@@ -118,6 +118,7 @@ class NCSelectHomeFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // No way back from here, user has to select a home folder to continue
                 if (fetchJob?.isActive == true) {
                     fetchJob?.cancel()
                     selectButton.isEnabled = true
@@ -126,7 +127,7 @@ class NCSelectHomeFragment: Fragment() {
                 }
                 else if (selectedFolder.isNotEmpty()) {
                     fetchFolder(selectedFolder.substringBeforeLast("/"))
-                } else returnResult()
+                }
             }
         })
 

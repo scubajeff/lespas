@@ -74,6 +74,8 @@ class PhotoWithMapFragment: Fragment() {
 
     private lateinit var remoteBase: String
 
+    private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -99,22 +101,19 @@ class PhotoWithMapFragment: Fragment() {
 
         stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
 
-
-        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+        shareOutBackPressedCallback = object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 // Cancel EXIF stripping job if it's running
                 waitingMsg?.let {
                     if (it.isShownOrQueued) {
                         imageLoaderModel.cancelShareOut()
                         it.dismiss()
-                        return
-                    }
-                }
-
-                if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
-                else parentFragmentManager.popBackStack()
+                        isEnabled = false
+                    } else isEnabled = false
+                } ?: run { isEnabled = false }
             }
-        })
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photo_with_map, container, false)
@@ -198,7 +197,10 @@ class PhotoWithMapFragment: Fragment() {
             imageLoaderModel.shareOutUris.collect { uris ->
                 // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
                 handler.removeCallbacksAndMessages(null)
-                if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+                if (waitingMsg?.isShownOrQueued == true) {
+                    waitingMsg?.dismiss()
+                    shareOutBackPressedCallback.isEnabled = false
+                }
 
                 // Call system share chooser
                 when (shareOutType) {
@@ -221,7 +223,10 @@ class PhotoWithMapFragment: Fragment() {
             }
         }.invokeOnCompletion {
             handler.removeCallbacksAndMessages(null)
-            if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+            if (waitingMsg?.isShownOrQueued == true) {
+                waitingMsg?.dismiss()
+                shareOutBackPressedCallback.isEnabled = false
+            }
         }
     }
 
@@ -297,11 +302,16 @@ class PhotoWithMapFragment: Fragment() {
     private fun shareOut(strip: Boolean, shareType: Int) {
         stripOrNot = strip
         shareOutType = shareType
-        waitingMsg = Tools.getPreparingSharesSnackBar(mapView, strip) { imageLoaderModel.cancelShareOut() }
-
+        waitingMsg = Tools.getPreparingSharesSnackBar(mapView, strip) {
+            imageLoaderModel.cancelShareOut()
+            shareOutBackPressedCallback.isEnabled = false
+        }
 
         // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-        handler.postDelayed({ waitingMsg?.show() }, 500)
+        handler.postDelayed({
+            waitingMsg?.show()
+            shareOutBackPressedCallback.isEnabled = true
+        }, 500)
 
         // Prepare media files for sharing
         imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.photo.apply { shareOutMimeType = mimeType }), strip, remotePhoto.remotePath.isNotEmpty(), remotePhoto.remotePath)

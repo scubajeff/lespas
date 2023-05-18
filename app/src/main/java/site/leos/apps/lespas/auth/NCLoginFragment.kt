@@ -97,6 +97,8 @@ class NCLoginFragment: Fragment() {
 
     private val authenticateModel: AuthenticateViewModel by activityViewModels { AuthenticateViewModelFactory(requireActivity()) }
 
+    private lateinit var pingJobBackPressedCallback: OnBackPressedCallback
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -130,11 +132,12 @@ class NCLoginFragment: Fragment() {
             // TODO Show scan error
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        pingJobBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                if (authenticateModel.isPinging()) authenticateModel.stopPinging() else requireActivity().finish()
+                if (authenticateModel.isPinging()) authenticateModel.stopPinging()
             }
-        })
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, pingJobBackPressedCallback)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -172,6 +175,7 @@ class NCLoginFragment: Fragment() {
         }
 
         authenticateModel.getPingResult().observe(viewLifecycleOwner) { result ->
+            pingJobBackPressedCallback.isEnabled = false
             when (result) {
                 200 -> {
                     // If host verification ok, start loading the nextcloud authentication page in webview
@@ -206,7 +210,10 @@ class NCLoginFragment: Fragment() {
                                 )
                             }
                         )
-                        .setPositiveButton(R.string.accept_certificate) { _, _ -> authenticateModel.pingServer(null, true) }
+                        .setPositiveButton(R.string.accept_certificate) { _, _ ->
+                            authenticateModel.pingServer(null, true)
+                            pingJobBackPressedCallback.isEnabled = true
+                        }
                         .setNegativeButton(android.R.string.cancel) { _, _ -> showError(1001) }
                         .create().show()
                 }
@@ -300,6 +307,7 @@ class NCLoginFragment: Fragment() {
             disableInputWhilePinging()
             authenticateModel.setToken(username, token)
             authenticateModel.pingServer(hostUrl, false)
+            pingJobBackPressedCallback.isEnabled = true
             // Reset self-signed certificate
             authenticateModel.setSelfSignedCertificate(null)
             authenticateModel.setSelfSignedCertificateString("")

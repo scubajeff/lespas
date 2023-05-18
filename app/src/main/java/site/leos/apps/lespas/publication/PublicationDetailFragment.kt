@@ -89,6 +89,8 @@ class PublicationDetailFragment: Fragment() {
     private var showName = false
     private lateinit var currentQuery: String
 
+    private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -178,20 +180,19 @@ class PublicationDetailFragment: Fragment() {
             }
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+        nameFilterBackPressedCallback = object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                // Clear search query if there is any
-                if (showName && currentQuery.isNotEmpty()) {
-                    searchMenuItem?.run {
-                        collapseActionView()
-                        (actionView as SearchView).setQuery("", false)
-                    }
-                    currentQuery = ""
-                    currentPositionModel.saveCurrentQuery(currentQuery)
+                searchMenuItem?.run {
+                    (actionView as SearchView).setQuery("", false)
+                    collapseActionView()
                 }
-                else parentFragmentManager.popBackStack()
+                currentQuery = ""
+                currentPositionModel.saveCurrentQuery(currentQuery)
+
+                isEnabled = false
             }
-        })
+        }
+        if (showName) requireActivity().onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -277,23 +278,30 @@ class PublicationDetailFragment: Fragment() {
                 searchMenuItem = menu.findItem(R.id.option_menu_search)
                 searchMenuItem?.apply {
                     (actionView as SearchView).run {
+                        // When resume from device rotation
                         if (currentQuery.isNotEmpty()) {
                             searchMenuItem?.expandActionView()
                             setQuery(currentQuery, false)
+                            nameFilterBackPressedCallback.isEnabled = true
                         }
 
                         queryHint = getString(R.string.option_menu_search)
 
                         setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                            override fun onQueryTextSubmit(query: String?): Boolean = false
+                            override fun onQueryTextSubmit(query: String?): Boolean = true
                             override fun onQueryTextChange(newText: String?): Boolean {
                                 (newText ?: "").let { query ->
                                     photoListAdapter.filter(query)
                                     currentQuery = query
                                 }
-                                return false
+                                return true
                             }
                         })
+
+                        setOnCloseListener {
+                            nameFilterBackPressedCallback.isEnabled = false
+                            false
+                        }
                     }
                 }
 
@@ -356,6 +364,10 @@ class PublicationDetailFragment: Fragment() {
                             )
                         ), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                         true
+                    }
+                    R.id.option_menu_search-> {
+                        nameFilterBackPressedCallback.isEnabled = true
+                        false
                     }
                     else-> false
                 }

@@ -99,6 +99,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
     private var albums = listOf<RemoteAlbum>()
     private var currentFilter = ""
+    private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -200,23 +201,14 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return super.onCreateDialog(savedInstanceState).also {
-            (it as ComponentDialog).onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            nameFilterBackPressedCallback = object: OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
-                    if (currentFilter.isNotEmpty()) {
-                        nameFilterSearchView.setQuery("", false)
-                        nameFilterSearchView.isIconified = true
-                        return
-                    }
-
-                    if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG) requireActivity().finish()
-                    else {
-                        // Clear editing mode
-                        destinationModel.setEditMode(false)
-
-                        dialog?.dismiss()
-                    }
+                    nameFilterSearchView.setQuery("", false)
+                    nameFilterSearchView.isIconified = true
+                    isEnabled = false
                 }
-            })
+            }
+            (it as ComponentDialog).onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
         }
     }
 
@@ -239,18 +231,31 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
         copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)
         nameFilterSearchView = view.findViewById<SearchView>(R.id.name_filter).apply {
-            if (currentFilter.isNotEmpty()) setQuery(currentFilter, false)
+            // When resume from device rotation
+            if (currentFilter.isNotEmpty()) {
+                setQuery(currentFilter, false)
+                nameFilterBackPressedCallback.isEnabled = true
+            }
 
             setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean = false
+                override fun onQueryTextSubmit(query: String?): Boolean = true
                 override fun onQueryTextChange(newText: String?): Boolean {
                     (newText ?: "").let { text ->
                         currentFilter = text
                         setAlbums()
                     }
-                    return false
+                    return true
                 }
             })
+
+            setOnCloseListener { 
+                nameFilterBackPressedCallback.isEnabled = false
+                false
+            }
+
+            setOnSearchClickListener {
+                nameFilterBackPressedCallback.isEnabled = true
+            }
         }
 
         newAlbumTextInputLayout = view.findViewById<TextInputLayout?>(R.id.new_album_textinputlayout).apply {

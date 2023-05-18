@@ -125,6 +125,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var showCameraRollPreferenceListener: SharedPreferences.OnSharedPreferenceChangeListener
 
+    private lateinit var selectionBackPressedCallback: OnBackPressedCallback
+    private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -226,25 +229,27 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+        selectionBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 if (selectionTracker.hasSelection()) {
                     selectionTracker.clearSelection()
                     lastSelection.clear()
                 }
-                else requireActivity().finish()
             }
-        })
+        }
 
-        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+        nameFilterBackPressedCallback = object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                // Clear search query if there is any
-                if (currentFilter.isNotEmpty()) {
-                    (nameFilterMenu?.actionView as? SearchView)?.setQuery("", false)
-                    return
-                } else requireActivity().finish()
+                nameFilterMenu?.run {
+                    (actionView as SearchView).setQuery("", false)
+                    collapseActionView()
+                }
+                isEnabled = false
             }
-        })
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
+        requireActivity().onBackPressedDispatcher.addCallback(this, selectionBackPressedCallback)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
@@ -310,9 +315,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumFragment)
                             actionMode?.let { it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize) }
+                            selectionBackPressedCallback.isEnabled = true
                         } else if (!selectionTracker.hasSelection() && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
+                            selectionBackPressedCallback.isEnabled = false
                         } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
                     }
 
@@ -390,23 +397,30 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 sortByMenu = menu.findItem(R.id.option_menu_sortby)
                 nameFilterMenu = menu.findItem(R.id.option_menu_album_name_filter).apply {
                     (actionView as SearchView).let {
+                        // When resume from device rotation
                         if (currentFilter.isNotEmpty()) {
                             expandActionView()
                             it.setQuery(currentFilter, false)
+                            nameFilterBackPressedCallback.isEnabled = true
                         }
 
                         it.queryHint = getString(R.string.option_menu_name_filter)
 
                         it.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                            override fun onQueryTextSubmit(query: String?): Boolean = false
+                            override fun onQueryTextSubmit(query: String?): Boolean = true
                             override fun onQueryTextChange(newText: String?): Boolean {
                                 (newText ?: "").let { text ->
                                     currentFilter = text
                                     setAlbums {}
                                 }
-                                return false
+                                return true
                             }
                         })
+
+                        it.setOnCloseListener {
+                            nameFilterBackPressedCallback.isEnabled = false
+                            false
+                        }
                     }
                 }
             }
@@ -492,6 +506,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         } else unhide()
 
                         return true
+                    }
+                    R.id.option_menu_album_name_filter-> {
+                        nameFilterBackPressedCallback.isEnabled = true
+                        return false
                     }
                     else-> {
                         return false
@@ -636,7 +654,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private fun setAlbums(callback: () -> Unit) {
         mutableListOf<Album>().run {
             // Filter albums by name
-            addAll(if (currentFilter.isNotEmpty()) albums.filter { it.name.contains(currentFilter, true) } else albums)
+            addAll(if (currentFilter.isNotEmpty()) albums.filter { it.name.indexOf(currentFilter, 0, true) != -1 } else albums)
 
             // Sort albums by user's choice, this sort order is persistence in shared preference
             when (currentSortOrder) {

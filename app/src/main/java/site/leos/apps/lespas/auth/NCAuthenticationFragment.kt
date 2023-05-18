@@ -75,20 +75,20 @@ class NCAuthenticationFragment: Fragment() {
     private var actionBarHeight = 0
     private var currentLoginName = ""
 
+    private lateinit var webviewBackPressedCallback: OnBackPressedCallback
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         reLogin = requireArguments().getBoolean(KEY_RELOGIN, false)
         serverTheme = requireArguments().parcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
 
-        requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        webviewBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                if (authWebpage.canGoBack()) authWebpage.goBack() else {
-                    authWebpage.stopLoading()
-                    parentFragmentManager.popBackStack()
-                }
+                authWebpage.goBack()
             }
-        })
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, webviewBackPressedCallback)
 
         if (reLogin) {
             scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -189,6 +189,11 @@ class NCAuthenticationFragment: Fragment() {
                             }
                         } else handler?.cancel()
                     }
+                }
+
+                override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                    super.doUpdateVisitedHistory(view, url, isReload)
+                    webviewBackPressedCallback.isEnabled = authWebpage.canGoBack()
                 }
             }
 
@@ -308,6 +313,7 @@ class NCAuthenticationFragment: Fragment() {
 
     override fun onDestroyView() {
         requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        authWebpage.stopLoading()
         super.onDestroyView()
     }
 

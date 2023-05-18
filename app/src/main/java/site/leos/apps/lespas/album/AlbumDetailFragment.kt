@@ -120,7 +120,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.abs
-
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var album: Album
     private var scrollTo = ""
@@ -176,6 +175,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var searchOptionMenu: MenuItem? = null
     private var currentQuery = ""
+
+    private lateinit var selectionBackPressedCallback: OnBackPressedCallback
+    private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
+    private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -282,11 +285,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     lastId = uri.lastPathSegment!!
 
                     snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(
-                        SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), 
-                        SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, 
+                        SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(),
+                        SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id,
                         SnapseedResultWorker.KEY_ALBUM to album.id)
                     ).build()
-                    
+
                     with(WorkManager.getInstance(requireContext())) {
                         enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
@@ -333,41 +336,41 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+        selectionBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                // Quit selection mode
                 if (selectionTracker.hasSelection()) {
                     selectionTracker.clearSelection()
                     lastSelection.clear()
-                    return
                 }
+            }
+        }
+        nameFilterBackPressedCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                searchOptionMenu?.run {
+                    (actionView as SearchView).setQuery("", false)
+                    collapseActionView()
+                }
+                currentQuery = ""
+                currentPhotoModel.setCurrentQuery(currentQuery)
 
-                // Cancel EXIF stripping job if it's running
+                isEnabled = false
+            }
+        }
+        if (Tools.isWideListAlbum(album.sortOrder)) requireActivity().onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
+        requireActivity().onBackPressedDispatcher.addCallback(this, selectionBackPressedCallback)
+
+        shareOutBackPressedCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
                 waitingMsg?.let {
                     if (it.isShownOrQueued) {
                         publishModel.cancelShareOut()
                         it.dismiss()
-                        return
-                    }
-                }
-
-                // Clear search query if there is any
-                if (Tools.isWideListAlbum(album.sortOrder)) {
-                    if (currentQuery.isNotEmpty()) {
-                        searchOptionMenu?.run {
-                            collapseActionView()
-                            (actionView as SearchView).setQuery("", false)
-                        }
-                        currentQuery = ""
-                        currentPhotoModel.setCurrentQuery(currentQuery)
-                        return
-                    }
-                }
-
-                if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
-                else parentFragmentManager.popBackStack()
+                        isEnabled = false
+                    } else isEnabled = false
+                } ?: run { isEnabled = false }
             }
-        })
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_albumdetail, container, false)
@@ -417,9 +420,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
                             actionMode?.let { it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize) }
+                            selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
+                            selectionBackPressedCallback.isEnabled = false
                         } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
                     }
 
@@ -597,7 +602,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         viewLifecycleOwner.lifecycleScope.launch {
             publishModel.shareOutUris.collect { uris ->
                 handler.removeCallbacksAndMessages(null)
-                if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+                if (waitingMsg?.isShownOrQueued == true) {
+                    waitingMsg?.dismiss()
+                    shareOutBackPressedCallback.isEnabled = false
+                }
 
                 // Collect share out files preparation result
                 when (shareOutType) {
@@ -650,7 +658,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }.invokeOnCompletion {
             handler.removeCallbacksAndMessages(null)
-            if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+            if (waitingMsg?.isShownOrQueued == true) {
+                waitingMsg?.dismiss()
+                shareOutBackPressedCallback.isEnabled = false
+            }
         }
 
         // Rename result handler
@@ -827,6 +838,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (parentFragmentManager.findFragmentByTag(EXPORT_GPX_DIALOG) == null) GPXExportDialogFragment.newInstance(album.name, mAdapter.currentList).show(parentFragmentManager, EXPORT_GPX_DIALOG)
                         true
                     }
+                    R.id.option_menu_search-> {
+                        nameFilterBackPressedCallback.isEnabled = true
+                        false
+                    }
                     else-> false
                 }
             }
@@ -836,7 +851,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             if (it.getBoolean(KEY_SHAREOUT_RUNNING)) {
                 shareOutType = it.getInt(KEY_SHAREOUT_TYPE)
                 stripOrNot = it.getBoolean(KEY_SHAREOUT_STRIP)
-                waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, stripOrNot) { publishModel.cancelShareOut() }.apply { show() }
+                waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, stripOrNot) {
+                    publishModel.cancelShareOut()
+                    shareOutBackPressedCallback.isEnabled = false
+                }
+                waitingMsg?.run {
+                    show()
+                    shareOutBackPressedCallback.isEnabled = true
+                }
             }
         }
     }
@@ -892,28 +914,36 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 it.isVisible = true
 
                 (it.actionView as SearchView).run {
+                    // When resume from device rotation
                     if (currentQuery.isNotEmpty()) {
                         it.expandActionView()
                         setQuery(currentQuery, false)
+                        nameFilterBackPressedCallback.isEnabled = true
                     }
 
                     queryHint = getString(R.string.option_menu_search)
 
                     setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                        override fun onQueryTextSubmit(query: String?): Boolean = false
+                        override fun onQueryTextSubmit(query: String?): Boolean = true
                         override fun onQueryTextChange(newText: String?): Boolean {
                             (newText ?: "").let { query ->
                                 mAdapter.filter(query)
                                 currentQuery = query
                             }
-                            return false
+                            return true
                         }
                     })
+
+                    setOnCloseListener {
+                        nameFilterBackPressedCallback.isEnabled = false
+                        false
+                    }
                 }
             } else {
                 it.isVisible = false
                 it.collapseActionView()
                 currentQuery = ""
+                nameFilterBackPressedCallback.isEnabled = false
             }
         }
     }
@@ -1020,10 +1050,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private fun shareOut(strip: Boolean, shareType: Int = GENERAL_SHARE) {
         stripOrNot = strip
         shareOutType = shareType
-        waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { publishModel.cancelShareOut() }
+        waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) {
+            publishModel.cancelShareOut()
+            shareOutBackPressedCallback.isEnabled = false
+        }
 
         // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-        handler.postDelayed({ waitingMsg?.show() }, 500)
+        handler.postDelayed({
+            waitingMsg?.show()
+            shareOutBackPressedCallback.isEnabled = true
+        },500)
 
         // Collect photos for sharing
         sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())!!
