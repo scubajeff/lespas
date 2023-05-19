@@ -25,6 +25,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -129,6 +131,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                     playButton.isEnabled = false
                     removeButton.isEnabled = false
                 }
+                setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             }
 
             findViewById<PlayerControlView>(R.id.bgm_control_view).apply {

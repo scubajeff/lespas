@@ -18,13 +18,16 @@ package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Parcelable
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
@@ -47,7 +50,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel,
-    private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
+    private val clickListener: ((Boolean?) -> Unit)?, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
     val volumeDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_volume_on_24)
     val brightnessDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_brightness_24)
@@ -65,62 +68,64 @@ abstract class SeamlessMediaSliderAdapter<T>(
     val hideForwardMessageCallback = Runnable { forwardMessage?.isVisible = false }
     val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
 
-    val gestureDetector: GestureDetectorCompat
+    var gestureDetector: GestureDetectorCompat? = null
+
     init {
-        gestureDetector = GestureDetectorCompat(context, object: GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent): Boolean = true
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (currentVideoView?.isControllerFullyVisible == false) {
-                    currentVideoView?.showController()
-                    clickListener(true)
-                    handler.removeCallbacks(hideProgressCallback)
-                    handler.postDelayed(hideProgressCallback, 3000)
+        clickListener?.let { cl ->
+            gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDown(e: MotionEvent): Boolean = true
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    if (currentVideoView?.isControllerFullyVisible == false) {
+                        currentVideoView?.showController()
+                        cl(true)
+                        handler.removeCallbacks(hideProgressCallback)
+                        handler.postDelayed(hideProgressCallback, 3000)
+                        return true
+                    }
+                    return false
+                }
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    if (e.x < displayWidth / 2) {
+                        playerViewModel.skip(-5)
+                        rewindMessage?.isVisible = true
+                        forwardMessage?.isVisible = false
+                        handler.removeCallbacks(hideRewindMessageCallback)
+                        handler.postDelayed(hideRewindMessageCallback, 1000)
+                    } else {
+                        playerViewModel.skip(5)
+                        forwardMessage?.isVisible = true
+                        rewindMessage?.isVisible = false
+                        handler.removeCallbacks(hideForwardMessageCallback)
+                        handler.postDelayed(hideForwardMessageCallback, 1000)
+                    }
                     return true
                 }
-                return false
-            }
 
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                if (e.x < displayWidth / 2) {
-                    playerViewModel.skip( -5)
-                    rewindMessage?.isVisible = true
-                    forwardMessage?.isVisible = false
-                    handler.removeCallbacks(hideRewindMessageCallback)
-                    handler.postDelayed(hideRewindMessageCallback, 1000)
-                } else {
-                    playerViewModel.skip( 5)
-                    forwardMessage?.isVisible = true
-                    rewindMessage?.isVisible = false
-                    handler.removeCallbacks(hideForwardMessageCallback)
-                    handler.postDelayed(hideForwardMessageCallback, 1000)
-                }
-                return true
-            }
+                override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                    // Ignore flings
+                    if (abs(distanceY) > 15) return false
 
-            override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-                // Ignore flings
-                if (abs(distanceY) > 15) return false
+                    if (abs(distanceX) < abs(distanceY)) {
+                        knobLayout?.isVisible = true
+                        // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
+                        if (e1.x > displayWidth / 2) {
+                            knobIcon?.setImageDrawable(volumeDrawable)
+                            playerViewModel.setVolume(distanceY / 300)
+                            knobPosition?.progress = (playerViewModel.getVolume() * 100).toInt()
+                        } else {
+                            knobIcon?.setImageDrawable(brightnessDrawable)
+                            playerViewModel.setBrightness(distanceY / 300)
+                            knobPosition?.progress = (playerViewModel.getBrightness() * 100).toInt()
+                        }
 
-                if (abs(distanceX) < abs(distanceY)) {
-                    knobLayout?.isVisible = true
-                    // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
-                    if (e1.x > displayWidth / 2) {
-                        knobIcon?.setImageDrawable(volumeDrawable)
-                        playerViewModel.setVolume(distanceY / 300)
-                        knobPosition?.progress = (playerViewModel.getVolume() * 100).toInt()
+                        handler.removeCallbacks(hideSettingCallback)
+                        handler.postDelayed(hideSettingCallback, 1000)
                     }
-                    else {
-                        knobIcon?.setImageDrawable(brightnessDrawable)
-                        playerViewModel.setBrightness(distanceY / 300)
-                        knobPosition?.progress = (playerViewModel.getBrightness() * 100).toInt()
-                    }
-
-                    handler.removeCallbacks(hideSettingCallback)
-                    handler.postDelayed(hideSettingCallback, 1000)
+                    return true
                 }
-                return true
-            }
-        })
+            })
+        }
     }
 
     abstract fun getVideoItem(position: Int): VideoItem
@@ -152,17 +157,19 @@ abstract class SeamlessMediaSliderAdapter<T>(
             else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader)
         }
     }
-
+    
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
         super.onViewAttachedToWindow(holder)
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
             playerViewModel.resume(holder.videoView, holder.videoUri)
             currentVideoView = holder.videoView
-            knobLayout = holder.knobLayout
-            knobIcon = holder.knobIcon
-            knobPosition = holder.knobPosition
-            forwardMessage = holder.forwardMessage
-            rewindMessage = holder.rewindMessage
+            clickListener?.let {
+                knobLayout = holder.knobLayout
+                knobIcon = holder.knobIcon
+                knobPosition = holder.knobPosition
+                forwardMessage = holder.forwardMessage
+                rewindMessage = holder.rewindMessage
+            }
 
             handler.removeCallbacksAndMessages(null)
             //clickListener(false)
@@ -174,10 +181,15 @@ abstract class SeamlessMediaSliderAdapter<T>(
             playerViewModel.pause(holder.videoUri)
             playerViewModel.resetBrightness()
             holder.videoView.player = null
-            holder.knobLayout.isVisible = false
-            holder.forwardMessage.isVisible = false
-            holder.rewindMessage.isVisible = false
+            clickListener?.let {
+                holder.knobLayout.isVisible = false
+                holder.forwardMessage.isVisible = false
+                holder.rewindMessage.isVisible = false
+            }
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && holder is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder) holder.getAnimatedDrawable().clearAnimationCallbacks()
+
         super.onViewDetachedFromWindow(holder)
     }
 
@@ -211,40 +223,42 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         init {
             ivMedia = itemView.findViewById<PhotoView>(R.id.media).apply {
-                setAllowParentInterceptOnEdge(true)
-                maximumScale = 5.0f
-                mediumScale = 2.5f
+                clickListener?.let {
+                    setAllowParentInterceptOnEdge(true)
+                    maximumScale = 5.0f
+                    mediumScale = 2.5f
 
-                // Tapping on image will zoom out to normal if currently zoomed in, otherwise show bottom menu
-                setOnPhotoTapListener { _, _, _ -> touchHandler(this) }
-                setOnOutsidePhotoTapListener {touchHandler(this) }
-                setOnLongClickListener { view ->
-                    touchHandler(view as PhotoView)
-                    true
-                }
+                    // Tapping on image will zoom out to normal if currently zoomed in, otherwise show bottom menu
+                    setOnPhotoTapListener { _, _, _ -> touchHandler(this) }
+                    setOnOutsidePhotoTapListener { touchHandler(this) }
+                    setOnLongClickListener { view ->
+                        touchHandler(view as PhotoView)
+                        true
+                    }
 
-                // Disable viewpager2 swipe when in zoom mode
-                setOnScaleChangeListener { _, _, _ ->
-                    setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f)
-                    if (scale == 1.0f) baseWidth = displayRect.width()
-                    currentWidth = (baseWidth * scale).toInt()
-                }
+                    // Disable viewpager2 swipe when in zoom mode
+                    setOnScaleChangeListener { _, _, _ ->
+                        setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f)
+                        if (scale == 1.0f) baseWidth = displayRect.width()
+                        currentWidth = (baseWidth * scale).toInt()
+                    }
 
-                // Keep swiping on edge will enable viewpager2 swipe again
-                edgeDetected = 0
-                setOnMatrixChangeListener {
-                    if (currentWidth > displayWidth) {
-                        when {
-                            it.right.toInt() <= displayWidth -> edgeDetected++
-                            it.left.toInt() >= 0 -> edgeDetected++
-                            else -> {
-                                edgeDetected = 0
-                                setAllowParentInterceptOnEdge(false)
+                    // Keep swiping on edge will enable viewpager2 swipe again
+                    edgeDetected = 0
+                    setOnMatrixChangeListener {
+                        if (currentWidth > displayWidth) {
+                            when {
+                                it.right.toInt() <= displayWidth -> edgeDetected++
+                                it.left.toInt() >= 0 -> edgeDetected++
+                                else -> {
+                                    edgeDetected = 0
+                                    setAllowParentInterceptOnEdge(false)
+                                }
                             }
-                        }
 
-                        if (edgeDetected > 30) setAllowParentInterceptOnEdge(true)
-                    } else edgeDetected = 0
+                            if (edgeDetected > 30) setAllowParentInterceptOnEdge(true)
+                        } else edgeDetected = 0
+                    }
                 }
             }
         }
@@ -256,12 +270,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
+        fun getPhotoView() = ivMedia
+
         private fun touchHandler(photoView: PhotoView) {
             photoView.run {
                 if (scale != 1.0f) setScale(1.0f, true)
                 setAllowParentInterceptOnEdge(true)
                 currentWidth = baseWidth.toInt()
-                clickListener(null)
+                clickListener?.let { it(null) }
             }
         }
     }
@@ -270,7 +286,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         private val ivMedia: ImageView
 
         init {
-            ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { setOnClickListener { clickListener(null) } }
+            ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { clickListener?.let { setOnClickListener { it(null) } }}
         }
 
         fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
@@ -279,6 +295,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 ViewCompat.setTransitionName(this, transitionName)
             }
         }
+
+        @RequiresApi(Build.VERSION_CODES.P)
+        fun getAnimatedDrawable(): AnimatedImageDrawable = ivMedia.drawable as AnimatedImageDrawable
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -294,7 +313,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         val rewindMessage: TextView
         init {
             videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
-                setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
+                gestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}
             }
             knobLayout = itemView.findViewById(R.id.knob)
             knobIcon = itemView.findViewById(R.id.knob_icon)
@@ -313,6 +332,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 imageLoader(item, null, NCShareViewModel.TYPE_NULL)
             }
         }
+
+        fun play() { playerViewModel.play() }
+        fun pause() { playerViewModel.pause(videoUri) }
     }
 
     @Parcelize

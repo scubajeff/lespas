@@ -33,6 +33,7 @@
     <string name="duration_weeks">行程%1$d周</string>
     <string name="duration_months">行程%1$d個月</string>
     <string name="duration_years">行程%1$d年</string>
+    <string name="option_menu_slideshow">幻燈片播放</string>
     <string name="button_text_set_cover">設定為相冊封面</string>
     <string name="button_text_share">分享</string>
     <string name="button_text_info">照片資訊</string>
@@ -156,6 +157,7 @@
     <string name="solo_album">個人相冊</string>
     <string name="joint_album_tooltips">大家共同編輯這個相冊</string>
     <string name="solo_album_tooltips">他人只可瀏覽這個相冊</string>
+    <string name="the_end">劇終</string>
     <string name="muzei_provider_description">Les Pas瞬間</string>
     <string name="exclude_albums">排除以下相冊：</string>
     <string name="prefer">選取：</string>
@@ -187,7 +189,7 @@
     <string name="button_text_map">地圖App</string>
     <string name="object_location">拍照地點</string>
     <string name="item_location_search">拍照地點</string>
-    <string name="option_menu_in_map">顯示全圖</string>
+    <string name="option_menu_in_map">地圖秀</string>
     <string name="object_face">人臉</string>
     <string name="action_hide">隱藏</string>
     <string name="option_menu_name_filter">按名檢索</string>

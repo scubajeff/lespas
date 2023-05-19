@@ -79,6 +79,7 @@
     <string name="msg_server_operation">Le foto appariranno nell\'album di destinazione dopo la sincronizzazione con il server.</string>
 
     <!-- PhotoSlide fragment -->
+    <string name="option_menu_slideshow">Presentazione</string>
     <string name="button_text_set_cover">Imposta come copertina</string>
     <string name="button_text_share">Condividi</string>
     <string name="button_text_set_as">Imposta sfondo</string>
@@ -274,7 +275,7 @@
     <string name="downloading_message">Il file %1$s sarà salvato nella cartella Download.</string>
 
     <!-- Location Search Fragment -->
-    <string name="option_menu_in_map">Tutto sulla mappa</string>
+    <string name="option_menu_in_map">Mostra sulla mappa</string>
 
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Presentazione</string>
@@ -291,6 +292,7 @@
     <string name="object_face">Volti</string>
 
     <!-- Muzei Artwork Provider -->
+    <string name="the_end">Fine</string>
     <string name="muzei_provider_description">Momento Les Pas</string>
     <string name="prefer">Preferisci:</string>
     <string name="prefer_day_in_history">Ieri e oggi</string>

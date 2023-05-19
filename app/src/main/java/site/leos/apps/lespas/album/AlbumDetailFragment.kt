@@ -108,6 +108,7 @@ import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.story.StoryFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -815,6 +816,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             PhotosInMapFragment.newInstance(album, Tools.getPhotosWithCoordinate(mAdapter.currentList, sp.getBoolean(getString(R.string.nearby_convergence_pref_key), true), album.sortOrder)),
                             PhotosInMapFragment::class.java.canonicalName
                         ).addToBackStack(null).commit()
+                        true
+                    }
+                    R.id.option_menu_slideshow-> {
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        ViewCompat.setTransitionName(recyclerView, null)
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, StoryFragment.newInstance(album), StoryFragment::class.java.canonicalName).addToBackStack(null).commit()
                         true
                     }
                     R.id.option_menu_bgm-> {

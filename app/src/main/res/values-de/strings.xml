@@ -63,6 +63,7 @@
     <string name="striping_exif">Entfernen von EXIF-Bildinformationen…</string>
 
      <!-- PhotoSlide fragment -->
+    <string name="option_menu_slideshow">Diashow</string>
     <string name="button_text_set_cover">Als Albumcover</string>
     <string name="button_text_share">Teilen</string>
     <string name="button_text_set_as">Als Hintergrundbild</string>
@@ -229,6 +230,7 @@
     <string name="object_vehicle">Fahrzeug</string>
     
     <!-- Muzei Artwork Provider -->
+    <string name="the_end">Ende</string>
     <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="prefer">Bevorzugt:</string>
     <string name="prefer_day_in_history">Damals und heute</string>
@@ -239,7 +241,7 @@
     <string name="button_text_map">Karten-App</string>
     <string name="object_location">Standort</string>
     <string name="item_location_search">Standort</string>
-    <string name="option_menu_in_map">Alle in Karte</string>
+    <string name="option_menu_in_map">Auf Karte anzeigen</string>
     <string name="object_face">Gesicht</string>
     <string name="action_hide">Ausblenden</string>
     <string name="option_menu_name_filter">Nach Namen filtern</string>

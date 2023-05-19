@@ -43,6 +43,7 @@
     <string name="duration_weeks">旅行 %1$d 週</string>
     <string name="duration_months">旅行 %1$d 月</string>
     <string name="duration_years">旅行 %1$d 年</string>
+    <string name="option_menu_slideshow">スライドショー</string>
     <string name="button_text_set_cover">アルバムカバー</string>
     <string name="button_text_set_as">壁紙設定</string>
     <string name="button_text_info">写真情報</string>
@@ -156,6 +157,7 @@
     <string name="solo_album">ソロ</string>
     <string name="joint_album_tooltips">受信者が編集できます。</string>
     <string name="solo_album_tooltips">受信者のみ表示されます。</string>
+    <string name="the_end">終わり</string>
     <string name="muzei_provider_description">Les Pasの瞬間</string>
     <string name="exclude_albums">の写真を除外します</string>
     <string name="prefer_day_in_history">昔と今</string>

@@ -28,9 +28,7 @@
         android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:theme="@style/LightEdgeEffectColor"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp" />
+        android:theme="@style/LightEdgeEffectColor" />
 
     <LinearLayout
         android:id="@+id/bottom_controls_container"

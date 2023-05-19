@@ -718,6 +718,34 @@ object Tools {
 */
     }
 
+    @Suppress("DEPRECATION")
+    fun quitImmersive(window: Window) {
+        window.run {
+/*
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                decorView.setOnSystemUiVisibilityChangeListener(null)
+            } else {
+                insetsController?.apply {
+                    show(WindowInsets.Type.systemBars())
+                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
+                }
+                statusBarColor = resources.getColor(R.color.color_primary)
+                setDecorFitsSystemWindows(true)
+                decorView.setOnApplyWindowInsetsListener(null)
+            }
+*/
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            //statusBarColor = resources.getColor(R.color.color_primary)
+            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            decorView.setOnSystemUiVisibilityChangeListener(null)
+            //navigationBarColor = previousNavBarColor
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+        }
+    }
+
     fun getPreparingSharesSnackBar(anchorView: View, strip: Boolean, cancelAction: View.OnClickListener?): Snackbar {
         val ctx = anchorView.context
         return Snackbar.make(anchorView, if (strip) R.string.striping_exif else R.string.preparing_shares, Snackbar.LENGTH_INDEFINITE).apply {

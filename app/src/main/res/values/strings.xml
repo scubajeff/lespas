@@ -100,6 +100,7 @@
     <string name="msg_check_network">Check your server connection.</string>
     <string name="msg_server_operation">Photos will appear in target album after synchronizing with server.</string>
     <string name="option_menu_search">Search for name</string>
+    <string name="option_menu_slideshow">Slideshow</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>
@@ -403,7 +404,7 @@
     <string name="downloading_message">File %1$s will be saved to Download folder.</string>
 
     <!-- Location Search Fragment -->
-    <string name="option_menu_in_map">All in Map</string>
+    <string name="option_menu_in_map">Show on Map</string>
 
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Slideshow</string>
@@ -453,6 +454,9 @@
     <string name="object_vehicle">Vehicle</string>
     <string name="object_location">Location</string>
     <string name="object_face">Face</string>
+
+    <!-- Story Fragment -->
+    <string name="the_end">The End</string>
 
     <!-- Muzei Artwork Provider -->
     <string name="muzei_provider_description">Les Pas Moment</string>

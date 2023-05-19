@@ -38,7 +38,6 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -46,7 +45,7 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
@@ -71,7 +70,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
                     if (playbackState == Player.STATE_ENDED) {
                         playWhenReady = false
-                        seekTo(0L)
+                        //seekTo(0L)
                         saveVideoPosition(currentVideo)
                     }
                 }
@@ -84,7 +83,13 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             })
 
             // Retrieve repeat mode setting
-            repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
+            repeatMode = when {
+                slideshowMode -> ExoPlayer.REPEAT_MODE_OFF
+                PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true) -> ExoPlayer.REPEAT_MODE_ALL
+                else -> ExoPlayer.REPEAT_MODE_OFF
+            }
+
+            playWhenReady = !slideshowMode
 
             // Handle audio focus
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
@@ -93,7 +98,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
 
         // Mute video sound during late night hours
-        with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
+        if (!slideshowMode) with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
     }
 
     fun addListener(listener: Player.Listener) {
@@ -101,6 +106,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         addedListener = listener
         videoPlayer.addListener(listener)
     }
+
+    fun play() { videoPlayer.play() }
 
     fun resume(view: PlayerView?, uri: Uri?) {
         // When device rotated, enable gapless playback by canceling scheduled pause job
@@ -111,7 +118,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         if (view != null && uri != null) {
             if (view.context is Activity) window = (view.context as Activity).window
-            if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
+            else if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
 
             if (uri == currentVideo) {
                 // Resuming the same video
@@ -122,7 +129,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                 }
             } else {
                 // Pause the current one
-                if (videoPlayer.isPlaying) pause(currentVideo, false)
+                if (videoPlayer.isPlaying) pause(currentVideo)
 
                 // Switch to new video
                 currentVideo = uri
@@ -135,7 +142,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             with(videoPlayer) {
                 setMediaItem(MediaItem.fromUri(currentVideo), getVideoPosition(currentVideo))
                 prepare()
-                play()
+                if (!slideshowMode) play()
             }
         } else {
             // OnWindowFocusChange called with hasFocus true
@@ -143,13 +150,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
     }
 
-    fun pause(uri: Uri?, delayedPause: Boolean = true) {
+    fun pause(uri: Uri?) {
         pauseJob = viewModelScope.launch {
             // Might be called multiple times, cancel previous scheduled job
             pauseJob?.cancel(null)
-
-            // Pause for 250ms, so that device rotate will resume playing gapless
-            if (delayedPause) delay(250)
 
             // Only pause if current playing video is the same as the argument. When swiping between two video items, onViewAttachedToWindow in SeamlessMediaSliderAdapter will call pause with last item's uri
             // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri

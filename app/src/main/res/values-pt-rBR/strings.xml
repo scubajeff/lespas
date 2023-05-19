@@ -73,6 +73,7 @@
     <string name="msg_check_network">Verifique sua conexão.</string>
 
     <!-- PhotoSlide fragment -->
+    <string name="option_menu_slideshow">Mostra de slides</string>
     <string name="button_text_set_cover">Configurar como capa</string>
     <string name="button_text_share">Compartilhar</string>
     <string name="button_text_set_as">Usar como fundo de tela</string>
@@ -259,7 +260,7 @@
     <string name="downloading_message">Arquivo %1$s será salvo para a pasta Download.</string>
 
     <!-- Location Search Fragment -->
-    <string name="option_menu_in_map">Tudo no mapa</string>
+    <string name="option_menu_in_map">Mostrar no mapa</string>
 
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Apresentação</string>
@@ -276,6 +277,7 @@
     <string name="object_face">Rosto</string>
 
     <!-- Muzei Artwork Provider -->
+    <string name="the_end">Fim</string>
     <string name="muzei_provider_description">Momento Les Pas</string>
     <string name="prefer">Preferi:</string>
     <string name="prefer_day_in_history">Antes e agora</string>
