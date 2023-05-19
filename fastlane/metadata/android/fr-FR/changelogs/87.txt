@@ -1,0 +1,4 @@
+* Nouvelle fonctionnalité : Diaporama avec BGM
+* Nouvelle fonctionnalité : Filtre de nom pour la liste des albums
+* Nouvelle fonction : Re-scan EXIF pour les albums
+* Autres améliorations et corrections de bugs

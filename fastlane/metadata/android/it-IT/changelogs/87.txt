@@ -1,0 +1,4 @@
+* Nuova funzione: Slideshow con BGM
+* Nuova funzione: Filtro del nome per l'elenco degli album
+* Nuova funzione: Ri-scansione EXIF per gli album
+* Altri miglioramenti e correzioni di bug

@@ -1,0 +1,4 @@
+* Nueva función: Presentación de diapositivas con BGM
+* Nueva función: Filtro de nombres para la lista de álbumes
+* Nueva función: Reescaneo EXIF para álbumes
+* Otras mejoras y correcciones de errores

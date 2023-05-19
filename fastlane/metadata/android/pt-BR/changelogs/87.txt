@@ -1,0 +1,4 @@
+* Novo recurso: Apresentação de slides com BGM
+* Novo recurso: Filtro de nomes para a lista de álbuns
+* Novo recurso: Reescaneamento de EXIF para álbum
+* Outras melhorias e correções de bugs

@@ -1,0 +1,4 @@
+* New feature: Slideshow with BGM
+* New feature: Name filter for album list
+* New feature: EXIF re-scan for album
+* Other improvements and bugs fixes

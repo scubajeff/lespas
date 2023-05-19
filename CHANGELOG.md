@@ -1,3 +1,8 @@
+## Version 2.8.3
+* New feature: Slideshow with BGM
+* New feature: Name filter for album list
+* New feature: EXIF re-scan for album
+
 ## Version 2.8.1
 * Fixed bug when moving photos from 'Local' album, the moved photos are not deleted in the original album
 * Fixed bug after the last photo deleted from Camera Roll Archive, it's still showing in the list
