@@ -67,7 +67,7 @@ class NCAuthenticationFragment: Fragment() {
     private var reLogin: Boolean = false
     private lateinit var serverTheme: NCLoginFragment.AuthenticateViewModel.NCTheming
 
-    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
+    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels { NCLoginFragment.AuthenticateViewModelFactory(requireActivity()) }
 
     private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
     private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
