@@ -104,6 +104,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        currentFilter = savedInstanceState?.getString(KEY_NAME_FILTER) ?: ""
+
         albumAdapter = DestinationAdapter(
             { remoteAlbum ->
                 remoteAlbum.album.let { album ->
@@ -287,9 +289,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         view.findViewById<MaterialButton>(R.id.move).isEnabled = arguments?.getBoolean(KEY_CAN_WRITE) == true
         savedInstanceState?.let {
             it.getInt(KEY_COPY_OR_MOVE).apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
-            currentFilter = it.getString(KEY_NAME_FILTER) ?: ""
         }
-
 
         newAlbumTitleTextInputEditText.run {
             setOnEditorActionListener { _, actionId, keyEvent ->
