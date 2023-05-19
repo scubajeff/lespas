@@ -665,7 +665,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
 
             // Put camera roll album at the top if need
-            if (showCameraRoll) add(0, cameraRollAlbum)
+            if (showCameraRoll && currentFilter.isEmpty()) add(0, cameraRollAlbum)
 
             mAdapter.submitList(this) { callback() }
         }
