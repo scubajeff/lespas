@@ -1,22 +1,36 @@
 Les Pas, ist eine kostenlose, moderne, leichte und schnelle Galerie-App. Organisieren Sie Ihre Fotos, GIFs und Videos in Alben zum einfachen Betrachten und Teilen. Durch die integrierte Zwei-Wege-Synchronisation mit dem Nextcloud-Server bleiben Ihre Dateien privat, sicher und geschützt.
 
-Funktionen:
-- Einfache, schöne und schnelle Anzeige von Fotos und Videos
-- Organisierte Fotos und Videos in Alben
-- Verwalten Sie die Kamerarolle Ihres Handys und erstellen Sie automatisch ein Backup auf dem Server
-- Synchronisation funktioniert mit Nextcloud-Server und zwischen mehreren Geräten, bearbeiten Sie Alben auf Nextcloud-Server und auf allen Ihren mobilen Geräten gleichzeitig
-- Teilen Sie Alben und Album-Diashows mit anderen Nextcloud-Nutzern (Voraussetzungen prüfen unter https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
-- Gemeinsames Album, das Sie und andere Nextcloud-Nutzer gemeinsam bearbeiten können
-- Unterstützung von Foto-Blogging (Anleitung unter https://github.com/scubajeff/pico_lespas)
-- Suche nach Fotos nach Objekten mit AI
-- Fotos nach Ort suchen, Album in Karte anzeigen (Kartendaten vom OpenStreetMap-Projekt)
-- Integration mit Snapseed zur Fotobearbeitung auf mobilen Geräten
-- Integration mit Muzei Live Wallpaper App
-- Teilen in sozialen Netzwerken, Option zum Entfernen der EXIF-Daten des Fotos vor der Freigabe
-- Themendesign inspiriert von den Werken von Wes Anderson
-- Verwalten Sie das Remote-Album, bei dem alle Fotodateien nur auf dem Nextcloud-Server gespeichert sind, und geben Sie den Speicherplatz des Telefons frei.
-- Lokale Alben verwalten, bei denen alle Dateien im privaten Speicher der App gespeichert sind, damit sie nicht von bösartigen Apps gescannt werden
-- Open-Source
+Verwalten, Synchronisieren und Archivieren
+  * Organisieren Sie Ihre Mediendateien in Alben.
+  * Einfaches Importieren von Medien durch einfaches Freigeben von Dateien auf Les Pas
+  * Verwalten Sie die Kamerarolle Ihres Telefons und erstellen Sie automatisch ein Backup auf dem Server.
+  * Integration mit Snapseed zur Fotobearbeitung
+  * Unterstützt das Hinzufügen von Bildunterschriften zu Fotos
+  * Synchronisierung mit Nextcloud-Server und zwischen mehreren Geräten, Bearbeitung von Alben auf Nextcloud-Server und auf allen Ihren mobilen Geräten gleichzeitig
+  * Unterstützung von Remote-Alben, bei denen alle Mediendateien nur auf dem Nextcloud-Server gespeichert sind, um Speicherplatz auf dem Handy freizugeben
+  * Suche nach Fotos nach Objekten mit AI
+  * Suche nach Fotos nach Standort
+  * Unterstützt GPX-Import, so dass Sie einfach GPS-Standortdaten zu Bildern hinzufügen können, die Sie mit Ihrer Digitalkamera aufgenommen haben
+  * Unterstützt den externen Speicher von Nextcloud
+  * Wunderschönes Design, inspiriert von den Werken von Wes Anderson
+
+Freigabe
+  * Teilen Sie Alben und Album-Diashows mit anderen Nextcloud-Nutzern, Gruppen und Kreisen
+  * Einzigartige "Joint Album"-Funktion, die Sie und andere Nextcloud-Nutzer gemeinsam bearbeiten können
+  * Exportieren Sie eine GPX-Datei aus dem Album, damit Sie Ihr Abenteuer mit anderen teilen können
+
+Fokus Datenschutz
+  * Mediendateien und Vorschaubilder werden im privaten Speicher der App gespeichert, damit sie nicht von bösartigen Apps gescannt werden.
+  * Option zum Entfernen der EXIF-Daten von Fotos vor der Weitergabe an andere soziale Netzwerke
+  * Option zum Verstecken des Albums sowohl auf dem Telefon als auch auf dem Server
+  * Authentifizierung auf Ihrem Nextcloud-Server mit Ihren Nextcloud-Anmeldedaten
+  * Opensource
+
+Jede Anwendung, die das oben Genannte kann, ist lediglich ein Mediendateimanager mit einer ausgefallenen Benutzeroberfläche. Les Pas hört hier nicht auf, sondern bietet Möglichkeiten, Ihre Fotos zu nutzen. Die Vergangenheit sollte nicht auf der Festplatte ruhen, bringen Sie all diese Erinnerungen zum Leuchten.
+  * Integration mit der Muzei Live Wallpaper App, liefert "Heute in der Geschichte" Bilder direkt auf den Desktop Ihres Telefons
+  * Album-Diashow, mit Hintergrundmusik
+  * Einzigartige Funktion "Diashow auf der Karte", die die Album-Diashow auf der Karte ablaufen lässt
+  * Unterstützt Foto-Blogging in drei vorgefertigten Vorlagen. Mit ausgewählten Bildern und von Ihnen hinzugefügten Bildunterschriften können Sie Ihre Geschichten mit der Welt teilen.
 
 Dieses Projekt wurde unter Verwendung der folgenden Open-Source-Software erstellt:
 - OkHttp https://square.github.io/okhttp

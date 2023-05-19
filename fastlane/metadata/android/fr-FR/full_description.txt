@@ -1,22 +1,36 @@
 Les Pas, est une application de galerie gratuite, moderne, légère et rapide. Organisez vos photos, GIF et vidéos dans des albums pour les visualiser et les partager facilement. Grâce à la synchronisation bidirectionnelle intégrée avec votre serveur Nextcloud, vos fichiers restent privés, sûrs et sécurisés.
 
-Caractéristiques :
-- Visualisation simple, belle et rapide des photos et vidéos
-- Organisation des photos et vidéos en albums
-- Gérez la liste des photos de votre téléphone et sauvegardez automatiquement sur le serveur.
-- La synchronisation fonctionne avec le serveur Nextcloud et entre plusieurs appareils, éditez des albums sur le serveur Nextcloud et sur tous vos appareils mobiles simultanément.
-- Partager des albums et des diaporamas d'albums avec d'autres utilisateurs de Nextcloud (vérifier les conditions préalables à l'adresse https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
-- Album commun que vous et d'autres utilisateurs Nextcloud pouvez modifier ensemble.
-- Prise en charge des blogs photo (instruction à l'adresse https://github.com/scubajeff/pico_lespas)
-- Recherchez des photos par objets avec l'IA
-- Recherche de photos par lieu, affichage de l'album sur la carte (données cartographiques fournies par le projet OpenStreetMap)
-- Intégration avec Snapseed pour la retouche photo sur les appareils mobiles
-- Intégration à l'application Muzei Live Wallpaper
-- Partager sur les réseaux sociaux, option permettant de supprimer l'EXIF de la photo avant de la partager
-- Conception du thème inspirée des œuvres de Wes Anderson
-- Gérer l'album distant, dont tous les fichiers image des photos sont stockés uniquement sur le serveur Nextcloud, pour libérer l'espace de stockage du téléphone.
-- Gérer l'album local, dont tous les fichiers sont enregistrés dans le stockage privé de l'application, afin de ne plus être scanné par des applications malveillantes.
-- Source ouverte
+Gestion, synchronisation et archivage
+  * Organisez vos fichiers multimédias dans des albums
+  * Importation facile des médias en partageant simplement les fichiers avec Les Pas
+  * Gestion du rouleau d'appareils photo de votre téléphone et sauvegarde automatique sur le serveur
+  * Intégration avec Snapseed pour l'édition de photos
+  * Possibilité d'ajouter une légende à la photo
+  * La synchronisation fonctionne avec le serveur Nextcloud et entre plusieurs appareils, éditer des albums sur le serveur Nextcloud et sur tous vos appareils mobiles simultanément.
+  * Prise en charge de l'album à distance, dont tous les fichiers multimédias sont stockés sur le serveur Nextcloud uniquement, ce qui permet de libérer l'espace de stockage du téléphone.
+  * Recherche de photos par objets avec l'IA
+  * Recherche de photos par objet avec l'IA
+  * Prise en charge de l'importation GPX, afin que vous puissiez facilement ajouter des données de localisation GPS aux photos prises avec votre appareil photo numérique.
+  * Prise en charge du stockage externe Nextcloud
+  * Un thème magnifique inspiré par les œuvres de Wes Anderson
+
+Partage
+  * Partager des albums et des diaporamas d'albums avec d'autres utilisateurs, groupes et cercles Nextcloud
+  * Fonction unique "Album commun", que vous et d'autres utilisateurs de Nextcloud peuvent éditer ensemble
+  * Exportation d'un fichier GPX à partir de l'album, vous pouvez partager votre aventure avec d'autres.
+
+Confidentialité
+  * Les fichiers multimédias et les vignettes sont tous sauvegardés dans le stockage privé de l'application, ce qui évite d'être scanné par des applications malveillantes.
+  * Option permettant de supprimer les données EXIF des photos avant de les partager avec d'autres réseaux sociaux
+  * Option pour cacher l'album à la fois dans le téléphone et sur le serveur
+  * Authentification sur votre serveur Nextcloud avec votre identifiant Nextcloud
+  * Opensource
+
+Toute application capable de faire ce qui précède n'est qu'un gestionnaire de fichiers multimédia avec une interface fantaisiste. Les Pas ne s'arrête pas là, il s'efforce de fournir des moyens d'utiliser vos photos. Le passé ne doit pas rester sur le disque dur, faites briller tous ces souvenirs.
+  * Intégration avec l'application Muzei Live Wallpaper, pour afficher des photos "Aujourd'hui dans l'histoire" directement sur le bureau de votre téléphone.
+  * Diaporama d'albums avec musique de fond
+  * Fonction unique "Diaporama sur la carte" qui permet d'afficher le diaporama de l'album sur la carte.
+  * Prise en charge des blogs photo dans trois modèles prêts à l'emploi. Avec les photos sélectionnées et les légendes que vous avez ajoutées, vous pouvez partager vos histoires avec le monde entier.
 
 Ce projet a été élaboré à l'aide des logiciels libres suivants :
 - OkHttp https://square.github.io/okhttp

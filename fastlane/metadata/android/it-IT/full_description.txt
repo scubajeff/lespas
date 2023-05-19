@@ -1,22 +1,36 @@
 Les Pas è un'app galleria gratuita, moderna, leggera e veloce. Organizza le tue foto, GIF e acquisizioni video all'interno di album per visualizzarle e condividerle facilmente. Grazie alla sincronizzazione a due vie integrata con il tuo server Nextcloud, i tuoi file rimarranno privati e al sicuro.
 
-Funzionalità:
-- Visualizzazione di foto e video semplice, gradevole e veloce
-- Foto e video organizzati all'interno di album
-- Gestisci il rullino foto del tuo cellulare e l'auto-backup sul server
-- La sincronizzazione funziona con il server Nextcloud e su molteplici dispositivi, modifica gli album sul server Nextcloud e su tutti i tuoi dispositivi contemporaneamente
-- Condividi album e slideshow con altri utenti Nextcloud (verifica i prerequisiti qui: https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
-- Album collettivi che puoi modificare insieme ad altri utenti Nextcloud
-- Supportare il photo blogging (istruzioni su https://github.com/scubajeff/pico_lespas)
-- Cerca foto tramite oggetti con l'IA
-- Cerca foto tramite localizzazione, visualizza gli album nella mappa (dati della mappa forniti dal progetto OpenStreetMap)
-- Integrazione con Snapseed per modificare le foto su dispositivi mobili
-- Integrazione con l'app Muzei Live Wallpaper
-- Condividi sui social, opzione che consente di rimuovere i dati EXIF prima di condividere
-- Tema ispirato alle opere di Wes Anderson
-- Gestisci l'album remoto, con tutti i file immagine salvati sul server Nextcloud, per liberare spazio su cellulare
-- Gestisci l'album locale, con tutti i file salvati nell'archivio privato dell'app, così che le app maligne non potranno più prenderti di mira
-- Open-source
+Gestione, sincronizzazione e archiviazione
+  * Organizzare i file multimediali in album
+  * Importazione facile dei file multimediali semplicemente condividendoli con Les Pas
+  * Gestione del rullino fotografico del telefono e backup automatico su server
+  * Integrazione con Snapseed per il fotoritocco
+  * Supporto per l'aggiunta di didascalie alle foto
+  * La sincronizzazione funziona con il server Nextcloud e tra più dispositivi, modificando gli album sul server Nextcloud e su tutti i dispositivi mobili contemporaneamente
+  * Supporta gli album remoti, che hanno tutti i file multimediali memorizzati solo sul server Nextcloud, liberando così lo spazio di archiviazione del telefono.
+  * Ricerca di foto per oggetti con AI
+  * Ricerca delle foto in base alla posizione
+  * Supporta l'importazione di GPX, in modo da poter aggiungere facilmente i dati di localizzazione GPS alle immagini scattate con la fotocamera digitale.
+  * Supporto dell'archiviazione esterna di Nextcloud
+  * Tema bellissimo ispirato alle opere di Wes Anderson
+
+Condivisione
+  * Condividere album e presentazioni di album con altri utenti, gruppi e cerchie di Nextcloud.
+  * Funzione unica "Album congiunto", che voi e altri utenti di Nextcloud potete modificare insieme
+  * Esportazione di file GPX dall'album, per condividere la propria avventura con gli altri.
+
+Attenzione alla privacy
+  * I file multimediali e le miniature sono tutti salvati nello spazio di archiviazione privato dell'app, per evitare la scansione da parte di applicazioni dannose.
+  * Opzione per eliminare l'EXIF delle foto prima di condividerle su altri social network.
+  * Opzione per nascondere l'album sia sul telefono che sul server.
+  * Autenticazione sul server Nextcloud con le credenziali di Nextcloud
+  * Opensource
+
+Qualsiasi applicazione in grado di fare quanto sopra è semplicemente un gestore di file multimediali con un'interfaccia utente elegante. Les Pas non si ferma qui, ma cerca di fornire modi per utilizzare le foto. Il passato non dovrebbe rimanere nel disco rigido, ma far risplendere tutti i ricordi.
+  * Integrazione con l'applicazione Muzei Live Wallpaper, per offrire immagini "Oggi nella storia" direttamente sul desktop del telefono.
+  * Presentazione di album, con musica di sottofondo
+  * Funzione unica "Slideshow on Map" che esegue la presentazione dell'album sulla mappa.
+  * Supporta il photo blogging in tre modelli già pronti. Con le immagini selezionate e le didascalie aggiunte, è possibile condividere le proprie storie con il mondo.
 
 Questo progetto è stato realizzato utilizzando i seguenti software open-source:
 - OkHttp https://square.github.io/okhttp

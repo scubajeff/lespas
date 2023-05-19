@@ -1,22 +1,36 @@
 Les Pas é um aplicativo de galeria livre, moderno, leve e rápido. Organize suas fotos, GIFs e vídeos em álbuns para visualizar e compartilhar facilmente. Com sincronização de mão dupla com o seu servidor Nextcloud, seus arquivos continuam privados e seguros.
 
-Features:
-- Visualizador de fotos e vídeos simples, bonito e rápido
-- Fotos e vídeos organizadas em álbuns
-- Gerencie a pasta da câmera do seu telefone e automaticamente faça backup para o servidor
-- Sincronização funciona entre múltiplos dispositivos e o servidor Nextcloud, edite álbuns direto no servidor e em todos os seus dispositivos simultaneamente,
-- Compartilhe álbuns e apresentações com outros usuários Nextcloud (veja pré-requisito para isso em https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
-- Álbum conjunto que você e outros usuários Nextcloud podem editar juntos
-- Suporte a foto blogs (instrução em https://github.com/scubajeff/pico_lespas)
-- Pesquisa por fotos por objetos usando IA
-- Pesquisa por fotos por localização, mostra o álbum no mapa (Informações de mapa fornecidas pelo projeto OpenStreetMap)
-- Integraçao com Snapseed para edição de fotos em dispositivos móveis
-- Integração com o aplicativo de fundo de tela animado Muzei
-- Compartilhe com redes sociais, com a opção de remover a informação EXIF da foto antes de compartilhar
-- Design do tema inspirado no trabalho de Wes Anderson
-- Gerencie álbuns remotos, que tem todas suas fotos armazenadas apenas no servidor Nextcloud, liberando o espaço do telefone
-- Gerencie álbuns locais, com todos os arquivos salvos no armazenamento fechado do aplicativo, evitando ser rastreado por outros aplicativos maliciosos
-- Código fonte aberto
+Gerenciamento, sincronização e arquivamento
+  * Organize seus arquivos de mídia em álbuns
+  * Importação fácil de mídia simplesmente compartilhando arquivos com o Les Pas
+  * Gerencie o rolo da câmera do seu telefone e faça backup automático no servidor
+  * Integração com o Snapseed para edição de fotos
+  * Suporte para adicionar legenda à foto
+  * A sincronização funciona com o servidor Nextcloud e entre vários dispositivos, edite álbuns no servidor Nextcloud e em todos os seus dispositivos móveis simultaneamente.
+  * Suporte ao Remote Album, que tem todos os seus arquivos de mídia armazenados somente no servidor Nextcloud, liberando o armazenamento do telefone.
+  * Busca de fotos por objetos com IA
+  * Pesquisa de fotos por localização
+  * Suporte à importação de GPX, para que você possa adicionar facilmente dados de localização GPS às fotos tiradas com sua câmera digital
+  * Suporte ao armazenamento externo do Nextcloud
+  * Tema bonito inspirado nos trabalhos de Wes Anderson
+
+Compartilhamento
+  * Compartilhe álbuns e apresentações de slides de álbuns com outros usuários, grupos e círculos do Nextcloud
+  * Recurso exclusivo "Joint Album", que você e outros usuários do Nextcloud podem editar juntos
+  * Exporte o arquivo GPX do álbum e compartilhe sua aventura com outras pessoas.
+
+Foco na privacidade
+  * Os arquivos de mídia e as miniaturas são salvos no armazenamento privado do aplicativo, deixando de ser escaneados por aplicativos mal-intencionados.
+  * Opção fornecida para remover o EXIF da foto antes de compartilhá-la em outras redes sociais
+  * Opção para ocultar o álbum no telefone e no servidor
+  * Autenticação em seu servidor Nextcloud com a credencial do Nextcloud
+  * Código aberto
+
+Qualquer aplicativo que possa fazer o que foi mencionado acima é apenas um gerenciador de arquivos de mídia com uma interface de usuário sofisticada. O Les Pas não para por aqui, ele se esforça para fornecer maneiras de utilizar suas fotos. O passado não deve ficar guardado no disco rígido, faça com que todas essas lembranças brilhem.
+  * Integração com o aplicativo Muzei Live Wallpaper, que fornece imagens "Today in History" diretamente na área de trabalho do seu telefone
+  * Apresentação de slides de álbuns, com música de fundo
+  * Recurso exclusivo "Slideshow on Map", que executa a apresentação de slides do álbum no mapa.
+  * Suporte a blogs de fotos em três modelos prontos. Com as fotos selecionadas e a legenda adicionada, você pode compartilhar suas histórias com o mundo.
 
 Esse projeto foi construído usando os seguintes programas de código aberto:
 - OkHttp https://square.github.io/okhttp
