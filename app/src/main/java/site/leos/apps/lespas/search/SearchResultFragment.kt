@@ -62,23 +62,23 @@ class SearchResultFragment : Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
-        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel)
+        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getInt(KEY_SEARCH_SCOPE), imageLoaderModel)
     }
 
     private var loadingIndicator: MenuItem? = null
     private var loadingProgressBar: CircularProgressIndicator? = null
 
-    private var searchTarget = 0
+    private var searchScope = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
+        searchScope = requireArguments().getInt(KEY_SEARCH_SCOPE)
 
         searchResultAdapter = SearchResultAdapter(
-            searchTarget,
+            searchScope,
             { result, imageView ->
-                if (searchTarget == R.id.search_album) {
+                if (searchScope == R.id.search_album) {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val album: Album = albumModel.getThisAlbum(result.remotePhoto.photo.albumId)
                         withContext(Dispatchers.Main) {
@@ -100,7 +100,7 @@ class SearchResultFragment : Fragment() {
                     }
                     //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id, searchTarget == R.id.search_archive), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id, searchScope == R.id.search_archive), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
             { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
@@ -127,7 +127,7 @@ class SearchResultFragment : Fragment() {
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
 
         searchResultRecyclerView.addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(requireContext(),
-            when(searchTarget) {
+            when(searchScope) {
                 R.id.search_album -> R.drawable.ic_baseline_footprint_24
                 R.id.search_archive -> R.drawable.ic_baseline_archive_24
                 else -> R.drawable.ic_baseline_camera_roll_24
@@ -173,7 +173,7 @@ class SearchResultFragment : Fragment() {
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
             arguments?.let { title = getString(
-                when(searchTarget) {
+                when(searchScope) {
                     R.id.search_album -> R.string.title_in_album
                     R.id.search_cameraroll -> R.string.title_in_cameraroll
                     else -> R.string.title_in_archive
@@ -342,18 +342,18 @@ class SearchResultFragment : Fragment() {
     )
 
     companion object {
-        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
+        private const val KEY_SEARCH_SCOPE = "KEY_SEARCH_SCOPE"
         private const val CATEGORY_TYPE = "CATEGORY_TYPE"
         private const val CATEGORY_ID = "CATEGORY_ID"
         private const val CATEGORY_LABEL = "CATEGORY_LABEL"
 
         @JvmStatic
-        fun newInstance(categoryType: Int, categoryId: String, categoryLabel: String, target: Int) = SearchResultFragment().apply {
+        fun newInstance(categoryType: Int, categoryId: String, categoryLabel: String, scope: Int) = SearchResultFragment().apply {
             arguments = Bundle().apply {
                 putInt(CATEGORY_TYPE, categoryType)
                 putString(CATEGORY_ID, categoryId)
                 putString(CATEGORY_LABEL, categoryLabel)
-                putInt(KEY_SEARCH_TARGET, target)
+                putInt(KEY_SEARCH_SCOPE, scope)
             }
         }
     }

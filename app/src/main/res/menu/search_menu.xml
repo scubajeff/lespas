@@ -20,7 +20,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/option_menu_search_destination"
+        android:id="@+id/option_menu_search_scope"
         android:title=""
         app:showAsAction="always"
         app:actionLayout="@layout/menuitem_search_destination_switch" />

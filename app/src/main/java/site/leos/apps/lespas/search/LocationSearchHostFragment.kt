@@ -56,7 +56,7 @@ class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
     private var menu: Menu? = null
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel) }
+    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_SCOPE), imageLoaderModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,7 +83,7 @@ class LocationSearchHostFragment: Fragment() {
             }
         }
 
-        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getInt(KEY_SEARCH_TARGET)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
+        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getInt(KEY_SEARCH_SCOPE)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
 
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
@@ -115,11 +115,11 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    class LocationSearchViewModelFactory(private val application: Application, private val searchTarget: Int, private val remoteImageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchTarget, remoteImageModel) as T
+    class LocationSearchViewModelFactory(private val application: Application, private val searchScope: Int, private val remoteImageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchScope, remoteImageModel) as T
     }
 
-    class LocationSearchViewModel(application: Application, searchTarget: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(application) {
+    class LocationSearchViewModel(application: Application, searchScope: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(application) {
         private val photoRepository = PhotoRepository(application)
         private val resultList = mutableListOf<LocationSearchResult>()
         private val result = MutableLiveData<List<LocationSearchResult>>()
@@ -129,7 +129,7 @@ class LocationSearchHostFragment: Fragment() {
         @SuppressLint("RestrictedApi")
         private var job = viewModelScope.launch(Dispatchers.IO) {
             progress.postValue(0)
-            when(searchTarget) {
+            when(searchScope) {
                 R.id.search_album -> PhotoRepository(application).getAllImageNotHidden()
                 R.id.search_cameraroll -> Tools.getCameraRoll(application.contentResolver, true)
                 else -> remoteImageModel.getCameraRollArchive()
@@ -150,7 +150,7 @@ class LocationSearchHostFragment: Fragment() {
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
                     if (Tools.hasExif(photo.mimeType)) {
-                        when(searchTarget) {
+                        when(searchScope) {
                             R.id.search_album -> {
                                 if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
                                 else return@forEachIndexed
@@ -210,7 +210,7 @@ class LocationSearchHostFragment: Fragment() {
                                 } catch (e: IOException) { null }?.get(0)?.let {
                                     if (it.countryName != null) {
                                         val locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
-                                        if (searchTarget == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: Photo.NO_ADDRESS)
+                                        if (searchScope == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: Photo.NO_ADDRESS)
                                         //Pair(it.countryName, locality)
                                         LocationAddress(it.countryName, locality, it.countryCode)
                                     } else null
@@ -218,14 +218,14 @@ class LocationSearchHostFragment: Fragment() {
                             } else {
                                 LocationAddress(photo.country, photo.locality, photo.countryCode)
                             }?.apply {
-                                if (searchTarget == R.id.search_album) {
+                                if (searchScope == R.id.search_album) {
                                     val album = albums.find { it.id == photo.albumId }
                                     album?.let {
                                         rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${remoteBaseFolder}/${album.name}" else "")
                                     } ?: run {
                                         return@forEachIndexed
                                     }
-                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchTarget == R.id.search_cameraroll) "" else remoteCameraArchiveFolder)
+                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchScope == R.id.search_cameraroll) "" else remoteCameraArchiveFolder)
 
                                 resultList.find { result -> result.country == this.country && result.locality == this.locality }
                                     ?.let { existed ->
@@ -280,9 +280,9 @@ class LocationSearchHostFragment: Fragment() {
     )
 
     companion object {
-        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
+        private const val KEY_SEARCH_SCOPE = "KEY_SEARCH_SCOPE"
 
         @JvmStatic
-        fun newInstance(target: Int) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_TARGET, target) } }
+        fun newInstance(scope: Int) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_SCOPE, scope) } }
     }
 }

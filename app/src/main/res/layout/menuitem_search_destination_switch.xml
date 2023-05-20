@@ -24,7 +24,7 @@
     android:orientation="horizontal">
 
     <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/search_destination_toogle_group"
+        android:id="@+id/search_scope_toogle_group"
         android:layout_width="174dp"
         android:layout_height="?attr/actionBarSize"
         android:paddingVertical="12dp"

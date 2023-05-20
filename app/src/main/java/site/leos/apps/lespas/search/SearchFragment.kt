@@ -43,9 +43,9 @@ import site.leos.apps.lespas.helper.Tools
 class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var categoryView: RecyclerView
-    private var destinationToggleGroup: MaterialButtonToggleGroup? = null
+    private var scopeToggleGroup: MaterialButtonToggleGroup? = null
 
-    private var savedDestination = 0
+    private var savedScope = 0
     // Flag indicating if we have existing albums or not
     private var noAlbum = true
 
@@ -57,11 +57,11 @@ class SearchFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         categoryAdapter = CategoryAdapter { category ->
-            if (destinationToggleGroup?.checkedButtonId == R.id.search_album && noAlbum) {
+            if (scopeToggleGroup?.checkedButtonId == R.id.search_album && noAlbum) {
                 Snackbar.make(categoryView, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).show()
                 return@CategoryAdapter
             }
-            if (destinationToggleGroup?.checkedButtonId == R.id.search_cameraroll) {
+            if (scopeToggleGroup?.checkedButtonId == R.id.search_cameraroll) {
                 if (Tools.shouldRequestStoragePermission(requireContext())) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
@@ -79,7 +79,7 @@ class SearchFragment : Fragment() {
         categoryAdapter.submitList(categories)
         objectDrawableIds.recycle()
 
-        savedInstanceState?.apply { savedDestination = getInt(LAST_SELECTION) }
+        savedInstanceState?.apply { savedScope = getInt(LAST_SELECTION) }
 
         noAlbum = arguments?.getBoolean(NO_ALBUM) == true
 
@@ -111,7 +111,7 @@ class SearchFragment : Fragment() {
             in 1..4 -> {
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId ?: R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, scopeToggleGroup?.checkedButtonId ?: R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
             5 -> {
 /*
@@ -167,11 +167,11 @@ class SearchFragment : Fragment() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
                 inflater.inflate(R.menu.search_menu, menu)
-                destinationToggleGroup = menu.findItem(R.id.option_menu_search_destination).actionView?.findViewById(R.id.search_destination_toogle_group)
+                scopeToggleGroup = menu.findItem(R.id.option_menu_search_scope).actionView?.findViewById(R.id.search_scope_toogle_group)
             }
 
             override fun onPrepareMenu(menu: Menu) {
-                if (savedDestination != 0) destinationToggleGroup?.check(savedDestination)
+                if (savedScope != 0) scopeToggleGroup?.check(savedScope)
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true
@@ -189,13 +189,13 @@ class SearchFragment : Fragment() {
     }
 
     override fun onPause() {
-        destinationToggleGroup?.let { savedDestination = it.checkedButtonId }
+        scopeToggleGroup?.let { savedScope = it.checkedButtonId }
         super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        destinationToggleGroup?.let { outState.putInt(LAST_SELECTION, it.checkedButtonId) }
+        scopeToggleGroup?.let { outState.putInt(LAST_SELECTION, it.checkedButtonId) }
     }
 
     override fun onDestroyView() {
@@ -204,7 +204,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun launchLocationSearch() {
-        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(destinationToggleGroup?.checkedButtonId ?: R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
+        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(scopeToggleGroup?.checkedButtonId ?: R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
