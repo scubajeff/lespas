@@ -525,6 +525,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // Find out if blog site already created
         var token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT}")
+        if (token.first.isEmpty()) token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT_VARIANT}")
         webDav.getCallFactory().newCall(
             Request.Builder().url("${baseUrl}${NCShareViewModel.PICO_WEBSITES_ENDPOINT}").addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()
         ).execute().use { response ->
@@ -538,6 +539,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // Create pico site
             token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT}")
+            if (token.first.isEmpty()) webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT_VARIANT}")
             webDav.getCallFactory().newCall(Request.Builder()
                 .url("${baseUrl}${NCShareViewModel.PICO_WEBSITES_ENDPOINT}")
                 .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")

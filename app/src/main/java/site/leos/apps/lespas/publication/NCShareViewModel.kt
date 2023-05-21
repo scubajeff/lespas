@@ -972,7 +972,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     // Pico CMS integration
     private fun refreshBlog() {
         try {
-            val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
+            var token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
+            if (token.first.isEmpty()) token = webDav.getCSRFToken("${baseUrl}${ CSRF_TOKEN_ENDPOINT_VARIANT}")
 
             webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}").addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()).execute().use { response ->
                 if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
@@ -1751,6 +1752,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // Pico integration
         const val CSRF_TOKEN_ENDPOINT = "/csrftoken"
+        const val CSRF_TOKEN_ENDPOINT_VARIANT = "/index.php/csrftoken"
         const val PICO_WEBSITES_ENDPOINT = "/index.php/apps/cms_pico/personal/websites"
 
         const val SHARE_TYPE_USER = 0
