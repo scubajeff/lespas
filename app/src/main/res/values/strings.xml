@@ -65,7 +65,7 @@
     <string name="menu_item_qr_scanner_title">Scan QR code</string>
 
     <!-- Various Nextcloud access endpoints and naming -->
-    <string name="lespas_base_folder_name" translatable="false">/lespas</string>
+    <string name="local_base" translatable="false">/lespas</string>
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->

@@ -21,12 +21,8 @@ import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.transition.Fade
 import android.transition.TransitionManager
 import android.view.LayoutInflater
@@ -37,7 +33,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -72,7 +67,6 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var baseUrl: String
     private lateinit var resourceRoot: String
 
-    private lateinit var lespas: String
     private lateinit var serverTheme: NCLoginFragment.AuthenticateViewModel.NCTheming
     private var fetchJob: Job? = null
     private var currentList = mutableListOf<String>()
@@ -81,8 +75,6 @@ class NCSelectHomeFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        lespas = getString(R.string.lespas_base_folder_name).drop(1)
 
         //@Suppress("DEPRECATION")
         //serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_SERVER_THEME, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_SERVER_THEME)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
@@ -103,10 +95,8 @@ class NCSelectHomeFragment: Fragment() {
             )
         }
 
-        folderAdapter = FolderAdapter(
-            lespas,
-            Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary),
-        ) { name ->
+        folderAdapter = FolderAdapter()
+        { name ->
             if (selectButton.isEnabled) {
                 var newFolder = ""
                 if (name != PARENT_FOLDER) newFolder = "${selectedFolder}/${name}"
@@ -122,7 +112,7 @@ class NCSelectHomeFragment: Fragment() {
                 if (fetchJob?.isActive == true) {
                     fetchJob?.cancel()
                     selectButton.isEnabled = true
-                    showSelectedFolder(selectedFolder)
+                    folderTextView.text = selectedFolder.ifEmpty { "/" }
                     folderAdapter.submitList(currentList) { folderList.isVisible = true }
                 }
                 else if (selectedFolder.isNotEmpty()) {
@@ -174,13 +164,9 @@ class NCSelectHomeFragment: Fragment() {
         super.onDestroyView()
     }
 
-    private fun showSelectedFolder(name: String) {
-        folderTextView.text = SpannableString("$name/$lespas").apply { setSpan(ForegroundColorSpan(Color.GRAY), this.lastIndexOf('/') + 1, length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE) }
-    }
-
     private fun fetchFolder(target: String) {
         selectButton.isEnabled = false
-        showSelectedFolder(target)
+        folderTextView.text = target.ifEmpty { "/" }
 
         currentList = folderAdapter.currentList
         if (folderList.isVisible) {
@@ -226,7 +212,7 @@ class NCSelectHomeFragment: Fragment() {
             try {
                 var value: String
 
-                webDav.read("${resourceRoot}${selectedFolder}${getString(R.string.lespas_base_folder_name)}/${SyncAdapter.PREFERENCE_BACKUP_ON_SERVER}")?.let {
+                webDav.read("${resourceRoot}${selectedFolder}/${SyncAdapter.PREFERENCE_BACKUP_ON_SERVER}")?.let {
                     it.split(SyncAdapter.PREFERENCE_BACKUP_SEPARATOR).forEach { setting ->
                         setting.substringBefore('=', "").let { key ->
                             value = setting.substringAfter('=', "")
@@ -291,7 +277,7 @@ class NCSelectHomeFragment: Fragment() {
         }
     }
 
-    class FolderAdapter(private val lespas: String, private val textColor: Int, val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
+    class FolderAdapter(val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val tvName: TextView = itemView.findViewById<TextView>(R.id.name).apply { setOnClickListener { clickListener(this.text.toString()) }}
 
@@ -299,14 +285,6 @@ class NCSelectHomeFragment: Fragment() {
                 with(tvName) {
                     text = name
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { tooltipText = name }
-
-                    (name == lespas).let { isLesPasFolder ->
-                        isClickable = !isLesPasFolder
-                        (if (isLesPasFolder) Color.LTGRAY else textColor).let { color ->
-                            setTextColor(color)
-                            TextViewCompat.setCompoundDrawableTintList(tvName, ColorStateList.valueOf(color))
-                        }
-                    }
                 }
             }
         }

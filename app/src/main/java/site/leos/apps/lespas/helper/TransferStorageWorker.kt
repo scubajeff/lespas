@@ -51,7 +51,7 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
         val message: String
         val accounts = AccountManager.get(context).getAccountsByType(context.getString(R.string.account_type_nc))
 
-        context.getString(R.string.lespas_base_folder_name).apply {
+        context.getString(R.string.local_base).apply {
             if (inInternal) {
                 source = File(context.filesDir, this)
                 target = File(context.getExternalFilesDirs(null)[1], this)

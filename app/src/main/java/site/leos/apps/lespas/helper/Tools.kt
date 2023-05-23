@@ -600,7 +600,7 @@ object Tools {
     }
 
     fun getLocalRoot(context: Context): String {
-        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.lespas_base_folder_name)}"
+        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.local_base)}"
     }
 
     fun getRemoteHome(context: Context): String {
@@ -614,7 +614,8 @@ object Tools {
     }
     private fun getPathOnServer(context: Context, id: Int): String {
         return (PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
-            1 -> context.getString(R.string.lespas_base_folder_name)
+            //1 -> context.getString(R.string.lespas_base_folder_name)
+            1 -> "/"
             2 -> "/DCIM"
             3 -> "/Pictures"
             else -> ""
