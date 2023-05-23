@@ -273,16 +273,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
             this.albums = albums
-            if (albums.isNotEmpty()) {
-                setAlbums {
-                    if (scrollTo != -1) {
-                        recyclerView.scrollToPosition(scrollTo)
-                        scrollTo = -1
-                    }
+
+            setAlbums {
+                if (scrollTo != -1) {
+                    recyclerView.scrollToPosition(scrollTo)
+                    scrollTo = -1
                 }
-            } else {
-                sortByMenu?.isEnabled = false
-                nameFilterMenu?.isEnabled = false
             }
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
@@ -442,6 +438,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     Album.BY_DATE_TAKEN_DESC-> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
                     Album.BY_NAME_ASC-> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
                     Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+                }
+
+                if (albums.isEmpty()) {
+                    sortByMenu?.isEnabled = false
+                    nameFilterMenu?.isEnabled = false
                 }
             }
 

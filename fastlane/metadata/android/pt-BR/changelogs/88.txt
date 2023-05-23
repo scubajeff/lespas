@@ -1,0 +1,3 @@
+* Corrigido o desaparecimento do Rolo da Câmera quando ainda não havia nenhum álbum criado.
+* Correção do item de menu "Gerenciar blog" desativado devido à alteração de um ponto de extremidade webdav em algumas implementações do Nextcloud.
+* Outros aprimoramentos e correções de bugs
