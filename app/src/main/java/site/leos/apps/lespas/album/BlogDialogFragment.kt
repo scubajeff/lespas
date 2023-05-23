@@ -101,7 +101,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
             album = parcelable(KEY_ALBUM)!!
             blogLink = "${shareModel.getServerBaseUrl()}/apps/cms_pico/pico/${Tools.getBlogSiteName(shareModel.getUserLoginName())}/${album.id}"
         }
-        lespasPath = getString(R.string.lespas_base_folder_name)
+        lespasPath = Tools.getRemoteHome(requireContext())
 
         photoAdapter = PhotoGridAdapter(
             { photo, view, type -> shareModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) },
