@@ -1,0 +1,3 @@
+* Fixed Camera Roll disappears when there are no album created yet
+* Fixed 'Manage Blog' menu item disabled due to a webdav endpoint changed in some Nextcloud implementations
+* Other improvements and bugs fixes

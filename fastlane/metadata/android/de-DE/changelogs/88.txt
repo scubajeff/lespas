@@ -1,0 +1,3 @@
+* Behoben: Camera Roll verschwindet, wenn noch kein Album erstellt wurde
+* Behoben: Der Menüpunkt "Blog verwalten" wurde aufgrund eines geänderten Webdav-Endpunkts in einigen Nextcloud-Implementierungen deaktiviert
+* Weitere Verbesserungen und Fehlerkorrekturen

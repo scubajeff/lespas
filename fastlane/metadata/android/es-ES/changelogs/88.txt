@@ -1,0 +1,3 @@
+* Fijo Camera Roll desaparece cuando no hay ningún álbum creado todavía
+* Se ha corregido la desactivación del menú "Gestionar blog" debido a un cambio en el punto final webdav en algunas implementaciones de Nextcloud.
+* Otras mejoras y correcciones de errores

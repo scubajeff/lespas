@@ -1,3 +1,7 @@
+## Version 2.8.4
+* Fixed Camera Roll disappears when there are no album created yet
+* Fixed 'Manage Blog' menu item disabled due to a webdav endpoint changed in some Nextcloud implementations
+
 ## Version 2.8.3
 * New feature: Slideshow with BGM
 * New feature: Name filter for album list
