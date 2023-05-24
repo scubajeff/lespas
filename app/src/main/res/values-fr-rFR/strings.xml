@@ -40,6 +40,7 @@
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
     <string name="certificate_error">Erreur de certificat du site.</string>
     <!-- NCAuthentication fragment -->
+    <string name="tooltips_text_create_folder">Créer un nouveau dossier</string>
     <string name="login_to_new_account">Vous vous connectez avec un nouveau compte. Vous devez d\'abord vous déconnecter du compte actuel, puis relancer Les Pas. Procéder à la déconnexion ?</string>
     <string name="should_allow_launching_other_app">Veuillez autoriser Les Pas à lancer d\'autres applications dans vos paramètres de sécurité.</string>
     <string name="menu_item_qr_scanner_title">Scanner le QR code</string>
@@ -323,7 +324,7 @@
     <string name="msg_backup_oldies">Les nouvelles photos dans \'%1$s\' seront désormais sauvegardées. Vous avez également %2$,d photos dans l\'appareil en ce moment, avec %3$s en taille. Souhaitez-vous sauvegarder toutes ces anciennes photos maintenant ?</string>
     <string name="button_text_set_as_home">Définir</string>
     <string name="pick_home">Définir votre dossier d\'accueil</string>
-    <string name="pick_home_note">Les Pas enregistre vos albums et vos sauvegardes dans ce dossier sur votre serveur.</string>
+    <string name="pick_home_note">Les Pas enregistre vos albums et vos sauvegardes dans ce dossier sur votre serveur</string>
     <string name="button_text_save">Sauvegarder</string>
     <string name="hint_caption">Ajouter une légende</string>
     <string name="blog_header">Blog</string>

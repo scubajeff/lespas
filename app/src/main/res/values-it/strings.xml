@@ -44,6 +44,7 @@
     <string name="certificate_error">Errore del certificato del sito.</string>
 
     <!-- NCAuthentication fragment -->
+    <string name="tooltips_text_create_folder">Creare una nuova cartella</string>
     <string name="login_to_new_account">Stai accedendo con un nuovo account. Prima esci dall\'account corrente, poi riavvia Les Pas. Vuoi uscire\?</string>
     <string name="menu_item_qr_scanner_title">Scannerizza il codice QR</string>
 
@@ -353,7 +354,7 @@
     <string name="msg_backup_oldies">Le nuove foto contenute in \'%1$s\' saranno d\'ora in poi oggetto di backup. Nel dispositivo sono presenti anche %2$,d foto con dimensioni pari a %3$s. Si desidera eseguire il backup di tutte queste vecchie foto?</string>
     <string name="button_text_set_as_home">Set</string>
     <string name="pick_home">Impostare la cartella iniziale</string>
-    <string name="pick_home_note">Les Pas salva gli album e i backup in questa cartella sul server.</string>
+    <string name="pick_home_note">Les Pas salva gli album e i backup in questa cartella sul server</string>
     <string name="button_text_save">Salvare</string>
     <string name="hint_caption">Aggiungi legenda</string>
     <string name="blog_header">Blog</string>

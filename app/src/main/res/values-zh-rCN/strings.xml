@@ -222,6 +222,7 @@
     <string name="cache_size_setting_hint">缓存大小</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed修图 - 新建</string>
     <string name="checkbox_text_set_remote">远程相册，只在服务器上保存媒体文件。</string>
+    <string name="tooltips_text_create_folder">创建新文件夹</string>
     <string name="login_to_new_account">如果要登录其他帐户，请先登出当前帐户。现在继续登出当前帐户吗？</string>
     <string name="menu_item_qr_scanner_title">扫码登录</string>
     <string name="chinese_map_title">使用国内地图应用</string>
@@ -287,7 +288,7 @@
     <string name="msg_backup_oldies">从现在起，文件夹“%1$s”中的新照片将被备份。该文件夹在设备中还有%2$,d的照片，有%3$s的大小。需要备份这些旧照片吗？</string>
     <string name="button_text_set_as_home">选定</string>
     <string name="pick_home">设置主文件夹</string>
-    <string name="pick_home_note">Les Pas将在服务器上的这个文件夹里保存相册和备份文件。</string>
+    <string name="pick_home_note">Les Pas将在服务器上的这个文件夹里保存相册和备份</string>
     <string name="button_text_save">保存修订</string>
     <string name="hint_caption">添加照片说明</string>
     <string name="blog_header">博客</string>

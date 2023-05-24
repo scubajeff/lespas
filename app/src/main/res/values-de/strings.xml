@@ -274,6 +274,7 @@
     <string name="cache_size_setting_hint">Größe des Cache:</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Hinzufügen</string>
     <string name="checkbox_text_set_remote">Remote-Album, Mediendateien nur auf dem Server gespeichert.</string>
+    <string name="tooltips_text_create_folder">Neuen Ordner erstellen</string>
     <string name="login_to_new_account">Sie melden sich mit einem neuen Konto an. Sie sollten sich zuerst von Ihrem aktuellen Konto abmelden und dann Les Pas neu starten. Mit dem Abmelden fortfahren?</string>
     <string name="menu_item_qr_scanner_title">QR-Code scannen</string>
     <string name="chinese_map_title">Chinesische Karten-App verwenden</string>
@@ -339,7 +340,7 @@
     <string name="msg_backup_oldies">Neue Fotos in \"%1$s\" werden von nun an gesichert. Sie haben derzeit auch %2$,d Fotos mit einer Größe von %3$s auf dem Gerät. Möchten Sie alle diese alten Fotos jetzt sichern?</string>
     <string name="button_text_set_as_home">Satz</string>
     <string name="pick_home">Festlegen des Home-Ordners</string>
-    <string name="pick_home_note">Les Pas speichert Ihre Alben und Backups in diesem Ordner auf Ihrem Server.</string>
+    <string name="pick_home_note">Les Pas speichert Ihre Alben und Backups in diesem Ordner auf Ihrem Server</string>
     <string name="button_text_save">"Speichern "</string>
     <string name="hint_caption">Bildunterschrift hinzufügen</string>
     <string name="blog_header">Blog</string>
