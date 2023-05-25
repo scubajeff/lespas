@@ -613,9 +613,9 @@ object Tools {
         return getPathOnServer(context, 3)
     }
     private fun getPathOnServer(context: Context, id: Int): String {
-        return (PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
-            //1 -> context.getString(R.string.lespas_base_folder_name)
-            1 -> "/"
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
+            1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "/" else context.getString(R.string.local_base)
             2 -> "/DCIM"
             3 -> "/Pictures"
             else -> ""

@@ -248,6 +248,7 @@ class NCSelectHomeFragment: Fragment() {
         val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
 
         editor.putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
+        editor.putBoolean(SettingsFragment.NEW_HOME_SETTING, true)
 
         // Try restoring preference from server
         lifecycleScope.launch(Dispatchers.IO) {
