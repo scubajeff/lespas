@@ -50,7 +50,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -349,7 +349,6 @@ object Tools {
         val medias = mutableListOf<Photo>()
         val externalStorageUri = MediaStore.Files.getContentUri("external")
 
-        @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
@@ -406,7 +405,7 @@ object Tools {
                     medias.add(
                         Photo(
                             id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
-                            albumId = CameraRollFragment.FROM_CAMERA_ROLL,
+                            albumId = GalleryFragment.FROM_CAMERA_ROLL,
                             name = cursor.getString(nameColumn) ?: "",
                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
                             lastModified = LocalDateTime.MIN,
@@ -474,9 +473,9 @@ object Tools {
                     if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
 
                     // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
-                    //return Album(CameraRollFragment.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
+                    //return Album(GalleryFragment.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
                     return Album(
-                        id = CameraRollFragment.FROM_CAMERA_ROLL, name = albumName,
+                        id = GalleryFragment.FROM_CAMERA_ROLL, name = albumName,
                         startDate = startDate, endDate = endDate, lastModified = endDate,
                         cover = coverId, coverFileName = coverFileName, coverBaseline = coverBaseline, coverWidth = coverWidth, coverHeight = coverHeight, coverMimeType = coverMimeType,
                         sortOrder = Album.BY_DATE_TAKEN_DESC,
@@ -489,10 +488,10 @@ object Tools {
         } catch (_: Exception) {}
 
         return Album(
-            id = CameraRollFragment.FROM_CAMERA_ROLL, name = albumName,
+            id = GalleryFragment.FROM_CAMERA_ROLL, name = albumName,
             lastModified = LocalDateTime.now(), startDate = LocalDateTime.now(), endDate = LocalDateTime.now(),
             sortOrder = Album.BY_DATE_TAKEN_DESC, eTag = Album.ETAG_CAMERA_ROLL_ALBUM, shareId = Album.NULL_ALBUM,
-            cover = CameraRollFragment.EMPTY_ROLL_COVER_ID, coverWidth = 192, coverHeight = 108,
+            cover = GalleryFragment.EMPTY_ROLL_COVER_ID, coverWidth = 192, coverHeight = 108,
         )
     }
 
@@ -528,16 +527,14 @@ object Tools {
         val storageUriSignature = "com.android.externalstorage.documents"
         val mediaProviderUriSignature = "com.android.providers.media.documents"
         val downloadProviderUriSignature = "com.android.providers.downloads.documents"
+        val externalStorageUri = MediaStore.Files.getContentUri("external")
+        val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
 
-        //Log.e(">>>>>", "input: $uriString")
         return try {
             when {
                 (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && uriString.contains(downloadProviderUriSignature)) || uriString.contains(storageUriSignature) -> {
                     var id: String? = null
                     val folder = URLDecoder.decode(uriString.substringAfter(colon), "UTF-8").substringBeforeLast("/")
-                    val externalStorageUri = MediaStore.Files.getContentUri("external")
-                    @Suppress("DEPRECATION")
-                    val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                     val projection = arrayOf(
                         MediaStore.Files.FileColumns._ID,
                         MediaStore.Files.FileColumns.DISPLAY_NAME,
@@ -549,22 +546,19 @@ object Tools {
                         if (cursor.moveToFirst()) id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
                     }
 
-                    id?.let { Pair("$folder/", id!!) }
+                    id?.let { Pair("${folder.substringAfter("/storage/emulated/0/")}/", id!!) }
                 }
                 uriString.contains(mediaProviderUriSignature) || uriString.contains(downloadProviderUriSignature) -> {
                     var folderName: String? = null
                     val id = uriString.substringAfter(colon)
-                    val externalStorageUri = MediaStore.Files.getContentUri("external")
-                    @Suppress("DEPRECATION")
-                    val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                     val projection = arrayOf(
                         MediaStore.Files.FileColumns._ID,
-                        pathSelection,
+                        pathColumn,
                     )
                     val selection = "${MediaStore.Files.FileColumns._ID} = $id"
 
                     contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) folderName = cursor.getString(cursor.getColumnIndexOrThrow(pathSelection))
+                        if (cursor.moveToFirst()) folderName = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
                     }
 
                     folderName?.let { Pair(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName!! else "${folderName!!.substringAfter("/storage/emulated/0/").substringBeforeLast('/')}/", id) }

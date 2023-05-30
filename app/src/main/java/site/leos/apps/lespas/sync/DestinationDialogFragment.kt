@@ -64,7 +64,7 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.FileNameValidator
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
@@ -281,7 +281,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         clipDataRecyclerView.adapter = clipDataAdapter
         destinationRecyclerView.adapter = albumAdapter
         destinationRecyclerView.doOnPreDraw {
-            if (savedInstanceState == null && (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY)) {
+            if (savedInstanceState == null && (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == GalleryFragment.TAG_FROM_CAMERAROLL_ACTIVITY)) {
                 publicationModel.refresh()
             }
         }

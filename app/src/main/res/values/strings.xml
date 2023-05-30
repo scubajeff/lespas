@@ -16,7 +16,6 @@
 
 <resources>
     <string name="app_name">Les Pas</string>
-    <string name="gallery_app_name">Gallery</string>
 
     <!-- MainActivity -->
     <string name="need_to_restart">Storage transfer has finished. You need to restart Les Pas now.</string>
@@ -366,14 +365,21 @@
     </plurals>
 
     <!-- Camera Roll Activity -->
-    <string name="empty_camera_roll">No media found in Camera Roll.</string>
+    <string name="no_media_found">No image or video found in device.</string>
 
     <!-- Camera Roll Fragment -->
     <string name="tooltips_show_cameraroll">Show camera roll</string>
     <string name="tooltips_fetch_backup">Show backups on server</string>
     <string name="tooltips_date_picker">Pick a date</string>
+    <string name="tooltips_enable_backup">Enable backup</string>
+    <string name="tooltips_backup_setting">Backup setting</string>
     <string name="msg_empty_server_backup">No backups on server. Have you enabled camera roll auto backup in setting?</string>
     <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="option_menu_show_all">Show all</string>
+    <string name="gallery_name">Gallery</string>
+    <string name="camera_roll_name">Camera</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>

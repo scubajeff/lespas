@@ -71,6 +71,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
@@ -747,7 +748,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     // Prepare destination file in cache folder, strip EXIF if required
                     when {
                         isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> tempFile.inputStream()
-                        photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> cr.openInputStream(Uri.parse(photo.id))
+                        photo.albumId == GalleryFragment.FROM_CAMERA_ROLL -> cr.openInputStream(Uri.parse(photo.id))
                         else -> File(localFileFolder, photo.id).inputStream()
                     }?.use { source ->
                         File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name).let { destFile ->
@@ -1106,7 +1107,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 callBack?.onLoadComplete()
             } ?: run {
                 // For camera roll items, load thumbnail if cache missed
-                if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+                if (imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL) {
                     try {
                         (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
@@ -1155,7 +1156,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
-                                imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
+                                imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL -> {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
                                         // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
@@ -1190,7 +1191,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Photo is from remote album and is already uploaded
                                     getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
                                 }
-                                imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
+                                imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL -> {
                                     // Photo is from local Camrea roll
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
@@ -1209,7 +1210,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     TYPE_FULL -> {
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
-                                            (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
+                                            (imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                                     // Some framework implementation will crash when using ByteBuffer as ImageDrawable source
                                                     val tempFile = File(localCacheFolder, imagePhoto.photo.name)
@@ -1249,7 +1250,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     }
                                                     if (
                                                         imagePhoto.photo.orientation != 0 &&
-                                                        ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL)
+                                                        ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL)
                                                     ) Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true)
                                                     else this
                                                 }
@@ -1262,7 +1263,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         var height = imagePhoto.photo.height
                                         var orientation = imagePhoto.photo.orientation
 
-                                        if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+                                        if (imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL) {
                                             if (orientation == 90 || orientation == 270) {
                                                 width = imagePhoto.photo.height
                                                 height = imagePhoto.photo.width
@@ -1344,7 +1345,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
-        return if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+        return if (imagePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL) {
             val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {

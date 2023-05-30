@@ -43,7 +43,7 @@ import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.auth.NCLoginFragment
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         when(intent.action) {
-                            LAUNCH_CAMERAROLL -> supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()
-                            Intent.ACTION_VIEW -> intent.data?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(it), CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit() }
+                            LAUNCH_CAMERAROLL -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment(), GalleryFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()
+                            Intent.ACTION_VIEW -> intent.data?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(it), GalleryFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit() }
                             else -> supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
                         }
                     }

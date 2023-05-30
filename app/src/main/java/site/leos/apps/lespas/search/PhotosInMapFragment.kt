@@ -66,7 +66,7 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
@@ -232,7 +232,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                                     }
                                 }
                                 findViewById<TextView>(R.id.label).text =
-                                    if (remotePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                    if (remotePhoto.photo.albumId == GalleryFragment.FROM_CAMERA_ROLL) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
                                     else albumNames?.get(remotePhoto.photo.albumId)
                                 setOnClickListener(InfoWindowClickListener(mapView))
                             }
@@ -466,7 +466,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize += 2 }
             }
             marker.image = BitmapDrawable(resources,
-                if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+                if (photo.albumId == GalleryFragment.FROM_CAMERA_ROLL) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
                     if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                     bmp

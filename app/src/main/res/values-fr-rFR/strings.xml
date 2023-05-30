@@ -16,7 +16,7 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
-    <string name="gallery_app_name">Galerie</string>
+    <string name="gallery_name">Galerie</string>
     <!-- MainActivity -->
     <string name="need_to_restart">Le transfert est terminé. Vous devez maintenant redémarrer Les Pas.</string>
     <string name="sd_card_not_ready">La carte SD n\'est pas montée ou est en lecture seule.</string>
@@ -229,14 +229,20 @@
         <item quantity="other">%1$d sélectionnés</item>
     </plurals>
     <!-- Camera Roll Activity -->
-    <string name="empty_camera_roll">Aucun média n\'a été trouvé dans la galerie</string>
+    <string name="no_media_found">Aucune image ou vidéo n\'a été trouvée dans l\'appareil.</string>
     <!-- Camera Roll Fragment -->
     <string name="tooltips_show_cameraroll">Afficher la galerie</string>
     <string name="tooltips_fetch_backup">Afficher les sauvegardes sur le serveur</string>
     <string name="tooltips_date_picker">Choisir une date</string>
+    <string name="tooltips_enable_backup">Activer la sauvegarde</string>
+    <string name="tooltips_backup_setting">Paramètres de sauvegarde</string>
     <string name="msg_empty_server_backup">Aucune sauvegarde sur le serveur. Avez-vous activé la sauvegarde automatique de la galerie dans les paramètres ?</string>
     <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album partagé seront affichées une fois que le propriétaire de l\'album les aura confirmées.</string>
     <!-- Search Fragment -->
+    <string name="today">Aujourd\'hui</string>
+    <string name="yesterday">Hier</string>
+    <string name="option_menu_show_all">Tout afficher</string>
+    <string name="camera_roll_name">Appareil photo</string>
     <string name="tooltips_search_album">Rechercher dans les albums</string>
     <string name="tooltips_search_cameraroll">Rechercher dans la galerie</string>
     <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>

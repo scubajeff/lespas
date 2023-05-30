@@ -46,7 +46,7 @@ import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -92,7 +92,7 @@ class PhotoWithMapFragment: Fragment() {
         }
         with(remotePhoto.photo) {
             requireActivity().requestedOrientation =
-                if ((width < height) || (albumId == CameraRollFragment.FROM_CAMERA_ROLL && (orientation == 90 || orientation == 270)) || (remotePhoto.remotePath.isNotEmpty() && (orientation == 90 || orientation == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                if ((width < height) || (albumId == GalleryFragment.FROM_CAMERA_ROLL && (orientation == 90 || orientation == 270)) || (remotePhoto.remotePath.isNotEmpty() && (orientation == 90 || orientation == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 

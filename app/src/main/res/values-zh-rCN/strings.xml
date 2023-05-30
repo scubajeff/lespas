@@ -106,8 +106,8 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed修图 - 替换</string>
     <string name="item_camera_roll">相机相册</string>
     <string name="cameraroll_backup_title">备份本地相机相册</string>
-    <string name="empty_camera_roll">相机相册空空如也。</string>
-    <string name="gallery_app_name">相机相册</string>
+    <string name="no_media_found">没找到任何图片或视频。</string>
+    <string name="gallery_name">手机相册</string>
     <string name="same_file_found">同名文件已存在。</string>
     <string name="verify_ssl_certificate_title">SSL证书验证失败</string>
     <string name="verify_ssl_certificate_message">服务器%1$s的证书无法通过验证，是否信任该服务器并继续？</string>
@@ -120,6 +120,10 @@
     <string name="object_plant">花草树木</string>
     <string name="object_food">食物</string>
     <string name="object_vehicle">车船</string>
+    <string name="today">今天</string>
+    <string name="yesterday">昨天</string>
+    <string name="option_menu_show_all">显示所有</string>
+    <string name="camera_roll_name">相机</string>
     <string name="tooltips_search_album">在相册中搜索</string>
     <string name="tooltips_search_cameraroll">在相机相册中搜索</string>
     <string name="title_in_album">相册中的%1$s</string>
@@ -236,6 +240,8 @@
     <string name="true_black_title">采用深邃黑深色主题</string>
     <string name="tooltips_fetch_backup">显示服务器上的备份</string>
     <string name="tooltips_show_cameraroll">显示本机相机相册</string>
+    <string name="tooltips_enable_backup">备份开关</string>
+    <string name="tooltips_backup_setting">备份设置</string>
     <string name="msg_empty_server_backup">服务器上没有备份。相机相册自动备份设置开关打开了吗？</string>
     <string name="msg_joint_album_not_updated_locally">更新将在合作相册创建者确认后呈现。</string>
     <string name="option_menu_search">搜索名字</string>

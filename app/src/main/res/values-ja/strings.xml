@@ -18,7 +18,7 @@
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="verify_ssl_certificate_message">Server %1$sの証明書の検証に失敗したが、サーバを信頼して続行するか？</string>
-    <string name="gallery_app_name">カメラアルバム</string>
+    <string name="gallery_name">モバイルアルバム</string>
     <string name="need_to_restart">写真の移行が完了したので、Les Pasアプリを再起動する必要があります。</string>
     <string name="sd_card_not_ready">外部メモリーカードがマウントされていないか、読み取り専用になっている。</string>
     <string name="error_only_one_account">同一サーバー上では1つのアカウントしか使用できない</string>
@@ -132,7 +132,11 @@
     <plurals name="selected_count">
         <item quantity="other">%1$dが選択</item>
     </plurals>
-    <string name="empty_camera_roll">カメラのアルバムは空です。</string>
+    <string name="no_media_found">デバイスに画像や動画が見つからない。</string>
+    <string name="today">本日</string>
+    <string name="yesterday">昨日</string>
+    <string name="option_menu_show_all">全て表示</string>
+    <string name="camera_roll_name">カメラ</string>
     <string name="tooltips_search_album">アルバム内検索</string>
     <string name="tooltips_search_cameraroll">カメラアルバム内検索</string>
     <string name="condition_to_perform_search">画像検索機能を利用するためには、アルバムが存在するか、ストレージへのアクセスが許可されている必要があります。</string>
@@ -236,6 +240,8 @@
     <string name="true_black_title">トゥルーブラックダークテーマ</string>
     <string name="tooltips_fetch_backup">サーバー上のバックアップを表示</string>
     <string name="tooltips_show_cameraroll">カメラロールを表示する</string>
+    <string name="tooltips_enable_backup">バックアップを有効にする</string>
+    <string name="tooltips_backup_setting">バックアップの設定</string>
     <string name="msg_empty_server_backup">サーバーにバックアップがない。設定でカメラロールの自動バックアップを有効にしましたか？</string>
     <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
     <string name="option_menu_search">名前検索</string>

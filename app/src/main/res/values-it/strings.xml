@@ -16,7 +16,7 @@
 
 <resources>
     <string name="app_name">Les Pas</string>
-    <string name="gallery_app_name">Galleria</string>
+    <string name="gallery_name">Galleria</string>
 
     <!-- MainActivity -->
     <string name="need_to_restart">Trasferimento dell\'archivio completato. È necessario riavviare Les Pas.</string>
@@ -247,9 +247,13 @@
     </plurals>
 
     <!-- Camera Roll Activity -->
-    <string name="empty_camera_roll">Non è stato trovato alcun file nel rullino foto.</string>
+    <string name="no_media_found">Nessuna immagine o video trovata nel dispositivo.</string>
 
     <!-- Search Fragment -->
+    <string name="today">Oggi</string>
+    <string name="yesterday">Ieri</string>
+    <string name="option_menu_show_all">Mostra tutti</string>
+    <string name="camera_roll_name">Macchina fotografica</string>
     <string name="tooltips_search_album">Cerca negli album</string>
     <string name="tooltips_search_cameraroll">Cerca nel rullino foto</string>
     <string name="condition_to_perform_search">Per effettuare una ricerca è necessario almeno un album o il permesso di accesso all\'archivio.</string>
@@ -301,6 +305,8 @@
     <string name="prefer_latest">Recenti</string>
     <string name="skip_late_night_update">Salta aggiornamento notturno</string>
     <string name="hint_timestamp_pattern">La data di creazione della foto può essere modificata includendo il modello yyyyMMdd_hhmmss nel nome.</string>
+    <string name="tooltips_enable_backup">Abilita il backup</string>
+    <string name="tooltips_backup_setting">Impostazione del backup</string>
     <string name="msg_empty_server_backup">Nessun backup sul server. Hai attivato il backup automatico del rullino fotografico nelle impostazioni?</string>
     <string name="msg_joint_album_not_updated_locally">Le modifiche apportate all\'album comune saranno visualizzate dopo la conferma del proprietario dell\'album.</string>
     <string name="option_menu_search">Ricerca per nome</string>

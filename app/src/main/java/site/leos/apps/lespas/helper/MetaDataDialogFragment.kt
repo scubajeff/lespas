@@ -52,7 +52,7 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -246,7 +246,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
                 try {
                     if (rPhoto.remotePath.isEmpty()) {
-                        if (rPhoto.photo.albumId != CameraRollFragment.FROM_CAMERA_ROLL) {
+                        if (rPhoto.photo.albumId != GalleryFragment.FROM_CAMERA_ROLL) {
                             // Media in album
                             val fPath = Tools.getLocalRoot(context)
                             with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {

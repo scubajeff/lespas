@@ -107,8 +107,8 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
-    <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
-    <string name="gallery_app_name">Galería</string>
+    <string name="no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
+    <string name="gallery_name">Galería</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
     <string name="verify_ssl_certificate_title">Certificado SSL defectuoso</string>
     <string name="verify_ssl_certificate_message">El certificado del servidor %1$s NO PUEDE ser verificado, ¿desea confiar en este servidor y continuar?</string>
@@ -121,6 +121,10 @@
     <string name="object_plant">Planta</string>
     <string name="object_food">Alimentos</string>
     <string name="object_vehicle">Vehículo</string>
+    <string name="today">Hoy</string>
+    <string name="yesterday">Ayer</string>
+    <string name="option_menu_show_all">Mostrar todo</string>
+    <string name="camera_roll_name">Cámara</string>
     <string name="tooltips_search_album">En álbumes</string>
     <string name="tooltips_search_cameraroll">En el rollo de la cámara</string>
     <string name="title_in_album">%1$s en álbumes</string>
@@ -237,6 +241,8 @@
     <string name="true_black_title">Tema negro verdadero</string>
     <string name="tooltips_fetch_backup">Mostrar las copias de seguridad en el servidor</string>
     <string name="tooltips_show_cameraroll">Mostrar el rollo de la cámara</string>
+    <string name="tooltips_enable_backup">Activar copia de seguridad</string>
+    <string name="tooltips_backup_setting">Configuración de la copia de seguridad</string>
     <string name="msg_empty_server_backup">No hay copias de seguridad en el servidor. Has activado la copia de seguridad automática del rollo de la cámara en la configuración?</string>
     <string name="msg_joint_album_not_updated_locally">Los cambios realizados en el Álbum Conjunto se mostrarán después de que el propietario del álbum los confirme.</string>
     <string name="option_menu_search">Buscar por nombre</string>

@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.IDandName
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -161,7 +161,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     ivPhoto.setOnClickListener { clickListener(item, ivPhoto, tvLabel) }
 
                     tvLabel.text =
-                        if (this.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[this.albumId]
+                        if (this.albumId != GalleryFragment.FROM_CAMERA_ROLL) albumNames[this.albumId]
                         else this.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
             }

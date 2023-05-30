@@ -73,7 +73,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
@@ -154,7 +154,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                if (album.id != CameraRollFragment.FROM_CAMERA_ROLL) {
+                if (album.id != GalleryFragment.FROM_CAMERA_ROLL) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     reenterTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
@@ -162,6 +162,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                         .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
                 } else {
+/*
                     // Camera roll album's cover mime type is passed in property eTag
                     if (album.eTag.startsWith("video")) {
                         // Don't do transition for video cover
@@ -182,6 +183,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                             .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                             .replace(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                     }
+*/
+                    exitTransition = null
+                    reenterTransition = null
+                    parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                        .replace(R.id.container_root, GalleryFragment(), null).addToBackStack(null).commit()
                 }
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) },
@@ -193,7 +199,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
                         // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
                         eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
-                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${remoteBasePath}/${name}" else "", coverBaseline), imageView, if (cover == CameraRollFragment.EMPTY_ROLL_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
+                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${remoteBasePath}/${name}" else "", coverBaseline), imageView, if (cover == GalleryFragment.EMPTY_ROLL_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
                 }
             },
             { view -> publishViewModel.cancelSetImagePhoto(view) },
@@ -299,7 +305,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != CameraRollFragment.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != GalleryFragment.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0 && mAdapter.currentList[position].syncProgress >= 1.0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
@@ -451,8 +457,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     R.id.option_menu_camera_roll-> {
                         exitTransition = null
                         reenterTransition = null
-                        // Set tag to null so that CameraRollFragment will hide the action bar
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), null).addToBackStack(null).commit()
+                        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                            .replace(R.id.container_root, GalleryFragment(), null).addToBackStack(null).commit()
                         return true
                     }
                     R.id.option_menu_settings-> {
@@ -464,7 +470,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     R.id.option_menu_search-> {
                         exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                         reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == CameraRollFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                         return true
                     }
                     R.id.option_menu_received_shares-> {
@@ -523,7 +529,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onResume() {
         super.onResume()
 
-        (activity as? AppCompatActivity)?.run {
+        (requireActivity() as AppCompatActivity).run {
             supportActionBar?.run {
                 setDisplayHomeAsUpEnabled(false)
                 setDisplayShowTitleEnabled(true)
@@ -631,7 +637,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
             R.id.select_all -> {
                 mAdapter.currentList.forEach {
-                    if (it.id != CameraRollFragment.FROM_CAMERA_ROLL) selectionTracker.select(it.id)
+                    if (it.id != GalleryFragment.FROM_CAMERA_ROLL) selectionTracker.select(it.id)
                 }
                 true
             }
@@ -759,7 +765,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         if (new) {
                             // When syncing with server, don't repeatedly load the same image
                             imageLoader(album, coverImageview)
-                            ViewCompat.setTransitionName(coverImageview, if (album.id == CameraRollFragment.FROM_CAMERA_ROLL) album.cover else album.id)
+                            ViewCompat.setTransitionName(coverImageview, if (album.id == GalleryFragment.FROM_CAMERA_ROLL) album.cover else album.id)
                         }
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {
@@ -777,7 +783,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         text = album.name
 
                         setCompoundDrawables(when {
-                            album.id == CameraRollFragment.FROM_CAMERA_ROLL -> cameraDrawable
+                            album.id == GalleryFragment.FROM_CAMERA_ROLL -> cameraDrawable
                             Tools.isRemoteAlbum(album) -> cloudDrawable
                             else -> null
                         }, null, null, null)

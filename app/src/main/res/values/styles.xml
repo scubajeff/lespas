@@ -118,4 +118,13 @@
     <style name="Theme.LesPas.SearchView" parent="Widget.AppCompat.SearchView">
         <item name="android:textSize">12sp</item>
     </style>
+
+    <style name="Theme.LesPas.Gallery.Bottom.Button" parent="Widget.AppCompat.ImageButton">
+        <item name="android:paddingLeft">@dimen/small_padding</item>
+        <item name="android:paddingRight">@dimen/small_padding</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
 </resources>

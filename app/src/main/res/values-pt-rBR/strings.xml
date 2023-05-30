@@ -16,7 +16,7 @@
 
 <resources>
     <string name="app_name">Les Pas</string>
-    <string name="gallery_app_name">Galeria</string>
+    <string name="gallery_name">Galeria</string>
 
     <!-- MainActivity -->
     <string name="need_to_restart">Transferência do armazenamento concluída. Reinicie o Les Pas agora.</string>
@@ -232,9 +232,13 @@
     </plurals>
 
     <!-- Camera Roll Activity -->
-    <string name="empty_camera_roll">Nenhuma mídia encontrada na pasta Câmera.</string>
+    <string name="no_media_found">Nenhuma imagem ou vídeo foi encontrado no dispositivo.</string>
 
     <!-- Search Fragment -->
+    <string name="today">Hoje</string>
+    <string name="yesterday">Ontem</string>
+    <string name="option_menu_show_all">Mostrar tudo</string>
+    <string name="camera_roll_name">Câmera</string>
     <string name="tooltips_search_album">Pesquisar nos álbuns</string>
     <string name="tooltips_search_cameraroll">Pesquisar na pasta Câmera</string>
     <string name="condition_to_perform_search">Para pesquisar é necessário existir pelo menos um álbum ou ter a permissão de acesso ao armazenamento.</string>
@@ -299,6 +303,8 @@
     <string name="true_black_title">Verdadeiro tema negro e escuro</string>
     <string name="tooltips_fetch_backup">Mostrar backups no servidor</string>
     <string name="tooltips_show_cameraroll">Mostrar rolo de câmera</string>
+    <string name="tooltips_enable_backup">Ativar backup</string>
+    <string name="tooltips_backup_setting">Configuração de backup</string>
     <string name="msg_empty_server_backup">Sem backups no servidor. Você ativou o backup automático do rolo da câmera na configuração?</string>
     <string name="msg_joint_album_not_updated_locally">As mudanças feitas no Álbum Conjunto serão mostradas depois que o proprietário do álbum as confirmar.</string>
     <string name="option_menu_search">Busca por nome</string>
