@@ -136,8 +136,8 @@
     <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
     <string name="default_sort_order_title">Default photo sort order for new album</string>
 
-    <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
-    <string name="cameraroll_as_album_title">Show camera roll as an album</string>
+    <string name="gallery_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
+    <string name="gallery_as_album_title">Show device gallery as an album</string>
     <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
     <string name="show_list_first">Display media list when camera roll start</string>
 

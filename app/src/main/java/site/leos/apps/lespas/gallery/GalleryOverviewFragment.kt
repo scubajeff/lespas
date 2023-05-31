@@ -415,7 +415,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     }
                     tvCount.run {
                         isVisible = true
-                        tvCount.text = String.format("%d ›", count - max)
+                        tvCount.text = String.format("+ %d", count - max)
                     }
                 } else {
                     tvCount.run {

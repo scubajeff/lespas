@@ -405,7 +405,7 @@ object Tools {
                     medias.add(
                         Photo(
                             id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
-                            albumId = GalleryFragment.FROM_CAMERA_ROLL,
+                            albumId = GalleryFragment.FROM_DEVICE_GALLERY,
                             name = cursor.getString(nameColumn) ?: "",
                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
                             lastModified = LocalDateTime.MIN,
@@ -426,7 +426,7 @@ object Tools {
         return medias
     }
 
-    fun getCameraRollAlbum(cr: ContentResolver, albumName: String): Album {
+    fun getGalleryAlbum(cr: ContentResolver, albumName: String): Album {
         val externalStorageUri = MediaStore.Files.getContentUri("external")
         var startDate = LocalDateTime.MIN
         var endDate: LocalDateTime
@@ -439,7 +439,6 @@ object Tools {
         var orientation: Int
 
         @Suppress("DEPRECATION")
-        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
@@ -451,7 +450,7 @@ object Tools {
             MediaStore.Files.FileColumns.HEIGHT,
             "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
         )
-        val selection ="(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%') AND (${MediaStore.Files.FileColumns.WIDTH}!=0)"
+        val selection ="(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND (${MediaStore.Files.FileColumns.WIDTH}!=0)"
 
         try {
             cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
@@ -475,11 +474,11 @@ object Tools {
                     // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
                     //return Album(GalleryFragment.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
                     return Album(
-                        id = GalleryFragment.FROM_CAMERA_ROLL, name = albumName,
+                        id = GalleryFragment.FROM_DEVICE_GALLERY, name = albumName,
                         startDate = startDate, endDate = endDate, lastModified = endDate,
                         cover = coverId, coverFileName = coverFileName, coverBaseline = coverBaseline, coverWidth = coverWidth, coverHeight = coverHeight, coverMimeType = coverMimeType,
                         sortOrder = Album.BY_DATE_TAKEN_DESC,
-                        eTag = Album.ETAG_CAMERA_ROLL_ALBUM,
+                        eTag = Album.ETAG_GALLERY_ALBUM,
                         shareId = Album.NULL_ALBUM,
                         coverOrientation = orientation,
                     )
@@ -488,10 +487,10 @@ object Tools {
         } catch (_: Exception) {}
 
         return Album(
-            id = GalleryFragment.FROM_CAMERA_ROLL, name = albumName,
+            id = GalleryFragment.FROM_DEVICE_GALLERY, name = albumName,
             lastModified = LocalDateTime.now(), startDate = LocalDateTime.now(), endDate = LocalDateTime.now(),
-            sortOrder = Album.BY_DATE_TAKEN_DESC, eTag = Album.ETAG_CAMERA_ROLL_ALBUM, shareId = Album.NULL_ALBUM,
-            cover = GalleryFragment.EMPTY_ROLL_COVER_ID, coverWidth = 192, coverHeight = 108,
+            sortOrder = Album.BY_DATE_TAKEN_DESC, eTag = Album.ETAG_GALLERY_ALBUM, shareId = Album.NULL_ALBUM,
+            cover = GalleryFragment.EMPTY_GALLERY_COVER_ID, coverWidth = 192, coverHeight = 108,
         )
     }
 

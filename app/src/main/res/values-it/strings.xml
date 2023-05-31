@@ -104,7 +104,7 @@
     <string name="auto_replay_title">Riproduci di nuovo il video automaticamente</string>
     <string name="default_sort_order_title">Ordine delle foto predefinito per nuovo album</string>
 
-    <string name="cameraroll_as_album_title">Mostra rullino foto come album</string>
+    <string name="gallery_as_album_title">Mostra la galleria del dispositivo come album</string>
     <string name="show_list_first">Mostra l\'elenco dei file multimediali all\'avvio del rullino foto</string>
 
     <string name="edit_header">Modifica</string>

@@ -56,12 +56,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/item_camera_roll"
+        app:title="@string/gallery_name"
         app:icon="@drawable/ic_baseline_camera_roll_setting_24">
 
         <SwitchPreferenceCompat
-            app:key="@string/cameraroll_as_album_perf_key"
-            app:title="@string/cameraroll_as_album_title"
+            app:key="@string/gallery_as_album_perf_key"
+            app:title="@string/gallery_as_album_title"
             app:singleLineTitle="false"
             app:defaultValue="true" />
 

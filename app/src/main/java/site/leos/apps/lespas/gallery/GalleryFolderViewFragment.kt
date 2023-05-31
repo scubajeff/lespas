@@ -298,7 +298,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         if (media.media.photo.dateTaken.toLocalDate() != currentDate) {
                             currentDate = media.media.photo.dateTaken.toLocalDate()
                             // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_CAMERA_ROLL, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
                         }
                         listGroupedByDate.add(media.media)
                     }

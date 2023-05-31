@@ -88,7 +88,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
     private val storagePermission = Tools.getStoragePermissionsArray()
     private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
-    private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var showGalleryPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var backupPicturesPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
@@ -123,12 +123,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 installSnapseedIfNeeded()
             }
         }
-        showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+        showGalleryPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
             var isGranted = true
             for(result in results) isGranted = isGranted && result.value
-            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = isGranted
+            findPreference<SwitchPreferenceCompat>(getString(R.string.gallery_as_album_perf_key))?.isChecked = isGranted
 
             // Explicitly request ACCESS_MEDIA_LOCATION permission
             if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
@@ -230,7 +230,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
         // Toggle some switches off when Storage Access permission is not granted
         if (Tools.shouldRequestStoragePermission(requireContext())) {
-            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = false
+            findPreference<SwitchPreferenceCompat>(getString(R.string.gallery_as_album_perf_key))?.isChecked = false
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = false
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
             //toggleAutoSync(false)
@@ -457,11 +457,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 if (parentFragmentManager.findFragmentByTag(CACHE_SIZE_DIALOG) == null) CacheSizeSettingDialog().show(parentFragmentManager, CACHE_SIZE_DIALOG)
                 true
             }
-            getString(R.string.cameraroll_as_album_perf_key) -> {
+            getString(R.string.gallery_as_album_perf_key) -> {
                 if (Tools.shouldRequestStoragePermission(requireContext())) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
-                    showCameraRollPermissionRequestLauncher.launch(storagePermission)
+                    showGalleryPermissionRequestLauncher.launch(storagePermission)
 
                     (preference as SwitchPreferenceCompat).isChecked = false
                 }

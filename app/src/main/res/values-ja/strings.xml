@@ -169,7 +169,7 @@
     <string name="prefer_latest">最近の</string>
     <string name="prefer_random">ランダム (フォールバック)</string>
     <string name="http_toggle_helper_text">\u2B11プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
-    <string name="cameraroll_as_album_title">カメラロールをアルバムとして表示</string>
+    <string name="gallery_as_album_title">デバイスギャラリーをアルバムとして表示する</string>
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
     <string name="auto_replay_title">ビデオを自動的に再生する</string>

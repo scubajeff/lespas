@@ -246,7 +246,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
                 try {
                     if (rPhoto.remotePath.isEmpty()) {
-                        if (rPhoto.photo.albumId != GalleryFragment.FROM_CAMERA_ROLL) {
+                        if (rPhoto.photo.albumId != GalleryFragment.FROM_DEVICE_GALLERY) {
                             // Media in album
                             val fPath = Tools.getLocalRoot(context)
                             with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {

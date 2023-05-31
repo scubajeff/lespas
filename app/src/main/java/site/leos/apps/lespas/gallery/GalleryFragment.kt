@@ -474,7 +474,7 @@ class GalleryFragment: Fragment() {
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
                                             id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
-                                            albumId = FROM_CAMERA_ROLL,
+                                            albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
                                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
                                             lastModified = LocalDateTime.MIN,
@@ -537,9 +537,11 @@ class GalleryFragment: Fragment() {
             metadataRetriever?.release()
             */
 
-            setCurrentPhotoId(uri.toString())
-            // Set property lastModified to LocalDateTime.MAX to mark it not removable
-            _medias.value = listOf(LocalMedia(uri.toString(), NCShareViewModel.RemotePhoto(Photo(id = uri.toString(), albumId = FROM_CAMERA_ROLL, name = filename, mimeType = mimeType, shareId = size, dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.MAX)), uri.toString()))
+            uri.toString().let { uriString ->
+                setCurrentPhotoId(uriString)
+                // Set property lastModified to LocalDateTime.MAX to mark it not removable
+                _medias.value = listOf(LocalMedia(uriString, NCShareViewModel.RemotePhoto(Photo(id = uri.toString(), albumId = FROM_DEVICE_GALLERY, name = filename, mimeType = mimeType, shareId = size, dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.MAX)), uriString))
+            }
         }
 
         fun getPhotoById(id: String): Photo? = medias.value?.find { it.media.photo.id == id }?.media?.photo
@@ -607,8 +609,8 @@ class GalleryFragment: Fragment() {
     )
 
     companion object {
-        const val FROM_CAMERA_ROLL = "0"
-        const val EMPTY_ROLL_COVER_ID = "0"
+        const val FROM_DEVICE_GALLERY = "0"
+        const val EMPTY_GALLERY_COVER_ID = "0"
 
         private const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_FROM_CAMERAROLL_ACTIVITY = "TAG_DESTINATION_DIALOG"

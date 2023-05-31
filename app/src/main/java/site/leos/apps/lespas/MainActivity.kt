@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
                                 sp.edit {
                                     putBoolean(getString(R.string.snapseed_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
-                                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                                    putBoolean(getString(R.string.gallery_as_album_perf_key), false)
                                 }
                             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
 

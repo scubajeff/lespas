@@ -205,7 +205,7 @@ class GallerySlideFragment : Fragment() {
         }
         view.findViewById<ImageButton>(R.id.info_button).setOnClickListener {
             if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
-                (if (photo.albumId == GalleryFragment.FROM_CAMERA_ROLL) MetaDataDialogFragment.newInstance(photo) else MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))).show(parentFragmentManager, INFO_DIALOG)
+                (if (photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) MetaDataDialogFragment.newInstance(photo) else MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))).show(parentFragmentManager, INFO_DIALOG)
             }
         }
         removeButton = view.findViewById<ImageButton>(R.id.remove_button).apply {
@@ -342,7 +342,7 @@ class GallerySlideFragment : Fragment() {
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
         override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as NCShareViewModel.RemotePhoto).photo) {
-            if (albumId == GalleryFragment.FROM_CAMERA_ROLL) VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
+            if (albumId == GalleryFragment.FROM_DEVICE_GALLERY) VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
             else VideoItem(Uri.parse("${basePath}/${name}"), mimeType, width, height, id)
         }
 

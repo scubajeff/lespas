@@ -26,8 +26,8 @@
         android:enabled="false"
         app:showAsAction="always" />
     <item
-        android:id="@+id/option_menu_camera_roll"
-        android:title="@string/item_camera_roll"
+        android:id="@+id/option_menu_gallery"
+        android:title="@string/gallery_name"
         android:orderInCategory="80"
         app:showAsAction="never" />
     <item

@@ -97,7 +97,7 @@
     <string name="auto_rotate_title">Rotation de l\'écran selon le format de la photo</string>
     <string name="auto_replay_title">Reprise automatique de la vidéo</string>
     <string name="default_sort_order_title">Ordre de tri des photos par défaut pour un nouvel album</string>
-    <string name="cameraroll_as_album_title">Afficher la galerie comme un album</string>
+    <string name="gallery_as_album_title">Afficher la galerie de périphériques sous forme d\'album</string>
     <string name="show_list_first">Afficher la liste des médias à l\'ouverture de la galerie</string>
     <string name="edit_header">Retouche</string>
     <string name="snapseed_integration_title">Intégration de Snapseed</string>

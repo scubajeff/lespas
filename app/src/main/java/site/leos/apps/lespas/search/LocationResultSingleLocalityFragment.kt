@@ -161,7 +161,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     ivPhoto.setOnClickListener { clickListener(item, ivPhoto, tvLabel) }
 
                     tvLabel.text =
-                        if (this.albumId != GalleryFragment.FROM_CAMERA_ROLL) albumNames[this.albumId]
+                        if (this.albumId != GalleryFragment.FROM_DEVICE_GALLERY) albumNames[this.albumId]
                         else this.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
             }

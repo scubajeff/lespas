@@ -103,7 +103,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private var receivedShareMenu: MenuItem? = null
-    private var cameraRollAsAlbumMenu: MenuItem? = null
+    private var galleryAlbumMenu: MenuItem? = null
     private var unhideMenu: MenuItem? = null
     private var toggleRemoteMenu: MenuItem? = null
     private var sortByMenu: MenuItem? = null
@@ -114,8 +114,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
-    private var showCameraRoll = true
-    private lateinit var cameraRollAlbum: Album
+    private var showGallery = true
+    private lateinit var galleryAlbum: Album
     private var mediaStoreVersion = ""
     private var mediaStoreGeneration = 0L
 
@@ -123,7 +123,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var remoteBasePath: String
 
-    private lateinit var showCameraRollPreferenceListener: SharedPreferences.OnSharedPreferenceChangeListener
+    private lateinit var showGalleryPreferenceListener: SharedPreferences.OnSharedPreferenceChangeListener
 
     private lateinit var selectionBackPressedCallback: OnBackPressedCallback
     private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
@@ -154,7 +154,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                if (album.id != GalleryFragment.FROM_CAMERA_ROLL) {
+                if (album.id != GalleryFragment.FROM_DEVICE_GALLERY) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     reenterTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
@@ -162,28 +162,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                         .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
                 } else {
-/*
-                    // Camera roll album's cover mime type is passed in property eTag
-                    if (album.eTag.startsWith("video")) {
-                        // Don't do transition for video cover
-                        // Set tag to null so that CameraRollFragment will hide the action bar
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), null).addToBackStack(null).commit()
-                    }
-                    else {
-                        exitTransition = MaterialElevationScale(false).apply {
-                            duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                            excludeTarget(imageView, true)
-                            //excludeTarget(android.R.id.statusBarBackground, true)
-                            //excludeTarget(android.R.id.navigationBarBackground, true)
-                        }
-                        reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
-
-                        parentFragmentManager.beginTransaction()
-                            .setReorderingAllowed(true)
-                            .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                            .replace(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
-                    }
-*/
                     exitTransition = null
                     reenterTransition = null
                     parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
@@ -199,7 +177,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
                         // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
                         eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
-                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${remoteBasePath}/${name}" else "", coverBaseline), imageView, if (cover == GalleryFragment.EMPTY_ROLL_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
+                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${remoteBasePath}/${name}" else "", coverBaseline), imageView, if (cover == GalleryFragment.EMPTY_GALLERY_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
                 }
             },
             { view -> publishViewModel.cancelSetImagePhoto(view) },
@@ -208,17 +186,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         requireContext().run {
-            showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-                if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).run {
+            showGalleryPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+                if (key == getString(R.string.gallery_as_album_perf_key)) sharedPreferences.getBoolean(key, true).run {
                     // Changed this flag accordingly. When popping back from Setting fragment, album list livedata observer will be triggered again
-                    showCameraRoll = this
+                    showGallery = this
                     // Move album list to the top when popping back from Setting fragment, actual scrolling will happen after setAlbum in livedata observer
                     // Only scroll to top when setting being turned on
-                    if (showCameraRoll) scrollTo = 0
+                    if (showGallery) scrollTo = 0
 
                     // Maintain option menu
-                    cameraRollAsAlbumMenu?.isEnabled = !this
-                    cameraRollAsAlbumMenu?.isVisible = !this
+                    galleryAlbumMenu?.isEnabled = !this
+                    galleryAlbumMenu?.isVisible = !this
 
                     // Selection based on bindingAdapterPosition, must be cleared
                     try { selectionTracker.clearSelection() } catch (_: UninitializedPropertyAccessException) {}
@@ -226,11 +204,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
 
             // TODO only check first volume
-            getCameraRoll(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
+            getGallery(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
 
             with(PreferenceManager.getDefaultSharedPreferences(this)) {
-                registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
-                showCameraRoll = getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+                registerOnSharedPreferenceChangeListener(showGalleryPreferenceListener)
+                showGallery = getBoolean(getString(R.string.gallery_as_album_perf_key), true)
                 currentSortOrder = getInt(ALBUM_LIST_SORT_ORDER, Album.BY_DATE_TAKEN_DESC)
             }
         }
@@ -305,7 +283,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != GalleryFragment.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != GalleryFragment.FROM_DEVICE_GALLERY && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0 && mAdapter.currentList[position].syncProgress >= 1.0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
@@ -394,7 +372,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
                 inflater.inflate(R.menu.album_menu, menu)
                 receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
-                cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
+                galleryAlbumMenu = menu.findItem(R.id.option_menu_gallery)
                 unhideMenu = menu.findItem(R.id.option_menu_unhide)
                 sortByMenu = menu.findItem(R.id.option_menu_sortby)
                 nameFilterMenu = menu.findItem(R.id.option_menu_album_name_filter).apply {
@@ -431,8 +409,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 albumsModel.allHiddenAlbums.value.let { unhideMenu?.isEnabled = it?.isNotEmpty() ?: false }
                 publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
 
-                cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
-                cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
+                galleryAlbumMenu?.isEnabled = !showGallery
+                galleryAlbumMenu?.isVisible = !showGallery
 
                 menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
                 menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
@@ -454,7 +432,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
             override fun onMenuItemSelected(item: MenuItem): Boolean {
                 when(item.itemId) {
-                    R.id.option_menu_camera_roll-> {
+                    R.id.option_menu_gallery-> {
                         exitTransition = null
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
@@ -470,7 +448,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     R.id.option_menu_search-> {
                         exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                         reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_DEVICE_GALLERY)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                         return true
                     }
                     R.id.option_menu_received_shares-> {
@@ -538,12 +516,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             window.statusBarColor = Tools.getAttributeColor(this, android.R.attr.colorPrimary)
         }
 
-        if (showCameraRoll) {
+        if (showGallery) {
             requireContext().apply {
                 val newVersion = MediaStore.getVersion(this)
                 val newGeneration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L
-                if (newVersion != mediaStoreVersion) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
-                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
+                if (newVersion != mediaStoreVersion) getGallery(newVersion, newGeneration).apply { mAdapter.setGalleryAlbum(this) }
+                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getGallery(newVersion, newGeneration).apply { mAdapter.setGalleryAlbum(this) }
             }
         }
     }
@@ -563,7 +541,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onDestroy() {
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(showGalleryPreferenceListener)
 
         super.onDestroy()
     }
@@ -637,7 +615,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
             R.id.select_all -> {
                 mAdapter.currentList.forEach {
-                    if (it.id != GalleryFragment.FROM_CAMERA_ROLL) selectionTracker.select(it.id)
+                    if (it.id != GalleryFragment.FROM_DEVICE_GALLERY) selectionTracker.select(it.id)
                 }
                 true
             }
@@ -671,8 +649,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 Album.BY_NAME_DESC -> sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
             }
 
-            // Put camera roll album at the top if need
-            if (showCameraRoll && currentFilter.isEmpty()) add(0, cameraRollAlbum)
+            // Put gallery album at the top if need
+            if (showGallery && currentFilter.isEmpty()) add(0, galleryAlbum)
 
             mAdapter.submitList(this) { callback() }
         }
@@ -718,12 +696,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    private fun getCameraRoll(version: String, generation: Long): Album {
-        cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, getString(R.string.item_camera_roll))
+    private fun getGallery(version: String, generation: Long): Album {
+        galleryAlbum = Tools.getGalleryAlbum(requireContext().contentResolver, getString(R.string.gallery_name))
         mediaStoreVersion = version
         mediaStoreGeneration = generation
 
-        return cameraRollAlbum
+        return galleryAlbum
     }
 
     // List adapter for Albums' recyclerView
@@ -740,12 +718,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
             private val llRecipients = itemView.findViewById<LinearLayoutCompat>(R.id.recipients)
-            private val cameraDrawable: Drawable?
+            private val deviceDrawable: Drawable?
             private val cloudDrawable: Drawable?
 
             init {
                 val titleDrawableSize = tvTitle.textSize.toInt()
-                cameraDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+                deviceDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_phone_android_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
                 cloudDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
             }
 
@@ -765,7 +743,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         if (new) {
                             // When syncing with server, don't repeatedly load the same image
                             imageLoader(album, coverImageview)
-                            ViewCompat.setTransitionName(coverImageview, if (album.id == GalleryFragment.FROM_CAMERA_ROLL) album.cover else album.id)
+                            ViewCompat.setTransitionName(coverImageview, if (album.id == GalleryFragment.FROM_DEVICE_GALLERY) album.cover else album.id)
                         }
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {
@@ -783,7 +761,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         text = album.name
 
                         setCompoundDrawables(when {
-                            album.id == GalleryFragment.FROM_CAMERA_ROLL -> cameraDrawable
+                            album.id == GalleryFragment.FROM_DEVICE_GALLERY -> deviceDrawable
                             Tools.isRemoteAlbum(album) -> cloudDrawable
                             else -> null
                         }, null, null, null)
@@ -850,11 +828,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             for (recipient in recipients) { notifyItemChanged(currentList.indexOfFirst { it.id == recipient.fileId }) }
         }
 
-        internal fun setCameraRollAlbum(cameraRollAlbum: Album) {
+        internal fun setGalleryAlbum(galleryAlbum: Album) {
             mutableListOf<Album>().run {
                 addAll(currentList)
                 if (size > 0) removeAt(0)
-                add(0, cameraRollAlbum)
+                add(0, galleryAlbum)
                 submitList(this)
             }
         }

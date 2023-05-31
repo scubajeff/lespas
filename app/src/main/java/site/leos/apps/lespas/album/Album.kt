@@ -83,7 +83,7 @@ data class Album(
         const val NO_BGM = ""
 
         const val ETAG_NOT_YET_UPLOADED = ""
-        const val ETAG_CAMERA_ROLL_ALBUM = "CR"
+        const val ETAG_GALLERY_ALBUM = "GA"
 
         const val SYNC_COMPLETED = 1.0f
 

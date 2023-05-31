@@ -84,7 +84,7 @@
     <string name="theme_auto_entries">Nach Systemeinstellung richten</string>
     <string name="auto_rotate_title">Bildschirm passend zum Bildseitenverhältnis drehen</string>
     <string name="auto_replay_title">Automatische Videowiedergabe</string>
-    <string name="cameraroll_as_album_title">Filmrolle als Album anzeigen</string>
+    <string name="gallery_as_album_title">Gerätegalerie als Album anzeigen</string>
 
     <string name="edit_header">Bearbeiten</string>
     <string name="snapseed_integration_title">Snapseed-Integration</string>
