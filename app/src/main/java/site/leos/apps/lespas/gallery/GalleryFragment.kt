@@ -217,89 +217,88 @@ class GalleryFragment: Fragment() {
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.addition.collect { ids ->
-                selectedUris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) }}
-                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.lastModified != LocalDateTime.MAX).show(parentFragmentManager, if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) TAG_FROM_CAMERAROLL_ACTIVITY else TAG_DESTINATION_DIALOG)
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.deletion.collect { deletions ->
-                if (deletions.isNotEmpty()) {
-                    val uris = arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } }
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, uris)).setFillInIntent(null).build())
-                    else galleryModel.delete(uris)
+            launch {
+                galleryModel.addition.collect { ids ->
+                    selectedUris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
+                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.lastModified != LocalDateTime.MAX)
+                        .show(parentFragmentManager, if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) TAG_FROM_CAMERAROLL_ACTIVITY else TAG_DESTINATION_DIALOG)
                 }
             }
-        }
+            launch {
+                galleryModel.deletion.collect { deletions ->
+                    if (deletions.isNotEmpty()) {
+                        val uris = arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.shareOut.collect { strip ->
-                waitingMsg = Tools.getPreparingSharesSnackBar(requireView(), strip) {
-                    imageLoaderModel.cancelShareOut()
-                    shareOutBackPressedCallback.isEnabled = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, uris)).setFillInIntent(null).build())
+                        else galleryModel.delete(uris)
+                    }
+                }
+            }
+            launch {
+                galleryModel.shareOut.collect { strip ->
+                    waitingMsg = Tools.getPreparingSharesSnackBar(requireView(), strip) {
+                        imageLoaderModel.cancelShareOut()
+                        shareOutBackPressedCallback.isEnabled = false
+                        galleryModel.setIsPreparingShareOut(false)
+                    }
+
+                    // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+                    handler.postDelayed({
+                        waitingMsg?.show()
+                        shareOutBackPressedCallback.isEnabled = true
+                    }, 500)
+                }
+            }
+            launch {
+                imageLoaderModel.shareOutUris.collect { uris ->
+
+                    handler.removeCallbacksAndMessages(null)
+                    if (waitingMsg?.isShownOrQueued == true) {
+                        waitingMsg?.dismiss()
+                        shareOutBackPressedCallback.isEnabled = false
+                    }
+
+                    val cr = requireActivity().contentResolver
+                    val clipData = ClipData.newUri(cr, "", uris[0])
+                    for (i in 1 until uris.size) {
+                        if (isActive) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                            else clipData.addItem(ClipData.Item(uris[i]))
+                        }
+                    }
+                    startActivity(Intent.createChooser(Intent().apply {
+                        if (uris.size > 1) {
+                            action = Intent.ACTION_SEND_MULTIPLE
+                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                        } else {
+                            // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                        }
+                        type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                        if (type!!.startsWith("image")) type = "image/*"
+                        this.clipData = clipData
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
+
                     galleryModel.setIsPreparingShareOut(false)
                 }
-
-                // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-                handler.postDelayed({
-                    waitingMsg?.show()
-                    shareOutBackPressedCallback.isEnabled = true
-                }, 500)
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            imageLoaderModel.shareOutUris.collect { uris ->
-
+            }.invokeOnCompletion {
                 handler.removeCallbacksAndMessages(null)
                 if (waitingMsg?.isShownOrQueued == true) {
                     waitingMsg?.dismiss()
                     shareOutBackPressedCallback.isEnabled = false
                 }
-
-                val cr = requireActivity().contentResolver
-                val clipData = ClipData.newUri(cr, "", uris[0])
-                for (i in 1 until uris.size) {
-                    if (isActive) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                        else clipData.addItem(ClipData.Item(uris[i]))
-                    }
-                }
-                startActivity(Intent.createChooser(Intent().apply {
-                    if (uris.size > 1) {
-                        action = Intent.ACTION_SEND_MULTIPLE
-                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                    } else {
-                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                        action = Intent.ACTION_SEND
-                        putExtra(Intent.EXTRA_STREAM, uris[0])
-                    }
-                    type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
-                    if (type!!.startsWith("image")) type = "image/*"
-                    this.clipData = clipData
-                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                }, null))
-
                 galleryModel.setIsPreparingShareOut(false)
             }
-        }.invokeOnCompletion {
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg?.isShownOrQueued == true) {
-                waitingMsg?.dismiss()
-                shareOutBackPressedCallback.isEnabled = false
-            }
-            galleryModel.setIsPreparingShareOut(false)
-        }
-        
-        viewLifecycleOwner.lifecycleScope.launch { 
-            galleryModel.medias.collect { localMedias ->
-                localMedias?.let {
-                    if (localMedias.size == 1 && localMedias[0].media.photo.lastModified == LocalDateTime.MAX) {
-                        requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
-                        requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
+            launch {
+                galleryModel.medias.collect { localMedias ->
+                    localMedias?.let {
+                        if (localMedias.size == 1 && localMedias[0].media.photo.lastModified == LocalDateTime.MAX) {
+                            requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
+                            requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
+                        }
                     }
                 }
             }
