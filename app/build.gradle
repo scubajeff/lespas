@@ -24,7 +24,7 @@ android {
         resValue 'string', 'muzei_authority', "${namespace}.muzei.ArtProvider"
 
         ksp {
-            arg('oom.schemaLocation', "$projectDir/schemas".toString())
+            arg('room.schemaLocation', "$projectDir/schemas".toString())
             arg('room.incremental', 'true')
         }
     }
