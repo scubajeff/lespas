@@ -19,5 +19,5 @@
     <item android:color="@color/color_gray_out" android:state_enabled="false" />
     <item android:color="#A5D6A7" android:state_checked="true" />
     <item android:color="#A5D6A7" android:state_selected="true" />
-    <item android:color="#9E9E9E" />
+    <item android:color="#BEBEBE" />
 </selector>
