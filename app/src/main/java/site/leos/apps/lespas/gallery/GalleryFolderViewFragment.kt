@@ -243,6 +243,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     if (dx == 0 && dy == 0) {
                         // First entry or fragment resume false call, by layout re-calculation, hide dataIndicator
                         yearIndicator.isVisible = false
+
+                        // Convenient place to catch events triggered by scrollToPosition
+                        if (flashDateId.isNotEmpty()) {
+                            flashDate(mediaList.findViewWithTag(flashDateId))
+                            flashDateId = ""
+                        }
                     } else {
                         (recyclerView.layoutManager as GridLayoutManager).run {
                             if ((findLastCompletelyVisibleItemPosition() < mediaAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
@@ -330,11 +336,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                                     mediaAdapter.getPositionByDate(picked).let { newPosition ->
                                         mediaList.findViewHolderForAdapterPosition(newPosition)?.itemView?.findViewById<TextView>(R.id.date)?.let { view ->
                                             // new position is visible on screen now
-                                            if (newPosition == currentBottom) mediaList.scrollToPosition(newPosition + 1)
+                                            if (newPosition >= currentBottom) mediaList.scrollToPosition( min(mediaAdapter.currentList.size -1, newPosition + spanCount))
                                             flashDate(view)
                                         } ?: run {
-                                            // flash the date after it has revealed
-                                            mediaAdapter.setFlashDate(picked)
+                                            // flash the date after scroll finished
+                                            flashDateId = mediaAdapter.getPhotoId(newPosition)
                                             mediaList.scrollToPosition(if (newPosition < currentBottom) newPosition else min(mediaAdapter.currentList.size - 1, newPosition + spanCount))
                                         }
                                     }
@@ -360,7 +366,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        
         try { selectionTracker.onSaveInstanceState(outState) } catch (_: UninitializedPropertyAccessException) {}
+        // Because we might need scrolling to a new position when returning from GallerySliderFragment, we have to save current scroll state in this way, though it's not as perfect as layoutManager.onSavedInstanceState
+        galleryModel.setCurrentPhotoId((mediaList.layoutManager as GridLayoutManager).findFirstVisibleItemPosition().let { mediaAdapter.getPhotoId(it) })
     }
 
     override fun onDestroyView() {
@@ -410,12 +419,15 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         actionMode = null
     }
 
+    private var flashDateId = ""
     private fun flashDate(view: View) {
-        ObjectAnimator.ofPropertyValuesHolder(view, PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)).run {
-            duration = 800
-            repeatMode = ValueAnimator.REVERSE
-            interpolator = BounceInterpolator()
-            start()
+        view.post {
+            ObjectAnimator.ofPropertyValuesHolder(view, PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)).run {
+                duration = 800
+                repeatMode = ValueAnimator.REVERSE
+                interpolator = BounceInterpolator()
+                start()
+            }
         }
     }
 
@@ -441,7 +453,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private val defaultOffset = OffsetDateTime.now().offset
         private var sToday = ""
         private var sYesterday = ""
-        private var flashDateId = LocalDate.MIN
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentId = ""
@@ -480,7 +491,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        inner class HorizontalDateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class DateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val tvDate = itemView.findViewById<TextView>(R.id.date)
 
             @SuppressLint("SetTextI18n")
@@ -494,6 +505,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         date.year == now.year -> "${format(DateTimeFormatter.ofPattern("MMM d"))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                         else -> "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                     }
+                    tvDate.tag = item.photo.id
                 }
 
                 tvDate.setOnLongClickListener {
@@ -511,11 +523,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
             if (viewType == TYPE_MEDIA) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
-            else HorizontalDateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
+            else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is MediaViewHolder) holder.bind(currentList[position])
-            else (holder as HorizontalDateViewHolder).bind(currentList[position])
+            else (holder as DateViewHolder).bind(currentList[position])
         }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
@@ -546,8 +558,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         fun dateRange(): Pair<Long, Long>? {
             return if (currentList.isNotEmpty()) Pair(currentList.last().photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()) else null
         }
-        fun setFlashDate(date: Long) { flashDateId = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate() }
-        fun getPositionByDate(date: Long): Int = currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
+        fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
         fun getDateByPosition(position: Int): Long = currentList[position].photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
 
         class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
