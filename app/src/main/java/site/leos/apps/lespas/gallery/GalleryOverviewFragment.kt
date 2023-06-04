@@ -144,7 +144,10 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
-        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+        ).apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+            setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
+        }
 
         selectionBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -176,7 +179,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
 
         overviewList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
-            overviewAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
             adapter = overviewAdapter
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {

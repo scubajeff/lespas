@@ -140,7 +140,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             },
             { photo, imageView -> imageLoaderModel.setImagePhoto(photo, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
-        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+        ).apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+            setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
+            setDateStrings(getString(R.string.today), getString(R.string.yesterday))
+        }
 
         selectionBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -180,8 +184,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
         }
         mediaList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
-            mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
-            mediaAdapter.setDateStrings(getString(R.string.today), getString(R.string.yesterday))
             adapter = mediaAdapter
 
             spanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
