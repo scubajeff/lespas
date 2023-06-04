@@ -408,7 +408,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                 if (overflow) {
                     ivPhoto.run {
-                        imageTintList = ColorStateList.valueOf(Color.argb(0x50, 0x00, 0x00, 0x00))
+                        imageTintList = ColorStateList.valueOf(Color.argb(0x70, 0x00, 0x00, 0x00))
                         imageTintMode = PorterDuff.Mode.SRC_ATOP
                         clearColorFilter()
                         setOnClickListener { if (!selectionTracker.hasSelection()) folderClickListener(item.folder) }
