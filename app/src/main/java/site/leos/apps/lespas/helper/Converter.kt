@@ -44,4 +44,10 @@ class Converter {
         //return date.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         return date.toInstant(ZoneOffset.UTC).toEpochMilli()
     }
+
+    @TypeConverter
+    fun fromSet(value: MutableSet<String>): String = value.joinToString(separator = "|")
+    @TypeConverter
+    fun toSet(value: String): MutableSet<String> = value.split('|').toMutableSet()
+
 }

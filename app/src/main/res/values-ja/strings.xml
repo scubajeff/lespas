@@ -290,7 +290,7 @@
     <string name="sync_status_action_create_album_from_server">アルバム \'%s\' が作成されています</string>
     <string name="sync_status_action_update_album_from_server">アルバム \'%s\' を更新しています</string>
     <string name="sync_status_action_backup_file">写真 %s をバックアップしています</string>
-    <string name="msg_backup_oldies">\'%1$s\'にある新しい写真は、今後バックアップされます。また、現在デバイスには%2$,d枚の写真があり、そのサイズは%3$sです。これらの古い写真もすべてバックアップしますか？</string>
+    <string name="msg_backup_existing">\'%1$s\'内の新しい写真は、今後バックアップされます。現在、デバイスには %2$,d 枚の写真があり、総サイズは %3$s です。それらもバックアップにしますか？</string>
     <string name="button_text_set_as_home">設定</string>
     <string name="pick_home">ホームフォルダの設定</string>
     <string name="pick_home_note">Les Pasは、アルバムとバックアップをサーバーのこのフォルダに保存します。</string>
@@ -334,4 +334,9 @@
     <string name="hint_gpx_offset">分単位の時差</string>
     <string name="item_export_gpx">GPXのエクスポート</string>
     <string name="hint_gpx_export_file_location">ファイルは「Download」フォルダに保存されます。</string>
+    <string name="gallery_backup_option_dialog_title">\'%1$s\'の設定</string>
+    <string name="label_remove_after_backup">バックアップ後の保管日数</string>
+    <string name="label_exclude">バックアップから除外されるサブフォルダー</string>
+    <string name="msg_last_backup_date">最後のバックアップは %1$s で終了しました。</string>
+    <string name="manage_media_access_permission_rationale">Les Pasにバックアップされたファイルの削除を許可するには、Manage Media権限を付与する必要があります。</string>
 </resources>

@@ -575,7 +575,6 @@ object Tools {
         val subFolders = mutableSetOf<String>()
         val externalStorageUri = MediaStore.Files.getContentUri("external")
 
-        @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val projection = arrayOf(pathSelection,)
         val selection = "$pathSelection LIKE '%${parent}%'"
@@ -589,7 +588,7 @@ object Tools {
             }
         } catch (_: Exception) {}
 
-        return subFolders.toList()
+        return subFolders.toList().sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it })
     }
 
     fun getLocalRoot(context: Context): String {

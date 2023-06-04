@@ -353,7 +353,7 @@
     <string name="sync_status_action_create_album_from_server">Criação do álbum \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Atualização do álbum \'%s\'</string>
     <string name="sync_status_action_backup_file">Foto de apoio %s</string>
-    <string name="msg_backup_oldies">Novas fotos em \'%1$s\' serão backups a partir de agora. Você também tem %2$,d fotos em dispositivo neste momento, com %3$s em tamanho. Você quer fazer o backup de todas estas fotos antigas agora?</string>
+    <string name="msg_backup_existing">As novas fotos em \'%1$s\' serão backup a partir de agora. Há %2$,d fotos no dispositivo no momento, com tamanho total de %3$s. Você deseja que elas também sejam incluídas no backup?</string>
     <string name="button_text_set_as_home">Conjunto</string>
     <string name="pick_home">Configure sua pasta de casa</string>
     <string name="pick_home_note">Les Pas salva seus álbuns e backups nesta pasta em seu servidor.</string>
@@ -398,4 +398,9 @@
     <string name="hint_gpx_offset">diferença de minutos permitida</string>
     <string name="item_export_gpx">Exportar GPX</string>
     <string name="hint_gpx_export_file_location">O arquivo será salvo na pasta \'Download\'.</string>
+    <string name="gallery_backup_option_dialog_title">Configurações de \'%1$s\'</string>
+    <string name="label_remove_after_backup">Dias para manter após o backup</string>
+    <string name="label_exclude">Subpastas excluídas do backup</string>
+    <string name="msg_last_backup_date">O último backup foi concluído em %1$s</string>
+    <string name="manage_media_access_permission_rationale">Para permitir que o Les Pas remova os arquivos de backup, você deve conceder a ele a permissão Manage Media (Gerenciar mídia).</string>
 </resources>

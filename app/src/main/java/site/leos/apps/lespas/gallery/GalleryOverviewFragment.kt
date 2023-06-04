@@ -58,6 +58,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -66,6 +67,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.BackupSettingViewModel
 import java.time.LocalDateTime
 
 class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
@@ -80,6 +82,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     private lateinit var overviewList: RecyclerView
 
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
+    private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,6 +92,22 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         overviewAdapter = OverviewAdapter(
             getString(R.string.camera_roll_name),
             spanCount * 2,
+            { folder, isEnabled, lastBackup ->
+                if (isEnabled) {
+                    backupSettingModel.enableBackup(folder)
+                    if (lastBackup == 0 && parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            Tools.getFolderStatistic(requireContext().contentResolver, folder).let {
+                                if (it.first > 0) {
+                                    // If there are existing photos in camera roll, offer choice to backup those too
+                                    ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_existing, folder, it.first, Tools.humanReadableByteCountSI(it.second)), positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false, requestKey = "${BACKUP_EXISTING_REQUEST_KEY}${folder}").show(parentFragmentManager, CONFIRM_DIALOG)
+                                } else backupSettingModel.updateLastBackupTimestamp(folder, System.currentTimeMillis())
+                            }
+                        }
+                    }
+                } else backupSettingModel.disableBackup(folder)
+            },
+            { folder -> if (parentFragmentManager.findFragmentByTag(BACKUP_OPTION_DIALOG) == null) GalleryBackupSettingDialogFragment.newInstance(folder).show(parentFragmentManager, BACKUP_OPTION_DIALOG) },
             { folder ->
                 galleryModel.setCurrentPhotoId("")
 
@@ -209,32 +228,44 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
-            when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.remove(getSelectedPhotos())
-                STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
+            bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)?.let { requestKey ->
+                when {
+                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.remove(getSelectedPhotos())
+                    requestKey == STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
+                    // When ConfirmDialogFragment launched to confirm backup existing media files, INDIVIDUAL_REQUEST_KEY is the folder name. TODO hope that no body use 'DELETE_REQUEST_KEY' and 'STRIP_REQUEST_KEY' as their folder name
+                    requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) 0L else System.currentTimeMillis())
+                }
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.medias.collect { localMedias ->
+            combine(galleryModel.medias, backupSettingModel.getBackupEnableStates()) { localMedias, backupSettings ->
                 localMedias?.let {
                     if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
                     val overview = mutableListOf<GalleryFragment.LocalMedia>()
+                    var isEnabled = false
+                    var lastBackupDate = 0
                     localMedias.groupBy { it.folder }.run {
                         forEach { group ->
                             //if (group.key in managingFolders) {
-                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property shareId
-                            overview.add(GalleryFragment.LocalMedia(group.key, NCShareViewModel.RemotePhoto(Photo(id = group.key, mimeType = "", shareId = group.value.size, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN))))
+                            backupSettings.find { it.folder == group.key }?.let {
+                                isEnabled = it.enabled
+                                lastBackupDate = it.lastBackup.toInt()
+                            } ?: run {
+                                isEnabled = false
+                                lastBackupDate = 0
+                            }
+                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property shareId, last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
+                            overview.add(GalleryFragment.LocalMedia(group.key, NCShareViewModel.RemotePhoto(Photo(id = group.key, mimeType = "", shareId = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = if (isEnabled) 1 else 0)))
                             // Maximum 2 lines of media items in overview list
                             overview.addAll(group.value.take(spanCount * 2))
                             //}
                         }
                     }
-
-                    overviewAdapter.submitList(overview)
+                    overview
                 }
-            }
+            }.collect { overviewAdapter.submitList(it) }
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {
@@ -341,7 +372,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         selectionTracker.clearSelection()
     }
 
-    class OverviewAdapter(private val cameraRollName: String, private val max: Int, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    class OverviewAdapter(private val cameraRollName: String, private val max: Int, private val enableBackupClickListener: (String, Boolean, Int) -> Unit,  private val backupOptionClickListener: (String) -> Unit, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<GalleryFragment.LocalMedia, RecyclerView.ViewHolder>(OverviewDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -458,8 +489,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     setOnClickListener { folderClickListener(item.folder) }
                 }
 
-                cbEnableBackup.setOnCheckedChangeListener { _, isChecked ->
-                    ivBackupSetting.isVisible = isChecked
+                cbEnableBackup.run {
+                    isChecked = item.media.coverBaseLine == 1
+                    setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
+                }
+
+                ivBackupSetting.run {
+                    isVisible = item.media.coverBaseLine == 1
+                    setOnClickListener { backupOptionClickListener(item.folder) }
                 }
             }
         }
@@ -528,12 +565,15 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     class OverviewDiffCallback : DiffUtil.ItemCallback<GalleryFragment.LocalMedia>() {
         override fun areItemsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.id == newItem.media.photo.id
-        override fun areContentsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = true
+        override fun areContentsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.mimeType.isNotEmpty() || oldItem.media.coverBaseLine == newItem.media.coverBaseLine
     }
 
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val BACKUP_OPTION_DIALOG = "BACKUP_OPTION_DIALOG"
+
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
+        private const val BACKUP_EXISTING_REQUEST_KEY = "BACKUP_EXISTING_REQUEST_KEY"
     }
 }

@@ -326,7 +326,7 @@
     <string name="sync_status_action_create_album_from_server">Création de l\'album \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Mise à jour de l\'album \'%s\'</string>
     <string name="sync_status_action_backup_file">Sauvegarde de la photo %s</string>
-    <string name="msg_backup_oldies">Les nouvelles photos dans \'%1$s\' seront désormais sauvegardées. Vous avez également %2$,d photos dans l\'appareil en ce moment, avec %3$s en taille. Souhaitez-vous sauvegarder toutes ces anciennes photos maintenant ?</string>
+    <string name="msg_backup_existing">Les nouvelles photos contenues dans \'%1$s\' seront désormais sauvegardées. Il y a %2$,d photos dans l\'appareil en ce moment, avec une taille totale de %3$s. Voulez-vous qu\'elles soient également sauvegardées ?</string>
     <string name="button_text_set_as_home">Définir</string>
     <string name="pick_home">Définir votre dossier d\'accueil</string>
     <string name="pick_home_note">Les Pas enregistre vos albums et vos sauvegardes dans ce dossier sur votre serveur.</string>
@@ -371,4 +371,9 @@
     <string name="hint_gpx_offset">minutes de différence accordées</string>
     <string name="item_export_gpx">Exporter GPX</string>
     <string name="hint_gpx_export_file_location">Le fichier sera enregistré dans le dossier \"Download\".</string>
+    <string name="gallery_backup_option_dialog_title">Paramètres de \'%1$s\'</string>
+    <string name="label_remove_after_backup">Jours à conserver après la sauvegarde</string>
+    <string name="label_exclude">Sous-dossiers exclus de la sauvegarde</string>
+    <string name="msg_last_backup_date">La dernière sauvegarde s\'est terminée à %1$s</string>
+    <string name="manage_media_access_permission_rationale">Pour permettre à Les Pas de supprimer des fichiers sauvegardés, vous devez lui accorder le droit de gérer les médias.</string>
 </resources>

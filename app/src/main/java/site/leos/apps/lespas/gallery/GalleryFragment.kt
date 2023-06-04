@@ -77,15 +77,16 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.text.Collator
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 class GalleryFragment: Fragment() {
+    private val actionModel: ActionViewModel by viewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity().contentResolver, imageLoaderModel) }
-    private val actionModel: ActionViewModel by viewModels()
 
     private lateinit var mediaStoreObserver: ContentObserver
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
@@ -484,6 +485,7 @@ class GalleryFragment: Fragment() {
                                             orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property, keep original orientation, CameraRollFragment will handle the rotation, TODO video length?
                                         ),
                                         remotePath = "",    // Local media
+                                        coverBaseLine = 0,  // Backup is disable by default
                                     ),
                                     relativePath
                                 )
@@ -495,7 +497,8 @@ class GalleryFragment: Fragment() {
 
                 // Emitting
                 ensureActive()
-                localMedias.sortWith(compareBy<LocalMedia> { it.folder }.thenByDescending { it.media.photo.dateTaken })
+                //localMedias.sortWith(compareBy<LocalMedia> { it.folder }.thenByDescending { it.media.photo.dateTaken })
+                localMedias.sortWith(compareBy<LocalMedia, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.folder }.thenByDescending { it.media.photo.dateTaken })
                 ensureActive()
                 _medias.value = localMedias
             }.apply {

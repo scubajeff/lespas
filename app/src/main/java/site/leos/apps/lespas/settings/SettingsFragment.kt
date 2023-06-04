@@ -569,7 +569,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     Tools.getFolderStatistic(requireContext().contentResolver, folderName).let {
                         if (it.first > 0)
                             // If there are existing photos in camera roll, offer choice to backup those too
-                            ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_oldies, folderName, it.first, Tools.humanReadableByteCountSI(it.second)),
+                            ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_existing, folderName, it.first, Tools.humanReadableByteCountSI(it.second)),
                                 positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false, requestKey = if (whichFolder == LAST_BACKUP_CAMERA) BACKUP_OLD_CAMERA_ROLL_DIALOG else BACKUP_OLD_PICTURES_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
                         else sp.edit().apply {
                             putLong(whichFolder, 1L)

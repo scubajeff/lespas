@@ -291,7 +291,7 @@
     <string name="sync_status_action_create_album_from_server">Creando el álbum \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Actualizando el álbum \'%s\'</string>
     <string name="sync_status_action_backup_file">Haciendo una copia de seguridad de la foto %s</string>
-    <string name="msg_backup_oldies">Las nuevas fotos en \'%1$s\' serán copias de seguridad a partir de ahora. También tienes %2$,d fotos en el dispositivo ahora mismo, con %3$s de tamaño. ¿Desea hacer una copia de seguridad de todas estas fotos antiguas?</string>
+    <string name="msg_backup_existing">Las nuevas fotos en \'%1$s\' se copiarán a partir de ahora. Hay %2$,d fotos en el dispositivo en este momento, con un tamaño total de %3$s. ¿Desea que también se incluyan en la copia de seguridad?</string>
     <string name="button_text_save">Guardar</string>
     <string name="hint_caption">Añadir un pie de foto</string>
     <string name="button_text_set_as_home">Set</string>
@@ -336,4 +336,9 @@
     <string name="hint_gpx_offset">minutos de diferencia permitidos</string>
     <string name="item_export_gpx">Exportar GPX</string>
     <string name="hint_gpx_export_file_location">El archivo se guardará en la carpeta \"Download\".</string>
+    <string name="gallery_backup_option_dialog_title">Configuración de \'%1$s</string>
+    <string name="label_remove_after_backup">Días de conservación tras la copia de seguridad</string>
+    <string name="label_exclude">Subcarpetas excluidas de la copia de seguridad</string>
+    <string name="msg_last_backup_date">Última copia de seguridad finalizada en %1$s</string>
+    <string name="manage_media_access_permission_rationale">Para permitir que Les Pas elimine los archivos de las copias de seguridad, debes concederle el permiso Gestionar medios.</string>
 </resources>

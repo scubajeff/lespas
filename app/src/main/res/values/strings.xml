@@ -204,7 +204,6 @@
     <string name="wifionly_title">Sync and backup only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
-    <string name="msg_backup_oldies">New photos in \'%1$s\' will be backup from now on. You also have %2$,d photos in device right now, with %3$s in size. Do you want to backup all these old photos now?</string>
 
     <string name="map_header">Map</string>
     <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
@@ -380,6 +379,12 @@
     <string name="option_menu_show_all">Show all</string>
     <string name="gallery_name">Gallery</string>
     <string name="camera_roll_name">Camera</string>
+    <string name="gallery_backup_option_dialog_title">Settings of \'%1$s\'</string>
+    <string name="label_remove_after_backup">Days to keep after backed up</string>
+    <string name="label_exclude">Sub-folders excluded from backup</string>
+    <string name="msg_last_backup_date">Last backup finished at %1$s</string>
+    <string name="msg_backup_existing">New photos in \'%1$s\' will be backup from now on. There are %2$,d photos in device right now, with total size of %3$s. Do you want to back them up too?</string>
+    <string name="manage_media_access_permission_rationale">To allow Les Pas remove backed up files, you must grant it the Manage Media permission.</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>

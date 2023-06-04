@@ -1708,7 +1708,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     data class RemotePhoto(
         val photo: Photo,
         val remotePath: String = "",
-        val coverBaseLine: Int = 0,
+        var coverBaseLine: Int = 0,
     ) : Parcelable
 
     @Parcelize

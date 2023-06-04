@@ -17,6 +17,7 @@
 package site.leos.apps.lespas
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -28,13 +29,16 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoDao
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionDao
+import site.leos.apps.lespas.sync.BackupSetting
+import site.leos.apps.lespas.sync.BackupSettingDao
 
-@Database(entities = [Album::class, Photo::class, Action::class], version = 10)
+@Database(entities = [Album::class, Photo::class, Action::class, BackupSetting::class], version = 11, autoMigrations = [ AutoMigration(10, 11) ])
 @TypeConverters(Converter::class)
 abstract class LespasDatabase: RoomDatabase() {
     abstract fun albumDao(): AlbumDao
     abstract fun photoDao(): PhotoDao
     abstract fun actionDao(): ActionDao
+    abstract fun backupSettingDao(): BackupSettingDao
 
     companion object {
         @Volatile

@@ -290,7 +290,7 @@
     <string name="sync_status_action_create_album_from_server">正在创建相册\'%s\'</string>
     <string name="sync_status_action_update_album_from_server">正在更新相册\'%s\'</string>
     <string name="sync_status_action_backup_file">正在备份照片%s</string>
-    <string name="msg_backup_oldies">从现在起，文件夹“%1$s”中的新照片将被备份。该文件夹在设备中还有%2$,d的照片，有%3$s的大小。需要备份这些旧照片吗？</string>
+    <string name="msg_backup_existing">从现在起，文件夹“%1$s”中的新照片将被备份。该文件夹在设备中还有%2$,d的照片，有%3$s的大小。需要备份这些旧照片吗？</string>
     <string name="button_text_set_as_home">选定</string>
     <string name="pick_home">设置主文件夹</string>
     <string name="pick_home_note">Les Pas将在服务器上的这个文件夹里保存相册和备份文件。</string>
@@ -333,4 +333,9 @@
     <string name="hint_gpx_offset">分钟时间差</string>
     <string name="item_export_gpx">导出GPX</string>
     <string name="hint_gpx_export_file_location">文件将被保存在 \"Download\"文件夹中。</string>
+    <string name="gallery_backup_option_dialog_title">\'%1$s\'的选项</string>
+    <string name="label_remove_after_backup">备份后保留的天数</string>
+    <string name="label_exclude">不需备份以下选中的子目录</string>
+    <string name="msg_last_backup_date">最后一次备份在完成于%1$s</string>
+    <string name="manage_media_access_permission_rationale">为了允许Les Pas在备份期间删除已备份文件，你必须授予它管理媒体的权限。</string>
 </resources>

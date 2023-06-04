@@ -356,7 +356,7 @@
     <string name="sync_status_action_create_album_from_server">Creazione dell\'album \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Aggiornamento dell\'album \'%s\'</string>
     <string name="sync_status_action_backup_file">Backup della foto %s</string>
-    <string name="msg_backup_oldies">Le nuove foto contenute in \'%1$s\' saranno d\'ora in poi oggetto di backup. Nel dispositivo sono presenti anche %2$,d foto con dimensioni pari a %3$s. Si desidera eseguire il backup di tutte queste vecchie foto?</string>
+    <string name="msg_backup_existing">Le nuove foto in \'%1$s\' saranno di backup d\'ora in poi. Ci sono %2$,d foto nel dispositivo in questo momento, con una dimensione totale di %3$s. Si desidera che anche queste vengano salvate?</string>
     <string name="button_text_set_as_home">Set</string>
     <string name="pick_home">Impostare la cartella iniziale</string>
     <string name="pick_home_note">Les Pas salva gli album e i backup in questa cartella sul server.</string>
@@ -401,4 +401,9 @@
     <string name="hint_gpx_offset">minuti di differenza consentiti</string>
     <string name="item_export_gpx">Esportazione GPX</string>
     <string name="hint_gpx_export_file_location">Il file verrà salvato nella cartella \"Download\".</string>
+    <string name="gallery_backup_option_dialog_title">Impostazioni di \'%1$s\'</string>
+    <string name="label_remove_after_backup">Giorni di conservazione dopo il backup</string>
+    <string name="label_exclude">Sottocartelle escluse dal backup</string>
+    <string name="msg_last_backup_date">L\'ultimo backup è terminato a %1$s</string>
+    <string name="manage_media_access_permission_rationale">Per consentire a Les Pas di rimuovere i file di backup, è necessario concedergli l\'autorizzazione Gestione supporti.</string>
 </resources>
