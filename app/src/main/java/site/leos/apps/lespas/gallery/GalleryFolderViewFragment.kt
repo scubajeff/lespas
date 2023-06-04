@@ -113,12 +113,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         mediaAdapter = MediaAdapter(
             { view, photoId, mimeType ->
+                galleryModel.setCurrentPhotoId(photoId)
+
                 if (mimeType.startsWith("video")) {
                     // Transition to surface view might crash some OEM phones, like Xiaomi
                     parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
                 } else {
-                    galleryModel.setCurrentPhotoId(photoId)
-
                     reenterTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
                         excludeTarget(view, true)
