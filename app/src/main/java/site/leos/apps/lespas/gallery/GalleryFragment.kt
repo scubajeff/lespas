@@ -402,6 +402,7 @@ class GalleryFragment: Fragment() {
 
                 val localMedias = mutableListOf<LocalMedia>()
 
+                val contentUri = MediaStore.Files.getContentUri("external")
                 val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                 val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
                 val projection = arrayOf(
@@ -419,7 +420,7 @@ class GalleryFragment: Fragment() {
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
                 try {
-                    cr.query(MediaStore.Files.getContentUri("external"), projection, selection, null, null)?.use { cursor ->
+                    cr.query(contentUri, projection, selection, null, null)?.use { cursor ->
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -433,7 +434,6 @@ class GalleryFragment: Fragment() {
                         val defaultZone = ZoneId.systemDefault()
                         var mimeType: String
                         var date: Long
-                        var contentUri: Uri
                         var relativePath: String
 
                         cursorLoop@ while (cursor.moveToNext()) {
@@ -443,10 +443,7 @@ class GalleryFragment: Fragment() {
                             // Insert media
                             mimeType = cursor.getString(typeColumn)
                             // Make sure image type is supported
-                            contentUri = if (mimeType.startsWith("image")) {
-                                if (mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
-                                else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                            } else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                            if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
 
                             date = cursor.getLong(dateColumn)
                             // Sometimes dateTaken is not available from system, use dateAdded instead
@@ -559,7 +556,9 @@ class GalleryFragment: Fragment() {
             viewModelScope.launch { _deletion.emit(photoIds)
         }}
         fun delete(uris: ArrayList<Uri>) {
-            uris.forEach { cr.delete(it, null, null) }
+            val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
+            cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
+
             setNextInLine()
         }
 
