@@ -602,6 +602,8 @@ class GalleryFragment: Fragment() {
         // Next in line to show after current item deleted, for GallerySlideFragment only
         private var nextInLine = ""
         fun setNextInLine() { if (nextInLine.isNotEmpty()) currentPhotoId = nextInLine }
+
+        fun getFullPath(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.fullPath ?: ""
     }
 
     data class LocalMedia(

@@ -75,6 +75,7 @@ class GallerySlideFragment : Fragment() {
     private lateinit var mediaAdapter: MediaSlideAdapter
     private lateinit var mediaList: ViewPager2
     private lateinit var controlsContainer: ConstraintLayout
+    private lateinit var tvPath: TextView
     private lateinit var tvDate: TextView
     private lateinit var tvSize: TextView
     private lateinit var removeButton: ImageButton
@@ -148,6 +149,7 @@ class GallerySlideFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        tvPath = view.findViewById(R.id.path)
         tvDate = view.findViewById(R.id.date)
         tvSize = view.findViewById(R.id.size)
         mediaList = view.findViewById<ViewPager2>(R.id.pager).apply {
@@ -174,6 +176,7 @@ class GallerySlideFragment : Fragment() {
                         mediaAdapter.getPhotoAt(position).run {
                             if (autoRotate) requireActivity().requestedOrientation = if (this.photo.width > this.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                             galleryModel.setCurrentPhotoId(photo.id)
+                            tvPath.text = "/${galleryModel.getFullPath(photo.id).substringBeforeLast('/')}"
                             tvDate.text = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
                             tvSize.text = Tools.humanReadableByteCountSI(photo.shareId.toLong())
                             removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX

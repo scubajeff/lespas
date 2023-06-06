@@ -40,7 +40,7 @@
         app:layout_constraintRight_toRightOf="parent"
         android:gravity="center_horizontal|bottom"
         android:orientation="vertical"
-        android:background="#B3404040"
+        android:background="@color/bottom_bar_background"
         android:clipToPadding="false"
         android:visibility="gone"
         tools:visibility="visible">
