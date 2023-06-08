@@ -90,7 +90,7 @@
         <item name="colorButtonText">@color/borderless_button_text_bw</item>
         <item name="colorBottomSheetBackground">#202020</item>
         <item name="colorAnimatedPlaceHolder">?primaryTextWhite</item>
-        <item name="colorToggleButtonOnToolbar">#4B4D4C</item>
+        <item name="colorToggleButtonOnToolbar">#6B6D6C</item>
         <item name="colorHighlightPrimary">?primaryTextWhite</item>
         <item name="colorErrorDatePicker">@color/color_error_date_picker_true_black</item>
 

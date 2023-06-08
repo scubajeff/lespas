@@ -43,14 +43,13 @@
     <string name="view_header">浏览</string>
     <string name="auto_rotate_title">依照长宽比旋转显示照片</string>
     <string name="sync_header">同步</string>
-    <string name="background_sync_title">定时同步</string>
     <string name="wifionly_title">只使用WiFi网络进行同步和备份</string>
     <string name="wifionly_summary_on">已开启。应用将不消耗移动网络流量。</string>
     <string name="wifionly_summary_off">已关闭。应用将消耗移动网络流量。如果照片数量多，请谨慎选择使用。</string>
     <string name="account_header">帐户</string>
     <string name="logout_title">登出服务器</string>
     <string name="msg_logout_dialog">登出帐户%1$s吗？</string>
-    <string name="sync_status_stage_backup_pictures">正在备份“Pictures”文件夹...</string>
+    <string name="sync_status_stage_backup_pictures">正在备份设备中的媒体文件...</string>
     <string name="copy_files">复制</string>
     <string name="create_new_album">创建新相册</string>
     <string name="invalid_character_found">禁止使用目录符号\'\\\'或\'/\'</string>
@@ -87,7 +86,6 @@
     <string name="action_select_all">全选</string>
     <string name="access_right_violation">您使用的分享应用未遵循Android存储访问安全规范，所以Les Pas无法接收到她的分享。请更新您的分享应用或使用其他应用进行操作。</string>
     <string name="error_preparing_files">发生错误</string>
-    <string name="background_sync_summary">每六小时检查一次服务器更新</string>
     <string name="no_media_file_found">分享来的数据中未找到任何图像或视频文件。</string>
     <string name="button_text_set_as">设置为桌布</string>
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
@@ -105,7 +103,6 @@
     <string name="item_namedesc">按名称倒序</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed修图 - 替换</string>
     <string name="item_camera_roll">相机相册</string>
-    <string name="cameraroll_backup_title">备份本地相机相册</string>
     <string name="no_media_found">没找到任何图片或视频。</string>
     <string name="gallery_name">本机相册</string>
     <string name="same_file_found">同名文件已存在。</string>
@@ -124,6 +121,8 @@
     <string name="yesterday">昨天</string>
     <string name="option_menu_show_all">显示所有</string>
     <string name="camera_roll_name">相机</string>
+    <string name="msg_remove_old_files_warning">警告：如果您在首次启用本文件夹备份时选择了不备份现有文件，那么激活此自动删除设置后，那些现有文件也将被按设定删除！</string>
+    <string name="button_text_i_understand">知道了</string>
     <string name="tooltips_search_album">在相册中搜索</string>
     <string name="tooltips_search_cameraroll">在相机相册中搜索</string>
     <string name="title_in_album">相册中的%1$s</string>
@@ -189,7 +188,6 @@
     <string name="action_reuse">至相册…</string>
     <string name="preparing_shares">正在准备分享文件……</string>
     <string name="striping_exif">正在删除图片EXIF隐私数据……</string>
-    <string name="show_list_first">启动相机相册时显示照片列表</string>
     <string name="button_text_map">地图应用</string>
     <string name="object_location">拍摄地点</string>
     <string name="item_location_search">拍摄地点</string>
@@ -254,9 +252,6 @@
     <string name="msg_login_first">请先登录服务器。</string>
     <string name="msg_downloading_exif">正从服务器上获取照片元数据……</string>
     <string name="cameraroll_backup_remaining">还有%d个</string>
-    <string name="pictures_backup_title">备份“Pictures”文件夹</string>
-    <string name="backup_summary">在服务器的“%1$s/%2$s”文件夹中可以找到你的备份。</string>
-    <string name="pictures_sub_folder_exclusion_title">跳过备份以下子文件夹</string>
     <string name="sync_status_action_delete_media">正在删除相册《%2$s》中的照片%1$s</string>
     <string name="sync_status_action_delete_album">正在删除相册《%s》</string>
     <string name="sync_status_action_add_media">正在添加%1$s到相册《%2$s》中</string>
@@ -282,7 +277,6 @@
     <string name="sync_status_stage_started">正在启动同步……</string>
     <string name="button_text_help">求助</string>
     <string name="button_text_resync">再次同步</string>
-    <string name="sync_status_stage_backup_camera_roll">正在备份相机相册……</string>
     <string name="sync_status_title">同步状态</string>
     <string name="sync_status_result_general_error">%s的最后一次同步出错！</string>
     <string name="sync_status_stage_sync_local">正在同步本地更新……</string>
@@ -336,6 +330,6 @@
     <string name="gallery_backup_option_dialog_title">\'%1$s\'的选项</string>
     <string name="label_remove_after_backup">备份后保留的天数</string>
     <string name="label_exclude">不需备份以下选中的子目录</string>
-    <string name="msg_last_backup_date">最后一次备份在完成于%1$s</string>
+    <string name="msg_backup_status">最后一次备份在完成于%1$s。你可以在服务器的 %2$s 文件夹中找到所有备份。</string>
     <string name="manage_media_access_permission_rationale">为了允许Les Pas在备份期间删除已备份文件，你必须授予它管理媒体的权限。</string>
 </resources>

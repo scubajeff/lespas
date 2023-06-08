@@ -236,9 +236,9 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.auto_replay_perf_key),
                                 getString(R.string.auto_rotate_perf_key),
                                 getString(R.string.gallery_as_album_perf_key),
-                                getString(R.string.roll_list_first_perf_key),
+                                //getString(R.string.roll_list_first_perf_key),
                                 getString(R.string.snapseed_replace_pref_key),
-                                getString(R.string.sync_pref_key),
+                                //getString(R.string.sync_pref_key),
                                 getString(R.string.wifionly_pref_key),
                                 getString(R.string.chinese_map_pref_key),
                                 getString(R.string.nearby_convergence_pref_key),
@@ -254,6 +254,7 @@ class NCSelectHomeFragment: Fragment() {
                                 LesPasArtProviderSettingActivity.KEY_PREFER,
                                 SettingsFragment.CACHE_SIZE -> try { editor.putInt(key, value.toInt()) } catch(_: java.lang.NumberFormatException) {}
 
+/*
                                 // TODO multiple devices conflict
                                 getString(R.string.cameraroll_backup_pref_key), -> {
                                     value.toBoolean().let { on ->
@@ -267,10 +268,11 @@ class NCSelectHomeFragment: Fragment() {
                                         if (on) editor.putLong(SettingsFragment.LAST_BACKUP_PICTURE, System.currentTimeMillis() / 1000)
                                     }
                                 }
+*/
                                 //AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
                                 //SettingsFragment.LAST_BACKUP -> try { editor.putLong(key, value.toLong()) } catch(_: java.lang.NumberFormatException) {}
 
-                                getString(R.string.pictures_sub_folder_exclusion_pref_key),
+                                //getString(R.string.pictures_sub_folder_exclusion_pref_key),
                                 LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(", ").toSet())
 
                                 getString(R.string.snapseed_pref_key) -> editor.putBoolean(key, value.toBoolean() && requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null)

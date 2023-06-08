@@ -115,9 +115,6 @@
     <string name="statistic_free_space_message">%1$s verfügbar in %2$s</string>
     
     <string name="sync_header">Synchronisierung</string>
-    <string name="cameraroll_backup_title">Filmrolle synchronsisieren</string>
-    <string name="background_sync_title">Regelmäßig synchronisieren</string>
-    <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
     <string name="wifionly_title">Synchronisierung und Sicherung nur über WiFi</string>
     <string name="wifionly_summary_on">Nur WLAN nutzen, verbraucht keine mobilen Daten.</string>
     <string name="wifionly_summary_off">Auch Mobile Daten nutzen - Vorsicht, falls Sie eine große Fotosammlung haben.</string>
@@ -134,7 +131,7 @@
     <string name="install_snapseed_dialog_msg">Snapseed jetzt installieren?</string>
 
     <!-- Destination DialogFragment -->
-    <string name="sync_status_stage_backup_pictures">Sichern des Ordners \"Pictures\"...</string>
+    <string name="sync_status_stage_backup_pictures">Sichern von Mediendateien...</string>
     <string name="copy_files">Kopieren</string>
     <string name="move_files">Verschieben</string>
     <string name="create_new_album">Neues Album erstellen</string>
@@ -201,6 +198,8 @@
     <string name="yesterday">Gestern</string>
     <string name="option_menu_show_all">Alle anzeigen</string>
     <string name="camera_roll_name">Kamera</string>
+    <string name="msg_remove_old_files_warning">WARNUNG: Wenn Sie bei der ersten Aktivierung der Datensicherung für diesen Ordner keine vorhandenen Dateien gesichert haben, werden diese vorhandenen Dateien durch die Aktivierung dieser Einstellung ebenfalls gelöscht!</string>
+    <string name="button_text_i_understand">Ich verstehe</string>
     <string name="tooltips_search_album">In den Alben suchen</string>
     <string name="tooltips_search_cameraroll">In der Filmrolle suchen</string>
     <string name="condition_to_perform_search">Es muss mindestens ein Album vorhanden sein ODER Les Pas muss auf lokale zugreifen dürfen, um die Suchfunktion zu nutzen.</string>
@@ -241,7 +240,6 @@
     <string name="prefer_random">Zufällig (Rückgriff auf alle oben genannten Möglichkeiten)</string>
     <string name="exclude_albums">Fotos ausschließen:</string>
     <string name="prefer_latest">Letzte</string>
-    <string name="show_list_first">Medienliste beim Start der Kamerarolle anzeigen</string>
     <string name="button_text_map">Karten-App</string>
     <string name="object_location">Standort</string>
     <string name="item_location_search">Standort</string>
@@ -306,9 +304,6 @@
     <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server…</string>
     <string name="cameraroll_backup_remaining">%d übrig</string>
-    <string name="pictures_backup_title">Sicherung des Ordners \"Pictures\"</string>
-    <string name="backup_summary">Finden Sie Ihr Backup auf dem Server im Ordner \'%1$s/%2$s\'.</string>
-    <string name="pictures_sub_folder_exclusion_title">Unterordner von der Sicherung ausschließen</string>
     <string name="sync_status_action_delete_media">Entfernen von %1$s in Album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Album \'%s\' wird entfernt</string>
     <string name="sync_status_action_add_media">Hinzufügen von %1$s zum Album \'%2$s\'</string>
@@ -334,7 +329,6 @@
     <string name="sync_status_stage_started">Start der Synchronisation…</string>
     <string name="button_text_help">Hilfe!</string>
     <string name="button_text_resync">Re-Sync</string>
-    <string name="sync_status_stage_backup_camera_roll">Rückfahrkamera…</string>
     <string name="sync_status_title">Status der Synchronisierung</string>
     <string name="sync_status_result_general_error">Letzte Synchronisierung fehlgeschlagen %s!</string>
     <string name="sync_status_stage_sync_local">Synchronisierung lokaler Änderungen…</string>
@@ -389,6 +383,6 @@
     <string name="gallery_backup_option_dialog_title">Einstellungen von \'%1$s\'</string>
     <string name="label_remove_after_backup">Tage nach der Sicherung aufbewahren</string>
     <string name="label_exclude">Von der Sicherung ausgeschlossene Unterordner</string>
-    <string name="msg_last_backup_date">Letzte Sicherung beendet bei %1$s</string>
+    <string name="msg_backup_status">Die letzte Sicherung wurde um %1$s abgeschlossen. Sie können das Archiv auf dem Server im Ordner %2$s finden.</string>
     <string name="manage_media_access_permission_rationale">Damit Les Pas gesicherte Dateien entfernen kann, müssen Sie ihm die Berechtigung \"Medien verwalten\" erteilen.</string>
 </resources>

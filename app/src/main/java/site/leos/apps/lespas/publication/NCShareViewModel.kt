@@ -70,7 +70,6 @@ import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
@@ -597,7 +596,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             result.sortByDescending { it.dateTaken }
 
             // Save a snapshot
-            File(localFileFolder, CameraRollFragment.CameraRollViewModel.SNAPSHOT_FILENAME).writer().use {
+            File(localFileFolder, SNAPSHOT_FILENAME).writer().use {
                 it.write(Tools.photosToMetaJSONString(result))
             }
         } catch (_: Exception) {}
@@ -1775,5 +1774,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         const val BLOG_TYPE_PUBLIC = 1
         const val BLOG_TYPE_PRIVATE = 2
+
+        private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
     }
 }

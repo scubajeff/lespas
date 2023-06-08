@@ -20,7 +20,6 @@ import android.accounts.Account
 import android.accounts.AccountManager
 import android.accounts.AuthenticatorException
 import android.accounts.NetworkErrorException
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.*
 import android.graphics.*
@@ -30,6 +29,7 @@ import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock.sleep
 import android.provider.MediaStore
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
@@ -42,6 +42,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
@@ -73,13 +74,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private lateinit var userBase: String
     private lateinit var lespasBase: String
     private lateinit var dcimBase: String
-    private lateinit var picturesBase: String
+    private lateinit var serverBase: String
     private lateinit var localBaseFolder: String
     private lateinit var token: String
     private var blogSiteName = ""
     private var userName = ""
     private val albumRepository = AlbumRepository(application)
     private val photoRepository = PhotoRepository(application)
+    private val backupSettingRepository = BackupSettingRepository(application)
     private val actionRepository = ActionRepository(application)
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val wifionlyKey = application.getString(R.string.wifionly_pref_key)
@@ -101,8 +103,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
             syncRemoteChanges()
             updateMeta()
+/*
             if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) backup(dcimBase)
             if (sp.getBoolean(application.getString(R.string.pictures_backup_pref_key), false)) backup(picturesBase)
+*/
+            backupGallery()
             if (prefBackupNeeded) backupPreference()
 
             // Clear status counters
@@ -212,7 +217,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             userBase = "${baseUrl}${application.getString(R.string.dav_files_endpoint)}${userName}"
             lespasBase = "${userBase}${Tools.getRemoteHome(application)}"
             dcimBase = "${userBase}${Tools.getCameraArchiveHome(application)}"
-            picturesBase = "${userBase}${Tools.getPicturesArchiveHome(application)}"
+            serverBase = "${userBase}${Tools.getServerBase(context)}"
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
@@ -220,7 +225,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
-        if (!webDav.isExisted(lespasBase)) webDav.createFolder(lespasBase)
+        makeSureFolderExisted(lespasBase)
+    }
+
+    private fun makeSureFolderExisted(folder: String) {
+        if (!webDav.isExisted(folder)) webDav.createFolder(folder)
     }
 
     private fun syncLocalChanges(pendingActions: List<Action>) {
@@ -1593,6 +1602,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
+/*
     @SuppressLint("ApplySharedPref")
     private fun backup(folder: String) {
         var backupFolder = folder
@@ -1777,6 +1787,224 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             reportBackupStatus(" ", 0L, 0, 0)
         }
     }
+*/
+
+    private fun backupGallery() {
+        reportStage(Action.SYNC_STAGE_BACKUP_PICTURES)
+
+        // Make sure archive folders hierarchy exsited on server
+        var backupFolder = "${serverBase}${ARCHIVE_BASE}"
+        makeSureFolderExisted(backupFolder)
+        backupFolder += "/${Tools.getDeviceModel()}"
+        makeSureFolderExisted(backupFolder)
+
+        val contentUri = MediaStore.Files.getContentUri("external")
+        val mediaMetadataRetriever = MediaMetadataRetriever()
+        val cr = application.contentResolver
+
+        var selection: String
+        var projection: Array<String>
+        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val dateTakenColumnName = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+        val orientationColumnName = "orientation"     // MediaStore.MediaColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
+
+        var relativePath: String
+        var fileName: String
+        var size: Long
+        var mimeType: String
+        var id: Long
+        var photoUri: Uri
+        var latitude: Double
+        var longitude: Double
+        var altitude: Double
+        var bearing: Double
+        var mDate: Long
+
+        backupSettingRepository.getEnabled().forEach {
+            val subFolder = "${backupFolder}/${it.folder}"
+            makeSureFolderExisted(subFolder)
+
+            projection = arrayOf(
+                MediaStore.Files.FileColumns._ID,
+                pathSelection,
+                dateTakenColumnName,
+                orientationColumnName,
+                MediaStore.Files.FileColumns.DATE_ADDED,
+                MediaStore.Files.FileColumns.MEDIA_TYPE,
+                MediaStore.Files.FileColumns.MIME_TYPE,
+                MediaStore.Files.FileColumns.DISPLAY_NAME,
+                MediaStore.Files.FileColumns.SIZE,
+                MediaStore.Files.FileColumns.WIDTH,
+                MediaStore.Files.FileColumns.HEIGHT,
+            )
+            selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                    "($pathSelection LIKE '${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.folder else "${GalleryFragment.STORAGE_EMULATED}_/${it.folder}"}%')" + " AND " +    // path start with specific folder
+                    "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${it.lastBackup})"   // DATE_ADDED is in second
+
+            cr.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC")?.use { cursor->
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+                val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+                val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+                val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+                val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+                val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+                val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+                val dateTakenColumn = cursor.getColumnIndexOrThrow(dateTakenColumnName)
+                val orientationColumn = cursor.getColumnIndexOrThrow(orientationColumnName)
+
+                while(cursor.moveToNext()) {
+                    //Log.e(TAG, "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
+                    // Check network type on every loop, so that user is able to stop sync right in the middle
+                    checkConnection()
+
+                    //Log.e(">>>>>>>>", "backupGallery: ${it.folder} ${cursor.getLong(idColumn)} ${cursor.getString(nameColumn)} ${cursor.getLong(dateColumn)} ${cursor.getString(pathColumn)} ${cursor.getInt(widthColumn)} ${cursor.getInt(orientationColumn)}")
+                    relativePath = cursor.getString(pathColumn).substringAfter("${it.folder}/").substringBeforeLast('/', "")
+                    // Exclude sub folder in user defined exclusion set
+                    if (relativePath.isNotEmpty() && it.exclude.contains(relativePath.substringBefore('/'))) continue
+                    
+                    // Get uri, in Android Q or above, try getting original uri for meta data extracting
+                    id = cursor.getLong(idColumn)
+                    photoUri = ContentUris.withAppendedId(contentUri, id)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (_: Exception) {}
+
+                    // For Android 9 and below, MediaStore.Files.FileColumns.DISPLAY_NAME won't return file name for files in Download folder
+                    fileName = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && it.folder == "Download") cursor.getString(pathColumn).substringAfterLast('/') else cursor.getString(nameColumn)
+                    size = try { cursor.getLong(sizeColumn) } catch(_: Exception) { -1L }
+                    mimeType = cursor.getString(typeColumn)
+                    //Log.e(TAG, "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
+
+                    reportBackupStatus(fileName, size, cursor.position, cursor.count)
+
+                    // Indefinite while loop is for handling 404 and 409 (Caddy seems to prefer) error when folders needed to be created on server before hand
+                    while(true) {
+                        try {
+                            webDav.upload(photoUri, "${subFolder}/${relativePath}/${fileName}", mimeType, cr, size, application)
+                            break
+                        } catch (e: OkHttpWebDavException) {
+                            when (e.statusCode) {
+                                // Caddy seems preferring 409 response code when PUT file to a non-existing folder
+                                404, 409 -> {
+                                    // create file in non-existed folder, should create subfolder first
+                                    createSubFoldersRecursively(subFolder, relativePath)
+                                }
+                                400 -> sleep(2000)
+                                else -> throw e
+                            }
+                        } catch (e: StreamResetException) {
+                            createSubFoldersRecursively(subFolder, relativePath)
+                        } catch (e: EOFException) {
+                            // Under some unknown situation StreamResetException might be suppressed by EOFException
+                            e.suppressed.let { suppressed ->
+                                if (suppressed.isNotEmpty()) {
+                                    if (suppressed[0] is StreamResetException) createSubFoldersRecursively(subFolder, relativePath)
+                                }
+                            }
+                        }
+                    }
+
+                    // Try to get GPS data
+                    latitude = Photo.GPS_DATA_UNKNOWN
+                    longitude = Photo.GPS_DATA_UNKNOWN
+                    altitude = Photo.GPS_DATA_UNKNOWN
+                    bearing = Photo.GPS_DATA_UNKNOWN
+                    if (Tools.hasExif(mimeType)) {
+                        try {
+                            cr.openInputStream(photoUri)?.use { stream ->
+                                ExifInterface(stream).let { exif ->
+                                    exif.latLong?.let { latLong ->
+                                        latitude = latLong[0]
+                                        longitude = latLong[1]
+                                        altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                                        bearing = Tools.getBearing(exif)
+                                    } ?: run {
+                                        // No GPS data
+                                        latitude = Photo.NO_GPS_DATA
+                                        longitude = Photo.NO_GPS_DATA
+                                        altitude = Photo.NO_GPS_DATA
+                                        bearing = Photo.NO_GPS_DATA
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) {} catch (_: OutOfMemoryError) {}
+                    } else if (mimeType.startsWith("video/")) {
+                        try {
+                            mediaMetadataRetriever.setDataSource(application, photoUri)
+                            Tools.getVideoLocation(mediaMetadataRetriever).let { coordinate ->
+                                latitude = coordinate[0]
+                                longitude = coordinate[1]
+                                altitude = Photo.NO_GPS_DATA
+                                bearing = Photo.NO_GPS_DATA
+                            }
+                        } catch (_: SecurityException) {}
+                    }
+
+                    // Patch photo's DAV properties to accelerate future operations on camera roll archive
+                    mDate = cursor.getLong(dateTakenColumn)
+                    if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
+                    try {
+                        webDav.patch(
+                            "${subFolder}/${relativePath}/${fileName}",
+                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +      // timestamp from Android MediaStore is in UTC timezone
+                                    "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + cursor.getInt(orientationColumn) + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
+                                    "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + cursor.getInt(widthColumn) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
+                                    "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + cursor.getInt(heightColumn) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
+                                    if (latitude == Photo.GPS_DATA_UNKNOWN) ""
+                                    else
+                                        "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
+                                                "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
+                                                "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
+                                                "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>"
+                        )
+                    } catch (_: Exception) {}
+
+                    // Save latest timestamp after successful upload
+                    backupSettingRepository.updateLastBackupTimestamp(it.folder, cursor.getLong(dateColumn))
+                }
+            }
+
+            if (it.autoRemove > 0) {
+                projection  = arrayOf(
+                    MediaStore.Files.FileColumns._ID,
+                    pathSelection,
+                    MediaStore.Files.FileColumns.DATE_ADDED,
+                    MediaStore.Files.FileColumns.MEDIA_TYPE,
+                )
+                selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                        "($pathSelection LIKE '${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.folder else "${GalleryFragment.STORAGE_EMULATED}_/${it.folder}"}%')" + " AND " +      // path starts with specific folder
+                        "(${MediaStore.Files.FileColumns.DATE_ADDED} < ${min(System.currentTimeMillis() / 1000 - it.autoRemove * 86400L, it.lastBackup)})"                                 // DATE_ADDED is in second
+
+                val deletion = arrayListOf<Uri>()
+                cr.query(contentUri, projection, selection, null, null)?.use { cursor ->
+                    while(cursor.moveToNext()) {
+                        deletion.add(ContentUris.withAppendedId(contentUri, cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))))
+                    }
+                }
+
+                if (deletion.isNotEmpty()) {
+/*
+                    deletion.forEach { uri ->
+                        cr.query(uri, null, null, null, null)?.use { cursor ->
+                            if (cursor.moveToFirst()) Log.e(">>>>>>>>", "backupGallery: delete ${it.folder} ${cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))} ", )
+                        }
+                    }
+*/
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        cr.delete(contentUri, "${MediaStore.Files.FileColumns._ID} IN (${arrayListOf<String>().apply { deletion.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()})", null)
+                    }
+                    else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R && MediaStore.canManageMedia(application)) {
+                        val pi = MediaStore.createDeleteRequest(cr, deletion)
+                        try { application.startIntentSender(pi.intentSender, null, 0, 0, 0) } catch (_: IntentSender.SendIntentException) {}
+                    }
+                }
+            }
+        }
+
+        mediaMetadataRetriever.release()
+
+        // Report finished status
+        reportBackupStatus(" ", 0L, 0, 0)
+    }
 
     private fun backupPreference() {
         webDav.upload(
@@ -1793,7 +2021,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var subFolder = base
         path.split("/").forEach {
             subFolder += "/$it"
-            if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
+            makeSureFolderExisted(subFolder)
         }
     }
 
@@ -1939,6 +2167,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_BOTH_WAY = 3
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
+
+        const val ARCHIVE_BASE = "/Backup"
 
         const val PREFERENCE_BACKUP_ON_SERVER = ".mobile_preference"
         const val PREFERENCE_BACKUP_SEPARATOR = "\u0000"

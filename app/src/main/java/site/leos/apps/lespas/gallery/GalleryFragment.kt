@@ -65,7 +65,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -123,7 +122,7 @@ class GalleryFragment: Fragment() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
 
                     arguments?.parcelable<Uri>(ARGUMENT_URI)?.let { uri ->
-                        Tools.getFolderFromUri(uri.toString(), requireActivity().contentResolver)?.let {
+                        getFolderFromUri(uri)?.let {
                             galleryModel.asGallery()
                             // Launched as viewer from system file manager
                             galleryModel.setCurrentPhotoId(it.second)
@@ -186,9 +185,9 @@ class GalleryFragment: Fragment() {
                         imageLoaderModel.cancelShareOut()
                         galleryModel.setIsPreparingShareOut(false)
                         it.dismiss()
-                        isEnabled = false
-                    } else isEnabled = false
-                } ?: run { isEnabled = false }
+                    }
+                }
+                isEnabled = false
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
@@ -333,7 +332,7 @@ class GalleryFragment: Fragment() {
                     if (actions.isNotEmpty()) actionModel.addActions(actions)
                 } else {
                     // Acquire files
-                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(selectedUris, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, CameraRollFragment.TAG_ACQUIRING_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(selectedUris, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
         }
@@ -370,6 +369,93 @@ class GalleryFragment: Fragment() {
 
     private fun finish() {
         if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) requireActivity().finish() else parentFragmentManager.popBackStack()
+    }
+
+    private fun fromStorageUri(contentResolver: ContentResolver, externalStorageUri: Uri,  pathColumn: String, folder: String, displayName: String): Pair<String, String>? {
+        var id: String? = null
+        val projection: Array<String>
+        val selection: String
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            projection = arrayOf(
+                MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DISPLAY_NAME,
+                pathColumn
+            )
+            selection = "(${pathColumn} LIKE '${folder}%') AND (${MediaStore.Files.FileColumns.DISPLAY_NAME} = '${displayName}')"
+        } else {
+            projection = arrayOf(
+                MediaStore.Files.FileColumns._ID,
+                pathColumn,
+            )
+            selection = "(${pathColumn} LIKE '${STORAGE_EMULATED}_/${folder}%') AND (${pathColumn} LIKE '%${displayName}')"
+        }
+
+        contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+        }
+
+        return id?.let { Pair("${folder}/", id!!) }
+    }
+
+    private fun getFolderFromUri(uri: Uri): Pair<String, String>? {
+        val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val externalStorageUri = MediaStore.Files.getContentUri("external")
+        val contentResolver = requireActivity().contentResolver
+
+        return try {
+            when(uri.authority) {
+                "com.android.externalstorage.documents" -> {
+                    fromStorageUri(contentResolver, externalStorageUri, pathColumn, uri.lastPathSegment!!.substringAfter(':').substringBeforeLast('/'), uri.lastPathSegment!!.substringAfterLast('/'))
+                }
+                "com.android.providers.downloads.documents" -> {
+                    // Download provider does not provide common _ID, we have to find out the display name first, then use Storage provider to do the rest
+                    var filename: String? = null
+                    val projection = arrayOf(
+                        MediaStore.Files.FileColumns.DISPLAY_NAME,
+                        MediaStore.Files.FileColumns.DOCUMENT_ID,
+                    )
+                    contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) filename = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME))
+                    }
+
+                    filename?.let { fromStorageUri(contentResolver, externalStorageUri, pathColumn, "Download", filename!!) }
+                }
+                "com.android.providers.media.documents" -> {
+                    var folderName: String? = null
+                    val id = uri.lastPathSegment!!.substringAfterLast(':')
+                    val projection = arrayOf(
+                        MediaStore.Files.FileColumns._ID,
+                        pathColumn,
+                    )
+                    val selection = "${MediaStore.Files.FileColumns._ID} = $id"
+
+                    contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) folderName = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
+                    }
+
+                    folderName?.let { Pair(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName!! else "${folderName!!.substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/')}/", id) }
+                }
+                "media" -> {
+                    val projection = arrayOf(
+                        pathColumn,
+                    )
+                    contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            return Pair(
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(0).substringBefore('/') else cursor.getString(0).substringAfter(STORAGE_EMULATED).substringAfter('/').substringBeforeLast('/') + "/",
+                                uri.toString().substringAfterLast('/')
+                            )
+                        }
+                    }
+                    null
+                }
+                else -> null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     class GalleryViewModelFactory(private val cr: ContentResolver,private val imageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
@@ -464,7 +550,7 @@ class GalleryFragment: Fragment() {
                                 }
                             }
 
-                            relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter("/storage/emulated/0/").substringBeforeLast('/') + "/"
+                            relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
                                     relativePath.substringBefore('/'),
@@ -489,8 +575,7 @@ class GalleryFragment: Fragment() {
                             )
                         }
                     }
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) { }
 
                 // Emitting
                 ensureActive()
@@ -612,6 +697,7 @@ class GalleryFragment: Fragment() {
     )
 
     companion object {
+        const val STORAGE_EMULATED = "/storage/emulated/"
         const val FROM_DEVICE_GALLERY = "0"
         const val EMPTY_GALLERY_COVER_ID = "0"
 

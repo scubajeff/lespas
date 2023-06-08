@@ -24,6 +24,7 @@ class BackupSettingRepository(application: Application) {
     private val backupSettingDao = LespasDatabase.getDatabase(application).backupSettingDao()
 
     fun getSetting(folder: String): Flow<BackupSetting?> = backupSettingDao.getSetting(folder)
+    fun getEnabled(): List<BackupSetting> = backupSettingDao.getEnabledSettings()
     fun updateSetting(setting: BackupSetting) { backupSettingDao.update(setting) }
     fun getBackupEnableStates(): Flow<List<FolderState>> = backupSettingDao.getBackupEnableStates()
     fun enableBackup(folder: String) {

@@ -58,7 +58,6 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.io.InputStream
-import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.text.CharacterIterator
@@ -364,7 +363,8 @@ object Tools {
             MediaStore.Files.FileColumns.HEIGHT,
             "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
         )
-        val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%${folder}%')"
+        //val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%${folder}%')"
+        val selection = if (imageOnly) "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}"
             else "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%${folder}%')"
 
         try {
@@ -498,7 +498,6 @@ object Tools {
         var itemCount = 0
         var totalSize = 0L
 
-        @Suppress("DEPRECATION")
         val externalStorageUri = MediaStore.Files.getContentUri("external")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val projection = arrayOf(
@@ -506,7 +505,8 @@ object Tools {
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.SIZE,
         )
-        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%$folderName%')"
+        val path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName else "${GalleryFragment.STORAGE_EMULATED}_/${folderName}"
+        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '${path}%')"
 
         try {
             cr.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
@@ -521,94 +521,21 @@ object Tools {
         return Pair(itemCount, totalSize)
     }
 
-    fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
-        val colon = "%3A"
-        val storageUriSignature = "com.android.externalstorage.documents"
-        val mediaProviderUriSignature = "com.android.providers.media.documents"
-        val downloadProviderUriSignature = "com.android.providers.downloads.documents"
-        val externalStorageUri = MediaStore.Files.getContentUri("external")
-        val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-
-        return try {
-            when {
-                (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && uriString.contains(downloadProviderUriSignature)) || uriString.contains(storageUriSignature) -> {
-                    var id: String? = null
-                    val folder = URLDecoder.decode(uriString.substringAfter(colon), "UTF-8").substringBeforeLast("/")
-                    val projection = arrayOf(
-                        MediaStore.Files.FileColumns._ID,
-                        MediaStore.Files.FileColumns.DISPLAY_NAME,
-                        pathColumn,
-                    )
-                    val selection = "($pathColumn LIKE '%${folder}%') AND (${MediaStore.Files.FileColumns.DISPLAY_NAME}='${URLDecoder.decode(uriString, "UTF-8").substringAfterLast('/')}')"
-
-                    contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
-                    }
-
-                    id?.let { Pair("${folder.substringAfter("/storage/emulated/0/")}/", id!!) }
-                }
-                uriString.contains(mediaProviderUriSignature) || uriString.contains(downloadProviderUriSignature) -> {
-                    var folderName: String? = null
-                    val id = uriString.substringAfter(colon)
-                    val projection = arrayOf(
-                        MediaStore.Files.FileColumns._ID,
-                        pathColumn,
-                    )
-                    val selection = "${MediaStore.Files.FileColumns._ID} = $id"
-
-                    contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) folderName = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
-                    }
-
-                    folderName?.let { Pair(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName!! else "${folderName!!.substringAfter("/storage/emulated/0/").substringBeforeLast('/')}/", id) }
-                }
-                else -> null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    fun listSubFolders(parent: String, cr: ContentResolver): List<String> {
-        // TODO Set used here to make sure no duplicate, but what about folder in external SD that has the same name as that in internal storage
-        val subFolders = mutableSetOf<String>()
-        val externalStorageUri = MediaStore.Files.getContentUri("external")
-
-        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val projection = arrayOf(pathSelection,)
-        val selection = "$pathSelection LIKE '%${parent}%'"
-
-        try {
-            cr.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
-                val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-                while (cursor.moveToNext()) {
-                    cursor.getString(pathColumn).substringAfter("$parent/", "").substringBefore('/', "").run { if (this.isNotEmpty()) subFolders.add(this) }
-                }
-            }
-        } catch (_: Exception) {}
-
-        return subFolders.toList().sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it })
-    }
-
     fun getLocalRoot(context: Context): String {
         return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.lespas_base_folder_name)}"
     }
 
+    fun getServerBase(context: Context): String = PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: ""
     fun getRemoteHome(context: Context): String {
         return getPathOnServer(context, 1)
     }
     fun getCameraArchiveHome(context: Context): String {
         return getPathOnServer(context, 2)
     }
-    fun getPicturesArchiveHome(context: Context): String {
-        return getPathOnServer(context, 3)
-    }
     private fun getPathOnServer(context: Context, id: Int): String {
         return (PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
             1 -> context.getString(R.string.lespas_base_folder_name)
             2 -> "/DCIM"
-            3 -> "/Pictures"
             else -> ""
         }
     }

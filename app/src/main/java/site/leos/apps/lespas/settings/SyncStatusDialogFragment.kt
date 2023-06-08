@@ -32,7 +32,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.SyncAdapter
-import java.util.*
+import java.util.Locale
 
 class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_status_dialog), SharedPreferences.OnSharedPreferenceChangeListener {
     private lateinit var sp: SharedPreferences
@@ -205,14 +205,13 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                     // Show local action status view when in these stages
                     currentLocalActionTextView.isVisible = stageId == Action.SYNC_STAGE_LOCAL || stageId == Action.SYNC_STAGE_REMOTE || stageId == Action.SYNC_RESULT_ERROR_GENERAL
                     // Update backup status view visibility
-                    if (stageId == Action.SYNC_STAGE_BACKUP_CAMERA_ROLL || stageId == Action.SYNC_STAGE_BACKUP_PICTURES) unhideBackupStatusViews() else hideBackupStatusViews()
+                    if (stageId == Action.SYNC_STAGE_BACKUP_PICTURES) unhideBackupStatusViews() else hideBackupStatusViews()
 
                     when(stageId) {
                         // Various stages
                         Action.SYNC_STAGE_STARTED -> getString(R.string.sync_status_stage_started)
                         Action.SYNC_STAGE_LOCAL -> getString(R.string.sync_status_stage_sync_local)
                         Action.SYNC_STAGE_REMOTE -> getString(R.string.sync_status_stage_sync_remote)
-                        Action.SYNC_STAGE_BACKUP_CAMERA_ROLL -> getString(R.string.sync_status_stage_backup_camera_roll)
                         Action.SYNC_STAGE_BACKUP_PICTURES -> getString(R.string.sync_status_stage_backup_pictures)
 
                         // Various results

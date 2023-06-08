@@ -138,8 +138,6 @@
 
     <string name="gallery_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
     <string name="gallery_as_album_title">Show device gallery as an album</string>
-    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
-    <string name="show_list_first">Display media list when camera roll start</string>
 
     <string name="edit_header">Edit</string>
     <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
@@ -186,20 +184,10 @@
     <string name="cache_size_setting_hint">Cache size:</string>
 
     <string name="sync_header">Synchronization</string>
-    <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
-    <string name="cameraroll_backup_title">Backup Camera Roll</string>
-    <string name="pictures_backup_pref_key" translatable="false">PICTURES_BACKUP</string>
-    <string name="pictures_backup_title">Backup \'Pictures\' Folder</string>
-    <string name="pictures_sub_folder_exclusion_pref_key" translatable="false">PICTURES_SUB_FOLDER_EXCLUSION</string>
-    <string name="pictures_sub_folder_exclusion_title">Exclude Sub Folders from Backup</string>
-    <string name="backup_summary">Find your backup on server in the folder \'%1$s/%2$s\'.</string>
     <string name="backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
-    <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
     <string name="sync_status_local_action_pref_key" translatable="false">SYNC_CURRENT_ACTION</string>
     <string name="sync_status_title">Synchronization status</string>
-    <string name="background_sync_title">Sync periodically</string>
-    <string name="background_sync_summary">Synchronize every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync and backup only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
@@ -275,8 +263,7 @@
     <string name="sync_status_stage_started">Starting synchronization…</string>
     <string name="sync_status_stage_sync_local">Synchronizing local changes…</string>
     <string name="sync_status_stage_sync_remote">Synchronizing remote changes…</string>
-    <string name="sync_status_stage_backup_camera_roll">Backing up camera roll…</string>
-    <string name="sync_status_stage_backup_pictures">Backing up \'Pictures\' folder…</string>
+    <string name="sync_status_stage_backup_pictures">Backing up media files…</string>
 
     <!-- Destination DialogFragment -->
     <string name="copy_files">Copy</string>
@@ -382,9 +369,11 @@
     <string name="gallery_backup_option_dialog_title">Settings of \'%1$s\'</string>
     <string name="label_remove_after_backup">Days to keep after backed up</string>
     <string name="label_exclude">Sub-folders excluded from backup</string>
-    <string name="msg_last_backup_date">Last backup finished at %1$s</string>
+    <string name="msg_backup_status">Last backup finished at %1$s. You can find archive on server in folder %2$s</string>
     <string name="msg_backup_existing">New photos in \'%1$s\' will be backup from now on. There are %2$,d photos in device right now, with total size of %3$s. Do you want to back them up too?</string>
     <string name="manage_media_access_permission_rationale">To allow Les Pas remove backed up files, you must grant it the Manage Media permission.</string>
+    <string name="msg_remove_old_files_warning">WARNING: If you chose not to backup existing files when you first enabled backup for this folder, those existing files WILL ALSO BE REMOVED by turning on this setting!</string>
+    <string name="button_text_i_understand">I understand</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>

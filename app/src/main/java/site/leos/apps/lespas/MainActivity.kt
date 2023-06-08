@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                             if (Tools.shouldRequestStoragePermission(this@MainActivity))
                                 sp.edit {
                                     putBoolean(getString(R.string.snapseed_pref_key), false)
-                                    putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                                    //putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                                     putBoolean(getString(R.string.gallery_as_album_perf_key), false)
                                 }
                             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
@@ -226,8 +226,8 @@ class MainActivity : AppCompatActivity() {
         when(key) {
             // TODO ignore changes of preferences that don't need backup
             AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
-            SettingsFragment.LAST_BACKUP_CAMERA,
-            SettingsFragment.LAST_BACKUP_PICTURE,
+            //SettingsFragment.LAST_BACKUP_CAMERA,
+            //SettingsFragment.LAST_BACKUP_PICTURE,
             getString(R.string.backup_status_pref_key),
             getString(R.string.sync_status_local_action_pref_key),
             getString(R.string.sync_status_pref_key) -> {}

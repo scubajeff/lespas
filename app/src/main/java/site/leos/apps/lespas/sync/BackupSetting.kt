@@ -53,6 +53,9 @@ abstract class BackupSettingDao: BaseDao<BackupSetting>() {
     abstract fun getSettingDistinctFlow(folder: String): Flow<BackupSetting?>
     fun getSetting(folder: String): Flow<BackupSetting?> = getSettingDistinctFlow(folder).distinctUntilChanged()
 
+    @Query("SELECT * FROM ${BackupSetting.TABLE_NAME} WHERE enabled = 1")
+    abstract fun getEnabledSettings(): List<BackupSetting>
+
     @Query("SELECT folder, enabled, lastBackup FROM ${BackupSetting.TABLE_NAME}")
     abstract fun getBackupEnableStatesDistinctFlow(): Flow<List<FolderState>>
     fun getBackupEnableStates(): Flow<List<FolderState>> = getBackupEnableStatesDistinctFlow().distinctUntilChanged()

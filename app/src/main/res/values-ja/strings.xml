@@ -72,9 +72,6 @@
     <string name="external_storage">外部メモリーカード</string>
     <string name="statistic_free_space_message">%2$sの残りの%1$sのスペース</string>
     <string name="sync_header">シンクロ</string>
-    <string name="cameraroll_backup_title">ローカルカメラのアルバムをバックアップする</string>
-    <string name="background_sync_title">タイムドシンクロ</string>
-    <string name="background_sync_summary">6時間ごとにサーバーの更新をチェック</string>
     <string name="wifionly_title">WiFi環境下でのシンク、データバックアップのみ</string>
     <string name="wifionly_summary_on">はい、モバイルデータを消費しません。</string>
     <string name="wifionly_summary_off">いいえ、モバイルデータを消費します。写真のコレクションが多い場合は注意が必要です。</string>
@@ -89,7 +86,7 @@
     <string name="logout_title">サーバーからのログアウト</string>
     <string name="msg_logout_dialog">アカウント %1$s からログアウトしますか？</string>
     <string name="yes_logout">ログアウトへの同意</string>
-    <string name="sync_status_stage_backup_pictures">Picturesフォルダのバックアップ...</string>
+    <string name="sync_status_stage_backup_pictures">メディアファイルをバックアップする...</string>
     <string name="copy_files">レプリケート</string>
     <string name="move_files">ポータブル</string>
     <string name="create_new_album">新規アルバムの作成</string>
@@ -137,6 +134,8 @@
     <string name="yesterday">昨日</string>
     <string name="option_menu_show_all">全て表示</string>
     <string name="camera_roll_name">カメラ</string>
+    <string name="msg_remove_old_files_warning">警告：このフォルダのバックアップを最初に有効にしたときに、既存のファイルをバックアップしないことを選択した場合、この設定をオンにすると、既存のファイルも削除されます！</string>
+    <string name="button_text_i_understand">なんでも</string>
     <string name="tooltips_search_album">アルバム内検索</string>
     <string name="tooltips_search_cameraroll">カメラアルバム内検索</string>
     <string name="condition_to_perform_search">画像検索機能を利用するためには、アルバムが存在するか、ストレージへのアクセスが許可されている必要があります。</string>
@@ -189,7 +188,6 @@
     <string name="action_reuse">アルバムに……</string>
     <string name="preparing_shares">共有ファイルの準備……</string>
     <string name="striping_exif">EXIFデータのストライピング……</string>
-    <string name="show_list_first">カメラロール起動時のメディアリスト表示</string>
     <string name="button_text_map">地図アプリ</string>
     <string name="object_location">所在地</string>
     <string name="item_location_search">所在地</string>
@@ -254,9 +252,6 @@
     <string name="msg_low_storage_space">内部ストレージの空き容量が10％未満になると、Les Pasとサーバーの同期が停止します。</string>
     <string name="msg_login_first">まず、サーバーにログインしてください。</string>
     <string name="msg_downloading_exif">サーバーからメタデータを取得する</string>
-    <string name="pictures_backup_title">Picturesフォルダのバックアップ</string>
-    <string name="backup_summary">サーバー上のバックアップを「%1$s/%2$s」フォルダーで検索します。</string>
-    <string name="pictures_sub_folder_exclusion_title">サブフォルダをバックアップから除外する</string>
     <string name="sync_status_action_delete_media">アルバム『%2$s』内の写真%1$sを削除しています</string>
     <string name="sync_status_action_delete_album">アルバム『%s』は削除されています</string>
     <string name="sync_status_action_add_media">アルバム『%2$s』に%1$sを追加しました</string>
@@ -282,7 +277,6 @@
     <string name="sync_status_stage_started">同期開始中</string>
     <string name="button_text_help">助けて</string>
     <string name="button_text_resync">再同期</string>
-    <string name="sync_status_stage_backup_camera_roll">カメラのバックアップ</string>
     <string name="sync_status_title">シンクロの状態</string>
     <string name="sync_status_result_general_error">" %s最後の同期に失敗しました!"</string>
     <string name="sync_status_stage_sync_local">ローカルの変更を同期させる</string>
@@ -337,6 +331,6 @@
     <string name="gallery_backup_option_dialog_title">\'%1$s\'の設定</string>
     <string name="label_remove_after_backup">バックアップ後の保管日数</string>
     <string name="label_exclude">バックアップから除外されるサブフォルダー</string>
-    <string name="msg_last_backup_date">最後のバックアップは %1$s で終了しました。</string>
+    <string name="msg_backup_status">最後のバックアップは %1$s で終了しました。アーカイブはサーバー上のフォルダ %2$s にあります。</string>
     <string name="manage_media_access_permission_rationale">Les Pasにバックアップされたファイルの削除を許可するには、Manage Media権限を付与する必要があります。</string>
 </resources>

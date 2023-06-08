@@ -39,8 +39,9 @@
             app:layout_constraintTop_toTopOf="parent"
             android:singleLine="false"
             android:maxLines="6"
+            android:lineSpacingMultiplier="1.2"
             style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
-            tools:text="Message?"/>
+            tools:text="Message?\nMessage?"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/ok_button"

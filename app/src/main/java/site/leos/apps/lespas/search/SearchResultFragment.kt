@@ -33,7 +33,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -43,7 +42,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
-import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
@@ -99,8 +98,12 @@ class SearchResultFragment : Fragment() {
                         excludeTarget(imageView, true)
                     }
                     //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+/*
                     parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                         .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id, searchScope == R.id.search_archive), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+*/
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
+                        .replace(R.id.container_root, GalleryFragment.newInstance(Uri.parse(result.remotePhoto.photo.id)), GalleryFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
             { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
@@ -124,29 +127,30 @@ class SearchResultFragment : Fragment() {
 
         searchResultRecyclerView = view.findViewById(R.id.photo_grid)
         searchResultRecyclerView.adapter = searchResultAdapter
-        adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
+        adhocSearchViewModel.getResultList().observe(viewLifecycleOwner) { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) }
 
         searchResultRecyclerView.addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(requireContext(),
             when(searchScope) {
                 R.id.search_album -> R.drawable.ic_baseline_footprint_24
                 R.id.search_archive -> R.drawable.ic_baseline_archive_24
-                else -> R.drawable.ic_baseline_camera_roll_24
+                else -> R.drawable.ic_baseline_phone_android_24
             }
         )!!))
 
-        adhocSearchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
-            when(progress) {
+        adhocSearchViewModel.getProgress().observe(viewLifecycleOwner) { progress ->
+            when (progress) {
                 0 -> loadingProgressBar?.isIndeterminate = true
                 100 -> loadingIndicator?.apply {
                     isVisible = false
                     isEnabled = false
                 }
+
                 else -> loadingProgressBar?.apply {
                     isIndeterminate = false
                     setProgressCompat(progress, true)
                 }
             }
-        })
+        }
 
         if (searchResultAdapter.itemCount !=0 ) postponeEnterTransition()
 

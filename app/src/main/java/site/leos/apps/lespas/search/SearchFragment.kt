@@ -34,6 +34,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialSharedAxis
@@ -168,10 +169,12 @@ class SearchFragment : Fragment() {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
                 inflater.inflate(R.menu.search_menu, menu)
                 scopeToggleGroup = menu.findItem(R.id.option_menu_search_scope).actionView?.findViewById(R.id.search_scope_toogle_group)
+                menu.findItem(R.id.option_menu_search_scope).actionView?.findViewById<MaterialButton>(R.id.search_archive)?.isEnabled = false
             }
 
             override fun onPrepareMenu(menu: Menu) {
                 if (savedScope != 0) scopeToggleGroup?.check(savedScope)
+
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true

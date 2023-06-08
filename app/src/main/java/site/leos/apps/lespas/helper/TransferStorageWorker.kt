@@ -47,7 +47,7 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
         val target: File
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val inInternal = sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)
-        val isSyncEnabled = sp.getBoolean(context.getString(R.string.sync_pref_key), false)
+        //val isSyncEnabled = sp.getBoolean(context.getString(R.string.sync_pref_key), false)
         val message: String
         val accounts = AccountManager.get(context).getAccountsByType(context.getString(R.string.account_type_nc))
 
@@ -67,7 +67,8 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
 
         try {
             // Stop periodic sync during transferring
-            if (isSyncEnabled) ContentResolver.removePeriodicSync(accounts[0], context.getString(R.string.sync_authority), Bundle.EMPTY)
+            //if (isSyncEnabled) ContentResolver.removePeriodicSync(accounts[0], context.getString(R.string.sync_authority), Bundle.EMPTY)
+            ContentResolver.removePeriodicSync(accounts[0], context.getString(R.string.sync_authority), Bundle.EMPTY)
 
             // Make destination folder
             target.mkdir()
@@ -104,10 +105,10 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
             Result.failure()
         } finally {
             // Restore periodic sync
-            if (isSyncEnabled) {
+            //if (isSyncEnabled) {
                 ContentResolver.setSyncAutomatically(accounts[0], context.getString(R.string.sync_authority), true)
                 ContentResolver.addPeriodicSync(accounts[0], context.getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) }, 6 * 3600L)
-            }
+            //}
         }
     }
 

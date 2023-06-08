@@ -98,7 +98,6 @@
     <string name="auto_replay_title">Reprise automatique de la vidéo</string>
     <string name="default_sort_order_title">Ordre de tri des photos par défaut pour un nouvel album</string>
     <string name="gallery_as_album_title">Afficher la galerie de périphériques sous forme d\'album</string>
-    <string name="show_list_first">Afficher la liste des médias à l\'ouverture de la galerie</string>
     <string name="edit_header">Retouche</string>
     <string name="snapseed_integration_title">Intégration de Snapseed</string>
     <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
@@ -131,9 +130,6 @@
     <string name="cache_size_summary">Taille actuelle du cache : %1$d MB</string>
     <string name="cache_size_setting_hint">Taille du cache :</string>
     <string name="sync_header">Synchronisation</string>
-    <string name="cameraroll_backup_title">Sauvegarde de la galerie</string>
-    <string name="background_sync_title">Synchroniser périodiquement</string>
-    <string name="background_sync_summary">Vérifier les changements sur le serveur toutes les 6 heures</string>
     <string name="wifionly_title">Synchronisation et sauvegarde uniquement en WiFi</string>
     <string name="wifionly_summary_on">Oui, pas de consommation des données mobiles.</string>
     <string name="wifionly_summary_off">Non, consommation des données mobiles - prudence lorsque vous avez une grande collection de photos.</string>
@@ -156,7 +152,7 @@
     <string name="proceed_request">Continuer</string>
     <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>
     <!-- Destination DialogFragment -->
-    <string name="sync_status_stage_backup_pictures">Sauvegarde du dossier \'Pictures\'...</string>
+    <string name="sync_status_stage_backup_pictures">Sauvegarde des fichiers multimédias...</string>
     <string name="copy_files">Copier</string>
     <string name="move_files">Déplacer</string>
     <string name="create_new_album">Créer un nouvel album</string>
@@ -243,6 +239,8 @@
     <string name="yesterday">Hier</string>
     <string name="option_menu_show_all">Tout afficher</string>
     <string name="camera_roll_name">Appareil photo</string>
+    <string name="msg_remove_old_files_warning">AVERTISSEMENT : Si vous avez choisi de ne pas sauvegarder les fichiers existants lorsque vous avez activé la sauvegarde pour ce dossier, ces fichiers seront également supprimés si vous activez ce paramètre !</string>
+    <string name="button_text_i_understand">Je comprends</string>
     <string name="tooltips_search_album">Rechercher dans les albums</string>
     <string name="tooltips_search_cameraroll">Rechercher dans la galerie</string>
     <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>
@@ -290,9 +288,6 @@
     <string name="skip_late_night_update">Ignorer la mise à jour de fin de soirée</string>
     <string name="msg_downloading_exif">Récupérer les méta-données du serveur…</string>
     <string name="cameraroll_backup_remaining">%d restant</string>
-    <string name="pictures_backup_title">Sauvegarde du dossier \'Pictures\'</string>
-    <string name="backup_summary">Trouvez votre sauvegarde sur le serveur dans le dossier \'%1$s/%2$s\'.</string>
-    <string name="pictures_sub_folder_exclusion_title">Exclure des sous-dossiers de la sauvegarde</string>
     <string name="sync_status_action_delete_media">Suppression de %1$s dans l\'album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Suppression de l\'album \'%s\'</string>
     <string name="sync_status_action_add_media">Ajout de %1$s à l\'album \'%2$s\'</string>
@@ -318,7 +313,6 @@
     <string name="sync_status_stage_started">Démarrer la synchronisation…</string>
     <string name="button_text_help">A l\'aide !</string>
     <string name="button_text_resync">Re-Sync</string>
-    <string name="sync_status_stage_backup_camera_roll">Sauvegarde de la caméra…</string>
     <string name="sync_status_title">État de la synchronisation</string>
     <string name="sync_status_result_general_error">La dernière synchronisation a échoué %s !</string>
     <string name="sync_status_stage_sync_local">Synchronisation des modifications locales…</string>
@@ -374,6 +368,6 @@
     <string name="gallery_backup_option_dialog_title">Paramètres de \'%1$s\'</string>
     <string name="label_remove_after_backup">Jours à conserver après la sauvegarde</string>
     <string name="label_exclude">Sous-dossiers exclus de la sauvegarde</string>
-    <string name="msg_last_backup_date">La dernière sauvegarde s\'est terminée à %1$s</string>
+    <string name="msg_backup_status">La dernière sauvegarde s\'est terminée à %1$s. L\'archive se trouve sur le serveur dans le dossier %2$s</string>
     <string name="manage_media_access_permission_rationale">Pour permettre à Les Pas de supprimer des fichiers sauvegardés, vous devez lui accorder le droit de gérer les médias.</string>
 </resources>

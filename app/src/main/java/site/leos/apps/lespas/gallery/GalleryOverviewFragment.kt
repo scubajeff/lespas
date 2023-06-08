@@ -101,7 +101,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                 if (it.first > 0) {
                                     // If there are existing photos in camera roll, offer choice to backup those too
                                     ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_existing, folder, it.first, Tools.humanReadableByteCountSI(it.second)), positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false, requestKey = "${BACKUP_EXISTING_REQUEST_KEY}${folder}").show(parentFragmentManager, CONFIRM_DIALOG)
-                                } else backupSettingModel.updateLastBackupTimestamp(folder, System.currentTimeMillis())
+                                } else backupSettingModel.updateLastBackupTimestamp(folder, System.currentTimeMillis() / 1000)
                             }
                         }
                     }
@@ -226,7 +226,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             overviewAdapter.setSelectionTracker(selectionTracker)
             savedInstanceState?.let { selectionTracker.onRestoreInstanceState(it) }
 
-            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_camera_roll_24)!!))
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_phone_android_24)!!))
         }
 
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
@@ -235,7 +235,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.remove(getSelectedPhotos())
                     requestKey == STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
                     // When ConfirmDialogFragment launched to confirm backup existing media files, INDIVIDUAL_REQUEST_KEY is the folder name. TODO hope that no body use 'DELETE_REQUEST_KEY' and 'STRIP_REQUEST_KEY' as their folder name
-                    requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) 0L else System.currentTimeMillis())
+                    requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) 0L else System.currentTimeMillis() / 1000)
                 }
             }
         }

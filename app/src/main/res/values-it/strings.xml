@@ -105,7 +105,6 @@
     <string name="default_sort_order_title">Ordine delle foto predefinito per nuovo album</string>
 
     <string name="gallery_as_album_title">Mostra la galleria del dispositivo come album</string>
-    <string name="show_list_first">Mostra l\'elenco dei file multimediali all\'avvio del rullino foto</string>
 
     <string name="edit_header">Modifica</string>
     <string name="snapseed_integration_title">Integrazione con Snapseed</string>
@@ -142,9 +141,6 @@
     <string name="cache_size_setting_hint">Dimensione della cache:</string>
 
     <string name="sync_header">Sincronizzazione</string>
-    <string name="cameraroll_backup_title">Backup del rullino foto</string>
-    <string name="background_sync_title">Sincronizza periodicamente</string>
-    <string name="background_sync_summary">Controlla modifiche al server ogni 6 ore</string>
     <string name="wifionly_title">Sincronizza e backup solo tramite WiFi</string>
     <string name="wifionly_summary_on">Non utilizza dati mobili.</string>
     <string name="wifionly_summary_off">Utilizza dati mobili – fai attenzione se hai una grande quantità di foto.</string>
@@ -171,7 +167,7 @@
     <string name="install_snapseed_dialog_msg">Installare Snapseed\?</string>
 
     <!-- Destination DialogFragment -->
-    <string name="sync_status_stage_backup_pictures">Backup della cartella \'Pictures\'...</string>
+    <string name="sync_status_stage_backup_pictures">Backup dei file multimediali...</string>
     <string name="copy_files">Copia</string>
     <string name="move_files">Sposta</string>
     <string name="create_new_album">Crea nuovo album</string>
@@ -254,6 +250,8 @@
     <string name="yesterday">Ieri</string>
     <string name="option_menu_show_all">Mostra tutti</string>
     <string name="camera_roll_name">Macchina fotografica</string>
+    <string name="msg_remove_old_files_warning">AVVERTENZA: se si è scelto di non eseguire il backup dei file esistenti quando si è abilitato il backup per questa cartella, i file esistenti verranno rimossi anche attivando questa impostazione!</string>
+    <string name="button_text_i_understand">Capisco</string>
     <string name="tooltips_search_album">Cerca negli album</string>
     <string name="tooltips_search_cameraroll">Cerca nel rullino foto</string>
     <string name="condition_to_perform_search">Per effettuare una ricerca è necessario almeno un album o il permesso di accesso all\'archivio.</string>
@@ -320,9 +318,6 @@
     <string name="msg_login_first">Effettuare prima il login al proprio server.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server…</string>
     <string name="cameraroll_backup_remaining">% rimasti</string>
-    <string name="pictures_backup_title">Backup della cartella \'Pictures\'</string>
-    <string name="backup_summary">Trovare il backup sul server nella cartella \'%1$s/%2$s\'.</string>
-    <string name="pictures_sub_folder_exclusion_title">Escludere le sottocartelle dal backup</string>
     <string name="sync_status_action_delete_media">Rimozione di %1$s nell\'album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Rimozione dell\'album \'%s\'</string>
     <string name="sync_status_action_add_media">Aggiunta di %1$s all\'album \'%2$s\'</string>
@@ -348,7 +343,6 @@
     <string name="sync_status_stage_started">Avvio della sincronizzazione…</string>
     <string name="button_text_help">Aiuto!</string>
     <string name="button_text_resync">Ri-sinc</string>
-    <string name="sync_status_stage_backup_camera_roll">Backup della telecamera…</string>
     <string name="sync_status_title">Stato della sincronizzazione</string>
     <string name="sync_status_result_general_error">L\'ultima sincronizzazione non è riuscita %s!</string>
     <string name="sync_status_stage_sync_local">Sincronizzare le modifiche locali…</string>
@@ -404,6 +398,6 @@
     <string name="gallery_backup_option_dialog_title">Impostazioni di \'%1$s\'</string>
     <string name="label_remove_after_backup">Giorni di conservazione dopo il backup</string>
     <string name="label_exclude">Sottocartelle escluse dal backup</string>
-    <string name="msg_last_backup_date">L\'ultimo backup è terminato a %1$s</string>
+    <string name="msg_backup_status">L\'ultimo backup è terminato a %1$s. L\'archivio si trova sul server nella cartella %2$s</string>
     <string name="manage_media_access_permission_rationale">Per consentire a Les Pas di rimuovere i file di backup, è necessario concedergli l\'autorizzazione Gestione supporti.</string>
 </resources>

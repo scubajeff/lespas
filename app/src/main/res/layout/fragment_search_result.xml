@@ -32,7 +32,6 @@
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="@integer/photo_grid_span_count"
         tools:ignore="RtlHardcoded,RtlSymmetry,SpeakableTextPresentCheck"
-        tools:layout_editor_absoluteY="56dp"
         tools:listitem="@layout/recyclerview_item_photo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

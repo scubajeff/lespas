@@ -50,8 +50,6 @@
     <string name="theme_dark_entries">Tema oscuro</string>
     <string name="theme_auto_entries">Siga la configuración del sistema</string>
     <string name="sync_header">Sincronización</string>
-    <string name="background_sync_title">Sincronizar periódicamente</string>
-    <string name="background_sync_summary">Comprueba la actualización del servidor cada 6 horas</string>
     <string name="wifionly_title">Sincronización y copia de seguridad sólo en WiFi</string>
     <string name="wifionly_summary_on">Sí, no consumirá datos móviles.</string>
     <string name="wifionly_summary_off">No, consume datos móviles - se recomienda tener cuidado cuando se tiene una gran colección de fotos.</string>
@@ -66,7 +64,7 @@
     <string name="logout_title">Cierre de sesión</string>
     <string name="msg_logout_dialog">¿Desconexión de la cuenta %1$s?</string>
     <string name="yes_logout">Sí, cierre de sesión</string>
-    <string name="sync_status_stage_backup_pictures">Copia de seguridad de la carpeta \'Pictures\'...</string>
+    <string name="sync_status_stage_backup_pictures">Copia de seguridad de archivos multimedia...</string>
     <string name="copy_files">Copiar</string>
     <string name="create_new_album">Crear un nuevo álbum</string>
     <string name="invalid_character_found">El separador de caminos \'\\\' \'/\' no está permitido</string>
@@ -106,7 +104,6 @@
     </plurals>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
-    <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
     <string name="no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
     <string name="gallery_name">Galería</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
@@ -125,6 +122,8 @@
     <string name="yesterday">Ayer</string>
     <string name="option_menu_show_all">Mostrar todo</string>
     <string name="camera_roll_name">Cámara</string>
+    <string name="msg_remove_old_files_warning">ADVERTENCIA: Si eligió no hacer copia de seguridad de los archivos existentes cuando activó por primera vez la copia de seguridad para esta carpeta, esos archivos existentes TAMBIÉN SERÁN ELIMINADOS al activar esta opción.</string>
+    <string name="button_text_i_understand">Comprendo</string>
     <string name="tooltips_search_album">En álbumes</string>
     <string name="tooltips_search_cameraroll">En el rollo de la cámara</string>
     <string name="title_in_album">%1$s en álbumes</string>
@@ -190,7 +189,6 @@
     <string name="action_reuse">Al álbum…</string>
     <string name="preparing_shares">Preparación de archivos compartidos…</string>
     <string name="striping_exif">Eliminación de datos EXIF…</string>
-    <string name="show_list_first">Mostrar la lista de medios cuando se inicia el rollo de la cámara</string>
     <string name="button_text_map">App de mapas</string>
     <string name="object_location">Ubicación</string>
     <string name="item_location_search">Ubicación</string>
@@ -255,9 +253,6 @@
     <string name="msg_login_first">Por favor, inicie sesión en su servidor primero.</string>
     <string name="msg_downloading_exif">Obtención de metadatos del servidor…</string>
     <string name="cameraroll_backup_remaining">Quedan %d</string>
-    <string name="pictures_backup_title">Copia de seguridad de la carpeta \'Pictures\'</string>
-    <string name="backup_summary">Busque su copia de seguridad en el servidor en la carpeta \'%1$s/%2$s\'.</string>
-    <string name="pictures_sub_folder_exclusion_title">Excluir subcarpetas de la copia de seguridad</string>
     <string name="sync_status_action_delete_media">Eliminando %1$s en el álbum \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Eliminando el álbum \'%s\'</string>
     <string name="sync_status_action_add_media">Añadiendo %1$s al álbum \'%2$s\'</string>
@@ -283,7 +278,6 @@
     <string name="sync_status_stage_started">Iniciando la sincronización…</string>
     <string name="button_text_help">¡Ayuda!</string>
     <string name="button_text_resync">Re-Sync</string>
-    <string name="sync_status_stage_backup_camera_roll">Cámara de respaldo…</string>
     <string name="sync_status_title">Estado de la sincronización</string>
     <string name="sync_status_result_general_error">¡La última sincronización ha fallado %s!</string>
     <string name="sync_status_stage_sync_local">Sincronizar los cambios locales…</string>
@@ -339,6 +333,6 @@
     <string name="gallery_backup_option_dialog_title">Configuración de \'%1$s</string>
     <string name="label_remove_after_backup">Días de conservación tras la copia de seguridad</string>
     <string name="label_exclude">Subcarpetas excluidas de la copia de seguridad</string>
-    <string name="msg_last_backup_date">Última copia de seguridad finalizada en %1$s</string>
+    <string name="msg_backup_status">La última copia de seguridad finalizó en %1$s. Puede encontrar el archivo en el servidor en la carpeta %2$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que Les Pas elimine los archivos de las copias de seguridad, debes concederle el permiso Gestionar medios.</string>
 </resources>

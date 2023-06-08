@@ -41,12 +41,12 @@
             tools:text="Pictures" />
 
         <TextView
-            android:id="@+id/last_backup_date"
+            android:id="@+id/backup_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/folder_name"
             style="@style/TextAppearance.MaterialComponents.Caption"
-            android:text="@string/msg_last_backup_date"
+            android:text="@string/msg_backup_status"
             android:visibility="gone"
             tools:visibility="visible" />
 
@@ -54,7 +54,7 @@
             android:id="@+id/remove_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/last_backup_date"
+            app:layout_constraintTop_toBottomOf="@id/backup_status"
             android:layout_marginTop="@dimen/big_padding"
             android:layout_marginStart="@dimen/small_padding"
             android:text="@string/label_remove_after_backup"

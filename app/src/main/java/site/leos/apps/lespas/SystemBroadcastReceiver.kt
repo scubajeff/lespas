@@ -25,7 +25,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.sync.SyncAdapter
 
@@ -53,14 +52,14 @@ class SystemBroadcastReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED -> {
                 // Turn on periodic sync after bootup
                 if (accounts.isNotEmpty()) {
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.sync_pref_key), false)) {
+                    //if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.sync_pref_key), false)) {
                         ContentResolver.setSyncAutomatically(accounts[0], context.getString(R.string.sync_authority), true)
                         ContentResolver.addPeriodicSync(
                             accounts[0], context.getString(R.string.sync_authority),
                             Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
                             6 * 3600L
                         )
-                    }
+                    //}
 
                     // Clear cache
                     //context.cacheDir.deleteRecursively()
