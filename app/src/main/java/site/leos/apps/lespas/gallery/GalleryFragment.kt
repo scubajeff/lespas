@@ -532,7 +532,7 @@ class GalleryFragment: Fragment() {
                             if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
 
                             date = cursor.getLong(dateColumn)
-                            // Sometimes dateTaken is not available from system, use dateAdded instead
+                            // Sometimes dateTaken is not available from system, use DATE_ADDED instead, DATE_ADDED does not has nano adjustment
                             if (date == 0L) date = cursor.getLong(dateAddedColumn) * 1000
 
                             // TODO might need to put this type checking routine to background
@@ -540,14 +540,15 @@ class GalleryFragment: Fragment() {
                                 try {
                                     if (mimeType.contains("webp")) {
                                         // Set my own image/awebp mimetype for animated WebP
+                                        ensureActive()
                                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/awebp"
                                     }
                                     if (mimeType.contains("gif")) {
                                         // Set my own image/agif mimetype for animated GIF
+                                        ensureActive()
                                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/agif"
                                     }
-                                } catch (_: Exception) {
-                                }
+                                } catch (_: Exception) { }
                             }
 
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
