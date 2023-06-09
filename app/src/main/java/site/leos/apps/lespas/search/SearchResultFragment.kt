@@ -222,7 +222,7 @@ class SearchResultFragment : Fragment() {
                 progress.postValue(0)
                 val photos = when(searchTarget) {
                     R.id.search_album -> PhotoRepository(app).getAllImageNotHidden()
-                    R.id.search_cameraroll -> Tools.getCameraRoll(app.contentResolver, true)
+                    R.id.search_cameraroll -> Tools.listGalleryImages(app.contentResolver)
                     else -> remoteImageModel.getCameraRollArchive()
                 }
 

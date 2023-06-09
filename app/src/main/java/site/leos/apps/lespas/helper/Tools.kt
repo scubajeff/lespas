@@ -343,11 +343,11 @@ object Tools {
         return "${manufacturer}_${model}"
     }
 
-    fun getCameraRoll(cr: ContentResolver, imageOnly: Boolean): MutableList<Photo> = listMediaContent("DCIM", cr, imageOnly, false)
-    fun listMediaContent(folder: String, cr: ContentResolver, imageOnly: Boolean, strict: Boolean): MutableList<Photo> {
+    fun listGalleryImages(cr: ContentResolver): MutableList<Photo> {
         val medias = mutableListOf<Photo>()
         val externalStorageUri = MediaStore.Files.getContentUri("external")
 
+        val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
@@ -363,9 +363,7 @@ object Tools {
             MediaStore.Files.FileColumns.HEIGHT,
             "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
         )
-        //val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%${folder}%')"
-        val selection = if (imageOnly) "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}"
-            else "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%${folder}%')"
+        val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}"
 
         try {
             cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
@@ -383,18 +381,12 @@ object Tools {
                 var mimeType: String
                 var date: Long
                 var reSort = false
-                var contentUri: Uri
 
                 cursorLoop@ while (cursor.moveToNext()) {
-                    if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
-
                     // Insert media
                     mimeType = cursor.getString(typeColumn)
                     // Make sure image type is supported
-                    contentUri = if (mimeType.startsWith("image")) {
-                        if (mimeType.substringAfter("image/", "") !in SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
-                        else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    } else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    if (mimeType.substringAfter("image/", "") !in SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
 
                     date = cursor.getLong(dateColumn)
                     if (date == 0L) {

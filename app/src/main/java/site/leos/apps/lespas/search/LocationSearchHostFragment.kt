@@ -131,7 +131,7 @@ class LocationSearchHostFragment: Fragment() {
             progress.postValue(0)
             when(searchScope) {
                 R.id.search_album -> PhotoRepository(application).getAllImageNotHidden()
-                R.id.search_cameraroll -> Tools.getCameraRoll(application.contentResolver, true)
+                R.id.search_cameraroll -> Tools.listGalleryImages(application.contentResolver)
                 else -> remoteImageModel.getCameraRollArchive()
             }.run {
                 val remoteBaseFolder = Tools.getRemoteHome(application)
