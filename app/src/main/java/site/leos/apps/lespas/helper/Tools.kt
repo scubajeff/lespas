@@ -345,9 +345,6 @@ object Tools {
 
     fun listGalleryImages(cr: ContentResolver): MutableList<Photo> {
         val medias = mutableListOf<Photo>()
-        val externalStorageUri = MediaStore.Files.getContentUri("external")
-
-        val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
@@ -366,7 +363,7 @@ object Tools {
         val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}"
 
         try {
-            cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
+            cr.query(MediaStore.Files.getContentUri("external"), projection, selection, null, "$dateSelection DESC")?.use { cursor ->
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                 //val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -396,7 +393,7 @@ object Tools {
                     }
                     medias.add(
                         Photo(
-                            id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
+                            id = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
                             albumId = GalleryFragment.FROM_DEVICE_GALLERY,
                             name = cursor.getString(nameColumn) ?: "",
                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment

@@ -24,6 +24,7 @@ import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
@@ -338,7 +339,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.remove -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) galleryModel.remove(getSelectedPhotos())
+                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(getSelectedPhotos())
                 else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
 
                 true

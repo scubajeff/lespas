@@ -26,6 +26,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.Gravity
@@ -219,7 +220,7 @@ class GallerySlideFragment : Fragment() {
                     else -> mediaAdapter.getPhotoAt(mediaList.currentItem - 1).photo.id                                                         // Item to be deleted is the last one in the list and there are more than one left after deletion, next in line will be the previous one
                 }
                 mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) galleryModel.remove(listOf(photo.id), nextInLine)
+                    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(listOf(photo.id), nextInLine)
                     else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
             }

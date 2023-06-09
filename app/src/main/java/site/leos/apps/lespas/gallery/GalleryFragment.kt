@@ -557,7 +557,7 @@ class GalleryFragment: Fragment() {
                                     relativePath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
-                                            id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
+                                            id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
                                             albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
                                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment

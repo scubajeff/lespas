@@ -1798,10 +1798,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         backupFolder += "/${Tools.getDeviceModel()}"
         makeSureFolderExisted(backupFolder)
 
-        val contentUri = MediaStore.Files.getContentUri("external")
         val mediaMetadataRetriever = MediaMetadataRetriever()
         val cr = application.contentResolver
-
+        val contentUri = MediaStore.Files.getContentUri("external")
         var selection: String
         var projection: Array<String>
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -1967,6 +1966,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 projection  = arrayOf(
                     MediaStore.Files.FileColumns._ID,
                     pathSelection,
+                    MediaStore.Files.FileColumns.MIME_TYPE,
                     MediaStore.Files.FileColumns.DATE_ADDED,
                     MediaStore.Files.FileColumns.MEDIA_TYPE,
                 )
@@ -1977,7 +1977,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val deletion = arrayListOf<Uri>()
                 cr.query(contentUri, projection, selection, null, null)?.use { cursor ->
                     while(cursor.moveToNext()) {
-                        deletion.add(ContentUris.withAppendedId(contentUri, cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))))
+                        deletion.add(ContentUris.withAppendedId(if (cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)).startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))))
                     }
                 }
 
