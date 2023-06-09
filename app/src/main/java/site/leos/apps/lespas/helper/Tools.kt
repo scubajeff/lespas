@@ -431,11 +431,12 @@ object Tools {
         var orientation: Int
 
         @Suppress("DEPRECATION")
-        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+        //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             MediaStore.Files.FileColumns.DISPLAY_NAME,
-            dateSelection,
+            //dateSelection,
+            MediaStore.Files.FileColumns.DATE_ADDED,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.WIDTH,
@@ -445,15 +446,15 @@ object Tools {
         val selection ="(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND (${MediaStore.Files.FileColumns.WIDTH}!=0)"
 
         try {
-            cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
+            cr.query(externalStorageUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC")?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val dateColumn = cursor.getColumnIndex(dateSelection)
+                    val dateColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.DATE_ADDED)
                     val defaultZone = ZoneId.systemDefault()
                     coverMimeType = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE))
                     val externalUri = if (coverMimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
                     // Get album's end date, cover
-                    endDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
+                    endDate = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone)
                     coverId = ContentUris.withAppendedId(externalUri, cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)).toLong()).toString()
                     coverFileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME))
                     coverWidth = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH))
@@ -461,7 +462,7 @@ object Tools {
                     orientation = cursor.getInt(cursor.getColumnIndexOrThrow("orientation"))
 
                     // Get album's start date
-                    if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
+                    if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone)
 
                     // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
                     //return Album(GalleryFragment.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
