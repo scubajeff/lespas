@@ -21,6 +21,7 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
@@ -28,6 +29,7 @@ import android.database.ContentObserver
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -45,6 +47,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -132,7 +135,7 @@ class GalleryFragment: Fragment() {
                             childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(it.first)).addToBackStack(null).commit()
                         } ?: run {
                             // Launched as viewer from other apps, like Joplin, Conversation
-                            galleryModel.asViewer(uri)
+                            galleryModel.asViewer(uri, requireContext())
                             childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(uri.toString())).addToBackStack(null).commit()
                         }
                     } ?: run {
@@ -596,7 +599,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        fun asViewer(uri: Uri) {
+        fun asViewer(uri: Uri, ctx: Context) {
             loadJob?.cancel()
 
             val mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run { MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase()) ?: Photo.DEFAULT_MIMETYPE }
@@ -615,24 +618,23 @@ class GalleryFragment: Fragment() {
                 "file" -> uri.path?.let { filename = it.substringAfterLast('/') }
             }
 
-            /*
             var metadataRetriever: MediaMetadataRetriever? = null
             var exifInterface: ExifInterface? = null
             if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null } catch (e: RuntimeException) { null }
             else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.use { ExifInterface(it) }} catch (_: Exception) {} catch (_: OutOfMemoryError) {}
             val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr).copy(
-                albumId = GalleryFragment.FROM_CAMERA_ROLL,
+                id = uri.toString(),                // fileUri shared in as photo's id in Camera Roll album
+                albumId = FROM_DEVICE_GALLERY,
                 name = filename,
-                id = uri.toString(),                  // fileUri shared in as photo's id in Camera Roll album
-                shareId = size,             // Temporarily use shareId for saving file's size TODO maximum 4GB
+                shareId = size,                     // Temporarily use shareId for saving file's size TODO maximum 4GB
+                dateTaken = LocalDateTime.now(),
+                lastModified = LocalDateTime.MAX,   // LocalDateTime.MAX to mark it not removable
             )
             metadataRetriever?.release()
-            */
 
             uri.toString().let { uriString ->
                 setCurrentPhotoId(uriString)
-                // Set property lastModified to LocalDateTime.MAX to mark it not removable
-                _medias.value = listOf(LocalMedia(uriString, NCShareViewModel.RemotePhoto(Photo(id = uri.toString(), albumId = FROM_DEVICE_GALLERY, name = filename, mimeType = mimeType, shareId = size, dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.MAX)), uriString))
+                _medias.value = listOf(LocalMedia(uriString, NCShareViewModel.RemotePhoto(photo), uriString))
             }
         }
 
