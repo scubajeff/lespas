@@ -496,11 +496,11 @@ class GalleryFragment: Fragment() {
 
                 val contentUri = MediaStore.Files.getContentUri("external")
                 val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-                val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+                //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
                 val projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
                     pathSelection,
-                    dateSelection,
+                    //dateSelection,
                     MediaStore.Files.FileColumns.DATE_ADDED,
                     MediaStore.Files.FileColumns.MEDIA_TYPE,
                     MediaStore.Files.FileColumns.MIME_TYPE,
@@ -516,7 +516,7 @@ class GalleryFragment: Fragment() {
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-                        val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
+                        //val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
                         val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
                         val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
                         val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
