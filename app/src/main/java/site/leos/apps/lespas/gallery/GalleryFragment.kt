@@ -534,9 +534,12 @@ class GalleryFragment: Fragment() {
                             // Make sure image type is supported
                             if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
 
+/*
                             date = cursor.getLong(dateColumn)
                             // Sometimes dateTaken is not available from system, use DATE_ADDED instead, DATE_ADDED does not has nano adjustment
                             if (date == 0L) date = cursor.getLong(dateAddedColumn) * 1000
+*/
+                            date = cursor.getLong(dateAddedColumn)
 
                             // TODO might need to put this type checking routine to background
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -563,7 +566,8 @@ class GalleryFragment: Fragment() {
                                             id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
                                             albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
-                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                                            //dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),     // DATE_TAKEN has nano adjustment
                                             lastModified = LocalDateTime.MIN,
                                             width = cursor.getInt(widthColumn),
                                             height = cursor.getInt(heightColumn),
