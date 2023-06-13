@@ -37,7 +37,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.Tools
 
@@ -102,17 +101,13 @@ class SearchFragment : Fragment() {
             if (isGranted) launchLocationSearch()
         }
 */
-
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
     }
 
     private fun performSearch(category: SearchCategory) {
         when (category.id.toInt()) {
             in 1..4 -> {
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, scopeToggleGroup?.checkedButtonId ?: R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                    .replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, scopeToggleGroup?.checkedButtonId ?: R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
             5 -> {
 /*
@@ -207,7 +202,8 @@ class SearchFragment : Fragment() {
     }
 
     private fun launchLocationSearch() {
-        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(scopeToggleGroup?.checkedButtonId ?: R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
+        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+            .replace(R.id.container_root, LocationSearchHostFragment.newInstance(scopeToggleGroup?.checkedButtonId ?: R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {

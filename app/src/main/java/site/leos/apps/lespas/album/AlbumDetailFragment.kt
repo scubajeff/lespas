@@ -776,9 +776,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         true
                     }
                     R.id.option_menu_settings-> {
-                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
+                        exitTransition = null
+                        reenterTransition = null
+                        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                            .replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
                         true
                     }
                     R.id.option_menu_sortbydateasc-> {

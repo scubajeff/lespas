@@ -68,7 +68,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialElevationScale
-import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -440,23 +439,26 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         return true
                     }
                     R.id.option_menu_settings-> {
-                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        exitTransition = null
+                        reenterTransition = null
+                        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                            .replace(R.id.container_root, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
                         return true
                     }
                     R.id.option_menu_search-> {
-                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_DEVICE_GALLERY)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        exitTransition = null
+                        reenterTransition = null
+                        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                            .replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_DEVICE_GALLERY)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                         return true
                     }
                     R.id.option_menu_received_shares-> {
                         PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
 
-                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        exitTransition = null
+                        reenterTransition = null
+                        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                            .replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
                         receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)?.apply { setTint(ContextCompat.getColor(requireContext(), R.color.bottom_control_button)) }
                         return true
                     }
