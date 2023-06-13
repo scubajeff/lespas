@@ -1962,41 +1962,29 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
             }
 
-            if (it.autoRemove > 0) {
+            // Stealth removing can only happen in older version of Android
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && it.autoRemove > 0) {
                 projection  = arrayOf(
                     MediaStore.Files.FileColumns._ID,
                     pathSelection,
-                    MediaStore.Files.FileColumns.MIME_TYPE,
                     MediaStore.Files.FileColumns.DATE_ADDED,
                     MediaStore.Files.FileColumns.MEDIA_TYPE,
                 )
                 selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                        "($pathSelection LIKE '${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.folder else "${GalleryFragment.STORAGE_EMULATED}_/${it.folder}"}%')" + " AND " +      // path starts with specific folder
-                        "(${MediaStore.Files.FileColumns.DATE_ADDED} < ${min(System.currentTimeMillis() / 1000 - it.autoRemove * 86400L, it.lastBackup)})"                                 // DATE_ADDED is in second
+                        "($pathSelection LIKE '${"${if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) it.folder else GalleryFragment.STORAGE_EMULATED}_/${it.folder}"}%')" + " AND " +
+                        "(${MediaStore.Files.FileColumns.DATE_ADDED} < ${min(System.currentTimeMillis() / 1000 - it.autoRemove * 86400L, it.lastBackup)})"  // DATE_ADDED is in second
 
-                val deletion = arrayListOf<Uri>()
+                val deletion = arrayListOf<Long>()
                 cr.query(contentUri, projection, selection, null, null)?.use { cursor ->
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                    val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+
                     while(cursor.moveToNext()) {
-                        deletion.add(ContentUris.withAppendedId(if (cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)).startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))))
+                        if (cursor.getString(pathColumn).substringAfter("${it.folder}/").substringBefore('/') !in it.exclude) deletion.add(cursor.getLong(idColumn))
                     }
                 }
 
-                if (deletion.isNotEmpty()) {
-/*
-                    deletion.forEach { uri ->
-                        cr.query(uri, null, null, null, null)?.use { cursor ->
-                            if (cursor.moveToFirst()) Log.e(">>>>>>>>", "backupGallery: delete ${it.folder} ${cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))} ", )
-                        }
-                    }
-*/
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                        cr.delete(contentUri, "${MediaStore.Files.FileColumns._ID} IN (${arrayListOf<String>().apply { deletion.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()})", null)
-                    }
-                    else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R && MediaStore.canManageMedia(application)) {
-                        val pi = MediaStore.createDeleteRequest(cr, deletion)
-                        try { application.startIntentSender(pi.intentSender, null, 0, 0, 0) } catch (_: IntentSender.SendIntentException) {}
-                    }
-                }
+                if (deletion.isNotEmpty()) cr.delete(contentUri, "${MediaStore.Files.FileColumns._ID} IN (${deletion.joinToString()})", null)
             }
         }
 

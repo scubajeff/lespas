@@ -45,8 +45,6 @@ data class BackupSetting (
     }
 }
 
-data class FolderState (val folder: String, val enabled: Boolean, val lastBackup: Long)
-
 @Dao
 abstract class BackupSettingDao: BaseDao<BackupSetting>() {
     @Query("SELECT * FROM ${BackupSetting.TABLE_NAME} WHERE folder = :folder LIMIT 1")
@@ -56,9 +54,9 @@ abstract class BackupSettingDao: BaseDao<BackupSetting>() {
     @Query("SELECT * FROM ${BackupSetting.TABLE_NAME} WHERE enabled = 1")
     abstract fun getEnabledSettings(): List<BackupSetting>
 
-    @Query("SELECT folder, enabled, lastBackup FROM ${BackupSetting.TABLE_NAME}")
-    abstract fun getBackupEnableStatesDistinctFlow(): Flow<List<FolderState>>
-    fun getBackupEnableStates(): Flow<List<FolderState>> = getBackupEnableStatesDistinctFlow().distinctUntilChanged()
+    @Query("SELECT * FROM ${BackupSetting.TABLE_NAME} WHERE enabled = 1")
+    abstract fun getEnabledSettingsDistinctFlow(): Flow<List<BackupSetting>>
+    fun getEnabledFlow(): Flow<List<BackupSetting>> = getEnabledSettingsDistinctFlow().distinctUntilChanged()
 
     @Query("UPDATE ${BackupSetting.TABLE_NAME} SET enabled = 1 WHERE folder = :folder")
     abstract fun enableBackup(folder: String)

@@ -25,8 +25,8 @@ class BackupSettingRepository(application: Application) {
 
     fun getSetting(folder: String): Flow<BackupSetting?> = backupSettingDao.getSetting(folder)
     fun getEnabled(): List<BackupSetting> = backupSettingDao.getEnabledSettings()
+    fun getEnabledFlow(): Flow<List<BackupSetting>> = backupSettingDao.getEnabledFlow()
     fun updateSetting(setting: BackupSetting) { backupSettingDao.update(setting) }
-    fun getBackupEnableStates(): Flow<List<FolderState>> = backupSettingDao.getBackupEnableStates()
     fun enableBackup(folder: String) {
         if (backupSettingDao.isExisted(folder)) backupSettingDao.enableBackup(folder)
         else backupSettingDao.upsert(BackupSetting(folder))

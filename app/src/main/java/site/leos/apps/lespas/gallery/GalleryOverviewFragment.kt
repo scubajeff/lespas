@@ -247,7 +247,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            combine(galleryModel.medias, backupSettingModel.getBackupEnableStates()) { localMedias, backupSettings ->
+            combine(galleryModel.medias, backupSettingModel.getEnabledFlow()) { localMedias, backupSettings ->
                 localMedias?.let {
                     var attachFootNote = false
 
@@ -275,7 +275,11 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             //}
                         }
                     }
-                    if (attachFootNote) overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)))) else overview
+                    if (attachFootNote) {
+                        // TODO auto remove on Android 11
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
+                        overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN))))
+                    } else overview
                 }
             }.collect { overviewAdapter.submitList(it) }
         }

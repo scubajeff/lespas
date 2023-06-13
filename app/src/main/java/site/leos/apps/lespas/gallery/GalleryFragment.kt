@@ -44,6 +44,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -73,9 +74,11 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.lang.Long.min
 import java.text.Collator
 import java.time.Instant
 import java.time.LocalDateTime
@@ -629,6 +632,43 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        // TODO auto remove on Android 11
+        @RequiresApi(Build.VERSION_CODES.S)
+        fun autoRemove(activity: Activity, backSettings: List<BackupSetting>) {
+            if (MediaStore.canManageMedia(activity)) viewModelScope.launch(Dispatchers.IO) {
+                val pathSelection = MediaStore.Files.FileColumns.RELATIVE_PATH
+                val projection  = arrayOf(
+                    MediaStore.Files.FileColumns._ID,
+                    pathSelection,
+                    MediaStore.Files.FileColumns.DATE_ADDED,
+                    MediaStore.Files.FileColumns.MEDIA_TYPE,
+                )
+
+                backSettings.forEach {
+                    if (it.autoRemove > 0) {
+                        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                                "($pathSelection LIKE '${it.folder}%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} < ${min(System.currentTimeMillis() / 1000 - it.autoRemove * 86400L, it.lastBackup)})"  // DATE_ADDED is in second
+
+                        val deletion = arrayListOf<Uri>()
+                        cr.query(MediaStore.Files.getContentUri("external"), projection, selection, null, null)?.use { cursor ->
+                            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                            val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+                            val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
+                            var subFolder: String
+
+                            while (cursor.moveToNext()) {
+                                subFolder = cursor.getString(pathColumn).substringAfter("${it.folder}/").substringBefore("/")
+                                if (subFolder.isEmpty() || subFolder !in it.exclude)
+                                    deletion.add(ContentUris.withAppendedId(if (cursor.getInt(typeColumn) == MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getLong(idColumn)))
+                            }
+                        }
+                        if (deletion.isNotEmpty()) activity.startIntentSenderForResult(MediaStore.createTrashRequest(cr, deletion, true).intentSender, AUTO_REMOVE_OLD_MEDIA_FILES, null, 0, 0, 0)
+                        //cr.update(contentUri, ContentValues().apply { put(MediaStore.Files.FileColumns.IS_TRASHED, 1) }, "${MediaStore.Files.FileColumns._ID} IN (${arrayListOf<String>().apply { deletion.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()})", null)
+                    }
+                }
+            }
+        }
+
         fun getPhotoById(id: String): Photo? = medias.value?.find { it.media.photo.id == id }?.media?.photo
 
         private val _addition = MutableSharedFlow<List<String>>()
@@ -698,6 +738,7 @@ class GalleryFragment: Fragment() {
     )
 
     companion object {
+        private const val AUTO_REMOVE_OLD_MEDIA_FILES = 6667
         const val STORAGE_EMULATED = "/storage/emulated/"
         const val FROM_DEVICE_GALLERY = "0"
         const val EMPTY_GALLERY_COVER_ID = "0"
