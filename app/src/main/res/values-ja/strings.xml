@@ -331,6 +331,7 @@
     <string name="gallery_backup_option_dialog_title">\'%1$s\'の設定</string>
     <string name="label_remove_after_backup">バックアップ後の保管日数</string>
     <string name="label_exclude">バックアップから除外されるサブフォルダー</string>
-    <string name="msg_backup_status">最後のバックアップは %1$s で終了しました。アーカイブはサーバー上のフォルダ %2$s にあります。</string>
+    <string name="msg_backup_status">最後のバックアップは %1$s で終了しました</string>
+    <string name="msg_archive_location">アーカイブはサーバー上のフォルダ %1$s にあります</string>
     <string name="manage_media_access_permission_rationale">Les Pasにバックアップされたファイルの削除を許可するには、Manage Media権限を付与する必要があります。</string>
 </resources>

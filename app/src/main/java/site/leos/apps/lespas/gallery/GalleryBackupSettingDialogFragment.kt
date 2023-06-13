@@ -47,10 +47,8 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
-import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.BackupSettingViewModel
-import site.leos.apps.lespas.sync.SyncAdapter
 import java.text.Collator
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -166,11 +164,10 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
                     }
                 }
 
-
                 setting.lastBackup = it?.lastBackup ?: 0L
                 if (setting.lastBackup > 0L) {
                     val last = LocalDateTime.ofEpochSecond(setting.lastBackup, 0, OffsetDateTime.now().offset)
-                    backupStatus.text = getString(R.string.msg_backup_status, if (last.toLocalDate() == LocalDate.now()) DateTimeFormatter.ISO_LOCAL_TIME.format(last) else DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(last), "${Tools.getServerBase(requireContext())}${SyncAdapter.ARCHIVE_BASE}/${Tools.getDeviceModel()}/")
+                    backupStatus.text = getString(R.string.msg_backup_status, if (last.toLocalDate() == LocalDate.now()) DateTimeFormatter.ISO_LOCAL_TIME.format(last) else DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(last))
                     backupStatus.isVisible = true
                 }
 

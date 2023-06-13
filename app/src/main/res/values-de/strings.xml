@@ -383,6 +383,7 @@
     <string name="gallery_backup_option_dialog_title">Einstellungen von \'%1$s\'</string>
     <string name="label_remove_after_backup">Tage nach der Sicherung aufbewahren</string>
     <string name="label_exclude">Von der Sicherung ausgeschlossene Unterordner</string>
-    <string name="msg_backup_status">Die letzte Sicherung wurde um %1$s abgeschlossen. Sie können das Archiv auf dem Server im Ordner %2$s finden.</string>
+    <string name="msg_backup_status">Die letzte Sicherung wurde um %1$s abgeschlossen</string>
+    <string name="msg_archive_location">Sie können das Archiv auf dem Server im Ordner %1$s finden</string>
     <string name="manage_media_access_permission_rationale">Damit Les Pas gesicherte Dateien entfernen kann, müssen Sie ihm die Berechtigung \"Medien verwalten\" erteilen.</string>
 </resources>

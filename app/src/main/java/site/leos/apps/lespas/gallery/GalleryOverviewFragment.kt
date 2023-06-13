@@ -22,9 +22,12 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
@@ -69,6 +72,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.BackupSettingViewModel
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.time.LocalDateTime
 
 class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
@@ -148,6 +152,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
+            with("${Tools.getServerBase(requireContext())}${SyncAdapter.ARCHIVE_BASE}/${Tools.getDeviceModel()}/") { setFootNote(getString(R.string.msg_archive_location, "<br><a href=\"${imageLoaderModel.getServerBaseUrl()}/apps/files/?dir=${Uri.encode(this)}\">$this</a>")) }
         }
 
         selectionBackPressedCallback = object : OnBackPressedCallback(false) {
@@ -184,7 +189,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
-                    return if (overviewAdapter.getItemViewType(position) == OverviewAdapter.TYPE_HEADER) spanCount else 1
+                    return if (overviewAdapter.toSpan(position)) spanCount else 1
                 }
             }
 
@@ -244,6 +249,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         viewLifecycleOwner.lifecycleScope.launch {
             combine(galleryModel.medias, backupSettingModel.getBackupEnableStates()) { localMedias, backupSettings ->
                 localMedias?.let {
+                    var attachFootNote = false
+
                     if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
                     val overview = mutableListOf<GalleryFragment.LocalMedia>()
@@ -254,6 +261,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             //if (group.key in managingFolders) {
                             backupSettings.find { it.folder == group.key }?.let {
                                 isEnabled = it.enabled
+                                if (isEnabled) attachFootNote = true
+
                                 lastBackupDate = it.lastBackup.toInt()
                             } ?: run {
                                 isEnabled = false
@@ -266,7 +275,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             //}
                         }
                     }
-                    overview
+                    if (attachFootNote) overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)))) else overview
                 }
             }.collect { overviewAdapter.submitList(it) }
         }
@@ -381,6 +390,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var footNoteMessage = ""
 
         inner class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentId = ""
@@ -504,18 +514,27 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             }
         }
 
+        inner class FootNoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private val tvMessage = itemView.findViewById<TextView>(R.id.message).apply { movementMethod = LinkMovementMethod.getInstance() }
+            fun bind() {
+                tvMessage.text = Html.fromHtml(footNoteMessage, Html.FROM_HTML_MODE_LEGACY)
+            }
+        }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
             when(viewType) {
                 TYPE_MEDIA -> MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
                 TYPE_OVERFLOW -> OverflowHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_overflow, parent, false))
-                else -> HeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_header, parent, false))
+                TYPE_HEADER -> HeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_header, parent, false))
+                else -> FootNoteViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_foot_note, parent, false))
             }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
                 is MediaViewHolder -> holder.bind(currentList[position])
                 is OverflowHolder -> holder.bind(currentList[position], getCount(currentList[position].folder))
-                else -> (holder as OverviewAdapter.HeaderViewHolder).bind(currentList[position])
+                is HeaderViewHolder -> holder.bind(currentList[position])
+                else -> (holder as FootNoteViewHolder).bind()
             }
         }
 
@@ -529,10 +548,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
-        override fun getItemViewType(position: Int): Int =
-            if (currentList[position].media.photo.mimeType.isEmpty()) TYPE_HEADER
-            else if (position == currentList.size - 1 || currentList[position + 1].media.photo.mimeType.isEmpty()) TYPE_OVERFLOW else TYPE_MEDIA
+        override fun getItemViewType(position: Int): Int = when {
+            currentList[position].media.photo.id.isEmpty() -> TYPE_FOOTNOTE
+            currentList[position].media.photo.mimeType.isEmpty() -> TYPE_HEADER
+            else -> if (position == currentList.size - 1 || currentList[position + 1].media.photo.mimeType.isEmpty()) TYPE_OVERFLOW else TYPE_MEDIA
+        }
 
+        internal fun toSpan(position: Int): Boolean = getItemViewType(position) == TYPE_HEADER || getItemViewType(position) == TYPE_FOOTNOTE
+        internal fun setFootNote(message: String) { footNoteMessage = message }
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
@@ -563,6 +586,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             private const val TYPE_MEDIA = 1
             private const val TYPE_OVERFLOW = 2
             const val TYPE_HEADER = 3
+            private const val TYPE_FOOTNOTE = 4
         }
     }
 

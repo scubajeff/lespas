@@ -398,6 +398,7 @@
     <string name="gallery_backup_option_dialog_title">Impostazioni di \'%1$s\'</string>
     <string name="label_remove_after_backup">Giorni di conservazione dopo il backup</string>
     <string name="label_exclude">Sottocartelle escluse dal backup</string>
-    <string name="msg_backup_status">L\'ultimo backup è terminato a %1$s. L\'archivio si trova sul server nella cartella %2$s</string>
+    <string name="msg_backup_status">L\'ultimo backup è terminato a %1$s</string>
+    <string name="msg_archive_location">L\'archivio si trova sul server nella cartella %1$s</string>
     <string name="manage_media_access_permission_rationale">Per consentire a Les Pas di rimuovere i file di backup, è necessario concedergli l\'autorizzazione Gestione supporti.</string>
 </resources>

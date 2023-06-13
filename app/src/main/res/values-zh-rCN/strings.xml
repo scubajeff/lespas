@@ -330,6 +330,7 @@
     <string name="gallery_backup_option_dialog_title">\'%1$s\'的选项</string>
     <string name="label_remove_after_backup">备份后保留的天数</string>
     <string name="label_exclude">不需备份以下选中的子目录</string>
-    <string name="msg_backup_status">最后一次备份在完成于%1$s。你可以在服务器的 %2$s 文件夹中找到所有备份。</string>
+    <string name="msg_backup_status">最后一次备份在完成于%1$s</string>
+    <string name="msg_archive_location">备份保存在服务器文件夹%1$s</string>
     <string name="manage_media_access_permission_rationale">为了允许Les Pas在备份期间删除已备份文件，你必须授予它管理媒体的权限。</string>
 </resources>

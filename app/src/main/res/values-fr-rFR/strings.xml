@@ -368,6 +368,7 @@
     <string name="gallery_backup_option_dialog_title">Paramètres de \'%1$s\'</string>
     <string name="label_remove_after_backup">Jours à conserver après la sauvegarde</string>
     <string name="label_exclude">Sous-dossiers exclus de la sauvegarde</string>
-    <string name="msg_backup_status">La dernière sauvegarde s\'est terminée à %1$s. L\'archive se trouve sur le serveur dans le dossier %2$s</string>
+    <string name="msg_backup_status">La dernière sauvegarde s\'est terminée à %1$s</string>
+    <string name="msg_archive_location">L\'archive se trouve sur le serveur dans le dossier %1$s</string>
     <string name="manage_media_access_permission_rationale">Pour permettre à Les Pas de supprimer des fichiers sauvegardés, vous devez lui accorder le droit de gérer les médias.</string>
 </resources>
