@@ -33,6 +33,8 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val photoRepository = PhotoRepository(application)
     private val localRootFolder = Tools.getLocalRoot(application)
 
+    private var filterText = ""
+
     val allAlbumsByEndDate: LiveData<List<Album>> = albumRepository.getAllAlbumsSortByEndDate().asLiveData()
     fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
@@ -69,4 +71,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
             photoRepository.setExcludeFromBlog(exclusion, true)
         }
     }
+
+    fun saveFilter(text: String) { filterText = text }
+    fun restoreFilter(): String = filterText
 }

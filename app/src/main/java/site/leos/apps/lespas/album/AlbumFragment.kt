@@ -133,7 +133,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         remoteBasePath = Tools.getRemoteHome(requireContext())
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
-        currentFilter = savedInstanceState?.getString(KEY_NAME_FILTER) ?: ""
 
         addFileLauncher = registerForActivityResult(LesPasGetMediaContract(arrayOf("image/*", "video/*"))) {
             if (it.isNotEmpty()) {
@@ -379,15 +378,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 sortByMenu = menu.findItem(R.id.option_menu_sortby)
                 nameFilterMenu = menu.findItem(R.id.option_menu_album_name_filter).apply {
                     (actionView as SearchView).let {
-                        // When resume from device rotation
-                        if (currentFilter.isNotEmpty()) {
-                            expandActionView()
-                            it.setQuery(currentFilter, false)
-                            nameFilterBackPressedCallback.isEnabled = true
-                        }
-
                         it.queryHint = getString(R.string.option_menu_name_filter)
-
                         it.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                             override fun onQueryTextSubmit(query: String?): Boolean = true
                             override fun onQueryTextChange(newText: String?): Boolean {
@@ -402,6 +393,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         it.setOnCloseListener {
                             nameFilterBackPressedCallback.isEnabled = false
                             false
+                        }
+
+                        // Restore filtering state
+                        albumsModel.restoreFilter().run {
+                            if (this.isNotEmpty()) {
+                                expandActionView()
+                                it.setQuery(this, false)
+                                nameFilterBackPressedCallback.isEnabled = true
+                            }
                         }
                     }
                 }
@@ -531,10 +531,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
+    override fun onPause() {
+        albumsModel.saveFilter(currentFilter)
+        super.onPause()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
-        outState.putString(KEY_NAME_FILTER, currentFilter)
     }
 
     override fun onDestroyView() {
@@ -949,7 +953,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
 
         private const val KEY_SELECTION = "KEY_SELECTION"
-        private const val KEY_NAME_FILTER = "KEY_NAME_FILTER"
 
         const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 
