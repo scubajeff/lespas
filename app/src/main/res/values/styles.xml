@@ -27,7 +27,7 @@
     </style>
 
     <style name="Theme.LesPas.Dialog.Animation" parent="ThemeOverlay.MaterialComponents.Dialog">
-        <item name="android:windowEnterAnimation">@anim/dialog_entering</item>
+        <item name="android:windowEnterAnimation">@anim/enter_from_right</item>
         <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
     </style>
 
