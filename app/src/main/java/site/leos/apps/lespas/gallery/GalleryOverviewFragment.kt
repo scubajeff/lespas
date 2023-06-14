@@ -76,7 +76,6 @@ import site.leos.apps.lespas.sync.SyncAdapter
 import java.time.LocalDateTime
 
 class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
-    private val managingFolders = arrayOf("DCIM", "Movies", "Pictures")
     private var spanCount = 0
     private var actionMode: ActionMode? = null
     private lateinit var selectionTracker: SelectionTracker<String>
@@ -361,8 +360,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else galleryModel.shareOut(getSelectedPhotos(), false, )
-                } else galleryModel.shareOut(getSelectedPhotos(), stripExif == getString(R.string.strip_on_value), )
+                    } else galleryModel.shareOut(getSelectedPhotos(), false)
+                } else galleryModel.shareOut(getSelectedPhotos(), stripExif == getString(R.string.strip_on_value))
 
                 true
             }
