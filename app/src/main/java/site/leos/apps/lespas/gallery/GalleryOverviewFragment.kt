@@ -247,7 +247,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            combine(galleryModel.medias, backupSettingModel.getEnabledFlow()) { localMedias, backupSettings ->
+            combine(galleryModel.medias, backupSettingModel.getSettings()) { localMedias, backupSettings ->
                 localMedias?.let {
                     var attachFootNote = false
 
@@ -278,7 +278,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     if (attachFootNote) {
                         // TODO auto remove on Android 11
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
-                        overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN))))
+                        overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = 0)))
                     } else overview
                 }
             }.collect { overviewAdapter.submitList(it) }
@@ -507,6 +507,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 }
 
                 cbEnableBackup.run {
+                    setOnCheckedChangeListener(null)
                     isChecked = item.media.coverBaseLine == 1
                     setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
                 }

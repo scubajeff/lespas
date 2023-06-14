@@ -27,7 +27,7 @@ class BackupSettingViewModel(application: Application): AndroidViewModel(applica
     private val backupSettingRepository = BackupSettingRepository(application)
 
     fun getSetting(folder: String): Flow<BackupSetting?> = backupSettingRepository.getSetting(folder)
-    fun getEnabledFlow(): Flow<List<BackupSetting>> = backupSettingRepository.getEnabledFlow()
+    fun getSettings(): Flow<List<BackupSetting>> = backupSettingRepository.getBackupSettingsFlow()
     fun updateSetting(setting: BackupSetting) { viewModelScope.launch(Dispatchers.IO) { backupSettingRepository.updateSetting(setting) }}
     fun enableBackup(folder: String) { viewModelScope.launch(Dispatchers.IO) { backupSettingRepository.enableBackup(folder) }}
     fun disableBackup(folder: String) { viewModelScope.launch(Dispatchers.IO) { backupSettingRepository.disableBackup(folder) }}
