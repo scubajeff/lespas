@@ -287,6 +287,7 @@
     <string name="exclude_albums">Excluir de:</string>
     <string name="prefer_latest">Recentes</string>
     <string name="skip_late_night_update">Evitar atualizações tarde da noite</string>
+    <string name="tooltips_text_create_folder">Criar nova pasta</string>
     <string name="login_to_new_account">Você está entrando com uma nova conta. Você deve sair da conta corrente primeiro, depois relançar o Les Pas. Proceder ao logout?</string>
     <string name="menu_item_qr_scanner_title">Escanear código QR</string>
     <string name="chinese_map_title">Use o aplicativo de mapa chinês</string>
@@ -350,7 +351,7 @@
     <string name="msg_backup_existing">As novas fotos em \'%1$s\' serão backup a partir de agora. Há %2$,d fotos no dispositivo no momento, com tamanho total de %3$s. Você deseja que elas também sejam incluídas no backup?</string>
     <string name="button_text_set_as_home">Conjunto</string>
     <string name="pick_home">Configure sua pasta de casa</string>
-    <string name="pick_home_note">Les Pas salva seus álbuns e backups nesta pasta em seu servidor.</string>
+    <string name="pick_home_note">Les Pas salva seus álbuns e backups nesta pasta em seu servidor</string>
     <string name="button_text_save">Salvar</string>
     <string name="hint_caption">Adicionar legenda</string>
     <string name="blog_header">Blog</string>

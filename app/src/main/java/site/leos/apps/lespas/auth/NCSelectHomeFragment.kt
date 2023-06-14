@@ -21,12 +21,8 @@ import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.transition.Fade
 import android.transition.TransitionManager
 import android.view.LayoutInflater
@@ -37,7 +33,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -52,6 +47,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.OkHttpWebDav
+import site.leos.apps.lespas.helper.RenameDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.muzei.LesPasArtProviderSettingActivity
@@ -64,6 +60,8 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var selectedFolder: String
     private lateinit var folderTextView: TextView
     private lateinit var selectButton: MaterialButton
+    private lateinit var createButton: MaterialButton
+    private var grayOutColor = 0
 
     private lateinit var folderList: RecyclerView
     private lateinit var folderAdapter: FolderAdapter
@@ -72,17 +70,15 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var baseUrl: String
     private lateinit var resourceRoot: String
 
-    private lateinit var lespas: String
     private lateinit var serverTheme: NCLoginFragment.AuthenticateViewModel.NCTheming
     private var fetchJob: Job? = null
+    private var newFolderJob: Job? = null
     private var currentList = mutableListOf<String>()
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        lespas = getString(R.string.lespas_base_folder_name).drop(1)
 
         //@Suppress("DEPRECATION")
         //serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_SERVER_THEME, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_SERVER_THEME)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
@@ -103,10 +99,8 @@ class NCSelectHomeFragment: Fragment() {
             )
         }
 
-        folderAdapter = FolderAdapter(
-            lespas,
-            Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary),
-        ) { name ->
+        folderAdapter = FolderAdapter()
+        { name ->
             if (selectButton.isEnabled) {
                 var newFolder = ""
                 if (name != PARENT_FOLDER) newFolder = "${selectedFolder}/${name}"
@@ -121,8 +115,8 @@ class NCSelectHomeFragment: Fragment() {
                 // No way back from here, user has to select a home folder to continue
                 if (fetchJob?.isActive == true) {
                     fetchJob?.cancel()
-                    selectButton.isEnabled = true
-                    showSelectedFolder(selectedFolder)
+                    setTouchable(true)
+                    folderTextView.text = selectedFolder.ifEmpty { "/" }
                     folderAdapter.submitList(currentList) { folderList.isVisible = true }
                 }
                 else if (selectedFolder.isNotEmpty()) {
@@ -136,21 +130,54 @@ class NCSelectHomeFragment: Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_select_home, container, false)
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        grayOutColor = ContextCompat.getColor(requireContext(), R.color.color_gray_out)
+        val buttonTextColor = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf(-android.R.attr.state_enabled)), intArrayOf(serverTheme.textColor, grayOutColor))
+        val buttonBackgroundColor = ColorStateList.valueOf(serverTheme.color)
 
         container = view.findViewById<ViewGroup>(R.id.background).apply { setBackgroundColor(serverTheme.color) }
         folderTextView = view.findViewById<TextView>(R.id.home_folder_label).apply { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.title).run { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.note).run { setTextColor(serverTheme.textColor) }
         selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply {
-            setTextColor(serverTheme.textColor)
-            strokeColor = ColorStateList.valueOf(serverTheme.textColor)
-            backgroundTintList = ColorStateList.valueOf(serverTheme.color)
+            setTextColor(buttonTextColor)
+            strokeColor = buttonTextColor
+            backgroundTintList = buttonBackgroundColor
             setOnClickListener { returnResult() }
         }
+        createButton = view.findViewById<MaterialButton>(R.id.create_button).apply {
+            strokeColor = buttonTextColor
+            iconTint = buttonTextColor
+            backgroundTintList = buttonBackgroundColor
+            setOnClickListener {
+                if (parentFragmentManager.findFragmentByTag(NEW_FOLDER_DIALOG) == null) RenameDialogFragment.newInstance("", arrayListOf(), RenameDialogFragment.REQUEST_TYPE_NEW).show(parentFragmentManager, NEW_FOLDER_DIALOG)
+            }
+        }
 
+        parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle ->
+            bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { folderName ->
+                createButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
+                    @Suppress("DEPRECATION")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(grayOutColor, BlendMode.SRC_IN) else setColorFilter(grayOutColor, android.graphics.PorterDuff.Mode.SRC_IN)
+                }
+                setTouchable(false)
+
+                var success = false
+                newFolderJob = lifecycleScope.launch(Dispatchers.IO) {
+                    try { success = webDav.createFolder("${resourceRoot}/${selectedFolder}/$folderName").isNotEmpty() } catch (_: Exception) {}
+
+                    withContext(Dispatchers.Main) {
+                        if (success) fetchFolder("${selectedFolder}/${folderName}")
+                        setTouchable(true)
+                        createButton.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_add_24)
+                        createButton.iconTint = buttonTextColor
+                    }
+                }
+            }
+        }
+        
         folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply {
             adapter = folderAdapter
             setBackgroundColor(serverTheme.color)
@@ -174,13 +201,15 @@ class NCSelectHomeFragment: Fragment() {
         super.onDestroyView()
     }
 
-    private fun showSelectedFolder(name: String) {
-        folderTextView.text = SpannableString("$name/$lespas").apply { setSpan(ForegroundColorSpan(Color.GRAY), this.lastIndexOf('/') + 1, length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE) }
+    private fun setTouchable(touchable: Boolean) {
+        selectButton.isEnabled = touchable
+        createButton.isEnabled = touchable
+        folderList.isEnabled = touchable
     }
 
     private fun fetchFolder(target: String) {
-        selectButton.isEnabled = false
-        showSelectedFolder(target)
+        setTouchable(false)
+        folderTextView.text = target.ifEmpty { "/" }
 
         currentList = folderAdapter.currentList
         if (folderList.isVisible) {
@@ -202,7 +231,7 @@ class NCSelectHomeFragment: Fragment() {
                 folderAdapter.clearList()
                 folderAdapter.submitList(nameList) { folderList.isVisible = true }
                 selectedFolder = target
-                selectButton.isEnabled = true
+                setTouchable(true)
             }
         }
     }
@@ -212,21 +241,21 @@ class NCSelectHomeFragment: Fragment() {
         // Show progress indicator and disable user input
         selectButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
             @Suppress("DEPRECATION")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(serverTheme.textColor, BlendMode.SRC_IN) else setColorFilter(serverTheme.textColor, android.graphics.PorterDuff.Mode.SRC_IN)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(grayOutColor, BlendMode.SRC_IN) else setColorFilter(grayOutColor, android.graphics.PorterDuff.Mode.SRC_IN)
         }
-        selectButton.isClickable = false
-        folderList.isEnabled = false
+        setTouchable(false)
 
         val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
 
         editor.putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
+        editor.putBoolean(SettingsFragment.NEW_HOME_SETTING, true)
 
         // Try restoring preference from server
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 var value: String
 
-                webDav.read("${resourceRoot}${selectedFolder}${getString(R.string.lespas_base_folder_name)}/${SyncAdapter.PREFERENCE_BACKUP_ON_SERVER}")?.let {
+                webDav.read("${resourceRoot}${selectedFolder}/${SyncAdapter.PREFERENCE_BACKUP_ON_SERVER}")?.let {
                     it.split(SyncAdapter.PREFERENCE_BACKUP_SEPARATOR).forEach { setting ->
                         setting.substringBefore('=', "").let { key ->
                             value = setting.substringAfter('=', "")
@@ -293,7 +322,7 @@ class NCSelectHomeFragment: Fragment() {
         }
     }
 
-    class FolderAdapter(private val lespas: String, private val textColor: Int, val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
+    class FolderAdapter(val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val tvName: TextView = itemView.findViewById<TextView>(R.id.name).apply { setOnClickListener { clickListener(this.text.toString()) }}
 
@@ -301,14 +330,6 @@ class NCSelectHomeFragment: Fragment() {
                 with(tvName) {
                     text = name
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { tooltipText = name }
-
-                    (name == lespas).let { isLesPasFolder ->
-                        isClickable = !isLesPasFolder
-                        (if (isLesPasFolder) Color.LTGRAY else textColor).let { color ->
-                            setTextColor(color)
-                            TextViewCompat.setCompoundDrawableTintList(tvName, ColorStateList.valueOf(color))
-                        }
-                    }
                 }
             }
         }
@@ -328,6 +349,7 @@ class NCSelectHomeFragment: Fragment() {
     }
 
     companion object {
+        private const val NEW_FOLDER_DIALOG = "NEW_FOLDER_DIALOG"
         private const val PARENT_FOLDER = ".."
         private const val KEY_CURRENT_FOLDER = "KEY_CURRENT_FOLDER"
 

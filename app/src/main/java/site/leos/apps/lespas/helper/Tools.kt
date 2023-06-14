@@ -512,7 +512,7 @@ object Tools {
     }
 
     fun getLocalRoot(context: Context): String {
-        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.lespas_base_folder_name)}"
+        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.local_base)}"
     }
 
     fun getServerBase(context: Context): String = PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: ""
@@ -523,8 +523,9 @@ object Tools {
         return getPathOnServer(context, 2)
     }
     private fun getPathOnServer(context: Context, id: Int): String {
-        return (PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
-            1 -> context.getString(R.string.lespas_base_folder_name)
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
+            1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "/" else context.getString(R.string.local_base)
             2 -> "/DCIM"
             else -> ""
         }

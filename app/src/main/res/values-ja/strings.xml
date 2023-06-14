@@ -224,6 +224,7 @@
     <string name="cache_size_setting_hint">キャッシュサイズ。</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - 追加</string>
     <string name="checkbox_text_set_remote">リモートアルバム、メディアファイルはサーバーにのみ保存されます。</string>
+    <string name="tooltips_text_create_folder">新しいフォルダーを作成する</string>
     <string name="login_to_new_account">新しいアカウントでログインしています。まず現在のアカウントをログアウトしてから、Les Pasを起動し直してください。ログアウトを実行しますか？</string>
     <string name="menu_item_qr_scanner_title">QRコードを読み取る</string>
     <string name="chinese_map_title">中国語の地図アプリを使う</string>
@@ -287,7 +288,7 @@
     <string name="msg_backup_existing">\'%1$s\'内の新しい写真は、今後バックアップされます。現在、デバイスには %2$,d 枚の写真があり、総サイズは %3$s です。それらもバックアップにしますか？</string>
     <string name="button_text_set_as_home">設定</string>
     <string name="pick_home">ホームフォルダの設定</string>
-    <string name="pick_home_note">Les Pasは、アルバムとバックアップをサーバーのこのフォルダに保存します。</string>
+    <string name="pick_home_note">Les Pasは、アルバムとバックアップをサーバーのこのフォルダに保存します</string>
     <string name="button_text_save">保存</string>
     <string name="hint_caption">写真のキャプションを付ける</string>
     <string name="blog_header">ブログ</string>

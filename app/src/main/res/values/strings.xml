@@ -55,8 +55,9 @@
     <string name="certificate_error">Site certificate error.</string>
 
     <string name="pick_home">Set your home folder</string>
-    <string name="pick_home_note">Les Pas saves your albums and backups in this folder on your server.</string>
+    <string name="pick_home_note">"Les Pas saves your albums and backups in this folder on your server"</string>
     <string name="button_text_set_as_home">Set</string>
+    <string name="tooltips_text_create_folder">Create new folder</string>
 
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
@@ -64,7 +65,7 @@
     <string name="menu_item_qr_scanner_title">Scan QR code</string>
 
     <!-- Various Nextcloud access endpoints and naming -->
-    <string name="lespas_base_folder_name" translatable="false">/lespas</string>
+    <string name="local_base" translatable="false">/lespas</string>
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->

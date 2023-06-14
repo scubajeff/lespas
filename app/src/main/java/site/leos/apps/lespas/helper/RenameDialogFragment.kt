@@ -46,6 +46,7 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
                 view.findViewById<TextInputLayout>(R.id.rename_textinputlayout)?.helperText = getString(R.string.hint_timestamp_pattern)
                 getString(R.string.rename_media)
             }
+            REQUEST_TYPE_NEW -> getString(R.string.tooltips_text_create_folder)
             else -> ""
         }
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
@@ -93,6 +94,7 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
 
         const val REQUEST_TYPE_ALBUM = 1
         const val REQUEST_TYPE_PHOTO = 2
+        const val REQUEST_TYPE_NEW = 3
 
         @JvmStatic
         fun newInstance(oldName: String, usedNames: List<String>, requestType: Int) = RenameDialogFragment().apply {

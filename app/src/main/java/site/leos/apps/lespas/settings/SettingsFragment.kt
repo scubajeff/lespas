@@ -703,6 +703,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 */
         const val KEY_STORAGE_LOCATION = "KEY_STORAGE_LOCATION"
         const val SERVER_HOME_FOLDER = "SERVER_HOME_FOLDER"
+        // Setting to mark this instance uses new home folder setup on server, e.g., eliminated the requirement of /lespas sub-folder (the change in release 2.8.5). This preference and all it related functions can be removed in the future upgrade
+        const val NEW_HOME_SETTING = "NEW_HOME_SETTING"
 
         const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"
         const val SNAPSEED_MAIN_ACTIVITY_CLASS_NAME = "com.google.android.apps.snapseed.MainActivity"

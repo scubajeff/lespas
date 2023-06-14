@@ -225,6 +225,7 @@
     <string name="cache_size_setting_hint">Tamaño de la caché:</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Añadir</string>
     <string name="checkbox_text_set_remote">Álbum remoto, archivos multimedia almacenados sólo en el servidor.</string>
+    <string name="tooltips_text_create_folder">Crear nueva carpeta</string>
     <string name="login_to_new_account">Estás entrando con una nueva cuenta. Primero debe cerrar la sesión de la cuenta actual y luego volver a iniciar Les Pas. ¿Proceder a cerrar la sesión?</string>
     <string name="menu_item_qr_scanner_title">Código QR de varredura</string>
     <string name="chinese_map_title">Utilizar la aplicación de mapas chinos</string>
@@ -290,7 +291,7 @@
     <string name="hint_caption">Añadir un pie de foto</string>
     <string name="button_text_set_as_home">Set</string>
     <string name="pick_home">Establece tu carpeta de inicio</string>
-    <string name="pick_home_note">Les Pas guarda sus álbumes y copias de seguridad en esta carpeta de su servidor.</string>
+    <string name="pick_home_note">Les Pas guarda sus álbumes y copias de seguridad en esta carpeta de su servidor</string>
     <string name="blog_header">Blog</string>
     <string name="blog_name_default">Mis álbumes</string>
     <string name="item_blog">Gestionar el blog</string>
