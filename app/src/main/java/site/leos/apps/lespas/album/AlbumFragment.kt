@@ -263,6 +263,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     scrollTo = -1
                 }
             }
+
+            nameFilterMenu?.isEnabled = this.albums.isNotEmpty()
+            sortByMenu?.isEnabled = this.albums.isNotEmpty()
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
