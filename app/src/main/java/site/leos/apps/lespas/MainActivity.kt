@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         when(intent.action) {
-                            LAUNCH_CAMERAROLL -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment(), GalleryFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()
-                            Intent.ACTION_VIEW -> intent.data?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(it), GalleryFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit() }
+                            LAUNCH_GALLERY -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment(), GalleryFragment.TAG_FROM_LAUNCHER).commit()
+                            Intent.ACTION_VIEW -> intent.data?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(it), GalleryFragment.TAG_FROM_LAUNCHER).commit() }
                             else -> supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
                         }
                     }
@@ -268,6 +268,6 @@ class MainActivity : AppCompatActivity() {
         const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
         const val CONFIRM_LOW_STORAGE_SPACE_DIALOG = "CONFIRM_LOW_STORAGE_SPACE_DIALOG"
-        const val LAUNCH_CAMERAROLL = "LAUNCH_CAMERAROLL"
+        const val LAUNCH_GALLERY = "LAUNCH_GALLERY"
     }
 }

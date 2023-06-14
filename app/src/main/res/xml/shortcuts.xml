@@ -19,10 +19,9 @@
         android:shortcutId="gallery"
         android:icon="@mipmap/ic_launcher_gallery"
         android:shortcutShortLabel="@string/gallery_name"
-        android:shortcutLongLabel="@string/item_camera_roll"
         android:enabled="true">
         <intent
-            android:action="LAUNCH_CAMERAROLL"
+            android:action="LAUNCH_GALLERY"
             android:targetPackage="site.leos.apps.lespas"
             android:targetClass="site.leos.apps.lespas.MainActivity" />
     </shortcut>

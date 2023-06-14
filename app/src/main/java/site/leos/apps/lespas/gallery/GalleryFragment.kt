@@ -227,7 +227,7 @@ class GalleryFragment: Fragment() {
                 galleryModel.addition.collect { ids ->
                     selectedUris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.lastModified != LocalDateTime.MAX)
-                        .show(parentFragmentManager, if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) TAG_FROM_CAMERAROLL_ACTIVITY else TAG_DESTINATION_DIALOG)
+                        .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                 }
             }
             launch {
@@ -374,7 +374,7 @@ class GalleryFragment: Fragment() {
     }
 
     private fun finish() {
-        if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) requireActivity().finish() else parentFragmentManager.popBackStack()
+        if (tag == TAG_FROM_LAUNCHER) requireActivity().finish() else parentFragmentManager.popBackStack()
     }
 
     private fun fromStorageUri(contentResolver: ContentResolver, externalStorageUri: Uri,  pathColumn: String, folder: String, displayName: String): Pair<String, String>? {
@@ -749,9 +749,9 @@ class GalleryFragment: Fragment() {
         const val FROM_DEVICE_GALLERY = "0"
         const val EMPTY_GALLERY_COVER_ID = "0"
 
-        private const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
-        const val TAG_FROM_CAMERAROLL_ACTIVITY = "TAG_DESTINATION_DIALOG"
-        const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
+        const val TAG_ACQUIRING_DIALOG = "GALLERY_ACQUIRING_DIALOG"
+        private const val TAG_DESTINATION_DIALOG = "GALLERY_DESTINATION_DIALOG"
+        const val TAG_FROM_LAUNCHER = "TAG_FROM_LAUNCHER"
 
         private const val KEY_SHARING_OUT = "KEY_SHARING_OUT"
 

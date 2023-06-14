@@ -281,7 +281,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         clipDataRecyclerView.adapter = clipDataAdapter
         destinationRecyclerView.adapter = albumAdapter
         destinationRecyclerView.doOnPreDraw {
-            if (savedInstanceState == null && (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == GalleryFragment.TAG_FROM_CAMERAROLL_ACTIVITY)) {
+            if (savedInstanceState == null && (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == GalleryFragment.TAG_FROM_LAUNCHER)) {
                 publicationModel.refresh()
             }
         }
