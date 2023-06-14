@@ -377,6 +377,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 unhideMenu = menu.findItem(R.id.option_menu_unhide)
                 sortByMenu = menu.findItem(R.id.option_menu_sortby)
                 nameFilterMenu = menu.findItem(R.id.option_menu_album_name_filter).apply {
+                    setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+                        override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
+                        override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
+                            nameFilterBackPressedCallback.isEnabled = false
+                            return true
+                        }
+                    })
+
                     (actionView as SearchView).let {
                         it.queryHint = getString(R.string.option_menu_name_filter)
                         it.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -389,11 +397,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                                 return true
                             }
                         })
-
-                        it.setOnCloseListener {
-                            nameFilterBackPressedCallback.isEnabled = false
-                            false
-                        }
 
                         // Restore filtering state
                         albumsModel.restoreFilter().run {

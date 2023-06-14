@@ -719,7 +719,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 inflater.inflate(R.menu.album_detail_menu, menu)
                 mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
                 gpxExportOptionMenu = menu.findItem(R.id.option_menu_export_gpx)
-                searchOptionMenu = menu.findItem(R.id.option_menu_search)
+                searchOptionMenu = menu.findItem(R.id.option_menu_search).apply {
+                    setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+                        override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
+                        override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
+                            nameFilterBackPressedCallback.isEnabled = false
+                            return true
+                        }
+                    })
+                }
                 blogOptionMenu = menu.findItem(R.id.option_menu_blog)
 
                 run map@{
