@@ -43,12 +43,10 @@
 
         <TextView
             android:id="@+id/path"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@id/date"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/button_group"
             android:layout_marginTop="@dimen/small_padding"
             android:paddingHorizontal="@dimen/small_padding"
             style="@style/TextAppearance.MaterialComponents.Body2"
@@ -95,7 +93,7 @@
             android:id="@+id/button_group"
             android:layout_width="wrap_content"
             android:layout_height="56dp"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/path"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toRightOf="@id/date"
             app:layout_constraintRight_toRightOf="parent"
