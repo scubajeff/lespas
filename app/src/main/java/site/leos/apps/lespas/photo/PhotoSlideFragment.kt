@@ -103,7 +103,7 @@ class PhotoSlideFragment : Fragment() {
     private var shareOutType = GENERAL_SHARE
     private var shareOutMimeType = ""
     private var waitingMsg: Snackbar? = null
-    private val handlerShareOutSnackBar = Handler(Looper.getMainLooper())
+    private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -350,10 +350,13 @@ class PhotoSlideFragment : Fragment() {
         view.findViewById<Button>(R.id.share_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
+                val mimeType = pAdapter.getPhotoAt(slider.currentItem).mimeType
+                if (mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
+
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     handlerBottomControl.post(hideSystemUI)
 
-                    if (Tools.hasExif(pAdapter.getPhotoAt(slider.currentItem).mimeType)) {
+                    if (Tools.hasExif(mimeType)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false, GENERAL_SHARE)
                 }
@@ -424,7 +427,7 @@ class PhotoSlideFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             imageLoaderModel.shareOutUris.collect { uris ->
                 // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                handlerShareOutSnackBar.removeCallbacksAndMessages(null)
+                handler.removeCallbacksAndMessages(null)
                 if (waitingMsg?.isShownOrQueued == true) {
                     waitingMsg?.dismiss()
                     shareOutBackPressedCallback.isEnabled = false
@@ -470,7 +473,7 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }.invokeOnCompletion {
-            handlerShareOutSnackBar.removeCallbacksAndMessages(null)
+            handler.removeCallbacksAndMessages(null)
             if (waitingMsg?.isShownOrQueued == true) {
                 waitingMsg?.dismiss()
                 shareOutBackPressedCallback.isEnabled = false
@@ -512,6 +515,18 @@ class PhotoSlideFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        pAdapter.setPauseVideo(true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({
+            playerViewModel.pause(Uri.EMPTY)
+        }, 300)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
@@ -519,14 +534,13 @@ class PhotoSlideFragment : Fragment() {
         outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
         outState.putInt(KEY_SHAREOUT_TYPE, shareOutType)
         outState.putString(KEY_SHAREOUT_MIMETYPE, shareOutMimeType)
-    }
 
-    override fun onPause() {
-        super.onPause()
-        playerViewModel.pause(Uri.EMPTY)
+        pAdapter.setPauseVideo(false)
     }
 
     override fun onDestroyView() {
+        handler.removeCallbacksAndMessages(null)
+
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         slider.adapter = null
 
@@ -639,7 +653,7 @@ class PhotoSlideFragment : Fragment() {
         }
 
         // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-        handlerShareOutSnackBar.postDelayed({
+        handler.postDelayed({
             waitingMsg?.show()
             shareOutBackPressedCallback.isEnabled = true
         }, 500)

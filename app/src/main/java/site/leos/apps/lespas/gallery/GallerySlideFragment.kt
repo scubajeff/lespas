@@ -92,6 +92,7 @@ class GallerySlideFragment : Fragment() {
     private var stripExif = "2"
     private var autoRotate = false
     private var nextInLine = ""
+    private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var remoteArchiveBaseFolder: String
 
@@ -166,7 +167,7 @@ class GallerySlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handlerBottomControl.post(hideSystemUI)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideSystemUI)
                 }
 
                 @SuppressLint("SetTextI18n")
@@ -227,6 +228,8 @@ class GallerySlideFragment : Fragment() {
         }
         view.findViewById<ImageButton>(R.id.share_button).setOnClickListener {
             mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
+                if (photo.mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
+
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (Tools.hasExif(photo.mimeType)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
@@ -263,12 +266,26 @@ class GallerySlideFragment : Fragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        playerViewModel.pause(Uri.EMPTY)
+    override fun onResume() {
+        super.onResume()
+        mediaAdapter.setPauseVideo(true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (mediaAdapter.getPhotoAt(mediaList.currentItem).photo.mimeType.startsWith("video")) handler.postDelayed({
+            playerViewModel.pause(Uri.EMPTY)
+        }, 300)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        mediaAdapter.setPauseVideo(false)
     }
 
     override fun onDestroyView() {
+        handler.removeCallbacksAndMessages(null)
         mediaList.adapter = null
 
         super.onDestroyView()
@@ -276,8 +293,6 @@ class GallerySlideFragment : Fragment() {
 
     override fun onDestroy() {
         // BACK TO NORMAL UI
-        handlerBottomControl.removeCallbacksAndMessages(null)
-
         Tools.quitImmersive(window)
 
         (requireActivity() as AppCompatActivity).run {
@@ -292,10 +307,9 @@ class GallerySlideFragment : Fragment() {
     }
 
     // Toggle visibility of bottom controls and system decoView
-    private val handlerBottomControl = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
-        handlerBottomControl.removeCallbacksAndMessages(null)
-        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handler.removeCallbacksAndMessages(null)
+        handler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
     private val hideSystemUI = Runnable { Tools.goImmersive(window) }
@@ -316,8 +330,8 @@ class GallerySlideFragment : Fragment() {
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
     @SuppressLint("ClickableViewAccessibility")
     private val delayHideTouchListener = View.OnTouchListener { _, _ ->
-        handlerBottomControl.removeCallbacks(hideSystemUI)
-        handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        handler.removeCallbacks(hideSystemUI)
+        handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         false
     }
 

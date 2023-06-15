@@ -52,23 +52,25 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private val playerViewModel: VideoPlayerViewModel,
     private val clickListener: ((Boolean?) -> Unit)?, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
-    val volumeDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_volume_on_24)
-    val brightnessDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_brightness_24)
+    private val volumeDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_volume_on_24)
+    private val brightnessDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_brightness_24)
 
-    var currentVideoView: PlayerView? = null
-    var knobLayout: FrameLayout? = null
-    var knobIcon: ImageView? = null
-    var knobPosition: CircularProgressIndicator? = null
-    var forwardMessage: TextView? = null
-    var rewindMessage: TextView? = null
+    private var currentVideoView: PlayerView? = null
+    private var knobLayout: FrameLayout? = null
+    private var knobIcon: ImageView? = null
+    private var knobPosition: CircularProgressIndicator? = null
+    private var forwardMessage: TextView? = null
+    private var rewindMessage: TextView? = null
 
-    val handler = Handler(context.mainLooper)
-    val hideSettingCallback = Runnable { knobLayout?.isVisible = false }
-    val hideProgressCallback = Runnable { currentVideoView?.hideController() }
-    val hideForwardMessageCallback = Runnable { forwardMessage?.isVisible = false }
-    val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
+    private val handler = Handler(context.mainLooper)
+    private val hideSettingCallback = Runnable { knobLayout?.isVisible = false }
+    private val hideProgressCallback = Runnable { currentVideoView?.hideController() }
+    private val hideForwardMessageCallback = Runnable { forwardMessage?.isVisible = false }
+    private val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
 
-    var gestureDetector: GestureDetectorCompat? = null
+    private var gestureDetector: GestureDetectorCompat? = null
+
+    private var shouldPauseVideo = true
 
     init {
         clickListener?.let { cl ->
@@ -178,7 +180,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
-            playerViewModel.pause(holder.videoUri)
+            if (shouldPauseVideo) playerViewModel.pause(holder.videoUri)
             playerViewModel.resetBrightness()
             holder.videoView.player = null
             clickListener?.let {
@@ -214,6 +216,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     fun setDisplayWidth(width: Int) { displayWidth = width }
+    fun setPauseVideo(shouldPause: Boolean) { shouldPauseVideo = shouldPause }
 
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
         private val ivMedia: PhotoView

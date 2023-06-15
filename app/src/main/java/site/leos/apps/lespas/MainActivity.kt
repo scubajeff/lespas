@@ -189,18 +189,6 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        supportFragmentManager.fragments.apply {
-            if (this.isNotEmpty()) this.last().let { if (it is OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
-        }
-    }
-
-    interface OnWindowFocusChangedListener {
-        fun onWindowFocusChanged(hasFocus: Boolean)
-    }
-
-
     private fun requestSync() {
         ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
             putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)

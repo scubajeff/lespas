@@ -55,6 +55,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.helper.Tools.parcelableArray
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -77,6 +78,7 @@ class RemoteMediaFragment: Fragment() {
     private var autoRotate = false
     private var previousOrientationSetting = 0
     private var previousTitleBarDisplayOption = 0
+    private val handler = Handler(Looper.getMainLooper())
 
     private var albumId = ""
 
@@ -148,8 +150,8 @@ class RemoteMediaFragment: Fragment() {
             doOnEachNextLayout {
                 // Hide bottom control with delay adapted to caption's length
                 (it as TextView).let { caption ->
-                    hideHandler.removeCallbacks(hideSystemUI)
-                    hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + if (caption.text.isNotEmpty()) min(caption.lineCount, caption.maxLines) * 800 else 0)
+                    handler.removeCallbacks(hideSystemUI)
+                    handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + if (caption.text.isNotEmpty()) min(caption.lineCount, caption.maxLines) * 800 else 0)
                 }
             }
         }
@@ -168,7 +170,7 @@ class RemoteMediaFragment: Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_SETTLING) hideHandler.post(hideSystemUI)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideSystemUI)
                 }
 
                 override fun onPageSelected(position: Int) {
@@ -194,7 +196,7 @@ class RemoteMediaFragment: Fragment() {
         view.findViewById<Button>(R.id.download_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handler.post(hideSystemUI)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
@@ -206,7 +208,7 @@ class RemoteMediaFragment: Fragment() {
         view.findViewById<Button>(R.id.lespas_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                     DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
@@ -214,7 +216,7 @@ class RemoteMediaFragment: Fragment() {
         view.findViewById<Button>(R.id.info_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_INFO_DIALOG) == null) {
                     MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]).show(parentFragmentManager, TAG_INFO_DIALOG)
                 }
@@ -283,25 +285,34 @@ class RemoteMediaFragment: Fragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        playerViewModel.pause(Uri.EMPTY)
+    override fun onResume() {
+        super.onResume()
+        pAdapter.setPauseVideo(true)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({
+            playerViewModel.pause(Uri.EMPTY)
+        }, 300)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
+
+        pAdapter.setPauseVideo(false)
     }
 
     override fun onDestroyView() {
+        handler.removeCallbacksAndMessages(null)
         slider.adapter = null
+
         super.onDestroyView()
     }
 
     override fun onDestroy() {
         // BACK TO NORMAL UI
-        hideHandler.removeCallbacksAndMessages(null)
-
         Tools.quitImmersive(window)
 
         (requireActivity() as AppCompatActivity).run {
@@ -315,10 +326,9 @@ class RemoteMediaFragment: Fragment() {
         super.onDestroy()
     }
 
-    private val hideHandler = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
-        hideHandler.removeCallbacksAndMessages(null)
-        hideHandler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handler.removeCallbacksAndMessages(null)
+        handler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
     private val hideSystemUI = Runnable { Tools.goImmersive(window) }
@@ -345,8 +355,8 @@ class RemoteMediaFragment: Fragment() {
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
     @SuppressLint("ClickableViewAccessibility")
     private val delayHideTouchListener = View.OnTouchListener { _, _ ->
-        hideHandler.removeCallbacks(hideSystemUI)
-        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        handler.removeCallbacks(hideSystemUI)
+        handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         false
     }
 
@@ -380,7 +390,7 @@ class RemoteMediaFragment: Fragment() {
     private fun saveMedia() {
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
             shareModel.savePhoto(requireContext(), this)
-            hideHandler.postDelayed({ Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG).show() }, 400L)
+            handler.postDelayed({ Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG).show() }, 400L)
         }
     }
 
@@ -391,6 +401,8 @@ class RemoteMediaFragment: Fragment() {
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
         fun getCaption(position: Int): String = try { currentList[position].photo.caption } catch (_: Exception) { "" }
         fun isLandscape(position: Int): Boolean = try { currentList[position].photo.width >= currentList[position].photo.height } catch (_: Exception) { false }
+
+        fun getPhotoAt(position: Int): Photo = currentList[position].photo
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
