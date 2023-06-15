@@ -515,17 +515,12 @@ object Tools {
         return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.local_base)}"
     }
 
-    fun getServerBase(context: Context): String = PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: ""
-    fun getRemoteHome(context: Context): String {
-        return getPathOnServer(context, 1)
-    }
-    fun getCameraArchiveHome(context: Context): String {
-        return getPathOnServer(context, 2)
-    }
+    fun getRemoteHome(context: Context): String = getPathOnServer(context, 1)
+    fun getCameraArchiveHome(context: Context): String = getPathOnServer(context, 2)
     private fun getPathOnServer(context: Context, id: Int): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
-            1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "/" else context.getString(R.string.local_base)
+            1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "" else context.getString(R.string.local_base)
             2 -> "/DCIM"
             else -> ""
         }

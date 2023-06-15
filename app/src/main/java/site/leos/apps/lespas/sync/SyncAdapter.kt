@@ -74,7 +74,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private lateinit var userBase: String
     private lateinit var lespasBase: String
     private lateinit var dcimBase: String
-    private lateinit var serverBase: String
     private lateinit var localBaseFolder: String
     private lateinit var token: String
     private var blogSiteName = ""
@@ -217,7 +216,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             userBase = "${baseUrl}${application.getString(R.string.dav_files_endpoint)}${userName}"
             lespasBase = "${userBase}${Tools.getRemoteHome(application)}"
             dcimBase = "${userBase}${Tools.getCameraArchiveHome(application)}"
-            serverBase = "${userBase}${Tools.getServerBase(context)}"
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
@@ -1793,7 +1791,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         reportStage(Action.SYNC_STAGE_BACKUP_PICTURES)
 
         // Make sure archive folders hierarchy exsited on server
-        var backupFolder = "${serverBase}${ARCHIVE_BASE}"
+        var backupFolder = "${lespasBase}${ARCHIVE_BASE}"
         makeSureFolderExisted(backupFolder)
         backupFolder += "/${Tools.getDeviceModel()}"
         makeSureFolderExisted(backupFolder)

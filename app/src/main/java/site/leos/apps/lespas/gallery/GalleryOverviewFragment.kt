@@ -151,7 +151,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
-            with("${Tools.getServerBase(requireContext())}${SyncAdapter.ARCHIVE_BASE}/${Tools.getDeviceModel()}/") { setFootNote(getString(R.string.msg_archive_location, "<br><a href=\"${imageLoaderModel.getServerBaseUrl()}/apps/files/?dir=${Uri.encode(this)}\">$this</a>")) }
+            with("${Tools.getRemoteHome(requireContext())}${SyncAdapter.ARCHIVE_BASE}/${Tools.getDeviceModel()}/") { setFootNote(getString(R.string.msg_archive_location, "<br><a href=\"${imageLoaderModel.getServerBaseUrl()}/apps/files/?dir=${Uri.encode(this)}\">$this</a>")) }
         }
 
         selectionBackPressedCallback = object : OnBackPressedCallback(false) {
