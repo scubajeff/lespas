@@ -29,7 +29,6 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="@dimen/extra_padding"
         android:gravity="center"
-        android:lines="2"
         style="@style/TextAppearance.MaterialComponents.Caption"
         tools:text="@string/msg_archive_location" />
 
