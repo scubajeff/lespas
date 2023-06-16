@@ -104,6 +104,7 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed修圖 - 替換</string>
     <string name="item_camera_roll">相機相冊</string>
     <string name="no_media_found">搵唔到任何圖片或視頻。</string>
+    <string name="option_menu_empty_trash">清空回收站</string>
     <string name="gallery_name">本機相冊</string>
     <string name="same_file_found">同名文件已存在。</string>
     <string name="verify_ssl_certificate_title">SSL證書驗證失敗</string>
@@ -193,6 +194,7 @@
     <string name="item_location_search">影相地點</string>
     <string name="option_menu_in_map">地圖show</string>
     <string name="object_face">人面</string>
+    <string name="action_undelete">恢復</string>
     <string name="action_hide">隱藏</string>
     <string name="option_menu_name_filter">按名檢索</string>
     <string name="hidden_albums">已隱藏相冊：</string>
@@ -328,10 +330,12 @@
     <string name="hint_gpx_offset">分鐘時間差</string>
     <string name="item_export_gpx">導出GPX</string>
     <string name="hint_gpx_export_file_location">檔案將被儲存在 \"Download\"資料夾中。</string>
+    <string name="trash_name">回收站</string>
     <string name="gallery_backup_option_dialog_title">\'%1$s\'的選項</string>
     <string name="label_remove_after_backup">備份後保留的天數</string>
     <string name="label_exclude">不需備份以下選中的子目錄</string>
     <string name="msg_backup_status">最後一次備份在完成於%1$s</string>
     <string name="msg_archive_location">備份儲存在伺服器資料夾%1$s</string>
     <string name="manage_media_access_permission_rationale">為了允許Les Pas在備份期間刪除已備份文件，你必須授予佢管理媒體之權限。</string>
+    <string name="confirm_empty_trash">確定要清空回收站嗎？</string>
 </resources>

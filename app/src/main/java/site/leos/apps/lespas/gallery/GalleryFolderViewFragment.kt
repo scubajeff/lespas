@@ -293,12 +293,17 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.remove(getSelectedPhotos())
                 STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
+                EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.photo.id) }})
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.medias.collect { localMedias ->
-                localMedias?.let {
+            galleryModel.medias.collect {
+                val localMedias = mutableListOf<GalleryFragment.LocalMedia>()
+                // Filter out trashed items
+                (if (folderArgument != GalleryFragment.TRASH_FOLDER) it?.filter { media -> media.folder != GalleryFragment.TRASH_FOLDER } else it)?.let { medias -> localMedias.addAll(medias) }
+
+                localMedias.let {
                     val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
                     var currentDate = LocalDate.now().plusDays(1)
                     for (media in (if (folderArgument.isNotEmpty()) localMedias.filter { it.folder == folderArgument } else {
@@ -320,6 +325,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_folder_menu, menu)
+                if (folderArgument == GalleryFragment.TRASH_FOLDER) menu.findItem(R.id.empty_trash)?.isVisible = true
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when(menuItem.itemId) {
@@ -352,6 +358,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                     true
                 }
+                R.id.empty_trash -> {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_empty_trash), positiveButtonText = getString(R.string.yes_delete), requestKey = EMPTY_TRASH_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    true
+                }
                 else -> false
             }
 
@@ -363,7 +373,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             setDisplayHomeAsUpEnabled(true)
-            title = requireArguments().getString(ARGUMENT_FOLDER)
+            title = requireArguments().getString(ARGUMENT_FOLDER)?.let {
+                when(it) {
+                    "DCIM" -> getString(R.string.camera_roll_name)
+                    GalleryFragment.TRASH_FOLDER -> getString(R.string.trash_name)
+                    else -> it
+                }
+            }
         }
     }
 
@@ -383,6 +399,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         mode?.menuInflater?.inflate(R.menu.action_mode_gallery, menu)
+        if (folderArgument == GalleryFragment.TRASH_FOLDER) menu?.findItem(R.id.remove)?.let {
+            it.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_restore_from_trash_24)
+            it.title = getString(R.string.action_undelete)
+        }
 
         return true
     }
@@ -395,8 +415,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.remove -> {
-                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(getSelectedPhotos())
-                else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                when {
+                    folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(getSelectedPhotos())
+                    Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotos())
+                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
 
                 true
             }
@@ -563,6 +586,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
         fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
         fun getDateByPosition(position: Int): Long = currentList[position].photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
+        fun getAllItems(): List<NCShareViewModel.RemotePhoto> = currentList.filter { it.photo.mimeType.isNotEmpty() }
 
         class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
@@ -592,6 +616,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
+        private const val EMPTY_TRASH_REQUEST_KEY = "EMPTY_TRASH_REQUEST_KEY"
 
         private const val ARGUMENT_FOLDER = "ARGUMENT_FOLDER"
 

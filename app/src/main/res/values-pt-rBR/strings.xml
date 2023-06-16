@@ -16,6 +16,7 @@
 
 <resources>
     <string name="app_name">Les Pas</string>
+    <string name="option_menu_empty_trash">Esvaziar a lixeira</string>
     <string name="gallery_name">Galeria</string>
 
     <!-- MainActivity -->
@@ -217,6 +218,7 @@
     <string name="action_share">Compartilhar</string>
     <string name="action_rescan">Re-scan EXIF</string>
     <string name="action_remove">Remover</string>
+    <string name="action_undelete">Restaurar da lixeira</string>
     <string name="action_hide">Ocultar</string>
     <string name="action_set_remote">Configurar como Remoto</string>
     <string name="action_set_local">Configurar como Local</string>
@@ -393,10 +395,12 @@
     <string name="hint_gpx_offset">diferença de minutos permitida</string>
     <string name="item_export_gpx">Exportar GPX</string>
     <string name="hint_gpx_export_file_location">O arquivo será salvo na pasta \'Download\'.</string>
+    <string name="trash_name">Lixeira</string>
     <string name="gallery_backup_option_dialog_title">Configurações de \'%1$s\'</string>
     <string name="label_remove_after_backup">Dias para manter após o backup</string>
     <string name="label_exclude">Subpastas excluídas do backup</string>
     <string name="msg_backup_status">O último backup foi concluído em %1$s</string>
     <string name="msg_archive_location">Você pode encontrar o arquivo no servidor na pasta %1$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que o Les Pas remova os arquivos de backup, você deve conceder a ele a permissão Manage Media (Gerenciar mídia).</string>
+    <string name="confirm_empty_trash">Tem certeza de que deseja esvaziar a lixeira?</string>
 </resources>

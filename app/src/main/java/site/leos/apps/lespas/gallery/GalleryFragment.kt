@@ -224,19 +224,35 @@ class GalleryFragment: Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             launch {
-                galleryModel.addition.collect { ids ->
+                galleryModel.additions.collect { ids ->
                     selectedUris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.lastModified != LocalDateTime.MAX)
                         .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                 }
             }
             launch {
-                galleryModel.deletion.collect { deletions ->
+                galleryModel.deletions.collect { deletions ->
                     if (deletions.isNotEmpty()) {
                         val uris = arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } }
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, uris)).setFillInIntent(null).build())
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, uris, true)).setFillInIntent(null).build())
                         else galleryModel.delete(uris)
+                    }
+                }
+            }
+            launch {
+                galleryModel.restorations.collect { restorations ->
+                    if (restorations.isNotEmpty()) {
+                        val uris = arrayListOf<Uri>().apply { restorations.forEach { add(Uri.parse(it)) } }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, uris, false)).setFillInIntent(null).build())
+                    }
+                }
+            }
+            launch {
+                galleryModel.emptyTrash.collect { ids ->
+                    if (ids.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val uris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
+                        deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireActivity().contentResolver, uris)).setFillInIntent(null).build())
                     }
                 }
             }
@@ -472,6 +488,7 @@ class GalleryFragment: Fragment() {
         private lateinit var playMarkDrawable: Drawable
         private lateinit var selectedMarkDrawable: Drawable
         private var loadJob: Job? = null
+        private var autoRemoveDone = false
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
         val medias: StateFlow<List<LocalMedia>?> = _medias
 
@@ -497,7 +514,7 @@ class GalleryFragment: Fragment() {
                 val contentUri = MediaStore.Files.getContentUri("external")
                 val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                 //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
-                val projection = arrayOf(
+                var projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
                     pathSelection,
                     //dateSelection,
@@ -511,8 +528,14 @@ class GalleryFragment: Fragment() {
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
+                val queryBundle = Bundle()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    projection = projection.plus(MediaStore.Files.FileColumns.IS_TRASHED)
+                    queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                    queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
+                }
                 try {
-                    cr.query(contentUri, projection, selection, null, null)?.use { cursor ->
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cr.query(contentUri, projection, queryBundle, null) else cr.query(contentUri, projection, selection, null, null))?.use { cursor ->
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -527,6 +550,9 @@ class GalleryFragment: Fragment() {
                         var mimeType: String
                         var date: Long
                         var relativePath: String
+
+                        var isTrashColumn = 0
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) isTrashColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.IS_TRASHED)
 
                         cursorLoop@ while (cursor.moveToNext()) {
                             ensureActive()
@@ -563,7 +589,7 @@ class GalleryFragment: Fragment() {
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
-                                    relativePath.substringBefore('/'),
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
                                             id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
@@ -641,6 +667,8 @@ class GalleryFragment: Fragment() {
         // TODO auto remove on Android 11
         @RequiresApi(Build.VERSION_CODES.S)
         fun autoRemove(activity: Activity, backSettings: List<BackupSetting>) {
+            if (autoRemoveDone) return
+
             if (MediaStore.canManageMedia(activity)) viewModelScope.launch(Dispatchers.IO) {
                 val pathSelection = MediaStore.Files.FileColumns.RELATIVE_PATH
                 val projection  = arrayOf(
@@ -672,27 +700,40 @@ class GalleryFragment: Fragment() {
                         //cr.update(contentUri, ContentValues().apply { put(MediaStore.Files.FileColumns.IS_TRASHED, 1) }, "${MediaStore.Files.FileColumns._ID} IN (${arrayListOf<String>().apply { deletion.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()})", null)
                     }
                 }
+
+                autoRemoveDone = true
             }
         }
 
         fun getPhotoById(id: String): Photo? = medias.value?.find { it.media.photo.id == id }?.media?.photo
 
-        private val _addition = MutableSharedFlow<List<String>>()
-        val addition: SharedFlow<List<String>> = _addition
-        fun add(photoIds: List<String>) { viewModelScope.launch { _addition.emit(photoIds) }}
+        private val _additions = MutableSharedFlow<List<String>>()
+        val additions: SharedFlow<List<String>> = _additions
+        fun add(photoIds: List<String>) { viewModelScope.launch { _additions.emit(photoIds) }}
 
-        private val _deletion = MutableSharedFlow<List<String>>()
-        val deletion: SharedFlow<List<String>> = _deletion
+        private val _deletions = MutableSharedFlow<List<String>>()
+        val deletions: SharedFlow<List<String>> = _deletions
         fun remove(photoIds: List<String>, nextInLine: String = "") {
             this.nextInLine = nextInLine
-            viewModelScope.launch { _deletion.emit(photoIds)
-        }}
+            viewModelScope.launch { _deletions.emit(photoIds) }
+        }
         fun delete(uris: ArrayList<Uri>) {
             val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
             cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
 
             setNextInLine()
         }
+
+        private val _restorations = MutableSharedFlow<List<String>>()
+        val restorations: SharedFlow<List<String>> = _restorations
+        fun restore(photoIds: List<String>, nextInLine: String = "") {
+            this.nextInLine = nextInLine
+            viewModelScope.launch { _restorations.emit(photoIds) }
+        }
+
+        private val _emptyTrash = MutableSharedFlow<List<String>>()
+        val emptyTrash: SharedFlow<List<String>> = _emptyTrash
+        fun emptyTrash(photoIds: List<String>) { viewModelScope.launch { _emptyTrash.emit(photoIds) }}
 
         private val _shareOut = MutableSharedFlow<Boolean>()
         val shareOut: SharedFlow<Boolean> = _shareOut
@@ -748,6 +789,7 @@ class GalleryFragment: Fragment() {
         const val STORAGE_EMULATED = "/storage/emulated/"
         const val FROM_DEVICE_GALLERY = "0"
         const val EMPTY_GALLERY_COVER_ID = "0"
+        const val TRASH_FOLDER = "\uE83A"   // This private character make sure the Trash is at the bottom of folder list
 
         const val TAG_ACQUIRING_DIALOG = "GALLERY_ACQUIRING_DIALOG"
         private const val TAG_DESTINATION_DIALOG = "GALLERY_DESTINATION_DIALOG"

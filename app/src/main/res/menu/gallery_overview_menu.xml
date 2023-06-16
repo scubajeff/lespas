@@ -24,6 +24,10 @@
         android:title="@string/option_menu_show_all"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/trash"
+        android:title="@string/trash_name"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/option_menu_settings"
         android:title="@string/item_settings"
         android:orderInCategory="100"

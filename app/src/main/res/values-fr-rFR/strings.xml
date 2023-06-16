@@ -16,6 +16,7 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
+    <string name="option_menu_empty_trash">Vider la corbeille</string>
     <string name="gallery_name">Galerie</string>
     <!-- MainActivity -->
     <string name="need_to_restart">Le transfert est terminé. Vous devez maintenant redémarrer Les Pas.</string>
@@ -215,6 +216,7 @@
     <string name="action_share">Partager</string>
     <string name="action_rescan">Re-scanner EXIF</string>
     <string name="action_remove">Supprimer</string>
+    <string name="action_undelete">Restaurer à partir de la corbeille</string>
     <string name="action_hide">Cacher</string>
     <string name="action_set_remote">Définir comme Distant</string>
     <string name="action_set_local">Définir comme Local</string>
@@ -366,10 +368,12 @@
     <string name="hint_gpx_offset">minutes de différence accordées</string>
     <string name="item_export_gpx">Exporter GPX</string>
     <string name="hint_gpx_export_file_location">Le fichier sera enregistré dans le dossier \"Download\".</string>
+    <string name="trash_name">La corbeille</string>
     <string name="gallery_backup_option_dialog_title">Paramètres de \'%1$s\'</string>
     <string name="label_remove_after_backup">Jours à conserver après la sauvegarde</string>
     <string name="label_exclude">Sous-dossiers exclus de la sauvegarde</string>
     <string name="msg_backup_status">La dernière sauvegarde s\'est terminée à %1$s</string>
     <string name="msg_archive_location">L\'archive se trouve sur le serveur dans le dossier %1$s</string>
     <string name="manage_media_access_permission_rationale">Pour permettre à Les Pas de supprimer des fichiers sauvegardés, vous devez lui accorder le droit de gérer les médias.</string>
+    <string name="confirm_empty_trash">Êtes-vous sûr de vouloir vider la corbeille ?</string>
 </resources>

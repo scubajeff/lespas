@@ -41,6 +41,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
@@ -80,6 +81,7 @@ class GallerySlideFragment : Fragment() {
     private lateinit var tvDate: TextView
     private lateinit var tvSize: TextView
     private lateinit var removeButton: ImageButton
+    private lateinit var folderArgument: String
 
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -99,6 +101,7 @@ class GallerySlideFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: ""
         remoteArchiveBaseFolder = Tools.getCameraArchiveHome(requireContext())
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()))[VideoPlayerViewModel::class.java]
 
@@ -214,6 +217,13 @@ class GallerySlideFragment : Fragment() {
             }
         }
         removeButton = view.findViewById<ImageButton>(R.id.remove_button).apply {
+            if (folderArgument == GalleryFragment.TRASH_FOLDER) {
+                setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_restore_from_trash_24))
+                getString(R.string.action_undelete).let { buttonText ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) tooltipText = buttonText
+                    contentDescription = buttonText
+                }
+            }
             setOnClickListener {
                 nextInLine = when {
                     mediaList.currentItem < mediaAdapter.currentList.size - 1 -> mediaAdapter.getPhotoAt(mediaList.currentItem + 1).photo.id    // Item to be deleted is not the last one in the list, next in line will be the next one
@@ -221,8 +231,11 @@ class GallerySlideFragment : Fragment() {
                     else -> mediaAdapter.getPhotoAt(mediaList.currentItem - 1).photo.id                                                         // Item to be deleted is the last one in the list and there are more than one left after deletion, next in line will be the previous one
                 }
                 mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
-                    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(listOf(photo.id), nextInLine)
-                    else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    when {
+                        folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(listOf(photo.id), nextInLine)
+                        Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(listOf(photo.id), nextInLine)
+                        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    }
                 }
             }
         }
@@ -249,15 +262,18 @@ class GallerySlideFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.medias.collect { localMedias ->
-                localMedias?.let {
-                    val folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: ""
+            galleryModel.medias.collect {
+                val localMedias = mutableListOf<GalleryFragment.LocalMedia>()
+                // Filter out trashed items
+                (if (folderArgument != GalleryFragment.TRASH_FOLDER) it?.filter { media -> media.folder != GalleryFragment.TRASH_FOLDER } else it)?.let { medias -> localMedias.addAll(medias) }
+
+                localMedias.let {
                     val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
                         (when {
-                            folderArgument.isEmpty() -> localMedias.sortedByDescending { it.media.photo.dateTaken }
-                            folderArgument.contains('/') -> localMedias.filter { it.fullPath == folderArgument }
-                            else -> localMedias.filter { it.folder == folderArgument }
-                        }).forEach { add(it.media) }
+                            folderArgument.isEmpty() -> localMedias.sortedByDescending { item -> item.media.photo.dateTaken }
+                            folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
+                            else -> localMedias.filter { item -> item.folder == folderArgument }
+                        }).forEach { item -> add(item.media) }
                     }
 
                     if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
@@ -356,7 +372,7 @@ class GallerySlideFragment : Fragment() {
     class MediaSlideAdapter(
         context: Context, private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel,
         clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, GalleryFolderViewFragment.MediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, MediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
         override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as NCShareViewModel.RemotePhoto).photo) {

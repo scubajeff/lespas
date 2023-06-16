@@ -95,6 +95,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         spanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
         overviewAdapter = OverviewAdapter(
             getString(R.string.camera_roll_name),
+            getString(R.string.trash_name),
             spanCount * 2,
             { folder, isEnabled, lastBackup ->
                 if (isEnabled) {
@@ -258,32 +259,46 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     var totalSize: Long
                     localMedias.groupBy { it.folder }.run {
                         forEach { group ->
-                            //if (group.key in managingFolders) {
-                            backupSettings.find { it.folder == group.key }?.let {
-                                isEnabled = it.enabled
-                                if (isEnabled) attachFootNote = true
+                            if (group.key != GalleryFragment.TRASH_FOLDER) {
+                                //if (group.key in managingFolders) {
+                                backupSettings.find { it.folder == group.key }?.let {
+                                    isEnabled = it.enabled
+                                    if (isEnabled) attachFootNote = true
 
-                                lastBackupDate = it.lastBackup.toInt()
-                            } ?: run {
-                                isEnabled = false
-                                lastBackupDate = 0
+                                    lastBackupDate = it.lastBackup.toInt()
+                                } ?: run {
+                                    isEnabled = false
+                                    lastBackupDate = 0
+                                }
+
+                                totalSize = 0L
+                                group.value.forEach { totalSize += it.media.photo.shareId }
+
+                                overview.add(
+                                    GalleryFragment.LocalMedia(
+                                        group.key,
+                                        NCShareViewModel.RemotePhoto(
+                                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
+                                            // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
+                                            Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
+                                            coverBaseLine = when {
+                                                //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
+                                                isEnabled -> BACKUP_ENDABLED
+                                                else -> BACKUP_DISABLED
+                                            }
+                                        )
+                                    )
+                                )
+                                // Maximum 2 lines of media items in overview list
+                                overview.addAll(group.value.take(spanCount * 2))
+                                //}
                             }
-
-                            totalSize = 0L
-                            group.value.forEach { totalSize += it.media.photo.shareId  }
-
-                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
-                            // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
-                            overview.add(GalleryFragment.LocalMedia(group.key, NCShareViewModel.RemotePhoto(Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = if (isEnabled) 1 else 0)))
-                            // Maximum 2 lines of media items in overview list
-                            overview.addAll(group.value.take(spanCount * 2))
-                            //}
                         }
                     }
                     if (attachFootNote) {
                         // TODO auto remove on Android 11
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
-                        overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = 0)))
+                        overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
                     } else overview
                 }
             }.collect { overviewAdapter.submitList(it) }
@@ -302,6 +317,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
                             .replace(R.id.container_child_fragment, GalleryFolderViewFragment.newInstance(""), GalleryFolderViewFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        true
+                    }
+                    R.id.trash -> {
+                        galleryModel.setCurrentPhotoId("")
+                        exitTransition = null
+                        reenterTransition = null
+                        parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                            .replace(R.id.container_child_fragment, GalleryFolderViewFragment.newInstance(GalleryFragment.TRASH_FOLDER), GalleryFolderViewFragment::class.java.canonicalName).addToBackStack(null).commit()
                         true
                     }
                     R.id.option_menu_settings-> {
@@ -393,7 +416,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         selectionTracker.clearSelection()
     }
 
-    class OverviewAdapter(private val cameraRollName: String, private val max: Int, private val enableBackupClickListener: (String, Boolean, Int) -> Unit,  private val backupOptionClickListener: (String) -> Unit, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    class OverviewAdapter(
+        private val cameraRollName: String, private val trashName: String,
+        private val max: Int, private val enableBackupClickListener: (String, Boolean, Int) -> Unit,  private val backupOptionClickListener: (String) -> Unit, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<GalleryFragment.LocalMedia, RecyclerView.ViewHolder>(OverviewDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -507,18 +532,45 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
             fun bind(item: GalleryFragment.LocalMedia) {
                 tvName.run {
-                    text = String.format("%s (%s)", item.folder.let { if (it == "DCIM") cameraRollName else it }, Tools.humanReadableByteCountSI(item.media.photo.shareId.toLong() * 1000))
+                    text = String.format(
+                        "%s (%s)",
+                        when(item.folder) {
+                            "DCIM" -> cameraRollName
+                            GalleryFragment.TRASH_FOLDER -> trashName
+                            else -> item.folder
+                        },
+                        Tools.humanReadableByteCountSI(item.media.photo.shareId.toLong() * 1000)
+                    )
                     setOnClickListener { folderClickListener(item.folder) }
                 }
 
+/*
+                if (item.media.coverBaseLine == BACKUP_NOT_AVAILABLE) {
+                    cbEnableBackup.isVisible = false
+                    ivBackupSetting.isVisible = false
+                } else {
+                    cbEnableBackup.isVisible = true
+                    cbEnableBackup.run {
+                        setOnCheckedChangeListener(null)
+                        isChecked = item.media.coverBaseLine == BACKUP_ENDABLED
+                        setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
+                    }
+
+                    ivBackupSetting.run {
+                        isVisible = item.media.coverBaseLine == BACKUP_ENDABLED
+                        setOnClickListener { backupOptionClickListener(item.folder) }
+                    }
+                }
+*/
+                cbEnableBackup.isVisible = true
                 cbEnableBackup.run {
                     setOnCheckedChangeListener(null)
-                    isChecked = item.media.coverBaseLine == 1
+                    isChecked = item.media.coverBaseLine == BACKUP_ENDABLED
                     setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
                 }
 
                 ivBackupSetting.run {
-                    isVisible = item.media.coverBaseLine == 1
+                    isVisible = item.media.coverBaseLine == BACKUP_ENDABLED
                     setOnClickListener { backupOptionClickListener(item.folder) }
                 }
             }
@@ -542,7 +594,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
                 is MediaViewHolder -> holder.bind(currentList[position])
-                is OverflowHolder -> holder.bind(currentList[position], getCount(currentList[position].folder))
+                is OverviewAdapter.OverflowHolder -> holder.bind(currentList[position], getCount(currentList[position].folder))
                 is HeaderViewHolder -> holder.bind(currentList[position])
                 else -> (holder as FootNoteViewHolder).bind()
             }
@@ -612,5 +664,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val BACKUP_EXISTING_REQUEST_KEY = "BACKUP_EXISTING_REQUEST_KEY"
+
+        private const val BACKUP_NOT_AVAILABLE = -1
+        private const val BACKUP_DISABLED = 0
+        private const val BACKUP_ENDABLED = 1
     }
 }

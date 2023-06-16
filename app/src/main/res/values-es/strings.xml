@@ -105,6 +105,7 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
+    <string name="option_menu_empty_trash">Vaciar la papelera</string>
     <string name="gallery_name">Galería</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
     <string name="verify_ssl_certificate_title">Certificado SSL defectuoso</string>
@@ -194,6 +195,7 @@
     <string name="item_location_search">Ubicación</string>
     <string name="option_menu_in_map">Mostrar en mapa</string>
     <string name="object_face">Facial</string>
+    <string name="action_undelete">Restaurar desde la papelera</string>
     <string name="action_hide">Ocultar</string>
     <string name="option_menu_name_filter">Filtrar por nombre</string>
     <string name="hidden_albums">Álbumes ocultos:</string>
@@ -331,10 +333,12 @@
     <string name="hint_gpx_offset">minutos de diferencia permitidos</string>
     <string name="item_export_gpx">Exportar GPX</string>
     <string name="hint_gpx_export_file_location">El archivo se guardará en la carpeta \"Download\".</string>
+    <string name="trash_name">Papelera</string>
     <string name="gallery_backup_option_dialog_title">Configuración de \'%1$s</string>
     <string name="label_remove_after_backup">Días de conservación tras la copia de seguridad</string>
     <string name="label_exclude">Subcarpetas excluidas de la copia de seguridad</string>
     <string name="msg_backup_status">La última copia de seguridad finalizó en %1$s</string>
     <string name="msg_archive_location">Puede encontrar el archivo en el servidor en la carpeta %1$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que Les Pas elimine los archivos de las copias de seguridad, debes concederle el permiso Gestionar medios.</string>
+    <string name="confirm_empty_trash">¿Seguro que quieres vaciar la papelera?</string>
 </resources>

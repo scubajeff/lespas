@@ -341,6 +341,7 @@
     <string name="action_share">Share</string>
     <string name="action_rescan">Re-scan EXIF</string>
     <string name="action_remove">Remove</string>
+    <string name="action_undelete">Restore from trash</string>
     <string name="action_hide">Hide</string>
     <string name="action_set_remote">Set as Remote</string>
     <string name="action_set_local">Set as Local</string>
@@ -365,8 +366,10 @@
     <string name="today">Today</string>
     <string name="yesterday">Yesterday</string>
     <string name="option_menu_show_all">Show all</string>
+    <string name="option_menu_empty_trash">Empty trash</string>
     <string name="gallery_name">Gallery</string>
     <string name="camera_roll_name">Camera</string>
+    <string name="trash_name">Trash</string>
     <string name="gallery_backup_option_dialog_title">Settings of \'%1$s\'</string>
     <string name="label_remove_after_backup">Days to keep after backed up</string>
     <string name="label_exclude">Sub-folders excluded from backup</string>
@@ -376,6 +379,7 @@
     <string name="manage_media_access_permission_rationale">To allow Les Pas remove backed up files, you must grant it the Manage Media permission.</string>
     <string name="msg_remove_old_files_warning">WARNING: If you chose not to backup existing files when you first enabled backup for this folder, those existing files WILL ALSO BE REMOVED by turning on this setting!</string>
     <string name="button_text_i_understand">I understand</string>
+    <string name="confirm_empty_trash">Are you sure you want to empty the trash?</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>

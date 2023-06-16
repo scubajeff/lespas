@@ -16,6 +16,7 @@
 
 <resources>
     <string name="app_name">Les Pas</string>
+    <string name="option_menu_empty_trash">Svuotare il cestino</string>
     <string name="gallery_name">Galleria</string>
 
     <!-- MainActivity -->
@@ -232,6 +233,7 @@
     <string name="action_share">Condividi</string>
     <string name="action_rescan">Ri-scansione EXIF</string>
     <string name="action_remove">Rimuovi</string>
+    <string name="action_undelete">Ripristino dal cestino</string>
     <string name="action_hide">Nascondi</string>
     <string name="action_set_remote">Imposta come remoto</string>
     <string name="action_set_local">Imposta come locale</string>
@@ -396,10 +398,12 @@
     <string name="hint_gpx_offset">minuti di differenza consentiti</string>
     <string name="item_export_gpx">Esportazione GPX</string>
     <string name="hint_gpx_export_file_location">Il file verrà salvato nella cartella \"Download\".</string>
+    <string name="trash_name">Cestino</string>
     <string name="gallery_backup_option_dialog_title">Impostazioni di \'%1$s\'</string>
     <string name="label_remove_after_backup">Giorni di conservazione dopo il backup</string>
     <string name="label_exclude">Sottocartelle escluse dal backup</string>
     <string name="msg_backup_status">L\'ultimo backup è terminato a %1$s</string>
     <string name="msg_archive_location">L\'archivio si trova sul server nella cartella %1$s</string>
     <string name="manage_media_access_permission_rationale">Per consentire a Les Pas di rimuovere i file di backup, è necessario concedergli l\'autorizzazione Gestione supporti.</string>
+    <string name="confirm_empty_trash">Sei sicuro di voler svuotare il cestino?</string>
 </resources>

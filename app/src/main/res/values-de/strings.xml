@@ -17,6 +17,7 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
+    <string name="option_menu_empty_trash">Leeren Sie den Papierkorb</string>
     <string name="gallery_name">Galerie</string>
 
     <!-- MainActivity -->
@@ -245,6 +246,7 @@
     <string name="item_location_search">Standort</string>
     <string name="option_menu_in_map">Auf Karte anzeigen</string>
     <string name="object_face">Gesicht</string>
+    <string name="action_undelete">Wiederherstellen aus dem Papierkorb</string>
     <string name="action_hide">Ausblenden</string>
     <string name="option_menu_name_filter">Nach Namen filtern</string>
     <string name="hidden_albums">Versteckte Alben:</string>
@@ -381,10 +383,12 @@
     <string name="hint_gpx_offset">Erlaubte Minuten Differenz</string>
     <string name="item_export_gpx">GPX exportieren</string>
     <string name="hint_gpx_export_file_location">Die Datei wird im Ordner \"Download\" gespeichert.</string>
+    <string name="trash_name">Papierkorb</string>
     <string name="gallery_backup_option_dialog_title">Einstellungen von \'%1$s\'</string>
     <string name="label_remove_after_backup">Tage nach der Sicherung aufbewahren</string>
     <string name="label_exclude">Von der Sicherung ausgeschlossene Unterordner</string>
     <string name="msg_backup_status">Die letzte Sicherung wurde um %1$s abgeschlossen</string>
     <string name="msg_archive_location">Sie können das Archiv auf dem Server im Ordner %1$s finden</string>
     <string name="manage_media_access_permission_rationale">Damit Les Pas gesicherte Dateien entfernen kann, müssen Sie ihm die Berechtigung \"Medien verwalten\" erteilen.</string>
+    <string name="confirm_empty_trash">Sind Sie sicher, dass Sie den Papierkorb leeren wollen?</string>
 </resources>

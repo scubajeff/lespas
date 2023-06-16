@@ -18,6 +18,7 @@
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="verify_ssl_certificate_message">Server %1$sの証明書の検証に失敗したが、サーバを信頼して続行するか？</string>
+    <string name="option_menu_empty_trash">ゴミ箱を空にする</string>
     <string name="gallery_name">モバイルアルバム</string>
     <string name="need_to_restart">写真の移行が完了したので、Les Pasアプリを再起動する必要があります。</string>
     <string name="sd_card_not_ready">外部メモリーカードがマウントされていないか、読み取り専用になっている。</string>
@@ -193,6 +194,7 @@
     <string name="item_location_search">所在地</string>
     <string name="option_menu_in_map">地図で見る</string>
     <string name="object_face">顔</string>
+    <string name="action_undelete">ゴミ箱から復元する</string>
     <string name="action_hide">隠す</string>
     <string name="option_menu_name_filter">名前から探す</string>
     <string name="hidden_albums">隠れたアルバム</string>
@@ -329,10 +331,12 @@
     <string name="hint_gpx_offset">分単位の時差</string>
     <string name="item_export_gpx">GPXのエクスポート</string>
     <string name="hint_gpx_export_file_location">ファイルは「Download」フォルダに保存されます。</string>
+    <string name="trash_name">ゴミ箱</string>
     <string name="gallery_backup_option_dialog_title">\'%1$s\'の設定</string>
     <string name="label_remove_after_backup">バックアップ後の保管日数</string>
     <string name="label_exclude">バックアップから除外されるサブフォルダー</string>
     <string name="msg_backup_status">最後のバックアップは %1$s で終了しました</string>
     <string name="msg_archive_location">アーカイブはサーバー上のフォルダ %1$s にあります</string>
     <string name="manage_media_access_permission_rationale">Les Pasにバックアップされたファイルの削除を許可するには、Manage Media権限を付与する必要があります。</string>
+    <string name="confirm_empty_trash">本当にゴミ箱を空にしていいんですか？</string>
 </resources>
