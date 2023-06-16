@@ -255,6 +255,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     val overview = mutableListOf<GalleryFragment.LocalMedia>()
                     var isEnabled = false
                     var lastBackupDate = 0
+                    var totalSize: Long
                     localMedias.groupBy { it.folder }.run {
                         forEach { group ->
                             //if (group.key in managingFolders) {
@@ -267,8 +268,13 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                 isEnabled = false
                                 lastBackupDate = 0
                             }
-                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property shareId, last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
-                            overview.add(GalleryFragment.LocalMedia(group.key, NCShareViewModel.RemotePhoto(Photo(id = group.key, mimeType = "", shareId = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = if (isEnabled) 1 else 0)))
+
+                            totalSize = 0L
+                            group.value.forEach { totalSize += it.media.photo.shareId  }
+
+                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
+                            // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
+                            overview.add(GalleryFragment.LocalMedia(group.key, NCShareViewModel.RemotePhoto(Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = if (isEnabled) 1 else 0)))
                             // Maximum 2 lines of media items in overview list
                             overview.addAll(group.value.take(spanCount * 2))
                             //}
@@ -501,7 +507,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
             fun bind(item: GalleryFragment.LocalMedia) {
                 tvName.run {
-                    text = item.folder.let { if (it == "DCIM") cameraRollName else it }
+                    text = String.format("%s (%s)", item.folder.let { if (it == "DCIM") cameraRollName else it }, Tools.humanReadableByteCountSI(item.media.photo.shareId.toLong() * 1000))
                     setOnClickListener { folderClickListener(item.folder) }
                 }
 
@@ -567,7 +573,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.media.photo.id == photoId }
-        private fun getCount(folder: String): Int = currentList.find { it.folder == folder && it.media.photo.mimeType.isEmpty() }?.media?.photo?.shareId ?: 0
+        private fun getCount(folder: String): Int = currentList.find { it.folder == folder && it.media.photo.mimeType.isEmpty() }?.media?.photo?.height ?: 0
 
         class PhotoKeyProvider(private val adapter: OverviewAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
