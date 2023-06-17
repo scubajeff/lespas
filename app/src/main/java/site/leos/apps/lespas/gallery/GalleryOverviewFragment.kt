@@ -86,6 +86,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     private lateinit var overviewAdapter: OverviewAdapter
     private lateinit var overviewList: RecyclerView
 
+    private var trashMenuItem: MenuItem? = null
+
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -308,6 +310,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_overview_menu, menu)
+                trashMenuItem = menu.findItem(R.id.trash)
+                trashMenuItem?.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
