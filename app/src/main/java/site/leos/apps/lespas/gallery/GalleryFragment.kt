@@ -523,7 +523,6 @@ class GalleryFragment: Fragment() {
                 //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
                 var projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
-                    MediaStore.Files.FileColumns.VOLUME_NAME,
                     pathSelection,
                     //dateSelection,
                     MediaStore.Files.FileColumns.DATE_ADDED,
@@ -538,14 +537,13 @@ class GalleryFragment: Fragment() {
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
                 val queryBundle = Bundle()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    projection = projection.plus(MediaStore.Files.FileColumns.IS_TRASHED)
+                    projection = projection.plus(arrayOf(MediaStore.Files.FileColumns.VOLUME_NAME, MediaStore.Files.FileColumns.IS_TRASHED))
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
                     queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
                 }
                 try {
                     (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cr.query(contentUri, projection, queryBundle, null) else cr.query(contentUri, projection, selection, null, null))?.use { cursor ->
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-                        val volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
                         //val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
@@ -560,8 +558,12 @@ class GalleryFragment: Fragment() {
                         var date: Long
                         var relativePath: String
 
+                        var volumeColumn = 0
                         var isTrashColumn = 0
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) isTrashColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.IS_TRASHED)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
+                            isTrashColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.IS_TRASHED)
+                        }
 
                         cursorLoop@ while (cursor.moveToNext()) {
                             ensureActive()
