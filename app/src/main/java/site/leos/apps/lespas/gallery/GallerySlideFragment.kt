@@ -113,9 +113,9 @@ class GallerySlideFragment : Fragment() {
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { state -> toggleSystemUI(state) },
-            { remotePhoto, imageView, type ->
+            { localMedia, imageView, type ->
                 if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
-                else imageLoaderModel.setImagePhoto(remotePhoto, imageView!!, type) { startPostponedEnterTransition() }
+                else imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, type) { startPostponedEnterTransition() }
             },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -266,12 +266,10 @@ class GallerySlideFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { galleryModel.medias.collect {
                 it?.let { localMedias ->
-                    val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                        when {
-                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }
-                            folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
-                            else -> localMedias.filter { item -> item.folder == folderArgument }
-                        }.forEach { item -> add(item.media) }
+                    val photos = when {
+                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }
+                        folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
+                        else -> localMedias.filter { item -> item.folder == folderArgument }
                     }
 
                     if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
@@ -369,22 +367,22 @@ class GallerySlideFragment : Fragment() {
 
     class MediaSlideAdapter(
         context: Context, private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel,
-        clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
-        override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
-        override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
-        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as NCShareViewModel.RemotePhoto).photo) {
+        clickListener: (Boolean?) -> Unit, imageLoader: (GalleryFragment.LocalMedia, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<GalleryFragment.LocalMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+        override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
+        override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
+        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.LocalMedia).media.photo) {
             if (albumId == GalleryFragment.FROM_DEVICE_GALLERY) VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
             else VideoItem(Uri.parse("${basePath}/${name}"), mimeType, width, height, id)
         }
 
-        fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position]
-        fun getPhotoPosition(photoId: String): Int = photoId.substringAfterLast('/').let { id -> currentList.indexOfFirst { it.photo.id.substringAfterLast('/') == id }}
+        fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media
+        fun getPhotoPosition(photoId: String): Int = photoId.substringAfterLast('/').let { id -> currentList.indexOfFirst { it.media.photo.id.substringAfterLast('/') == id }}
     }
 
-    class SliderMediaDiffCallback : DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
-        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
-        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = true
+    class SliderMediaDiffCallback : DiffUtil.ItemCallback<GalleryFragment.LocalMedia>() {
+        override fun areItemsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.id == newItem.media.photo.id
+        override fun areContentsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = true
     }
 
     companion object {
