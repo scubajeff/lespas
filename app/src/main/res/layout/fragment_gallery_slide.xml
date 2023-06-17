@@ -49,13 +49,9 @@
             app:layout_constraintBottom_toTopOf="@id/date"
             android:layout_marginTop="@dimen/small_padding"
             android:paddingHorizontal="@dimen/small_padding"
-            style="@style/TextAppearance.MaterialComponents.Body2"
+            style="@style/TextAppearance.MaterialComponents.Subtitle2"
             android:textColor="@color/lespas_white"
-            android:autoSizeTextType="uniform"
-            android:lines="1"
-            android:ellipsize="middle"
-            tools:text="/Pictures/Screenshots"
-            tools:ignore="UnusedAttribute" />
+            tools:text="/Pictures/Screenshots" />
         <TextView
             android:id="@+id/date"
             android:layout_width="0dp"
@@ -65,13 +61,11 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/button_group"
             android:paddingHorizontal="@dimen/small_padding"
-            style="@style/TextAppearance.MaterialComponents.Body2"
+            style="@style/TextAppearance.MaterialComponents.Subtitle2"
             android:textColor="@color/lespas_white"
-            android:autoSizeTextType="uniform"
             android:lines="1"
             android:ellipsize="middle"
-            tools:text="1999-01-01"
-            tools:ignore="UnusedAttribute" />
+            tools:text="1999-01-01" />
         <TextView
             android:id="@+id/size"
             android:layout_width="0dp"
@@ -82,12 +76,10 @@
             app:layout_constraintRight_toRightOf="@id/date"
             android:layout_marginBottom="@dimen/small_padding"
             android:paddingHorizontal="@dimen/small_padding"
-            style="@style/TextAppearance.MaterialComponents.Body2"
+            style="@style/TextAppearance.MaterialComponents.Subtitle2"
             android:textColor="@color/lespas_white"
-            android:autoSizeTextType="uniform"
             android:lines="1"
-            tools:text="2MB"
-            tools:ignore="UnusedAttribute" />
+            tools:text="2MB" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/button_group"
