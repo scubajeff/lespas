@@ -82,7 +82,6 @@ import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.lang.Long.min
-import java.text.Collator
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -535,14 +534,16 @@ class GalleryFragment: Fragment() {
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
+                val sortOrder = "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
                 val queryBundle = Bundle()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     projection = projection.plus(arrayOf(MediaStore.Files.FileColumns.VOLUME_NAME, MediaStore.Files.FileColumns.IS_TRASHED))
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                    queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, sortOrder)
                     queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
                 }
                 try {
-                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cr.query(contentUri, projection, queryBundle, null) else cr.query(contentUri, projection, selection, null, null))?.use { cursor ->
+                    (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cr.query(contentUri, projection, queryBundle, null) else cr.query(contentUri, projection, selection, null, sortOrder))?.use { cursor ->
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -627,9 +628,8 @@ class GalleryFragment: Fragment() {
                 } catch (_: Exception) { }
 
                 // Emitting
-                ensureActive()
-                //localMedias.sortWith(compareBy<LocalMedia> { it.folder }.thenByDescending { it.media.photo.dateTaken })
-                localMedias.sortWith(compareBy<LocalMedia, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.folder }.thenByDescending { it.media.photo.dateTaken })
+                //ensureActive()
+                //localMedias.sortWith(compareBy<LocalMedia, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.folder }.thenByDescending { it.media.photo.dateTaken })
                 ensureActive()
                 _medias.value = localMedias
             }.apply {

@@ -263,22 +263,16 @@ class GallerySlideFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             galleryModel.medias.collect {
-                it?.let {
-                    val localMedias = mutableListOf<GalleryFragment.LocalMedia>()
-                    // Filter out trashed items.
-                    (if (folderArgument != GalleryFragment.TRASH_FOLDER) it.filter { media -> media.folder != GalleryFragment.TRASH_FOLDER } else it).let { medias -> localMedias.addAll(medias) }
-
-                    localMedias.let {
-                        val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                            (when {
-                                folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.sortedByDescending { item -> item.media.photo.dateTaken }
-                                folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
-                                else -> localMedias.filter { item -> item.folder == folderArgument }
-                            }).forEach { item -> add(item.media) }
-                        }
-
-                        if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
+                it?.let { localMedias ->
+                    val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
+                        when {
+                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }.sortedByDescending { item ->  item.media.photo.dateTaken }
+                            folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
+                            else -> localMedias.filter { item -> item.folder == folderArgument }
+                        }.forEach { item -> add(item.media) }
                     }
+
+                    if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
                 }
             }
         }

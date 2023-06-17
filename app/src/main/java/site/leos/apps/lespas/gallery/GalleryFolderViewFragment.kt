@@ -299,14 +299,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         viewLifecycleOwner.lifecycleScope.launch {
             galleryModel.medias.collect {
-                val localMedias = mutableListOf<GalleryFragment.LocalMedia>()
-                // Filter out trashed items
-                (if (folderArgument != GalleryFragment.TRASH_FOLDER) it?.filter { media -> media.folder != GalleryFragment.TRASH_FOLDER } else it)?.let { medias -> localMedias.addAll(medias) }
-
-                localMedias.let {
+                it?.let { localMedias ->
                     val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
                     var currentDate = LocalDate.now().plusDays(1)
-                    for (media in (if (folderArgument != GalleryFragment.ALL_FOLDER) localMedias.filter { item -> item.folder == folderArgument } else { localMedias.sortedByDescending { item -> item.media.photo.dateTaken }})) {
+
+                    // Match folder name (including Trash folder), or filter out trashed items for all folders case
+                    (if (folderArgument != GalleryFragment.ALL_FOLDER) localMedias.filter { item -> item.folder == folderArgument } else localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }).forEach { media ->
                         if (media.media.photo.dateTaken.toLocalDate() != currentDate) {
                             currentDate = media.media.photo.dateTaken.toLocalDate()
                             // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
