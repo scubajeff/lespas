@@ -373,6 +373,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 when(it) {
                     "DCIM" -> getString(R.string.camera_roll_name)
                     GalleryFragment.TRASH_FOLDER -> getString(R.string.trash_name)
+                    GalleryFragment.ALL_FOLDER -> ""
                     else -> it
                 }
             }
