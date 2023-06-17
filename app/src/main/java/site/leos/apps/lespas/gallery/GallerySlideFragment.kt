@@ -268,7 +268,7 @@ class GallerySlideFragment : Fragment() {
                 it?.let { localMedias ->
                     val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
                         when {
-                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }.sortedByDescending { item ->  item.media.photo.dateTaken }
+                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }
                             folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
                             else -> localMedias.filter { item -> item.folder == folderArgument }
                         }.forEach { item -> add(item.media) }
