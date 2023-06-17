@@ -52,6 +52,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
@@ -247,7 +248,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            combine(galleryModel.medias, backupSettingModel.getSettings()) { localMedias, backupSettings ->
+            repeatOnLifecycle(Lifecycle.State.STARTED) { combine(galleryModel.medias, backupSettingModel.getSettings()) { localMedias, backupSettings ->
                 localMedias?.let {
                     var attachFootNote = false
 
@@ -301,7 +302,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         overview.plus(GalleryFragment.LocalMedia(FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
                     } else overview
                 }
-            }.collect { overviewAdapter.submitList(it) }
+            }.collect { overviewAdapter.submitList(it) }}
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {

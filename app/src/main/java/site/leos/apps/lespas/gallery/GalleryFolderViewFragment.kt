@@ -56,6 +56,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
@@ -298,7 +299,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.medias.collect {
+            repeatOnLifecycle(Lifecycle.State.STARTED) { galleryModel.medias.collect {
                 it?.let { localMedias ->
                     val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
                     var currentDate = LocalDate.now().plusDays(1)
@@ -315,7 +316,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
                     if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
                 }
-            }
+            }}
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {

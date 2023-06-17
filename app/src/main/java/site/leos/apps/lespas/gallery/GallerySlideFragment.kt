@@ -50,8 +50,10 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -262,7 +264,7 @@ class GallerySlideFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            galleryModel.medias.collect {
+            repeatOnLifecycle(Lifecycle.State.STARTED) { galleryModel.medias.collect {
                 it?.let { localMedias ->
                     val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
                         when {
@@ -274,7 +276,7 @@ class GallerySlideFragment : Fragment() {
 
                     if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
                 }
-            }
+            }}
         }
     }
 
