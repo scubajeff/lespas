@@ -240,8 +240,8 @@ class GalleryFragment: Fragment() {
                                 if (galleryModel.getVolumeName(it) == MediaStore.VOLUME_EXTERNAL_PRIMARY) trashItems.add(Uri.parse(it))
                                 else deleteItems.add(Uri.parse(it))
                             }
-                            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, deleteItems)).setFillInIntent(null).build())
-                            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, trashItems, true)).setFillInIntent(null).build())
+                            if (deleteItems.isNotEmpty()) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, deleteItems)).setFillInIntent(null).build())
+                            if (trashItems.isNotEmpty()) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, trashItems, true)).setFillInIntent(null).build())
                         }
                         else galleryModel.delete(arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } })
                     }
