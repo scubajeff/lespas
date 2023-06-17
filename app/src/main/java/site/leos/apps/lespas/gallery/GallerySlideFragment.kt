@@ -263,20 +263,22 @@ class GallerySlideFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             galleryModel.medias.collect {
-                val localMedias = mutableListOf<GalleryFragment.LocalMedia>()
-                // Filter out trashed items
-                (if (folderArgument != GalleryFragment.TRASH_FOLDER) it?.filter { media -> media.folder != GalleryFragment.TRASH_FOLDER } else it)?.let { medias -> localMedias.addAll(medias) }
+                it?.let {
+                    val localMedias = mutableListOf<GalleryFragment.LocalMedia>()
+                    // Filter out trashed items.
+                    (if (folderArgument != GalleryFragment.TRASH_FOLDER) it.filter { media -> media.folder != GalleryFragment.TRASH_FOLDER } else it).let { medias -> localMedias.addAll(medias) }
 
-                localMedias.let {
-                    val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                        (when {
-                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.sortedByDescending { item -> item.media.photo.dateTaken }
-                            folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
-                            else -> localMedias.filter { item -> item.folder == folderArgument }
-                        }).forEach { item -> add(item.media) }
+                    localMedias.let {
+                        val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
+                            (when {
+                                folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.sortedByDescending { item -> item.media.photo.dateTaken }
+                                folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
+                                else -> localMedias.filter { item -> item.folder == folderArgument }
+                            }).forEach { item -> add(item.media) }
+                        }
+
+                        if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
                     }
-
-                    if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
                 }
             }
         }
@@ -289,7 +291,7 @@ class GallerySlideFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        if (mediaAdapter.getPhotoAt(mediaList.currentItem).photo.mimeType.startsWith("video")) handler.postDelayed({
+        if (mediaAdapter.currentList.isNotEmpty() && mediaAdapter.getPhotoAt(mediaList.currentItem).photo.mimeType.startsWith("video")) handler.postDelayed({
             playerViewModel.pause(Uri.EMPTY)
         }, 300)
     }
@@ -372,7 +374,7 @@ class GallerySlideFragment : Fragment() {
     class MediaSlideAdapter(
         context: Context, private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel,
         clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, MediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
         override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as NCShareViewModel.RemotePhoto).photo) {
@@ -384,7 +386,7 @@ class GallerySlideFragment : Fragment() {
         fun getPhotoPosition(photoId: String): Int = photoId.substringAfterLast('/').let { id -> currentList.indexOfFirst { it.photo.id.substringAfterLast('/') == id }}
     }
 
-    class MediaDiffCallback : DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
+    class SliderMediaDiffCallback : DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
         override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
         override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = true
     }

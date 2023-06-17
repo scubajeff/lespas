@@ -598,7 +598,7 @@ class GalleryFragment: Fragment() {
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/').apply { this.ifEmpty { cursor.getString(volumeColumn) }},
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
                                             id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
@@ -670,7 +670,7 @@ class GalleryFragment: Fragment() {
 
             uri.toString().let { uriString ->
                 setCurrentPhotoId(uriString)
-                _medias.value = listOf(LocalMedia(uriString, NCShareViewModel.RemotePhoto(photo), uriString))
+                _medias.value = listOf(LocalMedia(uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
             }
         }
 
