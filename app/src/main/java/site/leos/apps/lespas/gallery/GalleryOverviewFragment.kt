@@ -283,7 +283,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                             Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
                                             coverBaseLine = when {
                                                 //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
-                                                isEnabled -> BACKUP_ENDABLED
+                                                isEnabled -> BACKUP_ENABLED
                                                 else -> BACKUP_DISABLED
                                             }
                                         )
@@ -298,7 +298,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     if (attachFootNote) {
                         // TODO auto remove on Android 11
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
-                        overview.plus(GalleryFragment.LocalMedia("", NCShareViewModel.RemotePhoto(Photo(mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
+                        overview.plus(GalleryFragment.LocalMedia(FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
                     } else overview
                 }
             }.collect { overviewAdapter.submitList(it) }
@@ -316,7 +316,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         exitTransition = null
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
-                            .replace(R.id.container_child_fragment, GalleryFolderViewFragment.newInstance(""), GalleryFolderViewFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            .replace(R.id.container_child_fragment, GalleryFolderViewFragment.newInstance(GalleryFragment.ALL_FOLDER), GalleryFolderViewFragment::class.java.canonicalName).addToBackStack(null).commit()
                         true
                     }
                     R.id.trash -> {
@@ -535,6 +535,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     text = String.format(
                         "%s (%s)",
                         when(item.folder) {
+                            "" -> "/"
                             "DCIM" -> cameraRollName
                             GalleryFragment.TRASH_FOLDER -> trashName
                             else -> item.folder
@@ -565,12 +566,12 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 cbEnableBackup.isVisible = true
                 cbEnableBackup.run {
                     setOnCheckedChangeListener(null)
-                    isChecked = item.media.coverBaseLine == BACKUP_ENDABLED
+                    isChecked = item.media.coverBaseLine == BACKUP_ENABLED
                     setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
                 }
 
                 ivBackupSetting.run {
-                    isVisible = item.media.coverBaseLine == BACKUP_ENDABLED
+                    isVisible = item.media.coverBaseLine == BACKUP_ENABLED
                     setOnClickListener { backupOptionClickListener(item.folder) }
                 }
             }
@@ -611,7 +612,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun getItemViewType(position: Int): Int = when {
-            currentList[position].media.photo.id.isEmpty() -> TYPE_FOOTNOTE
+            currentList[position].folder == FOOTNOTE -> TYPE_FOOTNOTE
             currentList[position].media.photo.mimeType.isEmpty() -> TYPE_HEADER
             else -> if (position == currentList.size - 1 || currentList[position + 1].media.photo.mimeType.isEmpty()) TYPE_OVERFLOW else TYPE_MEDIA
         }
@@ -658,6 +659,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     }
 
     companion object {
+        private const val FOOTNOTE = "\uE83A\uE83A"   // This private character make sure the Trash is at the bottom of folder list
+
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val BACKUP_OPTION_DIALOG = "BACKUP_OPTION_DIALOG"
 
@@ -667,6 +670,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         private const val BACKUP_NOT_AVAILABLE = -1
         private const val BACKUP_DISABLED = 0
-        private const val BACKUP_ENDABLED = 1
+        private const val BACKUP_ENABLED = 1
     }
 }

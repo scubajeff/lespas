@@ -233,10 +233,17 @@ class GalleryFragment: Fragment() {
             launch {
                 galleryModel.deletions.collect { deletions ->
                     if (deletions.isNotEmpty()) {
-                        val uris = arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } }
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, uris, true)).setFillInIntent(null).build())
-                        else galleryModel.delete(uris)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            val trashItems = arrayListOf<Uri>()
+                            val deleteItems = arrayListOf<Uri>()
+                            deletions.forEach {
+                                if (galleryModel.getVolumeName(it) == MediaStore.VOLUME_EXTERNAL_PRIMARY) trashItems.add(Uri.parse(it))
+                                else deleteItems.add(Uri.parse(it))
+                            }
+                            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, deleteItems)).setFillInIntent(null).build())
+                            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, trashItems, true)).setFillInIntent(null).build())
+                        }
+                        else galleryModel.delete(arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } })
                     }
                 }
             }
@@ -516,6 +523,7 @@ class GalleryFragment: Fragment() {
                 //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
                 var projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
+                    MediaStore.Files.FileColumns.VOLUME_NAME,
                     pathSelection,
                     //dateSelection,
                     MediaStore.Files.FileColumns.DATE_ADDED,
@@ -537,6 +545,7 @@ class GalleryFragment: Fragment() {
                 try {
                     (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cr.query(contentUri, projection, queryBundle, null) else cr.query(contentUri, projection, selection, null, null))?.use { cursor ->
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                        val volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
                         //val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
@@ -589,7 +598,7 @@ class GalleryFragment: Fragment() {
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/').apply { this.ifEmpty { cursor.getString(volumeColumn) }},
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
                                             id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
@@ -607,7 +616,8 @@ class GalleryFragment: Fragment() {
                                         remotePath = "",    // Local media
                                         coverBaseLine = 0,  // Backup is disable by default
                                     ),
-                                    relativePath
+                                    cursor.getString(volumeColumn),
+                                    relativePath,
                                 )
                             )
                         }
@@ -776,11 +786,13 @@ class GalleryFragment: Fragment() {
         fun setNextInLine() { if (nextInLine.isNotEmpty()) currentPhotoId = nextInLine }
 
         fun getFullPath(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.fullPath ?: ""
+        fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.volume ?: ""
     }
 
     data class LocalMedia(
         var folder: String,
         var media: NCShareViewModel.RemotePhoto,
+        var volume: String = "",
         var fullPath: String = "",
     )
 
@@ -789,7 +801,9 @@ class GalleryFragment: Fragment() {
         const val STORAGE_EMULATED = "/storage/emulated/"
         const val FROM_DEVICE_GALLERY = "0"
         const val EMPTY_GALLERY_COVER_ID = "0"
+
         const val TRASH_FOLDER = "\uE83A"   // This private character make sure the Trash is at the bottom of folder list
+        const val ALL_FOLDER = ".."
 
         const val TAG_ACQUIRING_DIALOG = "GALLERY_ACQUIRING_DIALOG"
         private const val TAG_DESTINATION_DIALOG = "GALLERY_DESTINATION_DIALOG"

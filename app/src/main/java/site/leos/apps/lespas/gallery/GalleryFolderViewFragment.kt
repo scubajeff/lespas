@@ -110,7 +110,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: ""
+        folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: GalleryFragment.ALL_FOLDER
 
         mediaAdapter = MediaAdapter(
             { view, photoId, mimeType ->
@@ -306,9 +306,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 localMedias.let {
                     val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
                     var currentDate = LocalDate.now().plusDays(1)
-                    for (media in (if (folderArgument.isNotEmpty()) localMedias.filter { it.folder == folderArgument } else {
-                        localMedias.sortedByDescending { it.media.photo.dateTaken }
-                    })) {
+                    for (media in (if (folderArgument != GalleryFragment.ALL_FOLDER) localMedias.filter { item -> item.folder == folderArgument } else { localMedias.sortedByDescending { item -> item.media.photo.dateTaken }})) {
                         if (media.media.photo.dateTaken.toLocalDate() != currentDate) {
                             currentDate = media.media.photo.dateTaken.toLocalDate()
                             // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
