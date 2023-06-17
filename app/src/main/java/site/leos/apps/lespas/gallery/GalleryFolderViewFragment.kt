@@ -387,8 +387,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         super.onSaveInstanceState(outState)
         
         try { selectionTracker.onSaveInstanceState(outState) } catch (_: UninitializedPropertyAccessException) {}
+/*
         // Because we might need scrolling to a new position when returning from GallerySliderFragment, we have to save current scroll state in this way, though it's not as perfect as layoutManager.onSavedInstanceState
-        galleryModel.setCurrentPhotoId((mediaList.layoutManager as GridLayoutManager).findFirstVisibleItemPosition().let { mediaAdapter.getPhotoId(it) })
+        (mediaList.layoutManager as GridLayoutManager).findFirstVisibleItemPosition().let { position ->
+            if (position != RecyclerView.NO_POSITION) galleryModel.setCurrentPhotoId(mediaAdapter.getPhotoId(position))
+        }
+*/
     }
 
     override fun onDestroyView() {
