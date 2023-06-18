@@ -300,15 +300,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
-                var currentDate = LocalDate.now().plusDays(1)
-                //var currentDa = Instant.ofEpochMilli(System.currentTimeMillis()).truncatedTo(ChronoUnit.DAYS)
-                //val defaultZoneOffset = OffsetDateTime.now().offset
                 var theDate: LocalDate
 
                 if (folderArgument == GalleryFragment.TRASH_FOLDER) galleryModel.trash.collect {
-                    listGroupedByDate.clear()
-
+                    val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+                    var currentDate = LocalDate.now().plusDays(1)
                     it?.forEach { media ->
                         theDate = media.media.photo.dateTaken.toLocalDate()
                         if (theDate != currentDate) {
@@ -317,6 +313,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
                         }
 /*
+                        var currentDa = Instant.ofEpochMilli(System.currentTimeMillis()).truncatedTo(ChronoUnit.DAYS)
+                        val defaultZoneOffset = OffsetDateTime.now().offset
                         if (media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS) != currentDa) {
                             currentDa = media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS)
                             // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
@@ -329,7 +327,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
                 }
                 else galleryModel.medias.collect {
-                    listGroupedByDate.clear()
+                    val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+                    var currentDate = LocalDate.now().plusDays(1)
 
                     it?.let { localMedias ->
                         // Match folder name (including Trash folder), or filter out trashed items for all folders case
