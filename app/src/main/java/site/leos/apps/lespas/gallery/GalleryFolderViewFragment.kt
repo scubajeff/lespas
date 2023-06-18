@@ -299,24 +299,54 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) { galleryModel.medias.collect {
-                it?.let { localMedias ->
-                    val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
-                    var currentDate = LocalDate.now().plusDays(1)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+                var currentDate = LocalDate.now().plusDays(1)
+                //var currentDa = Instant.ofEpochMilli(System.currentTimeMillis()).truncatedTo(ChronoUnit.DAYS)
+                //val defaultZoneOffset = OffsetDateTime.now().offset
+                var theDate: LocalDate
 
-                    // Match folder name (including Trash folder), or filter out trashed items for all folders case
-                    (if (folderArgument != GalleryFragment.ALL_FOLDER) localMedias.filter { item -> item.folder == folderArgument } else localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }).forEach { media ->
-                        if (media.media.photo.dateTaken.toLocalDate() != currentDate) {
-                            currentDate = media.media.photo.dateTaken.toLocalDate()
+                if (folderArgument == GalleryFragment.TRASH_FOLDER) galleryModel.trash.collect {
+                    listGroupedByDate.clear()
+
+                    it?.forEach { media ->
+                        theDate = media.media.photo.dateTaken.toLocalDate()
+                        if (theDate != currentDate) {
+                            currentDate = theDate
                             // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
                             listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
                         }
+/*
+                        if (media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS) != currentDa) {
+                            currentDa = media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS)
+                            // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
+                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDa.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                        }
+*/
                         listGroupedByDate.add(media.media)
                     }
 
                     if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
                 }
-            }}
+                else galleryModel.medias.collect {
+                    listGroupedByDate.clear()
+
+                    it?.let { localMedias ->
+                        // Match folder name (including Trash folder), or filter out trashed items for all folders case
+                        (if (folderArgument == GalleryFragment.ALL_FOLDER) localMedias else localMedias.filter { item -> item.folder == folderArgument }).forEach { media ->
+                            theDate = media.media.photo.dateTaken.toLocalDate()
+                            if (theDate != currentDate) {
+                                currentDate = theDate
+                                // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
+                                listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                            }
+                            listGroupedByDate.add(media.media)
+                        }
+                    }
+
+                    if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
+                }
+            }
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {

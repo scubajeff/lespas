@@ -64,7 +64,10 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -496,7 +499,8 @@ class GalleryFragment: Fragment() {
         private var loadJob: Job? = null
         private var autoRemoveDone = false
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
-        val medias: StateFlow<List<LocalMedia>?> = _medias
+        val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        val trash: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
         override fun onCleared() {
             loadJob?.cancel()

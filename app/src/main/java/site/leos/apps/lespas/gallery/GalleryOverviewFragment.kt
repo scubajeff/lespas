@@ -250,61 +250,66 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) { combine(galleryModel.medias, backupSettingModel.getSettings()) { localMedias, backupSettings ->
-                localMedias?.let {
-                    var attachFootNote = false
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    combine(galleryModel.medias, backupSettingModel.getSettings()) { localMedias, backupSettings ->
+                        localMedias?.let {
+                            var attachFootNote = false
 
-                    if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
+                            if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
-                    val overview = mutableListOf<GalleryFragment.LocalMedia>()
-                    var isEnabled = false
-                    var lastBackupDate = 0
-                    var totalSize: Long
-                    localMedias.groupBy { it.folder }.run {
-                        forEach { group ->
-                            if (group.key != GalleryFragment.TRASH_FOLDER) {
-                                //if (group.key in managingFolders) {
-                                backupSettings.find { it.folder == group.key }?.let {
-                                    isEnabled = it.enabled
-                                    if (isEnabled) attachFootNote = true
+                            val overview = mutableListOf<GalleryFragment.LocalMedia>()
+                            var isEnabled = false
+                            var lastBackupDate = 0
+                            var totalSize: Long
+                            localMedias.groupBy { it.folder }.run {
+                                forEach { group ->
+                                    //if (group.key != GalleryFragment.TRASH_FOLDER) {
+                                        backupSettings.find { it.folder == group.key }?.let {
+                                            isEnabled = it.enabled
+                                            if (isEnabled) attachFootNote = true
 
-                                    lastBackupDate = it.lastBackup.toInt()
-                                } ?: run {
-                                    isEnabled = false
-                                    lastBackupDate = 0
-                                }
+                                            lastBackupDate = it.lastBackup.toInt()
+                                        } ?: run {
+                                            isEnabled = false
+                                            lastBackupDate = 0
+                                        }
 
-                                totalSize = 0L
-                                group.value.forEach { totalSize += it.media.photo.shareId }
+                                        totalSize = 0L
+                                        group.value.forEach { totalSize += it.media.photo.shareId }
 
-                                overview.add(
-                                    GalleryFragment.LocalMedia(
-                                        group.key,
-                                        NCShareViewModel.RemotePhoto(
-                                            // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
-                                            // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
-                                            Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
-                                            coverBaseLine = when {
-                                                //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
-                                                isEnabled -> BACKUP_ENABLED
-                                                else -> BACKUP_DISABLED
-                                            }
+                                        overview.add(
+                                            GalleryFragment.LocalMedia(
+                                                group.key,
+                                                NCShareViewModel.RemotePhoto(
+                                                    // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
+                                                    // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
+                                                    Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
+                                                    coverBaseLine = when {
+                                                        //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
+                                                        isEnabled -> BACKUP_ENABLED
+                                                        else -> BACKUP_DISABLED
+                                                    }
+                                                )
+                                            )
                                         )
-                                    )
-                                )
-                                // Maximum 2 lines of media items in overview list
-                                overview.addAll(group.value.take(spanCount * 2))
-                                //}
+                                        // Maximum 2 lines of media items in overview list
+                                        overview.addAll(group.value.take(spanCount * 2))
+                                    //}
+                                }
                             }
+                            if (attachFootNote) {
+                                // TODO auto remove on Android 11
+                                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
+                                overview.plus(GalleryFragment.LocalMedia(FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
+                            } else overview
                         }
-                    }
-                    if (attachFootNote) {
-                        // TODO auto remove on Android 11
-                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
-                        overview.plus(GalleryFragment.LocalMedia(FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
-                    } else overview
+                    }.collect { overviewAdapter.submitList(it) }
                 }
-            }.collect { overviewAdapter.submitList(it) }}
+                launch {
+                    galleryModel.trash.collect { trashMenuItem?.isEnabled = !it.isNullOrEmpty() }
+                }
+            }
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {
@@ -312,6 +317,12 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 menuInflater.inflate(R.menu.gallery_overview_menu, menu)
                 trashMenuItem = menu.findItem(R.id.trash)
                 trashMenuItem?.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                super.onPrepareMenu(menu)
+                // Collecting on trash might have already done when menu created
+                trashMenuItem?.isEnabled = !galleryModel.trash.value.isNullOrEmpty()
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {

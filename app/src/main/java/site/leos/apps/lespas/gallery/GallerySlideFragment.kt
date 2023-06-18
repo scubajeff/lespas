@@ -264,17 +264,22 @@ class GallerySlideFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) { galleryModel.medias.collect {
-                it?.let { localMedias ->
-                    val photos = when {
-                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { item -> item.folder != GalleryFragment.TRASH_FOLDER }
-                        folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
-                        else -> localMedias.filter { item -> item.folder == folderArgument }
-                    }
-
-                    if (photos.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(photos) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                if (folderArgument == GalleryFragment.TRASH_FOLDER) galleryModel.trash.collect { trashItems ->
+                    if (trashItems.isNullOrEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(trashItems) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
                 }
-            }}
+                else galleryModel.medias.collect {
+                    it?.let { localMedias ->
+                        when {
+                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias
+                            folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
+                            else -> localMedias.filter { item -> item.folder == folderArgument }
+                        }.let { filtered ->
+                            if (filtered.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(filtered) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
+                        }
+                    }
+                }
+            }
         }
     }
 
