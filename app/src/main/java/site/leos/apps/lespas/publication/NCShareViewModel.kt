@@ -637,8 +637,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
-    fun getAvatar(user: Sharee, view: View, callBack: NCShareViewModel.LoadCompleteListener?) {
+    fun getAvatar(user: Sharee, view: View, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(downloadDispatcher) {
@@ -862,7 +861,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         }
                     } else {
-                        @Suppress("DEPRECATION")
                         val fileName = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/${remotePhoto.photo.name}"
                         File(fileName).outputStream().use { local ->
                             webDav.getStream("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", true, null).use { remote ->
@@ -1094,8 +1092,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val httpCallMap = HashMap<Job, Call>()
     private val mediaMetadataRetriever by lazy { MediaMetadataRetriever() }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
-    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: NCShareViewModel.LoadCompleteListener? = null) {
+    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         // For full image, show a cached thumbnail version first
@@ -1143,12 +1140,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 var type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
 
                 var key = "${imagePhoto.photo.id}$type"
-                if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"
+                if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"    // Make sure cache missed when cover's baseline changed
 
                 (if (forceNetwork) null else imageCache.get(key))?.let {
                     bitmap = it
                     //Log.e(">>>>>>>>>","got cache hit $key")
                 } ?: run {
+                    var updateCache = true
+
                     // Cache missed
                     bitmap = when (type) {
                         TYPE_GRID, TYPE_IN_MAP -> {
@@ -1156,10 +1155,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
                                 imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> {
+                                    updateCache = false
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                        ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
                                         // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
-                                        //contentResolver.loadThumbnail(Uri.parse(photo.id), Size(photo.width/8, photo.height/8), null)
+                                        //ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
+                                        view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width/thumbnailSize, imagePhoto.photo.height/thumbnailSize), null)
                                     } else {
                                         @Suppress("DEPRECATION")
                                         MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
@@ -1207,6 +1207,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 when (type) {
                                     //TYPE_FULL, TYPE_QUARTER -> {
                                     TYPE_FULL -> {
+                                        updateCache = false
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
                                             (imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
@@ -1303,7 +1304,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
 
-                    if (bitmap != null && type != TYPE_FULL) imageCache.put(key, bitmap)
+                    if (bitmap != null && updateCache) imageCache.put(key, bitmap)
                 }
             }
             catch (e: OkHttpWebDavException) {
@@ -1348,7 +1349,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
-                    @Suppress("BlockingMethodInNonBlockingContext")
                     cr.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
                 } catch (e: Exception) {
                     // Some Android Q Rom, like AEX for EMUI 9, throw ArithmeticException
