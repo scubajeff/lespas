@@ -72,6 +72,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.BackupSettingViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.time.LocalDateTime
@@ -103,7 +104,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             { folder, isEnabled, lastBackup ->
                 if (isEnabled) {
                     backupSettingModel.enableBackup(folder)
-                    if (lastBackup == 0 && parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
+                    if (lastBackup == BackupSetting.NOT_YET.toInt() && parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
                         viewLifecycleOwner.lifecycleScope.launch {
                             Tools.getFolderStatistic(requireContext().contentResolver, folder).let {
                                 if (it.first > 0) {
@@ -260,7 +261,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                             val overview = mutableListOf<GalleryFragment.LocalMedia>()
                             var isEnabled = false
-                            var lastBackupDate = 0
+                            var lastBackupDate = BackupSetting.NOT_YET
                             var totalSize: Long
                             localMedias.groupBy { it.folder }.run {
                                 forEach { group ->
@@ -269,10 +270,10 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                             isEnabled = it.enabled
                                             if (isEnabled) attachFootNote = true
 
-                                            lastBackupDate = it.lastBackup.toInt()
+                                            lastBackupDate = it.lastBackup
                                         } ?: run {
                                             isEnabled = false
-                                            lastBackupDate = 0
+                                            lastBackupDate = BackupSetting.NOT_YET
                                         }
 
                                         totalSize = 0L
@@ -284,7 +285,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                                 NCShareViewModel.RemotePhoto(
                                                     // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
                                                     // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
-                                                    Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
+                                                    Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate.toInt(), dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
                                                     coverBaseLine = when {
                                                         //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
                                                         isEnabled -> BACKUP_ENABLED

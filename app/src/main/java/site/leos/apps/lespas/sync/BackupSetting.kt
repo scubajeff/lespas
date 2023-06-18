@@ -31,7 +31,7 @@ import site.leos.apps.lespas.BaseDao
 data class BackupSetting (
     @PrimaryKey var folder: String = "",
     var enabled: Boolean = true,
-    var lastBackup: Long = 0L,
+    var lastBackup: Long = NOT_YET,
     var autoRemove: Int = REMOVE_NEVER,
     var exclude: MutableSet<String> = mutableSetOf(),
 ) : Parcelable {
@@ -42,6 +42,8 @@ data class BackupSetting (
         const val REMOVE_ONE_DAY = 1
         const val REMOVE_ONE_WEEK = 7
         const val REMOVE_ONE_MONTH = 30
+
+        const val NOT_YET = -1L
     }
 }
 

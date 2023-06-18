@@ -1818,6 +1818,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var mDate: Long
 
         backupSettingRepository.getEnabled().forEach {
+            if (it.lastBackup == BackupSetting.NOT_YET) return@forEach
+
             val subFolder = "${backupFolder}/${it.folder}"
             makeSureFolderExisted(subFolder)
 
