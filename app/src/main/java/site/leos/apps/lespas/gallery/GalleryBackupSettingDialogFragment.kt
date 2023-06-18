@@ -82,7 +82,7 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
                 if (MediaStore.canManageMedia(requireContext())) {
                     autoRemoveChoice.check(lastCheckedId)
                     // Show a warning message of consequence for didn't choose to backup existing files
-                    if (parentFragmentManager.findFragmentByTag(REMOVE_OLD_FILES_WARNING_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_remove_old_files_warning), positiveButtonText = getString(R.string.button_text_i_understand), cancelable = false, requestKey = REMOVE_OLD_FILES_WARNING_REQUEST).show(parentFragmentManager, REMOVE_OLD_FILES_WARNING_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(REMOVE_OLD_FILES_WARNING_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_remove_old_files_warning), positiveButtonText = getString(R.string.button_text_i_understand), cancelable = false, individualKey = REMOVE_OLD_FILES_WARNING_REQUEST, requestKey = BACKUP_SETTING_DIALOG_REQUEST_KEY).show(parentFragmentManager, REMOVE_OLD_FILES_WARNING_DIALOG)
                 }
             }
         }
@@ -117,11 +117,11 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
         setting.folder = requireArguments().getString(ARGUMENT_FOLDER)!!
         view.findViewById<TextView>(R.id.folder_name).text = getString(R.string.gallery_backup_option_dialog_title, setting.folder.let { name -> if (name == "DCIM") getString(R.string.camera_roll_name) else name })
 
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(BACKUP_SETTING_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)?.let { requestKey ->
                 when(requestKey) {
                     MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST -> {
-                        if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                        if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                             lastCheckedId = autoRemoveChoice.checkedButtonId
                             autoRemoveChoice.check(R.id.remove_never)
                             manageMediaPermissionRequestLauncher.launch(Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, Uri.parse("package:${BuildConfig.APPLICATION_ID}")))
@@ -155,10 +155,10 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
                         if (checkedId != R.id.remove_never) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) {
                                 // Ask for MANAGE_MEDIA permission on Android S+ so that we can remove files without asking for user confirmation everytime
-                                if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.manage_media_access_permission_rationale), positiveButtonText = getString(R.string.proceed_request), requestKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
+                                if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.manage_media_access_permission_rationale), positiveButtonText = getString(R.string.proceed_request), individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST, requestKey = BACKUP_SETTING_DIALOG_REQUEST_KEY).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
                             } else {
                                 // Show a warning message of consequence for didn't choose to backup existing files
-                                if (notWarned && parentFragmentManager.findFragmentByTag(REMOVE_OLD_FILES_WARNING_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_remove_old_files_warning), positiveButtonText = getString(R.string.button_text_i_understand), cancelable = false, requestKey = REMOVE_OLD_FILES_WARNING_REQUEST).show(parentFragmentManager, REMOVE_OLD_FILES_WARNING_DIALOG)
+                                if (notWarned && parentFragmentManager.findFragmentByTag(REMOVE_OLD_FILES_WARNING_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_remove_old_files_warning), positiveButtonText = getString(R.string.button_text_i_understand), cancelable = false, individualKey = REMOVE_OLD_FILES_WARNING_REQUEST, requestKey = BACKUP_SETTING_DIALOG_REQUEST_KEY).show(parentFragmentManager, REMOVE_OLD_FILES_WARNING_DIALOG)
                             }
                         }
                     }
@@ -249,6 +249,7 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
     )
 
     companion object {
+        private const val BACKUP_SETTING_DIALOG_REQUEST_KEY = "BACKUP_SETTING_DIALOG_REQUEST_KEY"
         private const val MANAGE_MEDIA_PERMISSION_DIALOG = "MANAGE_MEDIA_PERMISSION_DIALOG"
         private const val MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST = "MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST"
         private const val REMOVE_OLD_FILES_WARNING_DIALOG = "REMOVE_OLD_FILES_WARNING_DIALOG"

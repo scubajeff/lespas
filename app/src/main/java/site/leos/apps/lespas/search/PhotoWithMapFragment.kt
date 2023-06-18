@@ -153,10 +153,10 @@ class PhotoWithMapFragment: Fragment() {
             invalidate()
         }
 
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+        parentFragmentManager.setFragmentResultListener(PHOTO_WITH_MAP_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY) {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), GENERAL_SHARE)
+                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), GENERAL_SHARE)
                 }
             }
         }
@@ -279,7 +279,7 @@ class PhotoWithMapFragment: Fragment() {
                 else {
                     if (stripExif == getString(R.string.strip_ask_value)) {
                         if (Tools.hasExif(remotePhoto.photo.mimeType)) {
-                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = PHOTO_WITH_MAP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                         } else shareOut(false, GENERAL_SHARE)
                     } else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
                 }
@@ -327,6 +327,7 @@ class PhotoWithMapFragment: Fragment() {
         const val TAG_DESTINATION_DIALOG = "PHOTO_WITH_MAP_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "PHOTO_WITH_MAP_ACQUIRING_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val PHOTO_WITH_MAP_REQUEST_KEY = "PHOTO_WITH_MAP_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_WITH_MAP_STRIP_REQUEST_KEY"
 
         @JvmStatic

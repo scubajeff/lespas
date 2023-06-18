@@ -357,7 +357,7 @@ class PhotoSlideFragment : Fragment() {
                     handlerBottomControl.post(hideSystemUI)
 
                     if (Tools.hasExif(mimeType)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = PHOTO_SLIDE_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false, GENERAL_SHARE)
                 }
                 else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
@@ -399,7 +399,7 @@ class PhotoSlideFragment : Fragment() {
                 handlerBottomControl.post(hideSystemUI)
 
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = PHOTO_SLIDE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
             }
         }
         captionTextView.run {
@@ -483,10 +483,10 @@ class PhotoSlideFragment : Fragment() {
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(PHOTO_SLIDE_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) removePhoto()
-                STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), GENERAL_SHARE)
+                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) removePhoto()
+                STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), GENERAL_SHARE)
             }
         }
 
@@ -710,6 +710,7 @@ class PhotoSlideFragment : Fragment() {
         private const val REMOVE_DIALOG = "REMOVE_DIALOG"
         private const val CAPTION_DIALOG = "CAPTION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val PHOTO_SLIDE_REQUEST_KEY = "PHOTO_SLIDE_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
 

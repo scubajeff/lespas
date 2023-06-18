@@ -77,8 +77,8 @@ class MainActivity : AppCompatActivity() {
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
 
-            supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->
-                if (key == ACTIVITY_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+            supportFragmentManager.setFragmentResultListener(MAIN_ACTIVITY_REQUEST_KEY, this) { _, bundle ->
+                if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                     when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
                         CONFIRM_RESTART_DIALOG -> {
                             WorkManager.getInstance(this).pruneWork()
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
             if (savedInstanceState == null) {
                 if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                     // We need external SD mounted writable
-                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), cancelable = false, requestKey = CONFIRM_REQUIRE_SD_DIALOG)
+                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), cancelable = false, individualKey = CONFIRM_REQUIRE_SD_DIALOG, requestKey = MAIN_ACTIVITY_REQUEST_KEY)
                         .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
                 } else {
                     lifecycleScope.launch(Dispatchers.IO) {
@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                     lifecycleScope.launch(Dispatchers.IO) {
                         StatFs(Environment.getDataDirectory().path).let {
                             if (it.availableBlocksLong < it.blockCountLong / 10) withContext(Dispatchers.Main) {
-                                if (supportFragmentManager.findFragmentByTag(CONFIRM_LOW_STORAGE_SPACE_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), cancelable = false).show(supportFragmentManager, CONFIRM_LOW_STORAGE_SPACE_DIALOG)
+                                if (supportFragmentManager.findFragmentByTag(CONFIRM_LOW_STORAGE_SPACE_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), cancelable = false, requestKey = MAIN_ACTIVITY_REQUEST_KEY).show(supportFragmentManager, CONFIRM_LOW_STORAGE_SPACE_DIALOG)
                             }
                         }
                     }
@@ -201,7 +201,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 workInfos?.get(0)?.apply {
                     if (state.isFinished) {
-                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), cancelable = false, requestKey = CONFIRM_RESTART_DIALOG)
+                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), cancelable = false, individualKey = CONFIRM_RESTART_DIALOG, requestKey = MAIN_ACTIVITY_REQUEST_KEY)
                             .show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
                     }
                 }
@@ -252,10 +252,11 @@ class MainActivity : AppCompatActivity() {
 */
 
     companion object {
-        const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
-        const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
-        const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
-        const val CONFIRM_LOW_STORAGE_SPACE_DIALOG = "CONFIRM_LOW_STORAGE_SPACE_DIALOG"
+        private const val MAIN_ACTIVITY_REQUEST_KEY = "MAIN_ACTIVITY_REQUEST_KEY"
+        private const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
+        private const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
+        private const val CONFIRM_LOW_STORAGE_SPACE_DIALOG = "CONFIRM_LOW_STORAGE_SPACE_DIALOG"
+
         const val LAUNCH_GALLERY = "LAUNCH_GALLERY"
     }
 }

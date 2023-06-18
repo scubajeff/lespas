@@ -594,7 +594,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     // If this is a MOVE operation, show moving result in source album immediately, result in target album however can't be shown until the next sync finished
                     if (destinationViewModel.shouldRemoveOriginal()) actionModel.deletePhotosLocalRecord(photoList)
 
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation)).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation), requestKey = ALBUM_DETAIL_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
                 else if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, targetAlbum, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
@@ -700,17 +700,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         // Confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(ALBUM_DETAIL_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY-> {
-                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                         val photos = mutableListOf<Photo>()
                         for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId)?.run { if (id != album.cover) photos.add(this) }
                         if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
                     }
                     selectionTracker.clearSelection()
                 }
-                STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, true))
+                STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, true))
             }
         }
 
@@ -994,13 +994,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = ALBUM_DETAIL_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.share -> {
                 if (stripSetting == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true, requestKey = ALBUM_DETAIL_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
                 }
                 else shareOut(stripSetting == getString(R.string.strip_on_value))
@@ -1344,6 +1344,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val KEY_SHAREOUT_PHOTO = "KEY_SHAREOUT_PHOTO"
         private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 
+        private const val ALBUM_DETAIL_REQUEST_KEY = "ALBUM_DETAIL_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "ALBUMDETAIL_STRIP_REQUEST_KEY"
 

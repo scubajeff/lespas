@@ -245,10 +245,10 @@ class NCAuthenticationFragment: Fragment() {
         }
 
         // Confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(NC_AUTHENTICATION_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
                 CONFIRM_NEW_ACCOUNT_DIALOG -> {
-                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                         AccountManager.get(context).apply { removeAccountExplicitly(getAccountsByType(getString(R.string.account_type_nc))[0]) }
                         (requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
                         requireActivity().finish()
@@ -289,7 +289,7 @@ class NCAuthenticationFragment: Fragment() {
                     R.id.option_menu_qr_scanner -> {
                         try { scanRequestLauncher?.launch(scanIntent) }
                         catch (e: SecurityException) {
-                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app)).show(parentFragmentManager, CONFIRM_DIALOG)
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), requestKey = NC_AUTHENTICATION_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                         true
                     }
@@ -322,7 +322,7 @@ class NCAuthenticationFragment: Fragment() {
             if (authenticateModel.getCredential().loginName != currentLoginName) {
                 // Re-login to a new account
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), positiveButtonText = getString(R.string.yes_logout), requestKey = CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), positiveButtonText = getString(R.string.yes_logout), individualKey = CONFIRM_NEW_ACCOUNT_DIALOG, requestKey = NC_AUTHENTICATION_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
             } else {
                 saveAccount()
                 parentFragmentManager.popBackStack()
@@ -398,6 +398,7 @@ class NCAuthenticationFragment: Fragment() {
         private const val LOGIN_FLOW_ENDPOINT = "/index.php/login/flow"
 
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val NC_AUTHENTICATION_REQUEST_KEY = "NC_AUTHENTICATION_REQUEST_KEY"
         private const val CONFIRM_NEW_ACCOUNT_DIALOG = "CONFIRM_NEW_ACCOUNT_DIALOG"
 
         private const val KEY_ACTION_BAR_HEIGHT = "KEY_ACTION_BAR_HEIGHT"

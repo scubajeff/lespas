@@ -290,11 +290,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
         )
 
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(GALLERY_FOLDERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.remove(getSelectedPhotos())
-                STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
-                EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.photo.id) }})
+                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos())
+                STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
+                EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.photo.id) }})
             }
         }
 
@@ -385,7 +385,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     true
                 }
                 R.id.empty_trash -> {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_empty_trash), positiveButtonText = getString(R.string.yes_delete), requestKey = EMPTY_TRASH_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_empty_trash), positiveButtonText = getString(R.string.yes_delete), individualKey = EMPTY_TRASH_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                     true
                 }
                 else -> false
@@ -449,7 +449,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 when {
                     folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(getSelectedPhotos())
                     Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotos())
-                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
 
                 true
@@ -457,7 +457,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             R.id.share -> {
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else galleryModel.shareOut(getSelectedPhotos(), false)
                 } else galleryModel.shareOut(getSelectedPhotos(), stripExif == getString(R.string.strip_on_value))
 
@@ -645,6 +645,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val GALLERY_FOLDERVIEW_REQUEST_KEY = "GALLERY_FOLDERVIEW_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val EMPTY_TRASH_REQUEST_KEY = "EMPTY_TRASH_REQUEST_KEY"

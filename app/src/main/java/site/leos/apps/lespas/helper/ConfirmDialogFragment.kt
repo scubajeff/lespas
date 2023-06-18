@@ -20,16 +20,14 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import com.google.android.material.button.MaterialButton
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 
 class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dialog) {
     private val buttonClickListener: View.OnClickListener = View.OnClickListener { v ->
         v?.id.let { viewId ->
-            val requestKey = requireArguments().getString(INDIVIDUAL_REQUEST_KEY) ?: ""
-            parentFragmentManager.setFragmentResult(if (requestKey == MainActivity.CONFIRM_REQUIRE_SD_DIALOG || requestKey == MainActivity.CONFIRM_RESTART_DIALOG) MainActivity.ACTIVITY_DIALOG_REQUEST_KEY else CONFIRM_DIALOG_REQUEST_KEY, Bundle().apply {
-                putBoolean(CONFIRM_DIALOG_REQUEST_KEY, viewId == R.id.ok_button)
-                putString(INDIVIDUAL_REQUEST_KEY, requestKey)
+            parentFragmentManager.setFragmentResult(requireArguments().getString(REQUEST_KEY, CONFIRM_DIALOG_RESULT_KEY), Bundle().apply {
+                putBoolean(CONFIRM_DIALOG_RESULT_KEY, viewId == R.id.ok_button)
+                putString(INDIVIDUAL_REQUEST_KEY, requireArguments().getString(INDIVIDUAL_REQUEST_KEY, ""))
             })
             dismiss()
         }
@@ -67,21 +65,23 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
     }
 
     companion object {
-        const val CONFIRM_DIALOG_REQUEST_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
+        const val CONFIRM_DIALOG_RESULT_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
         const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
+        private const val REQUEST_KEY = "REQUEST_KEY"
         private const val MESSAGE = "MESSAGE"
         private const val POSITIVE_BUTTON = "POSITIVE_BUTTON"
         private const val NEGATIVE_BUTTON = "NEGATIVE_BUTTON"
         private const val CANCELABLE = "CANCELABLE"
 
         @JvmStatic
-        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, requestKey: String = "") = ConfirmDialogFragment().apply {
+        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY) = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
                 putString(POSITIVE_BUTTON, positiveButtonText)
                 putString(NEGATIVE_BUTTON, negativeButtonText)
                 putBoolean(CANCELABLE, cancelable)
-                putString(INDIVIDUAL_REQUEST_KEY, requestKey)
+                putString(INDIVIDUAL_REQUEST_KEY, individualKey)
+                putString(REQUEST_KEY, requestKey)
             }
         }
     }

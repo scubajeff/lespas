@@ -236,7 +236,7 @@ class GallerySlideFragment : Fragment() {
                     when {
                         folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(listOf(photo.id), nextInLine)
                         Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(listOf(photo.id), nextInLine)
-                        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                     }
                 }
             }
@@ -247,19 +247,19 @@ class GallerySlideFragment : Fragment() {
 
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (Tools.hasExif(photo.mimeType)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else galleryModel.shareOut(listOf(photo.id), false,)
                 } else galleryModel.shareOut(listOf(photo.id), stripExif == getString(R.string.strip_on_value),)
             }
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener { galleryModel.add(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id)) }
 
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(GALLERY_SLIDE_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                     galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), nextInLine)
                 }
-                STRIP_REQUEST_KEY -> galleryModel.shareOut(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
+                STRIP_REQUEST_KEY -> galleryModel.shareOut(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
             }
         }
 
@@ -395,6 +395,7 @@ class GallerySlideFragment : Fragment() {
 
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val INFO_DIALOG = "INFO_DIALOG"
+        private const val GALLERY_SLIDE_REQUEST_KEY = "GALLERY_SLIDE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
 

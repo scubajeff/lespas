@@ -109,7 +109,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             Tools.getFolderStatistic(requireContext().contentResolver, folder).let {
                                 if (it.first > 0) {
                                     // If there are existing photos in camera roll, offer choice to backup those too
-                                    ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_existing, folder, it.first, Tools.humanReadableByteCountSI(it.second)), positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false, requestKey = "${BACKUP_EXISTING_REQUEST_KEY}${folder}").show(parentFragmentManager, CONFIRM_DIALOG)
+                                    ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_existing, folder, it.first, Tools.humanReadableByteCountSI(it.second)), positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false, individualKey = "${BACKUP_EXISTING_REQUEST_KEY}${folder}", requestKey = GALLERY_OVERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                                 } else backupSettingModel.updateLastBackupTimestamp(folder, System.currentTimeMillis() / 1000)
                             }
                         }
@@ -239,13 +239,13 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_phone_android_24)!!))
         }
 
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+        parentFragmentManager.setFragmentResultListener(GALLERY_OVERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)?.let { requestKey ->
                 when {
-                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) galleryModel.remove(getSelectedPhotos())
-                    requestKey == STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), false)
+                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos())
+                    requestKey == STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
                     // When ConfirmDialogFragment launched to confirm backup existing media files, INDIVIDUAL_REQUEST_KEY is the folder name. TODO hope that no body use 'DELETE_REQUEST_KEY' and 'STRIP_REQUEST_KEY' as their folder name
-                    requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) 0L else System.currentTimeMillis() / 1000)
+                    requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) 0L else System.currentTimeMillis() / 1000)
                 }
             }
         }
@@ -398,14 +398,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             }
             R.id.remove -> {
                 if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(getSelectedPhotos())
-                else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
 
                 true
             }
             R.id.share -> {
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else galleryModel.shareOut(getSelectedPhotos(), false)
                 } else galleryModel.shareOut(getSelectedPhotos(), stripExif == getString(R.string.strip_on_value))
 
@@ -681,6 +681,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val BACKUP_OPTION_DIALOG = "BACKUP_OPTION_DIALOG"
 
+        private const val GALLERY_OVERVIEW_REQUEST_KEY = "GALLERY_OVERVIEW_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val BACKUP_EXISTING_REQUEST_KEY = "BACKUP_EXISTING_REQUEST_KEY"

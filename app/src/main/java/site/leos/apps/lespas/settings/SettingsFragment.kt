@@ -248,8 +248,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         view.doOnPreDraw { startPostponedEnterTransition() }
 
         // Confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
-            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+        parentFragmentManager.setFragmentResultListener(SETTING_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
                     LOGOUT_CONFIRM_DIALOG -> {
                         AccountManager.get(context).apply { removeAccountExplicitly(getAccountsByType(getString(R.string.account_type_nc))[0]) }
@@ -390,14 +390,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
 */
             getString(R.string.logout_pref_key) -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_logout_dialog, accounts[0].name), positiveButtonText = getString(R.string.yes_logout), requestKey = LOGOUT_CONFIRM_DIALOG)
-                    .show(parentFragmentManager, CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_logout_dialog, accounts[0].name), positiveButtonText = getString(R.string.yes_logout), individualKey = LOGOUT_CONFIRM_DIALOG, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             getString(R.string.transfer_pref_key) -> {
                 if (ContentResolver.isSyncActive(accounts[0], getString(R.string.sync_authority))) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.is_syncing_message), cancelable = false)
-                        .show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.is_syncing_message), cancelable = false, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
                 else
                     if (parentFragmentManager.findFragmentByTag(TRANSFER_FILES_DIALOG) == null) TransferStorageDialog.newInstance(getString(R.string.confirm_transferring_message, preference.title)).show(parentFragmentManager, TRANSFER_FILES_DIALOG)
@@ -447,7 +445,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
                     if (shouldShowRequestPermissionRationale(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_IMAGES else android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
-                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), positiveButtonText = getString(R.string.proceed_request), requestKey = SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), positiveButtonText = getString(R.string.proceed_request), individualKey = SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                     } else {
                         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
@@ -458,8 +456,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.clear_cache_pref_key) -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_clear_cache), requestKey = CLEAR_CACHE_CONFIRM_DIALOG)
-                    .show(parentFragmentManager, CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_clear_cache), individualKey = CLEAR_CACHE_CONFIRM_DIALOG, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             getString(R.string.cache_size_pref_key) -> {
@@ -544,7 +541,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         if (preferenceManager.sharedPreferences.getBoolean(getString(R.string.snapseed_pref_key), false) && isSnapseedNotInstalled) {
             // Prompt user to install Snapseed
             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), requestKey = INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), individualKey = INSTALL_SNAPSEED_DIALOG, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
         }
     }
 
@@ -681,8 +678,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     }
 
     companion object {
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val TRANSFER_FILES_DIALOG = "CONFIRM_MOVING_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val SETTING_REQUEST_KEY = "SETTING_REQUEST_KEY"
         private const val LOGOUT_CONFIRM_DIALOG = "LOGOUT_CONFIRM_DIALOG"
         private const val CLEAR_CACHE_CONFIRM_DIALOG = "CLEAR_CACHE_CONFIRM_DIALOG"
         private const val CACHE_SIZE_DIALOG = "CACHE_SIZE_DIALOG"

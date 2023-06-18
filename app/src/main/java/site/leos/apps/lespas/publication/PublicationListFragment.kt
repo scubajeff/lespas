@@ -69,7 +69,7 @@ class PublicationListFragment: Fragment() {
             { share ->
                 shareSelected = share
                 if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), positiveButtonText = getString(R.string.yes_i_do)).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(PUBLICATION_LIST_REQUEST_KEY) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), positiveButtonText = getString(R.string.yes_i_do), requestKey = PUBLICATION_LIST_REQUEST_KEY).show(parentFragmentManager, PUBLICATION_LIST_REQUEST_KEY)
                 } else viewDetail()
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
@@ -128,8 +128,8 @@ class PublicationListFragment: Fragment() {
 */
 
         // Use mobile data confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) viewDetail()
+        parentFragmentManager.setFragmentResultListener(PUBLICATION_LIST_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) viewDetail()
         }
 
         requireActivity().addMenuProvider(object : MenuProvider {
@@ -223,7 +223,7 @@ class PublicationListFragment: Fragment() {
     }
 
     companion object {
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val PUBLICATION_LIST_REQUEST_KEY = "PUBLICATION_LIST_REQUEST_KEY"
 
         private const val SELECTED_SHARE = "SELECTED_SHARE"
     }

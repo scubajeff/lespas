@@ -338,8 +338,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
 
         // Confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
-            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+        parentFragmentManager.setFragmentResultListener(ALBUM_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                     CONFIRM_DELETE_REQUEST -> {
                         val albums = mutableListOf<Album>()
@@ -585,7 +585,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), requestKey = CONFIRM_DELETE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), individualKey = CONFIRM_DELETE_REQUEST, requestKey = ALBUM_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.hide -> {
@@ -622,7 +622,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 */
             R.id.toggle_remote -> {
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(if (item.title == getString(R.string.action_set_remote)) R.string.msg_set_as_remote else R.string.msg_set_as_local), requestKey = CONFIRM_TOGGLE_REMOTE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(if (item.title == getString(R.string.action_set_remote)) R.string.msg_set_as_remote else R.string.msg_set_as_local), individualKey = CONFIRM_TOGGLE_REMOTE_REQUEST, requestKey = ALBUM_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.select_all -> {
@@ -951,6 +951,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         const val TAG_ACQUIRING_DIALOG = "ALBUM_FRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUM_FRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val ALBUM_REQUEST_KEY = "ALBUM_REQUEST_KEY"
         private const val CONFIRM_DELETE_REQUEST = "CONFIRM_DELETE_REQUEST"
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
