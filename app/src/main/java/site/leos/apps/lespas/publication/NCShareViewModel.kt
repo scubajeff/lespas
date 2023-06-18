@@ -1158,8 +1158,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     updateCache = false
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
-                                        //ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
-                                        view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width/thumbnailSize, imagePhoto.photo.height/thumbnailSize), null)
+                                        try {
+                                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / thumbnailSize, imagePhoto.photo.height / thumbnailSize), null)
+                                        } catch (_: Exception) {
+                                            // loadThumbnail will failed on some format like webp, hence decode it here
+                                            updateCache = true
+                                            ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
+                                        }
                                     } else {
                                         @Suppress("DEPRECATION")
                                         MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
