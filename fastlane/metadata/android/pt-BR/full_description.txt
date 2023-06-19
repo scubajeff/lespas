@@ -3,7 +3,7 @@ Les Pas é um aplicativo de galeria livre, moderno, leve e rápido. Organize sua
 Gerenciamento, sincronização e arquivamento
   * Organize seus arquivos de mídia em álbuns
   * Importação fácil de mídia simplesmente compartilhando arquivos com o Les Pas
-  * Gerencie o rolo da câmera do seu telefone e faça backup automático no servidor
+  * Gerencie arquivos de mídia na galeria do seu telefone e faça backup automático no servidor; cada pasta de mídia no seu telefone tem sua própria configuração de backup
   * Integração com o Snapseed para edição de fotos
   * Suporte para adicionar legenda à foto
   * A sincronização funciona com o servidor Nextcloud e entre vários dispositivos, edite álbuns no servidor Nextcloud e em todos os seus dispositivos móveis simultaneamente.

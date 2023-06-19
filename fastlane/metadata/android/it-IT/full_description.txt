@@ -3,7 +3,7 @@ Les Pas è un'app galleria gratuita, moderna, leggera e veloce. Organizza le tue
 Gestione, sincronizzazione e archiviazione
   * Organizzare i file multimediali in album
   * Importazione facile dei file multimediali semplicemente condividendoli con Les Pas
-  * Gestione del rullino fotografico del telefono e backup automatico su server
+  * Gestione dei file multimediali nella galleria del telefono e backup automatico sul server; ogni cartella multimediale del telefono ha la propria impostazione di backup
   * Integrazione con Snapseed per il fotoritocco
   * Supporto per l'aggiunta di didascalie alle foto
   * La sincronizzazione funziona con il server Nextcloud e tra più dispositivi, modificando gli album sul server Nextcloud e su tutti i dispositivi mobili contemporaneamente

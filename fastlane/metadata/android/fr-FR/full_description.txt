@@ -3,7 +3,7 @@ Les Pas, est une application de galerie gratuite, moderne, légère et rapide. O
 Gestion, synchronisation et archivage
   * Organisez vos fichiers multimédias dans des albums
   * Importation facile des médias en partageant simplement les fichiers avec Les Pas
-  * Gestion du rouleau d'appareils photo de votre téléphone et sauvegarde automatique sur le serveur
+  * Gérez les fichiers multimédias dans la galerie de votre téléphone et effectuez une sauvegarde automatique sur le serveur. Chaque dossier multimédia de votre téléphone dispose de ses propres paramètres de sauvegarde
   * Intégration avec Snapseed pour l'édition de photos
   * Possibilité d'ajouter une légende à la photo
   * La synchronisation fonctionne avec le serveur Nextcloud et entre plusieurs appareils, éditer des albums sur le serveur Nextcloud et sur tous vos appareils mobiles simultanément.

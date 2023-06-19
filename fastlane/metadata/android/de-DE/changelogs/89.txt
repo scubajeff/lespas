@@ -1,0 +1,4 @@
+* Ersetzen Sie die Kamerarolle durch die neue Galerie, verwalten Sie nun alle Mediendateien auf Ihrem Gerät und haben Sie separate Backup-Einstellungen für jeden Ordner.
+* Der Home-Ordner auf dem Server muss nicht mehr den fest programmierten Namen 'lespas' haben, Sie können jeden beliebigen Ordner finden, in dem Sie Ihre Alben unterbringen möchten
+* Tonproblem behoben, wenn sich die Geräteausrichtung während der Videowiedergabe ändert
+* Weitere Verbesserungen und Fehlerkorrekturen

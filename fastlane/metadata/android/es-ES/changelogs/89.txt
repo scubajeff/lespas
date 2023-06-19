@@ -1,0 +1,4 @@
+* Sustituye Camera Roll por la nueva Galería, gestiona todos los archivos multimedia de tu dispositivo y haz copias de seguridad separadas para cada carpeta.
+* Carpeta de inicio en el servidor ya no necesita tener un nombre codificado de 'lespas', se puede encontrar cualquier carpeta que desea alojar sus álbumes
+* Arreglado un fallo de sonido cuando la orientación del dispositivo cambiaba durante la reproducción de vídeo.
+* Otras mejoras y correcciones de errores

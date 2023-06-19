@@ -1,0 +1,4 @@
+* Remplacer Camera Roll par la nouvelle Galerie, gérer tous les fichiers média de votre appareil et avoir des paramètres de sauvegarde séparés pour chaque dossier.
+* Le dossier personnel sur le serveur n'a plus besoin d'avoir un nom codé en dur de 'lespas', vous pouvez trouver le dossier que vous voulez pour héberger vos albums.
+* Correction d'un problème de son lorsque l'orientation de l'appareil changeait pendant la lecture d'une vidéo.
+* Autres améliorations et corrections de bugs

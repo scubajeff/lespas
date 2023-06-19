@@ -1,3 +1,8 @@
+## Version 2.9.0
+* Replace Camera Roll with new Gallery, manage all media files in your device now and have separate backup setting for each folder
+* Home folder on server no longer need to have a hardcoded name of 'lespas', you can find whichever folder you want to house you albums
+* Fixed sound glitch when device orientation changed during video playback
+
 ## Version 2.8.4
 * Fixed Camera Roll disappears when there are no album created yet
 * Fixed 'Manage Blog' menu item disabled due to a webdav endpoint changed in some Nextcloud implementations

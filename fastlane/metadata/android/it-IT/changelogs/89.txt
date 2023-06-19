@@ -1,0 +1,4 @@
+* Sostituire il Camera Roll con la nuova Galleria, gestire tutti i file multimediali nel dispositivo e avere impostazioni di backup separate per ogni cartella.
+* La cartella Home sul server non deve più avere un nome codificato di 'lespas', è possibile trovare la cartella che si desidera per ospitare gli album.
+* Correzione dell'anomalia del suono quando l'orientamento del dispositivo cambia durante la riproduzione del video
+* Altri miglioramenti e correzioni di bug

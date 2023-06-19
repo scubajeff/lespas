@@ -1,0 +1,4 @@
+* Substitua o Rolo da Câmera pela nova Galeria, gerencie todos os arquivos de mídia no seu dispositivo agora e tenha uma configuração de backup separada para cada pasta.
+* A pasta Home no servidor não precisa mais ter um nome codificado de "lespas", você pode encontrar a pasta que quiser para armazenar seus álbuns.
+* Correção de falha de som quando a orientação do dispositivo era alterada durante a reprodução de vídeo.
+* Outros aprimoramentos e correções de bugs
