@@ -103,8 +103,7 @@
         <item quantity="other">%1$d seleccionados</item>
     </plurals>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
-    <string name="item_camera_roll">Rollo de Cámara</string>
-    <string name="no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
+    <string name="msg_no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
     <string name="option_menu_empty_trash">Vaciar la papelera</string>
     <string name="gallery_name">Galería</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
@@ -126,9 +125,9 @@
     <string name="msg_remove_old_files_warning">ADVERTENCIA: Si eligió no hacer copia de seguridad de los archivos existentes cuando activó por primera vez la copia de seguridad para esta carpeta, esos archivos existentes TAMBIÉN SERÁN ELIMINADOS al activar esta opción.</string>
     <string name="button_text_i_understand">Comprendo</string>
     <string name="tooltips_search_album">En álbumes</string>
-    <string name="tooltips_search_cameraroll">En el rollo de la cámara</string>
+    <string name="tooltips_search_gallery">Buscar en la galería</string>
     <string name="title_in_album">%1$s en álbumes</string>
-    <string name="title_in_cameraroll">%1$s en galería</string>
+    <string name="title_in_device">%1$s en el dispositivo</string>
     <string name="condition_to_perform_search">Debe haber al menos un álbum existente O un permiso de acceso al almacenamiento concedido para realizar la función de búsqueda.</string>
     <string name="button_text_leave">Salir</string>
     <string name="need_albums">Por favor, cree primero un álbum.</string>
@@ -203,7 +202,7 @@
     <string name="button_text_scan">Escanear la contraseña</string>
     <string name="option_menu_map_slideshow">Presentación de diapositivas</string>
     <string name="backup_exif_location_permission_rationale">Para hacer una copia de seguridad de los datos GPS guardados en la foto</string>
-    <string name="search_exif_location_permission_rationale">Para buscar información sobre la ubicación en el rollo de la cámara</string>
+    <string name="search_exif_location_permission_rationale">Para buscar información de localización en la galería</string>
     <string name="read_exif_location_permission_rationale">Para mostrar la información de ubicación de las fotos</string>
     <string name="need_access_media_location_permission">, Les Pas necesita el permiso de acceso a la ubicación de los medios de comunicación.</string>
     <string name="unlock_please">Desbloquear álbumes ocultos</string>
@@ -241,10 +240,8 @@
     <string name="nearby_convergence_summary">Al reproducir el pase de diapositivas en el mapa, las fotos convergen en la más cercana que tenga coordenadas GPS.</string>
     <string name="true_black_title">Tema negro verdadero</string>
     <string name="tooltips_fetch_backup">Mostrar las copias de seguridad en el servidor</string>
-    <string name="tooltips_show_cameraroll">Mostrar el rollo de la cámara</string>
     <string name="tooltips_enable_backup">Activar copia de seguridad</string>
     <string name="tooltips_backup_setting">Configuración de la copia de seguridad</string>
-    <string name="msg_empty_server_backup">No hay copias de seguridad en el servidor. Has activado la copia de seguridad automática del rollo de la cámara en la configuración?</string>
     <string name="msg_joint_album_not_updated_locally">Los cambios realizados en el Álbum Conjunto se mostrarán después de que el propietario del álbum los confirme.</string>
     <string name="option_menu_search">Buscar por nombre</string>
     <string name="tooltips_date_picker">Elige una fecha</string>
@@ -255,7 +252,7 @@
     <string name="msg_low_storage_space">Tu espacio de almacenamiento interno está libre en menos de un 10%, esto impedirá que Les Pas se sincronice con el servidor.</string>
     <string name="msg_login_first">Por favor, inicie sesión en su servidor primero.</string>
     <string name="msg_downloading_exif">Obtención de metadatos del servidor…</string>
-    <string name="cameraroll_backup_remaining">Quedan %d</string>
+    <string name="backup_remaining">Quedan %d</string>
     <string name="sync_status_action_delete_media">Eliminando %1$s en el álbum \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Eliminando el álbum \'%s\'</string>
     <string name="sync_status_action_add_media">Añadiendo %1$s al álbum \'%2$s\'</string>

@@ -220,7 +220,7 @@
 
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
     <string name="backup_exif_location_permission_rationale">To backup GPS data saved in photo</string>
-    <string name="search_exif_location_permission_rationale">To search for location information in camera roll</string>
+    <string name="search_exif_location_permission_rationale">To search for location information in gallery</string>
     <string name="read_exif_location_permission_rationale">To show location information of photos</string>
     <string name="need_access_media_location_permission">, Les Pas needs Access Media Location permission.</string>
     <string name="proceed_request">Proceed</string>
@@ -229,7 +229,7 @@
     <!-- Sync Status Dialog Fragment -->
     <string name="button_text_resync">Re-Sync</string>
     <string name="button_text_help">Help!</string>
-    <string name="cameraroll_backup_remaining">%d left</string>
+    <string name="backup_remaining">%d left</string>
 
     <string name="sync_status_action_delete_media">Removing %1$s in album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Removing album \'%s\'</string>
@@ -324,7 +324,6 @@
     <string name="item_settings">Settings</string>
     <string name="item_search">Search</string>
     <string name="item_location_search">Location</string>
-    <string name="item_camera_roll">Camera Roll</string>
     <string name="item_unhide">Unhide</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
@@ -352,16 +351,12 @@
         <item quantity="other">%1$d selected</item>
     </plurals>
 
-    <!-- Camera Roll Activity -->
-    <string name="no_media_found">No image or video found in device.</string>
-
-    <!-- Camera Roll Fragment -->
-    <string name="tooltips_show_cameraroll">Show camera roll</string>
+    <!-- Gallery Fragment -->
     <string name="tooltips_fetch_backup">Show backups on server</string>
     <string name="tooltips_date_picker">Pick a date</string>
     <string name="tooltips_enable_backup">Enable backup</string>
     <string name="tooltips_backup_setting">Backup setting</string>
-    <string name="msg_empty_server_backup">No backups on server. Have you enabled camera roll auto backup in setting?</string>
+    <string name="msg_no_media_found">No image or video found in device.</string>
     <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday</string>
@@ -383,7 +378,7 @@
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>
-    <string name="tooltips_search_cameraroll">Search in Camera Roll</string>
+    <string name="tooltips_search_gallery">Search in Gallery</string>
     <string name="tooltips_search_archive">Search in Camera Backups</string>
     <string name="condition_to_perform_search">There must be at least one existing album OR storage access permission in order to search.</string>
     <string name="button_text_leave">Leave</string>
@@ -391,7 +386,7 @@
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in albums</string>
-    <string name="title_in_cameraroll">%1$s in Camera Roll</string>
+    <string name="title_in_device">%1$s in Device</string>
     <string name="title_in_archive">%1$s in Camera Backups</string>
 
     <!-- Publication List Fragment -->

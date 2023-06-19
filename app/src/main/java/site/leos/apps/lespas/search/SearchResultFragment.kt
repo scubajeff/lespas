@@ -175,7 +175,7 @@ class SearchResultFragment : Fragment() {
             arguments?.let { title = getString(
                 when(searchScope) {
                     R.id.search_album -> R.string.title_in_album
-                    R.id.search_cameraroll -> R.string.title_in_cameraroll
+                    R.id.search_cameraroll -> R.string.title_in_device
                     else -> R.string.title_in_archive
                 },
                 it.getString(CATEGORY_LABEL))

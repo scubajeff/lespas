@@ -173,7 +173,6 @@
     <!-- Toolbar actions -->
     <string name="item_settings">Einstellungen</string>
     <string name="item_search">Suchen</string>
-    <string name="item_camera_roll">Filmrolle</string>
     <string name="item_rename">Album umbenennen</string>
     <string name="item_publish">Album veröffentlichen</string>
     <string name="item_sortby">Sortieren nach</string>
@@ -192,7 +191,7 @@
     </plurals>
 
     <!-- Camera Roll Activity -->
-    <string name="no_media_found">Kein Bild oder Video im Gerät gefunden.</string>
+    <string name="msg_no_media_found">Kein Bild oder Video im Gerät gefunden.</string>
 
     <!-- Search Fragment -->
     <string name="today">Heute</string>
@@ -202,14 +201,14 @@
     <string name="msg_remove_old_files_warning">WARNUNG: Wenn Sie bei der ersten Aktivierung der Datensicherung für diesen Ordner keine vorhandenen Dateien gesichert haben, werden diese vorhandenen Dateien durch die Aktivierung dieser Einstellung ebenfalls gelöscht!</string>
     <string name="button_text_i_understand">Ich verstehe</string>
     <string name="tooltips_search_album">In den Alben suchen</string>
-    <string name="tooltips_search_cameraroll">In der Filmrolle suchen</string>
+    <string name="tooltips_search_gallery">Suche in der Galerie</string>
     <string name="condition_to_perform_search">Es muss mindestens ein Album vorhanden sein ODER Les Pas muss auf lokale zugreifen dürfen, um die Suchfunktion zu nutzen.</string>
     <string name="button_text_leave">Abbrechen</string>
     <string name="need_albums">Bitte erstellen Sie zuerst ein Album.</string>
     
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in den Alben</string>
-    <string name="title_in_cameraroll">%1$s in der Filmrolle</string>
+    <string name="title_in_device">%1$s im Gerät</string>
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">Veröffentlichung der Freunde</string>
@@ -254,7 +253,7 @@
     <string name="button_text_scan">App-Passwort scannen</string>
     <string name="option_menu_map_slideshow">Diashow</string>
     <string name="backup_exif_location_permission_rationale">So sichern Sie im Foto gespeicherte GPS-Daten</string>
-    <string name="search_exif_location_permission_rationale">So suchen Sie nach Standortinformationen in der Kamerarolle</string>
+    <string name="search_exif_location_permission_rationale">So suchen Sie in der Galerie nach Standortinformationen</string>
     <string name="read_exif_location_permission_rationale">So zeigen Sie Standortinformationen von Fotos an</string>
     <string name="need_access_media_location_permission">Les Pas benötigt eine Genehmigung für den Zugriff auf den Medienstandort.</string>
     <string name="unlock_please">Versteckte Alben freischalten</string>
@@ -292,10 +291,8 @@
     <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos auf das nächstgelegene Foto mit GPS-Koordinaten konvergiert.</string>
     <string name="true_black_title">Echtes schwarzes dunkles Thema</string>
     <string name="tooltips_fetch_backup">Backups auf dem Server anzeigen</string>
-    <string name="tooltips_show_cameraroll">Kamerarolle anzeigen</string>
     <string name="tooltips_enable_backup">Sicherung einschalten</string>
     <string name="tooltips_backup_setting">Backup-Einstellung</string>
-    <string name="msg_empty_server_backup">Keine Backups auf dem Server. Haben Sie die automatische Sicherung der Kamerarolle in den Einstellungen aktiviert?</string>
     <string name="msg_joint_album_not_updated_locally">Änderungen, die an einem gemeinsamen Album vorgenommen wurden, werden angezeigt, nachdem der Eigentümer des Albums sie bestätigt hat.</string>
     <string name="option_menu_search">Suche nach Name</string>
     <string name="tooltips_date_picker">Wählen Sie ein Datum</string>
@@ -306,7 +303,7 @@
     <string name="msg_low_storage_space">Ihr interner Speicherplatz ist weniger als 10 % frei, dann kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
     <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server…</string>
-    <string name="cameraroll_backup_remaining">%d übrig</string>
+    <string name="backup_remaining">%d übrig</string>
     <string name="sync_status_action_delete_media">Entfernen von %1$s in Album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Album \'%s\' wird entfernt</string>
     <string name="sync_status_action_add_media">Hinzufügen von %1$s zum Album \'%2$s\'</string>

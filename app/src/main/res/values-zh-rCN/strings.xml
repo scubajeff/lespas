@@ -102,10 +102,9 @@
     <string name="item_nameasc">按名称顺序</string>
     <string name="item_namedesc">按名称倒序</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed修图 - 替换</string>
-    <string name="item_camera_roll">相机相册</string>
-    <string name="no_media_found">没找到任何图片或视频。</string>
+    <string name="msg_no_media_found">没找到任何图片或视频。</string>
     <string name="option_menu_empty_trash">清空回收站</string>
-    <string name="gallery_name">本机相册</string>
+    <string name="gallery_name">本机图库</string>
     <string name="same_file_found">同名文件已存在。</string>
     <string name="verify_ssl_certificate_title">SSL证书验证失败</string>
     <string name="verify_ssl_certificate_message">服务器%1$s的证书无法通过验证，是否信任该服务器并继续？</string>
@@ -125,9 +124,9 @@
     <string name="msg_remove_old_files_warning">警告：如果您在首次启用本文件夹备份时选择了不备份现有文件，那么激活此自动删除设置后，那些现有文件也将被按设定删除！</string>
     <string name="button_text_i_understand">知道了</string>
     <string name="tooltips_search_album">在相册中搜索</string>
-    <string name="tooltips_search_cameraroll">在相机相册中搜索</string>
+    <string name="tooltips_search_gallery">在图库中搜索</string>
     <string name="title_in_album">相册中的%1$s</string>
-    <string name="title_in_cameraroll">相机相册中的%1$s</string>
+    <string name="title_in_device">本设备中的%1$s</string>
     <string name="button_text_leave">退出</string>
     <string name="condition_to_perform_search">需要存在有相册或授予了存储访问权限，才能使用图片搜索功能。</string>
     <string name="need_albums">请先创建相册。</string>
@@ -202,7 +201,7 @@
     <string name="button_text_scan">扫描应用密码</string>
     <string name="option_menu_map_slideshow">自动播放</string>
     <string name="backup_exif_location_permission_rationale">为了备份照片中的地理信息</string>
-    <string name="search_exif_location_permission_rationale">为了搜索照片中的地理信息</string>
+    <string name="search_exif_location_permission_rationale">在图库中搜索位置信息</string>
     <string name="read_exif_location_permission_rationale">为了显示照片中的地理信息</string>
     <string name="need_access_media_location_permission">，Les Pas需要获取访问媒体地理信息权限。</string>
     <string name="unlock_please">解锁隐藏相册</string>
@@ -240,10 +239,8 @@
     <string name="nearby_convergence_summary">在地图上播放旅程时，自动将照片归集到附近的有GPS坐标的照片上。</string>
     <string name="true_black_title">采用深邃黑深色主题</string>
     <string name="tooltips_fetch_backup">显示服务器上的备份</string>
-    <string name="tooltips_show_cameraroll">显示本机相机相册</string>
     <string name="tooltips_enable_backup">备份开关</string>
     <string name="tooltips_backup_setting">备份设置</string>
-    <string name="msg_empty_server_backup">服务器上没有备份。相机相册自动备份设置开关打开了吗？</string>
     <string name="msg_joint_album_not_updated_locally">更新将在合作相册创建者确认后呈现。</string>
     <string name="option_menu_search">搜索名字</string>
     <string name="tooltips_date_picker">选择日期</string>
@@ -254,7 +251,7 @@
     <string name="msg_low_storage_space">内部存储空间剩余不足10%，Les Pas将无法与服务器同步。</string>
     <string name="msg_login_first">请先登录服务器。</string>
     <string name="msg_downloading_exif">正从服务器上获取照片元数据……</string>
-    <string name="cameraroll_backup_remaining">还有%d个</string>
+    <string name="backup_remaining">还有%d个</string>
     <string name="sync_status_action_delete_media">正在删除相册《%2$s》中的照片%1$s</string>
     <string name="sync_status_action_delete_album">正在删除相册《%s》</string>
     <string name="sync_status_action_add_media">正在添加%1$s到相册《%2$s》中</string>

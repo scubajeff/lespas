@@ -208,7 +208,7 @@ class GalleryFragment: Fragment() {
         childFragmentManager.addOnBackStackChangedListener {
             if (childFragmentManager.backStackEntryCount == 0) {
                 // When all medias deleted
-                Toast.makeText(requireContext(), getString(R.string.no_media_found), Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.msg_no_media_found), Toast.LENGTH_SHORT).show()
                 finish()
             }
         }

@@ -111,7 +111,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
             title = getString(
                 when(searchTarget) {
                     R.id.search_album -> R.string.title_in_album
-                    R.id.search_cameraroll -> R.string.title_in_cameraroll
+                    R.id.search_cameraroll -> R.string.title_in_device
                     else -> R.string.title_in_archive
                 },
                 getString(R.string.item_location_search)

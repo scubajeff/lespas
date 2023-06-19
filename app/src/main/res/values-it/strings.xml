@@ -162,7 +162,7 @@
 
     <string name="storage_access_permission_rationale">Snapseed salva i file nella cartella \"Snapseed\". Per visualizzarli, consenti l\'accesso all\'archivio.</string>
     <string name="backup_exif_location_permission_rationale">Per effettuare il backup dei dati GPS delle foto</string>
-    <string name="search_exif_location_permission_rationale">Per cercare informazioni di geolocalizzazione nel rullino foto</string>
+    <string name="search_exif_location_permission_rationale">Per cercare informazioni sulla posizione nella galleria</string>
     <string name="read_exif_location_permission_rationale">Per visualizzare le informazioni di geolocalizzazione delle foto</string>
     <string name="need_access_media_location_permission">, Les Pas ha bisogno del permesso di accesso alla posizione.</string>
     <string name="proceed_request">Continua</string>
@@ -219,7 +219,6 @@
     <string name="item_settings">Impostazioni</string>
     <string name="item_search">Cerca</string>
     <string name="item_location_search">Posizione</string>
-    <string name="item_camera_roll">Rullino foto</string>
     <string name="item_unhide">Mostra</string>
     <string name="item_rename">Rinomina album</string>
     <string name="item_publish">Pubblica album</string>
@@ -246,7 +245,7 @@
     </plurals>
 
     <!-- Camera Roll Activity -->
-    <string name="no_media_found">Nessuna immagine o video trovata nel dispositivo.</string>
+    <string name="msg_no_media_found">Nessuna immagine o video trovata nel dispositivo.</string>
 
     <!-- Search Fragment -->
     <string name="today">Oggi</string>
@@ -256,14 +255,14 @@
     <string name="msg_remove_old_files_warning">AVVERTENZA: se si è scelto di non eseguire il backup dei file esistenti quando si è abilitato il backup per questa cartella, i file esistenti verranno rimossi anche attivando questa impostazione!</string>
     <string name="button_text_i_understand">Capisco</string>
     <string name="tooltips_search_album">Cerca negli album</string>
-    <string name="tooltips_search_cameraroll">Cerca nel rullino foto</string>
+    <string name="tooltips_search_gallery">Ricerca nella galleria</string>
     <string name="condition_to_perform_search">Per effettuare una ricerca è necessario almeno un album o il permesso di accesso all\'archivio.</string>
     <string name="button_text_leave">Esci</string>
     <string name="need_albums">Prima crea un album.</string>
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s negli album</string>
-    <string name="title_in_cameraroll">%1$s nel rullino foto</string>
+    <string name="title_in_device">%1$s nel dispositivo</string>
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">Pubblicazioni degli amici</string>
@@ -308,19 +307,17 @@
     <string name="hint_timestamp_pattern">La data di creazione della foto può essere modificata includendo il modello yyyyMMdd_hhmmss nel nome.</string>
     <string name="tooltips_enable_backup">Abilita il backup</string>
     <string name="tooltips_backup_setting">Impostazione del backup</string>
-    <string name="msg_empty_server_backup">Nessun backup sul server. Hai attivato il backup automatico del rullino fotografico nelle impostazioni?</string>
     <string name="msg_joint_album_not_updated_locally">Le modifiche apportate all\'album comune saranno visualizzate dopo la conferma del proprietario dell\'album.</string>
     <string name="option_menu_search">Ricerca per nome</string>
     <string name="title_in_archive">%1$s nei backup della fotocamera</string>
     <string name="tooltips_date_picker">Scegliere una data</string>
     <string name="tooltips_fetch_backup">Mostra i backup sul server</string>
     <string name="tooltips_search_archive">tooltips_search_archive</string>
-    <string name="tooltips_show_cameraroll">Mostra il rullino fotografico</string>
     <string name="should_allow_launching_other_app">Consentire l\'avvio di Les Pas ad altre applicazioni nelle impostazioni di sicurezza.</string>
     <string name="msg_low_storage_space">Lo spazio di archiviazione interno è inferiore al 10%, il che impedisce a Les Pas di sincronizzarsi con il server.</string>
     <string name="msg_login_first">Effettuare prima il login al proprio server.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server…</string>
-    <string name="cameraroll_backup_remaining">% rimasti</string>
+    <string name="backup_remaining">% rimasti</string>
     <string name="sync_status_action_delete_media">Rimozione di %1$s nell\'album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Rimozione dell\'album \'%s\'</string>
     <string name="sync_status_action_add_media">Aggiunta di %1$s all\'album \'%2$s\'</string>

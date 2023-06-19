@@ -148,7 +148,7 @@
     <string name="yes_logout">Déconnexion</string>
     <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans son propre dossier \"Snapseed\". Accordez l\'autorisation d\'accès au stockage pour lire ces fichiers.</string>
     <string name="backup_exif_location_permission_rationale">Pour sauvegarder les données GPS enregistrées dans une photo</string>
-    <string name="search_exif_location_permission_rationale">Pour rechercher des informations de localisation dans la galerie photos</string>
+    <string name="search_exif_location_permission_rationale">Pour rechercher des informations sur l\'emplacement dans la galerie</string>
     <string name="read_exif_location_permission_rationale">Pour afficher les informations de localisation des photos</string>
     <string name="need_access_media_location_permission">Les Pas a besoin de l\'autorisation \"Fichiers et contenus multimédias\".</string>
     <string name="proceed_request">Continuer</string>
@@ -202,7 +202,6 @@
     <string name="item_settings">Paramètres</string>
     <string name="item_search">Rechercher</string>
     <string name="item_location_search">Lieu</string>
-    <string name="item_camera_roll">Galerie</string>
     <string name="item_unhide">Albums cachés</string>
     <string name="item_rename">Renommer l\'album</string>
     <string name="item_publish">Publier l\'album</string>
@@ -228,14 +227,12 @@
         <item quantity="other">%1$d sélectionnés</item>
     </plurals>
     <!-- Camera Roll Activity -->
-    <string name="no_media_found">Aucune image ou vidéo n\'a été trouvée dans l\'appareil.</string>
+    <string name="msg_no_media_found">Aucune image ou vidéo n\'a été trouvée dans l\'appareil.</string>
     <!-- Camera Roll Fragment -->
-    <string name="tooltips_show_cameraroll">Afficher la galerie</string>
     <string name="tooltips_fetch_backup">Afficher les sauvegardes sur le serveur</string>
     <string name="tooltips_date_picker">Choisir une date</string>
     <string name="tooltips_enable_backup">Activer la sauvegarde</string>
     <string name="tooltips_backup_setting">Paramètres de sauvegarde</string>
-    <string name="msg_empty_server_backup">Aucune sauvegarde sur le serveur. Avez-vous activé la sauvegarde automatique de la galerie dans les paramètres ?</string>
     <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album partagé seront affichées une fois que le propriétaire de l\'album les aura confirmées.</string>
     <!-- Search Fragment -->
     <string name="today">Aujourd\'hui</string>
@@ -245,14 +242,14 @@
     <string name="msg_remove_old_files_warning">AVERTISSEMENT : Si vous avez choisi de ne pas sauvegarder les fichiers existants lorsque vous avez activé la sauvegarde pour ce dossier, ces fichiers seront également supprimés si vous activez ce paramètre !</string>
     <string name="button_text_i_understand">Je comprends</string>
     <string name="tooltips_search_album">Rechercher dans les albums</string>
-    <string name="tooltips_search_cameraroll">Rechercher dans la galerie</string>
+    <string name="tooltips_search_gallery">Recherche dans la galerie</string>
     <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>
     <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
     <string name="button_text_leave">Quitter</string>
     <string name="need_albums">Veuillez d\'abord créer un album.</string>
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s dans les albums</string>
-    <string name="title_in_cameraroll">%1$s dans la galerie</string>
+    <string name="title_in_device">%1$s dans l\'appareil</string>
     <string name="title_in_archive">%1$s dans les sauvegardes de la galerie</string>
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">"Publications des amis"</string>
@@ -290,7 +287,7 @@
     <string name="prefer_latest">Récent</string>
     <string name="skip_late_night_update">Ignorer la mise à jour de fin de soirée</string>
     <string name="msg_downloading_exif">Récupérer les méta-données du serveur…</string>
-    <string name="cameraroll_backup_remaining">%d restant</string>
+    <string name="backup_remaining">%d restant</string>
     <string name="sync_status_action_delete_media">Suppression de %1$s dans l\'album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Suppression de l\'album \'%s\'</string>
     <string name="sync_status_action_add_media">Ajout de %1$s à l\'album \'%2$s\'</string>

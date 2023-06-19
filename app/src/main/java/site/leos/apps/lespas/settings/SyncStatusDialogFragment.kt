@@ -130,7 +130,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                         currentFileTextView.text = String.format("%s (%s)", message[0], message[1])
                         (total - current).let { left ->
                             remainingTextView.isVisible = left > 0
-                            remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
+                            remainingTextView.text = String.format(getString(R.string.backup_remaining), left)
                         }
                     } else {
                         backupProgressBar.isVisible = false
@@ -172,7 +172,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                             String.format(
                                 getString(if (action[0].toInt() == Action.ACTION_COPY_ON_SERVER) R.string.sync_status_action_copy else R.string.sync_status_action_move),
                                 action[4].substringBefore('|'),
-                                if (action[1].substringBefore('/') == "DCIM") getString(R.string.item_camera_roll) else action[1].substringAfterLast('/'),
+                                if (action[1].substringBefore('/') == "DCIM") getString(R.string.camera_roll_name) else action[1].substringAfterLast('/'),
                                 action[2].substringAfterLast('/')
                             )
                         Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4].substringAfterLast('/'))

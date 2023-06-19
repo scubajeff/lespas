@@ -115,7 +115,6 @@
     <string name="artist">著者</string>
     <string name="item_settings">設定</string>
     <string name="item_search">検索</string>
-    <string name="item_camera_roll">カメラアルバム</string>
     <string name="item_rename">アルバム名変更</string>
     <string name="item_sortby">写真の並べ替え</string>
     <string name="item_dateasc">年代順</string>
@@ -130,7 +129,7 @@
     <plurals name="selected_count">
         <item quantity="other">%1$dが選択</item>
     </plurals>
-    <string name="no_media_found">デバイスに画像や動画が見つからない。</string>
+    <string name="msg_no_media_found">デバイスに画像や動画が見つからない。</string>
     <string name="today">本日</string>
     <string name="yesterday">昨日</string>
     <string name="option_menu_show_all">全て表示</string>
@@ -138,12 +137,12 @@
     <string name="msg_remove_old_files_warning">警告：このフォルダのバックアップを最初に有効にしたときに、既存のファイルをバックアップしないことを選択した場合、この設定をオンにすると、既存のファイルも削除されます！</string>
     <string name="button_text_i_understand">なんでも</string>
     <string name="tooltips_search_album">アルバム内検索</string>
-    <string name="tooltips_search_cameraroll">カメラアルバム内検索</string>
+    <string name="tooltips_search_gallery">ギャラリー内検索</string>
     <string name="condition_to_perform_search">画像検索機能を利用するためには、アルバムが存在するか、ストレージへのアクセスが許可されている必要があります。</string>
     <string name="button_text_leave">出口</string>
     <string name="need_albums">まずはアルバムを作成してください。</string>
     <string name="title_in_album">アルバム内の %1$s</string>
-    <string name="title_in_cameraroll">カメラアルバムの中の%1$s</string>
+    <string name="title_in_device">デバイス内の %1$s</string>
     <string name="object_unknown">未知</string>
     <string name="object_animal">動物</string>
     <string name="object_plant">花や植物や木</string>
@@ -202,7 +201,7 @@
     <string name="button_text_scan">スキャンアプリのパスワード</string>
     <string name="option_menu_map_slideshow">スライドショー</string>
     <string name="backup_exif_location_permission_rationale">写真に保存されたGPSデータをバックアップするには</string>
-    <string name="search_exif_location_permission_rationale">カメラロールの位置情報を検索するには</string>
+    <string name="search_exif_location_permission_rationale">Per cercare informazioni sulla posizione nella galleria</string>
     <string name="read_exif_location_permission_rationale">写真の位置情報を表示する</string>
     <string name="need_access_media_location_permission">Les Pasは、Access Media Locationの許可を必要とします。</string>
     <string name="unlock_please">隠しアルバムを解除する</string>
@@ -240,10 +239,8 @@
     <string name="nearby_convergence_summary">地図上でスライドショーを再生すると、GPS座標を持つ近くの写真に収束します。</string>
     <string name="true_black_title">トゥルーブラックダークテーマ</string>
     <string name="tooltips_fetch_backup">サーバー上のバックアップを表示</string>
-    <string name="tooltips_show_cameraroll">カメラロールを表示する</string>
     <string name="tooltips_enable_backup">バックアップを有効にする</string>
     <string name="tooltips_backup_setting">バックアップの設定</string>
-    <string name="msg_empty_server_backup">サーバーにバックアップがない。設定でカメラロールの自動バックアップを有効にしましたか？</string>
     <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
     <string name="option_menu_search">名前検索</string>
     <string name="tooltips_date_picker">日付を選択する</string>
@@ -251,7 +248,7 @@
     <string name="tooltips_search_archive">カメラロールバックアップで検索</string>
     <string name="hint_timestamp_pattern">写真の作成日は、名前にyyyyMMdd_hhmmssというパターンを含めることで変更することができます。</string>
     <string name="should_allow_launching_other_app">セキュリティ設定でLes Pasが他のアプリを起動することを許可してください。</string>
-    <string name="cameraroll_backup_remaining">残量 %d</string>
+    <string name="backup_remaining">残量 %d</string>
     <string name="msg_low_storage_space">内部ストレージの空き容量が10％未満になると、Les Pasとサーバーの同期が停止します。</string>
     <string name="msg_login_first">まず、サーバーにログインしてください。</string>
     <string name="msg_downloading_exif">サーバーからメタデータを取得する</string>

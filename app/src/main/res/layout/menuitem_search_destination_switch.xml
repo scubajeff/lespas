@@ -64,7 +64,7 @@
             android:insetBottom="0dp"
             style="?attr/materialButtonOutlinedStyle"
             app:strokeColor="@color/search_destination_switch_text"
-            android:tooltipText="@string/tooltips_search_cameraroll"
+            android:tooltipText="@string/tooltips_search_gallery"
             app:icon="@drawable/ic_baseline_phone_android_24"
             app:iconSize="18dp"
             app:iconGravity="textStart"
