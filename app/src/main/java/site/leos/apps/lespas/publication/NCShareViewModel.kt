@@ -755,7 +755,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Strip EXIF
                                     ensureActive()
                                     BitmapFactory.decodeStream(source)?.let { bmp ->
-                                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, dest)
+                                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, false) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, dest)
                                     }
                                 } else {
                                     // No need to strip EXIF, just rename the temp file to destination
@@ -803,7 +803,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (stripExif) {
                         job?.let { if (job.isCancelled) throw java.lang.Exception() }
                         BitmapFactory.decodeStream(tempFile.inputStream())?.let { bmp ->
-                            (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
+                            (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, false) else bmp)
                                 .compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
                         }
                     } else {
@@ -1110,7 +1110,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         } else {
                             @Suppress("DEPRECATION")
                             MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                                if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, true)
+                                if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
                                 else this
                             }
                         })?.let {
@@ -1168,7 +1168,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     } else {
                                         @Suppress("DEPRECATION")
                                         MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                                            if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, true)
+                                            if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
                                             else this
                                         }
                                     }
@@ -1256,7 +1256,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     if (
                                                         imagePhoto.photo.orientation != 0 &&
                                                         ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY)
-                                                    ) Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true)
+                                                    ) Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, false)
                                                     else this
                                                 }
                                             }
@@ -1299,7 +1299,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         @Suppress("DEPRECATION")
                                         (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, option)?.let { bmp ->
                                             ensureActive()
-                                            if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
+                                            if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, false)
                                             else bmp
                                         }
                                     }
@@ -1439,7 +1439,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
             if (imagePhoto.photo.orientation != 0) bitmap?.let {
                 job.ensureActive()
-                bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true)
+                bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, false)
             }
         }
 
