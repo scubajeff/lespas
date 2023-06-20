@@ -16,6 +16,7 @@
 
 package site.leos.apps.lespas.helper
 
+import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -42,6 +43,12 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
     private lateinit var rootLayout: ViewGroup
     private lateinit var themeBackground: ViewGroup
 
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        return super.onCreateDialog(savedInstanceState).also { dialog ->
+            dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(layoutId, container, false)
 
@@ -60,7 +67,7 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
     override fun onStart() {
         super.onStart()
 
-        requireDialog().window!!.apply {
+        requireComponentDialog().window!!.apply {
             // Set dialog width to a fixed ratio of screen width
             setLayout((resources.displayMetrics.widthPixels.toFloat() * resources.getInteger(R.integer.dialog_width_ratio) / 100).roundToInt(), WindowManager.LayoutParams.WRAP_CONTENT)
 
@@ -71,7 +78,6 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
             }
 
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
     }
 

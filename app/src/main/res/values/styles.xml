@@ -26,7 +26,7 @@
         <item name="android:drawableTint">@color/bottom_control_button</item>
     </style>
 
-    <style name="Theme.LesPas.Dialog.Animation" parent="ThemeOverlay.MaterialComponents.Dialog">
+    <style name="DialogAnimation">
         <item name="android:windowEnterAnimation">@anim/enter_from_right</item>
         <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
     </style>
