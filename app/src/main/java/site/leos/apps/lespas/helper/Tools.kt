@@ -124,7 +124,8 @@ object Tools {
 
                     exifInterface?.let { exif->
                         exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
-                        if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
+                        // TODO OMD put an advertising text in ExifInterface.TAG_IMAGE_DESCRIPTION
+                        //if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
 
                         // GPS data
                         exif.latLong?.let { latlong = it }
