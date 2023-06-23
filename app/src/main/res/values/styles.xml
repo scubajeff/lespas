@@ -135,4 +135,12 @@
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
     </style>
+
+    <style name="Theme.LesPas.Gallery.Folder.Chip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="chipBackgroundColor">@color/folder_chip_background</item>
+        <item name="chipCornerRadius">4dp</item>
+        <item name="android:lines">1</item>
+        <item name="android:ellipsize">middle</item>
+    </style>
 </resources>
