@@ -49,9 +49,11 @@ data class BackupSetting (
 
 @Dao
 abstract class BackupSettingDao: BaseDao<BackupSetting>() {
+/*
     @Query("SELECT * FROM ${BackupSetting.TABLE_NAME} WHERE folder = :folder LIMIT 1")
     abstract fun getSettingDistinctFlow(folder: String): Flow<BackupSetting?>
     fun getSetting(folder: String): Flow<BackupSetting?> = getSettingDistinctFlow(folder).distinctUntilChanged()
+*/
 
     @Query("SELECT * FROM ${BackupSetting.TABLE_NAME}")
     abstract fun getSettingsDistinctFlow(): Flow<List<BackupSetting>>

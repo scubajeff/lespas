@@ -18,12 +18,13 @@ package site.leos.apps.lespas.sync
 
 import android.app.Application
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import site.leos.apps.lespas.LespasDatabase
 
 class BackupSettingRepository(application: Application) {
     private val backupSettingDao = LespasDatabase.getDatabase(application).backupSettingDao()
 
-    fun getSetting(folder: String): Flow<BackupSetting?> = backupSettingDao.getSetting(folder)
+    fun getSetting(folder: String): Flow<BackupSetting?> = backupSettingDao.getBackupSettingsFlow().map { settings -> settings.find { it.folder == folder } }
     fun getEnabled(): List<BackupSetting> = backupSettingDao.getEnabledSettings()
     fun getBackupSettingsFlow(): Flow<List<BackupSetting>> = backupSettingDao.getBackupSettingsFlow()
     fun updateSetting(setting: BackupSetting) { backupSettingDao.update(setting) }
