@@ -77,7 +77,7 @@
     <string name="option_menu_slideshow">Mostra de slides</string>
     <string name="button_text_set_cover">Configurar como capa</string>
     <string name="button_text_share">Compartilhar</string>
-    <string name="button_text_set_as">Usar como fundo de tela</string>
+    <string name="button_text_use_as">Usar como</string>
     <string name="button_text_info">Informações</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Substituir</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Adicionar</string>

@@ -87,7 +87,7 @@
     <string name="access_right_violation">您使用的分享应用未遵循Android存储访问安全规范，所以Les Pas无法接收到她的分享。请更新您的分享应用或使用其他应用进行操作。</string>
     <string name="error_preparing_files">发生错误</string>
     <string name="no_media_file_found">分享来的数据中未找到任何图像或视频文件。</string>
-    <string name="button_text_set_as">设置为桌布</string>
+    <string name="button_text_use_as">设置为</string>
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
     <string name="snapseed_integration_title">集成Snapseed</string>
     <string name="snapseed_replace_title">替换原照片</string>

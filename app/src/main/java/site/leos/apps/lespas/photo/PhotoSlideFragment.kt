@@ -83,7 +83,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var controlsContainer: LinearLayout
     private lateinit var removeButton: Button
     private lateinit var coverButton: Button
-    private lateinit var setAsButton: Button
+    private lateinit var useAsButton: Button
     private lateinit var snapseedButton: Button
     private lateinit var captionTextView: TextView
 
@@ -291,7 +291,7 @@ class PhotoSlideFragment : Fragment() {
                             removeButton.isEnabled = this.id != album.cover
                             with(!(Tools.isMediaPlayable(this.mimeType))) {
                                 // Can't set video as avatar
-                                setAsButton.isEnabled = this
+                                useAsButton.isEnabled = this
                                 // Can't Snapseed video
                                 snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
                             }
@@ -327,7 +327,7 @@ class PhotoSlideFragment : Fragment() {
         }
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)
-        setAsButton = view.findViewById(R.id.set_as_button)
+        useAsButton = view.findViewById(R.id.set_as_button)
         snapseedButton = view.findViewById(R.id.snapseed_button)
         captionTextView = view.findViewById(R.id.caption)
 
@@ -362,7 +362,7 @@ class PhotoSlideFragment : Fragment() {
                 else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
             }
         }
-        setAsButton.run {
+        useAsButton.run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER)

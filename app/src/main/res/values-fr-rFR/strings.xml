@@ -81,7 +81,7 @@
     <string name="option_menu_slideshow">Diaporama</string>
     <string name="button_text_set_cover">Couverture d\'album</string>
     <string name="button_text_share">Partager</string>
-    <string name="button_text_set_as">Fond d\'écran</string>
+    <string name="button_text_use_as">Utiliser comme</string>
     <string name="button_text_info">Informations</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Remplacer</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Ajouter</string>

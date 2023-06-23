@@ -105,7 +105,7 @@
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>
     <string name="button_text_share">Share</string>
-    <string name="button_text_set_as">Set wallpaper</string>
+    <string name="button_text_use_as">Use as</string>
     <string name="button_text_info">Info</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Replace</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Add</string>

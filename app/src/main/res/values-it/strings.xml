@@ -84,7 +84,7 @@
     <string name="option_menu_slideshow">Presentazione</string>
     <string name="button_text_set_cover">Imposta come copertina</string>
     <string name="button_text_share">Condividi</string>
-    <string name="button_text_set_as">Imposta sfondo</string>
+    <string name="button_text_use_as">Utilizzare come</string>
     <string name="button_text_info">Informazioni</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sostituisci</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Aggiungi</string>

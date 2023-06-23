@@ -38,7 +38,7 @@
     <string name="option_menu_slideshow">Diaporama</string>
     <string name="button_text_set_cover">Portada del álbum</string>
     <string name="button_text_share">Comparte esto</string>
-    <string name="button_text_set_as">Fondo de pantalla</string>
+    <string name="button_text_use_as">Utilizar como</string>
     <string name="button_text_info">Información</string>
     <string name="toast_cover_applied">Se aplica una nueva cubierta.</string>
     <string name="toast_cover_set_canceled">Canceló el establecimiento de una nueva cubierta.</string>
