@@ -16,7 +16,6 @@
 
 package site.leos.apps.lespas.publication
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -194,7 +193,7 @@ class RemoteMediaFragment: Fragment() {
             }
         }
         view.findViewById<Button>(R.id.download_button).run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handler.post(hideSystemUI)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -206,7 +205,7 @@ class RemoteMediaFragment: Fragment() {
             }
         }
         view.findViewById<Button>(R.id.lespas_button).run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
@@ -214,7 +213,7 @@ class RemoteMediaFragment: Fragment() {
             }
         }
         view.findViewById<Button>(R.id.info_button).run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_INFO_DIALOG) == null) {
@@ -352,6 +351,7 @@ class RemoteMediaFragment: Fragment() {
         //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
+/*
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
     @SuppressLint("ClickableViewAccessibility")
     private val delayHideTouchListener = View.OnTouchListener { _, _ ->
@@ -359,6 +359,7 @@ class RemoteMediaFragment: Fragment() {
         handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         false
     }
+*/
 
     private fun followSystemBar(show: Boolean) {
         // Wipe ActionBar

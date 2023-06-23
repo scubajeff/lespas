@@ -324,9 +324,10 @@ class GallerySlideFragment : Fragment() {
     }
 
     // Toggle visibility of bottom controls and system decoView
+    private val handlerBottomControl = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
-        handler.removeCallbacksAndMessages(null)
-        handler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handlerBottomControl.removeCallbacksAndMessages(null)
+        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
     private val hideSystemUI = Runnable { Tools.goImmersive(window) }
@@ -342,14 +343,7 @@ class GallerySlideFragment : Fragment() {
         */
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-    }
-
-    // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
-    @SuppressLint("ClickableViewAccessibility")
-    private val delayHideTouchListener = View.OnTouchListener { _, _ ->
-        handler.removeCallbacks(hideSystemUI)
-        handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-        false
+        handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     private fun followSystemBar(show: Boolean) {

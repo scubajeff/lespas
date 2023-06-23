@@ -16,7 +16,6 @@
 
 package site.leos.apps.lespas.photo
 
-import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.database.ContentObserver
@@ -333,7 +332,7 @@ class PhotoSlideFragment : Fragment() {
         captionTextView = view.findViewById(R.id.caption)
 
         coverButton.run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideSystemUI)
 
@@ -348,7 +347,7 @@ class PhotoSlideFragment : Fragment() {
             }
         }
         view.findViewById<Button>(R.id.share_button).run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 val mimeType = pAdapter.getPhotoAt(slider.currentItem).mimeType
                 if (mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
@@ -364,11 +363,13 @@ class PhotoSlideFragment : Fragment() {
             }
         }
         setAsButton.run {
-            setOnTouchListener(delayHideTouchListener)
-            setOnClickListener { shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER) }
+            //setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER)
+            }
         }
         view.findViewById<Button>(R.id.info_button).run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideSystemUI)
 
@@ -390,11 +391,14 @@ class PhotoSlideFragment : Fragment() {
                 setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24), null, null)
                 text = getString(R.string.button_text_edit_in_snapseed_add)
             }
-            setOnTouchListener(delayHideTouchListener)
-            setOnClickListener { shareOut(false, SHARE_TO_SNAPSEED) }
+            //setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                handlerBottomControl.post(hideSystemUI)
+                shareOut(false, SHARE_TO_SNAPSEED)
+            }
         }
         removeButton.run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideSystemUI)
 
@@ -403,7 +407,7 @@ class PhotoSlideFragment : Fragment() {
             }
         }
         captionTextView.run {
-            setOnTouchListener(delayHideTouchListener)
+            //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideSystemUI)
 
@@ -597,6 +601,7 @@ class PhotoSlideFragment : Fragment() {
         handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
     }
 
+/*
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
     @SuppressLint("ClickableViewAccessibility")
     private val delayHideTouchListener = View.OnTouchListener { _, _ ->
@@ -604,6 +609,7 @@ class PhotoSlideFragment : Fragment() {
         handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         false
     }
+*/
 
     private fun followSystemBar(show: Boolean) {
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
