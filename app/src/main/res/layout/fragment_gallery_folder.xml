@@ -46,8 +46,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 style="@style/Theme.LesPas.Gallery.Folder.Chip"
-                android:text="All"
-                android:tag="...." />
+                app:chipIcon="@drawable/ic_baseline_check_all_24"
+                app:chipIconSize="20dp"
+                app:chipIconEnabled="true"
+                app:chipStartPadding="@dimen/small_padding"
+                app:chipEndPadding="@dimen/small_padding"
+                app:textStartPadding="0dp"
+                app:textEndPadding="0dp"
+                android:tag="...."
+                tools:checked="true"/>
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 

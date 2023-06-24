@@ -137,10 +137,14 @@
     </style>
 
     <style name="Theme.LesPas.Gallery.Folder.Chip" parent="Widget.MaterialComponents.Chip.Choice">
-        <item name="android:textColor">?android:textColorPrimary</item>
-        <item name="chipBackgroundColor">@color/folder_chip_background</item>
-        <item name="chipCornerRadius">4dp</item>
+        <item name="android:elevation">1dp</item>
+        <item name="textStartPadding">2dp</item>
+        <item name="textEndPadding">2dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/folder_chip_font</item>
         <item name="android:lines">1</item>
         <item name="android:ellipsize">middle</item>
+        <item name="chipBackgroundColor">?colorSurface</item>
+        <item name="chipCornerRadius">4dp</item>
     </style>
 </resources>
