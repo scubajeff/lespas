@@ -320,14 +320,14 @@ class GallerySlideFragment : Fragment() {
         if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
         else {
             requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
-                mediaAdapter.submitList(
-                    when {
-                        subFolder.isEmpty() -> localMedias
-                        subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
-                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
-                        else -> localMedias.filter { it.fullPath == subFolder }
-                    }
-                ) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
+                when {
+                    subFolder.isEmpty() -> localMedias
+                    subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
+                    folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
+                    else -> localMedias.filter { it.fullPath == subFolder }
+            }}.let { filtered ->
+                if (filtered.isEmpty()) parentFragmentManager.popBackStack()
+                else mediaAdapter.submitList(filtered) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
             }
         }
     }
