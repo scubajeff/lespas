@@ -127,7 +127,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
                 if (mimeType.startsWith("video")) {
                     // Transition to surface view might crash some OEM phones, like Xiaomi
-                    parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
                 } else {
                     reenterTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -143,7 +143,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
                         .addSharedElement(view, view.transitionName)
-                        .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument), GallerySlideFragment::class.java.canonicalName)
+                        .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName)
                         .addToBackStack(null)
                         .commit()
                 }
@@ -187,7 +187,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
 
         chipForAll = view.findViewById(R.id.chip_for_all)
-        currentCheckedTag = savedInstanceState?.getString(KEY_CHECKED_CHIP_ID, CHIP_FOR_ALL_TAG) ?: CHIP_FOR_ALL_TAG
+        currentCheckedTag = galleryModel.getCurrentSubFolder()
         subFolderChipGroup = view.findViewById(R.id.sub_chips)
 
         yearIndicator = view.findViewById<TextView>(R.id.year_indicator).apply {
@@ -400,10 +400,14 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
     }
 
+    override fun onPause() {
+        galleryModel.saveCurrentSubFolder(currentCheckedTag)
+        super.onPause()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putString(KEY_CHECKED_CHIP_ID, currentCheckedTag)
         try { selectionTracker.onSaveInstanceState(outState) } catch (_: UninitializedPropertyAccessException) {}
 /*
         // Because we might need scrolling to a new position when returning from GallerySliderFragment, we have to save current scroll state in this way, though it's not as perfect as layoutManager.onSavedInstanceState
@@ -701,8 +705,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private const val EMPTY_TRASH_REQUEST_KEY = "EMPTY_TRASH_REQUEST_KEY"
 
         // Default to All, same tag set in R.layout.fragment_gallery_list for view R.id.chip_for_all
-        private const val CHIP_FOR_ALL_TAG = "...."
-        private const val KEY_CHECKED_CHIP_ID = "KEY_CHECKED_CHIP_ID"
+        const val CHIP_FOR_ALL_TAG = "...."
 
         private const val ARGUMENT_FOLDER = "ARGUMENT_FOLDER"
 

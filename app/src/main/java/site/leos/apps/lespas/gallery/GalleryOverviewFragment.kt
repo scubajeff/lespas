@@ -119,6 +119,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             { folder -> if (parentFragmentManager.findFragmentByTag(BACKUP_OPTION_DIALOG) == null) GalleryBackupSettingDialogFragment.newInstance(folder).show(parentFragmentManager, BACKUP_OPTION_DIALOG) },
             { folder ->
                 galleryModel.setCurrentPhotoId("")
+                galleryModel.resetCurrentSubFolder()
 
                 exitTransition = null
                 reenterTransition = null
@@ -330,6 +331,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 return when(menuItem.itemId) {
                     R.id.show_all -> {
                         galleryModel.setCurrentPhotoId("")
+                        galleryModel.resetCurrentSubFolder()
                         exitTransition = null
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)

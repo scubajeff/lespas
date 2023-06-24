@@ -317,7 +317,19 @@ class GallerySlideFragment : Fragment() {
 
     private fun setList(localMedias: List<GalleryFragment.LocalMedia>?) {
         if (localMedias == null) return
-        if (localMedias.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(localMedias) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
+        if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
+        else {
+            requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
+                mediaAdapter.submitList(
+                    when {
+                        subFolder.isEmpty() -> localMedias
+                        subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
+                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.fullPath.substringBeforeLast('/').substringAfterLast('/') == subFolder }
+                        else -> localMedias.filter { it.fullPath == subFolder }
+                    }
+                ) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
+            }
+        }
     }
 
     // Toggle visibility of bottom controls and system decoView
@@ -393,8 +405,14 @@ class GallerySlideFragment : Fragment() {
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 
         private const val ARGUMENT_FOLDER = "ARGUMENT_FOLDER"
+        private const val ARGUMENT_SUBFOLDER = "ARGUMENT_SUBFOLDER"
 
         @JvmStatic
-        fun newInstance(folder: String) = GallerySlideFragment().apply { arguments = Bundle().apply { putString(ARGUMENT_FOLDER, folder) }}
+        fun newInstance(folder: String, subFolder: String = "") = GallerySlideFragment().apply {
+            arguments = Bundle().apply {
+                putString(ARGUMENT_FOLDER, folder)
+                putString(ARGUMENT_SUBFOLDER, subFolder)
+            }
+        }
     }
 }
