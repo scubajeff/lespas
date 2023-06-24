@@ -509,6 +509,7 @@ class GalleryFragment: Fragment() {
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
         val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         val trash: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
         override fun onCleared() {
             loadJob?.cancel()

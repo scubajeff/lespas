@@ -313,67 +313,27 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                var theDate: LocalDate
-
-                if (folderArgument == GalleryFragment.TRASH_FOLDER) galleryModel.trash.collect {
-                    val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
-                    var currentDate = LocalDate.now().plusDays(1)
-                    it?.forEach { media ->
-                        theDate = media.media.photo.dateTaken.toLocalDate()
-                        if (theDate != currentDate) {
-                            currentDate = theDate
-                            // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
-                        }
-/*
-                        var currentDa = Instant.ofEpochMilli(System.currentTimeMillis()).truncatedTo(ChronoUnit.DAYS)
-                        val defaultZoneOffset = OffsetDateTime.now().offset
-                        if (media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS) != currentDa) {
-                            currentDa = media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS)
-                            // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDa.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
-                        }
-*/
-                        listGroupedByDate.add(media.media)
-                    }
-
-                    if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
-                }
-                else galleryModel.medias.collect {
-                    it?.let {
-                        (if (folderArgument == GalleryFragment.ALL_FOLDER) it else it.filter { item -> item.folder == folderArgument }).let { localMedias ->
-                            if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
-
-                            currentMediaList.clear()
-                            currentMediaList.addAll(localMedias)
-
-                            subFolderChipGroup.children.iterator().forEach { chip -> if (chip.id != chipForAll.id) subFolderChipGroup.removeView(chip) }
-                            if (folderArgument == GalleryFragment.ALL_FOLDER) currentMediaList.groupBy { item -> item.fullPath.substringBeforeLast('/').substringAfterLast('/') }.forEach { subFolder ->
-                                subFolderChipGroup.addView(
-                                    (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
-                                        text = subFolder.key
-                                        tag = subFolder.key
-                                    }
-                                )
-                            }
-                            else currentMediaList.groupBy { item -> item.fullPath }.forEach { subFolder ->
-                                subFolderChipGroup.addView(
-                                    (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
-                                        text = subFolder.key.substringBeforeLast('/').substringAfterLast('/')
-                                        tag = subFolder.key
-                                    }
-                                )
-                            }
-                            subFolderChipGroup.setOnCheckedStateChangeListener(null)
-                            subFolderChipGroup.check(subFolderChipGroup.findViewWithTag<Chip>(currentCheckedTag)?.id ?: chipForAll.id)
-                            subFolderChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
-                                currentCheckedTag = subFolderChipGroup.findViewById<Chip>(checkedIds[0]).tag as String
-                                setList()
+                when (folderArgument) {
+                    GalleryFragment.TRASH_FOLDER -> {
+                        galleryModel.trash.collect {
+                            var theDate: LocalDate
+                            val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+                            var currentDate = LocalDate.now().plusDays(1)
+                            it?.forEach { media ->
+                                theDate = media.media.photo.dateTaken.toLocalDate()
+                                if (theDate != currentDate) {
+                                    currentDate = theDate
+                                    // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
+                                    listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                                }
+                                listGroupedByDate.add(media.media)
                             }
 
-                            setList()
+                            if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
                         }
                     }
+                    GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { prepareList(it) }
+                    else -> galleryModel.mediasInFolder(folderArgument).collect { prepareList(it) }
                 }
             }
         }
@@ -505,6 +465,41 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
         actionMode = null
+    }
+
+    @SuppressLint("InflateParams")
+    private fun prepareList(localMedias: List<GalleryFragment.LocalMedia>?) {
+        if (localMedias == null) return
+        if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
+
+        currentMediaList.clear()
+        currentMediaList.addAll(localMedias)
+
+        subFolderChipGroup.children.iterator().forEach { chip -> if (chip.id != chipForAll.id) subFolderChipGroup.removeView(chip) }
+        if (folderArgument == GalleryFragment.ALL_FOLDER) currentMediaList.groupBy { item -> item.fullPath.substringBeforeLast('/').substringAfterLast('/') }.forEach { subFolder ->
+            subFolderChipGroup.addView(
+                (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
+                    text = subFolder.key
+                    tag = subFolder.key
+                }
+            )
+        }
+        else currentMediaList.groupBy { item -> item.fullPath }.forEach { subFolder ->
+            subFolderChipGroup.addView(
+                (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
+                    text = subFolder.key.substringBeforeLast('/').substringAfterLast('/')
+                    tag = subFolder.key
+                }
+            )
+        }
+        subFolderChipGroup.setOnCheckedStateChangeListener(null)
+        subFolderChipGroup.check(subFolderChipGroup.findViewWithTag<Chip>(currentCheckedTag)?.id ?: chipForAll.id)
+        subFolderChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            currentCheckedTag = subFolderChipGroup.findViewById<Chip>(checkedIds[0]).tag as String
+            setList()
+        }
+
+        setList()
     }
 
     private fun setList() {

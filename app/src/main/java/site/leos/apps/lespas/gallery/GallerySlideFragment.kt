@@ -265,19 +265,11 @@ class GallerySlideFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                if (folderArgument == GalleryFragment.TRASH_FOLDER) galleryModel.trash.collect { trashItems ->
-                    if (trashItems.isNullOrEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(trashItems) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
-                }
-                else galleryModel.medias.collect {
-                    it?.let { localMedias ->
-                        when {
-                            folderArgument == GalleryFragment.ALL_FOLDER -> localMedias
-                            folderArgument.contains('/') -> localMedias.filter { item -> item.fullPath == folderArgument }
-                            else -> localMedias.filter { item -> item.folder == folderArgument }
-                        }.let { filtered ->
-                            if (filtered.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(filtered) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
-                        }
-                    }
+                when {
+                    folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.trash.collect { setList(it) }                    // Trash view
+                    folderArgument == GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { setList(it) }                     // All folder view
+                    folderArgument.indexOf('/') == -1 -> galleryModel.mediasInFolder(folderArgument).collect { setList(it) }   // Single main folder view
+                    else -> galleryModel.medias.collect { setList(it?.filter {item -> item.fullPath == folderArgument}) }           // Launched as viewer in a folder
                 }
             }
         }
@@ -321,6 +313,11 @@ class GallerySlideFragment : Fragment() {
         }
 
         super.onDestroy()
+    }
+
+    private fun setList(localMedias: List<GalleryFragment.LocalMedia>?) {
+        if (localMedias == null) return
+        if (localMedias.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(localMedias) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }
     }
 
     // Toggle visibility of bottom controls and system decoView
