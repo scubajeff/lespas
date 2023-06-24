@@ -324,7 +324,7 @@ class GallerySlideFragment : Fragment() {
                     when {
                         subFolder.isEmpty() -> localMedias
                         subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
-                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.fullPath.substringBeforeLast('/').substringAfterLast('/') == subFolder }
+                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
                         else -> localMedias.filter { it.fullPath == subFolder }
                     }
                 ) { mediaList.setCurrentItem(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()), false) }

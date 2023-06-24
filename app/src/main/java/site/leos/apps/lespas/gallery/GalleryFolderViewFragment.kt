@@ -480,7 +480,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         currentMediaList.addAll(localMedias)
 
         subFolderChipGroup.children.iterator().forEach { chip -> if (chip.id != chipForAll.id) subFolderChipGroup.removeView(chip) }
-        if (folderArgument == GalleryFragment.ALL_FOLDER) currentMediaList.groupBy { item -> item.fullPath.substringBeforeLast('/').substringAfterLast('/') }.forEach { subFolder ->
+        if (folderArgument == GalleryFragment.ALL_FOLDER) currentMediaList.groupBy { item -> item.appName }.forEach { subFolder ->
             subFolderChipGroup.addView(
                 (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
                     text = subFolder.key
@@ -491,7 +491,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         else currentMediaList.groupBy { item -> item.fullPath }.forEach { subFolder ->
             subFolderChipGroup.addView(
                 (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
-                    text = subFolder.key.substringBeforeLast('/').substringAfterLast('/')
+                    text = subFolder.key.dropLast(1).substringAfterLast('/')
                     tag = subFolder.key
                 }
             )
@@ -511,10 +511,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         var theDate: LocalDate
         var currentDate = LocalDate.now().plusDays(1)
 
-        //(if (subFolderChipGroup.checkedChipId == chipForAll.id) currentMediaList else currentMediaList.filter { it.fullPath == subFolderChipGroup.findViewById<Chip>(subFolderChipGroup.checkedChipId).tag }).forEach { media ->
         when {
             currentCheckedTag == CHIP_FOR_ALL_TAG -> currentMediaList
-            folderArgument == GalleryFragment.ALL_FOLDER -> currentMediaList.filter { it.fullPath.substringBeforeLast('/').substringAfterLast('/') == currentCheckedTag }
+            folderArgument == GalleryFragment.ALL_FOLDER -> currentMediaList.filter { it.appName == currentCheckedTag }
             else -> currentMediaList.filter { it.fullPath == currentCheckedTag }
         }.forEach { media ->
             theDate = media.media.photo.dateTaken.toLocalDate()

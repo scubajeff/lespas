@@ -611,6 +611,7 @@ class GalleryFragment: Fragment() {
                                 } catch (_: Exception) { }
                             }
 
+
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
@@ -621,7 +622,7 @@ class GalleryFragment: Fragment() {
                                             albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
                                             //dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
-                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),      // DATE_ADDED does not have nano adjustment
                                             lastModified = LocalDateTime.MIN,
                                             width = cursor.getInt(widthColumn),
                                             height = cursor.getInt(heightColumn),
@@ -634,6 +635,7 @@ class GalleryFragment: Fragment() {
                                     ),
                                     cursor.getString(volumeColumn),
                                     relativePath,
+                                    relativePath.dropLast(1).substringAfterLast('/'),
                                 )
                             )
                         }
@@ -814,6 +816,7 @@ class GalleryFragment: Fragment() {
         var media: NCShareViewModel.RemotePhoto,
         var volume: String = "",
         var fullPath: String = "",
+        var appName: String = "",
     )
 
     companion object {
