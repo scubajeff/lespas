@@ -406,6 +406,7 @@ class GalleryFragment: Fragment() {
         var id: String? = null
         val projection: Array<String>
         val selection: String
+        var relativePath = folder
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             projection = arrayOf(
@@ -423,10 +424,17 @@ class GalleryFragment: Fragment() {
         }
 
         contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+            if (cursor.moveToFirst()) {
+                id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+
+                // Get relative path when working with document provider "com.android.providers.downloads.documents"
+                if (folder == "Download") cursor.getString(cursor.getColumnIndexOrThrow(pathColumn)).let {
+                    relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.dropLast(1) else it.substringBeforeLast('/').substringAfter(STORAGE_EMULATED).substringAfter('/')
+                }
+            }
         }
 
-        return id?.let { Pair("${folder}/", id!!) }
+        return id?.let { Pair("${relativePath}/", id!!) }
     }
 
     private fun getFolderFromUri(uri: Uri): Pair<String, String>? {
