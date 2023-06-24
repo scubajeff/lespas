@@ -49,7 +49,6 @@ import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
-import androidx.core.view.children
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -476,10 +475,15 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         if (localMedias == null) return
         if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
+        // Disable list setting for now
+        subFolderChipGroup.setOnCheckedStateChangeListener(null)
+
+        // List facilitating sub folder view
         currentMediaList.clear()
         currentMediaList.addAll(localMedias)
 
-        subFolderChipGroup.children.iterator().forEach { chip -> if (chip.id != chipForAll.id) subFolderChipGroup.removeView(chip) }
+        // Generate sub folder chips
+        if (subFolderChipGroup.childCount > 1) subFolderChipGroup.removeViews(1, subFolderChipGroup.childCount - 1)
         if (folderArgument == GalleryFragment.ALL_FOLDER) currentMediaList.groupBy { item -> item.appName }.forEach { subFolder ->
             subFolderChipGroup.addView(
                 (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
@@ -496,8 +500,14 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
             )
         }
-        subFolderChipGroup.setOnCheckedStateChangeListener(null)
-        subFolderChipGroup.check(subFolderChipGroup.findViewWithTag<Chip>(currentCheckedTag)?.id ?: chipForAll.id)
+        subFolderChipGroup.check(
+            subFolderChipGroup.findViewWithTag<Chip>(currentCheckedTag)?.id
+            ?: run {
+                // If currentCheckedTag is not found in the new sub foler list, fall back to 'All'
+                currentCheckedTag = CHIP_FOR_ALL_TAG
+                chipForAll.id
+            }
+        )
         subFolderChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentCheckedTag = subFolderChipGroup.findViewById<Chip>(checkedIds[0]).tag as String
             setList()
@@ -526,7 +536,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         //if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
-        mediaAdapter.submitList(listGroupedByDate)
+        if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate)
     }
 
     private var flashDateId = ""
