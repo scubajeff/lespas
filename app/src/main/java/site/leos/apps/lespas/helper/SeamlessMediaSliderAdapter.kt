@@ -32,6 +32,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
@@ -323,6 +324,13 @@ abstract class SeamlessMediaSliderAdapter<T>(
             knobPosition = itemView.findViewById(R.id.knob_position)
             forwardMessage = itemView.findViewById(R.id.fast_forward_msg)
             rewindMessage = itemView.findViewById(R.id.fast_rewind_msg)
+
+            playerViewModel.addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    super.onIsPlayingChanged(isPlaying)
+                    videoView.keepScreenOn = isPlaying
+                }
+            })
         }
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
