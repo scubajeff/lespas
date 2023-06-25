@@ -402,7 +402,7 @@ class GalleryFragment: Fragment() {
         if (tag == TAG_FROM_LAUNCHER) requireActivity().finish() else parentFragmentManager.popBackStack()
     }
 
-    private fun fromStorageUri(contentResolver: ContentResolver, externalStorageUri: Uri,  pathColumn: String, folder: String, displayName: String): Pair<String, String>? {
+    private fun getDocumentId(contentResolver: ContentResolver, externalStorageUri: Uri, pathColumn: String, folder: String, displayName: String): Pair<String, String>? {
         var id: String? = null
         val projection: Array<String>
         val selection: String
@@ -445,7 +445,7 @@ class GalleryFragment: Fragment() {
         return try {
             when(uri.authority) {
                 "com.android.externalstorage.documents" -> {
-                    fromStorageUri(contentResolver, externalStorageUri, pathColumn, uri.lastPathSegment!!.substringAfter(':').substringBeforeLast('/'), uri.lastPathSegment!!.substringAfterLast('/'))
+                    getDocumentId(contentResolver, externalStorageUri, pathColumn, uri.lastPathSegment!!.substringAfter(':').substringBeforeLast('/'), uri.lastPathSegment!!.substringAfterLast('/'))
                 }
                 "com.android.providers.downloads.documents" -> {
                     // Download provider does not provide common _ID, we have to find out the display name first, then use Storage provider to do the rest
@@ -458,7 +458,7 @@ class GalleryFragment: Fragment() {
                         if (cursor.moveToFirst()) filename = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME))
                     }
 
-                    filename?.let { fromStorageUri(contentResolver, externalStorageUri, pathColumn, "Download", filename!!) }
+                    filename?.let { getDocumentId(contentResolver, externalStorageUri, pathColumn, "Download", filename!!) }
                 }
                 "com.android.providers.media.documents" -> {
                     var folderName: String? = null
@@ -488,6 +488,9 @@ class GalleryFragment: Fragment() {
                         }
                     }
                     null
+                }
+                "eu.siacs.conversations.files" -> {
+                    getDocumentId(contentResolver, externalStorageUri, pathColumn, uri.path!!.substringBeforeLast('/').substringAfter("/external/"), uri.lastPathSegment!!)
                 }
                 else -> null
             }
