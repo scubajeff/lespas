@@ -187,7 +187,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         chipForAll = view.findViewById(R.id.chip_for_all)
         currentCheckedTag = galleryModel.getCurrentSubFolder()
-        subFolderChipGroup = view.findViewById(R.id.sub_chips)
+        subFolderChipGroup = view.findViewById<ChipGroup?>(R.id.sub_chips).apply { if (folderArgument == GalleryFragment.TRASH_FOLDER) isVisible = false }
 
         yearIndicator = view.findViewById<TextView>(R.id.year_indicator).apply {
             doOnLayout {
