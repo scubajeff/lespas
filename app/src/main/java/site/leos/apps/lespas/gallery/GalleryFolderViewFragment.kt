@@ -68,6 +68,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.shape.CornerFamily
@@ -96,6 +98,8 @@ import kotlin.math.min
 class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     private lateinit var mediaAdapter: MediaAdapter
     private lateinit var mediaList: RecyclerView
+    private lateinit var subFolderChipGroup: ChipGroup
+    private lateinit var chipForAll: Chip
     private lateinit var yearIndicator: TextView
     private var actionMode: ActionMode? = null
     private lateinit var selectionTracker: SelectionTracker<String>
@@ -106,7 +110,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
 
+    private val currentMediaList = mutableListOf<GalleryFragment.LocalMedia>()
+
     private var stripExif = "2"
+    private var currentCheckedTag = CHIP_FOR_ALL_TAG
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,7 +126,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
                 if (mimeType.startsWith("video")) {
                     // Transition to surface view might crash some OEM phones, like Xiaomi
-                    parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
                 } else {
                     reenterTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -135,7 +142,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
                         .addSharedElement(view, view.transitionName)
-                        .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument), GallerySlideFragment::class.java.canonicalName)
+                        .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName)
                         .addToBackStack(null)
                         .commit()
                 }
@@ -171,11 +178,16 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         })
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_gallery_list, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_gallery_folder, container, false)
+    @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         postponeEnterTransition()
+
+        chipForAll = view.findViewById(R.id.chip_for_all)
+        currentCheckedTag = galleryModel.getCurrentSubFolder()
+        subFolderChipGroup = view.findViewById<ChipGroup?>(R.id.sub_chips).apply { if (folderArgument == GalleryFragment.TRASH_FOLDER) isVisible = false }
 
         yearIndicator = view.findViewById<TextView>(R.id.year_indicator).apply {
             doOnLayout {
@@ -300,50 +312,27 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                var theDate: LocalDate
-
-                if (folderArgument == GalleryFragment.TRASH_FOLDER) galleryModel.trash.collect {
-                    val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
-                    var currentDate = LocalDate.now().plusDays(1)
-                    it?.forEach { media ->
-                        theDate = media.media.photo.dateTaken.toLocalDate()
-                        if (theDate != currentDate) {
-                            currentDate = theDate
-                            // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
-                        }
-/*
-                        var currentDa = Instant.ofEpochMilli(System.currentTimeMillis()).truncatedTo(ChronoUnit.DAYS)
-                        val defaultZoneOffset = OffsetDateTime.now().offset
-                        if (media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS) != currentDa) {
-                            currentDa = media.media.photo.dateTaken.toInstant(defaultZoneOffset).truncatedTo(ChronoUnit.DAYS)
-                            // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                            listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDa.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
-                        }
-*/
-                        listGroupedByDate.add(media.media)
-                    }
-
-                    if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
-                }
-                else galleryModel.medias.collect {
-                    val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
-                    var currentDate = LocalDate.now().plusDays(1)
-
-                    it?.let { localMedias ->
-                        // Match folder name (including Trash folder), or filter out trashed items for all folders case
-                        (if (folderArgument == GalleryFragment.ALL_FOLDER) localMedias else localMedias.filter { item -> item.folder == folderArgument }).forEach { media ->
-                            theDate = media.media.photo.dateTaken.toLocalDate()
-                            if (theDate != currentDate) {
-                                currentDate = theDate
-                                // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                                listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                when (folderArgument) {
+                    GalleryFragment.TRASH_FOLDER -> {
+                        galleryModel.trash.collect {
+                            var theDate: LocalDate
+                            val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+                            var currentDate = LocalDate.now().plusDays(1)
+                            it?.forEach { media ->
+                                theDate = media.media.photo.dateTaken.toLocalDate()
+                                if (theDate != currentDate) {
+                                    currentDate = theDate
+                                    // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
+                                    listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                                }
+                                listGroupedByDate.add(media.media)
                             }
-                            listGroupedByDate.add(media.media)
+
+                            if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
                         }
                     }
-
-                    if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
+                    GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { prepareList(it) }
+                    else -> galleryModel.mediasInFolder(folderArgument).collect { prepareList(it) }
                 }
             }
         }
@@ -410,9 +399,14 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
     }
 
+    override fun onPause() {
+        galleryModel.saveCurrentSubFolder(currentCheckedTag)
+        super.onPause()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        
+
         try { selectionTracker.onSaveInstanceState(outState) } catch (_: UninitializedPropertyAccessException) {}
 /*
         // Because we might need scrolling to a new position when returning from GallerySliderFragment, we have to save current scroll state in this way, though it's not as perfect as layoutManager.onSavedInstanceState
@@ -474,6 +468,75 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
         actionMode = null
+    }
+
+    @SuppressLint("InflateParams")
+    private fun prepareList(localMedias: List<GalleryFragment.LocalMedia>?) {
+        if (localMedias == null) return
+        if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
+
+        // Disable list setting for now
+        subFolderChipGroup.setOnCheckedStateChangeListener(null)
+
+        // List facilitating sub folder view
+        currentMediaList.clear()
+        currentMediaList.addAll(localMedias)
+
+        // Generate sub folder chips
+        if (subFolderChipGroup.childCount > 1) subFolderChipGroup.removeViews(1, subFolderChipGroup.childCount - 1)
+        if (folderArgument == GalleryFragment.ALL_FOLDER) currentMediaList.groupBy { item -> item.appName }.forEach { subFolder ->
+            subFolderChipGroup.addView(
+                (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
+                    text = subFolder.key
+                    tag = subFolder.key
+                }
+            )
+        }
+        else currentMediaList.groupBy { item -> item.fullPath }.forEach { subFolder ->
+            subFolderChipGroup.addView(
+                (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
+                    text = subFolder.key.dropLast(1).substringAfterLast('/')
+                    tag = subFolder.key
+                }
+            )
+        }
+        subFolderChipGroup.check(
+            subFolderChipGroup.findViewWithTag<Chip>(currentCheckedTag)?.id
+            ?: run {
+                // If currentCheckedTag is not found in the new sub foler list, fall back to 'All'
+                currentCheckedTag = CHIP_FOR_ALL_TAG
+                chipForAll.id
+            }
+        )
+        subFolderChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            currentCheckedTag = subFolderChipGroup.findViewById<Chip>(checkedIds[0]).tag as String
+            setList()
+        }
+
+        setList()
+    }
+
+    private fun setList() {
+        val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+        var theDate: LocalDate
+        var currentDate = LocalDate.now().plusDays(1)
+
+        when {
+            currentCheckedTag == CHIP_FOR_ALL_TAG -> currentMediaList
+            folderArgument == GalleryFragment.ALL_FOLDER -> currentMediaList.filter { it.appName == currentCheckedTag }
+            else -> currentMediaList.filter { it.fullPath == currentCheckedTag }
+        }.forEach { media ->
+            theDate = media.media.photo.dateTaken.toLocalDate()
+            if (theDate != currentDate) {
+                currentDate = theDate
+                // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
+                listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+            }
+            listGroupedByDate.add(media.media)
+        }
+
+        //if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
+        if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate)
     }
 
     private var flashDateId = ""
@@ -649,6 +712,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val EMPTY_TRASH_REQUEST_KEY = "EMPTY_TRASH_REQUEST_KEY"
+
+        // Default to All, same tag set in R.layout.fragment_gallery_list for view R.id.chip_for_all
+        const val CHIP_FOR_ALL_TAG = "...."
 
         private const val ARGUMENT_FOLDER = "ARGUMENT_FOLDER"
 

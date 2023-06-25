@@ -32,6 +32,7 @@
     <color name="color_button_text">#F57F17</color>
     <color name="color_tab_indicator">#A5D6A7</color>
     <color name="color_control_background">#406A63</color>
+    <color name="color_gray_out">#9E9E9E</color>
 
     <color name="album_item_selected_background">#89937A</color>
 </resources>

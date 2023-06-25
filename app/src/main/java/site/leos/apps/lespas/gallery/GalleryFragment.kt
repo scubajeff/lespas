@@ -406,6 +406,7 @@ class GalleryFragment: Fragment() {
         var id: String? = null
         val projection: Array<String>
         val selection: String
+        var relativePath = folder
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             projection = arrayOf(
@@ -423,10 +424,17 @@ class GalleryFragment: Fragment() {
         }
 
         contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+            if (cursor.moveToFirst()) {
+                id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+
+                // Get relative path when working with document provider "com.android.providers.downloads.documents"
+                if (folder == "Download") cursor.getString(cursor.getColumnIndexOrThrow(pathColumn)).let {
+                    relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.dropLast(1) else it.substringBeforeLast('/').substringAfter(STORAGE_EMULATED).substringAfter('/')
+                }
+            }
         }
 
-        return id?.let { Pair("${folder}/", id!!) }
+        return id?.let { Pair("${relativePath}/", id!!) }
     }
 
     private fun getFolderFromUri(uri: Uri): Pair<String, String>? {
@@ -501,6 +509,7 @@ class GalleryFragment: Fragment() {
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
         val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         val trash: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
         override fun onCleared() {
             loadJob?.cancel()
@@ -602,6 +611,7 @@ class GalleryFragment: Fragment() {
                                 } catch (_: Exception) { }
                             }
 
+
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
@@ -612,7 +622,7 @@ class GalleryFragment: Fragment() {
                                             albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
                                             //dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
-                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),      // DATE_ADDED does not have nano adjustment
                                             lastModified = LocalDateTime.MIN,
                                             width = cursor.getInt(widthColumn),
                                             height = cursor.getInt(heightColumn),
@@ -625,6 +635,7 @@ class GalleryFragment: Fragment() {
                                     ),
                                     cursor.getString(volumeColumn),
                                     relativePath,
+                                    relativePath.dropLast(1).substringAfterLast('/'),
                                 )
                             )
                         }
@@ -793,6 +804,11 @@ class GalleryFragment: Fragment() {
 
         fun getFullPath(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.fullPath ?: ""
         fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.volume ?: ""
+
+        private var currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG
+        fun getCurrentSubFolder(): String = currentSubFolder
+        fun saveCurrentSubFolder(name: String) { currentSubFolder = name }
+        fun resetCurrentSubFolder() { currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG }
     }
 
     data class LocalMedia(
@@ -800,6 +816,7 @@ class GalleryFragment: Fragment() {
         var media: NCShareViewModel.RemotePhoto,
         var volume: String = "",
         var fullPath: String = "",
+        var appName: String = "",
     )
 
     companion object {
