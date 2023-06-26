@@ -157,8 +157,8 @@ class GalleryFragment: Fragment() {
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { delete ->
             if (delete) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, selectedUris)).setFillInIntent(null).build())
-                else { galleryModel.delete(selectedUris) }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) removeFilesSAF(selectedUris)
+                else galleryModel.delete(selectedUris)
             }
             selectedUris = arrayListOf()
 
@@ -233,21 +233,7 @@ class GalleryFragment: Fragment() {
                 }
             }
             launch {
-                galleryModel.deletions.collect { deletions ->
-                    if (deletions.isNotEmpty()) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            val trashItems = arrayListOf<Uri>()
-                            val deleteItems = arrayListOf<Uri>()
-                            deletions.forEach {
-                                if (galleryModel.getVolumeName(it) == MediaStore.VOLUME_EXTERNAL_PRIMARY) trashItems.add(Uri.parse(it))
-                                else deleteItems.add(Uri.parse(it))
-                            }
-                            if (deleteItems.isNotEmpty()) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, deleteItems)).setFillInIntent(null).build())
-                            if (trashItems.isNotEmpty()) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, trashItems, true)).setFillInIntent(null).build())
-                        }
-                        else galleryModel.delete(arrayListOf<Uri>().apply { deletions.forEach { add(Uri.parse(it)) } })
-                    }
-                }
+                galleryModel.deletions.collect { deletions -> if (deletions.isNotEmpty()) removeFilesSAF(deletions) }
             }
             launch {
                 galleryModel.restorations.collect { restorations ->
@@ -400,6 +386,19 @@ class GalleryFragment: Fragment() {
 
     private fun finish() {
         if (tag == TAG_FROM_LAUNCHER) requireActivity().finish() else parentFragmentManager.popBackStack()
+    }
+
+    private fun removeFilesSAF(deletions: List<Uri>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val trashItems = arrayListOf<Uri>()
+            val deleteItems = arrayListOf<Uri>()
+            deletions.forEach {
+                if (galleryModel.getVolumeName(it.lastPathSegment!!) == MediaStore.VOLUME_EXTERNAL_PRIMARY) trashItems.add(it)
+                else deleteItems.add(it)
+            }
+            if (deleteItems.isNotEmpty()) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, deleteItems)).setFillInIntent(null).build())
+            if (trashItems.isNotEmpty()) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, trashItems, true)).setFillInIntent(null).build())
+        }
     }
 
     private fun getDocumentId(contentResolver: ContentResolver, externalStorageUri: Uri, pathColumn: String, folder: String, displayName: String): Pair<String, String>? {
@@ -741,11 +740,13 @@ class GalleryFragment: Fragment() {
         val additions: SharedFlow<List<String>> = _additions
         fun add(photoIds: List<String>) { viewModelScope.launch { _additions.emit(photoIds) }}
 
-        private val _deletions = MutableSharedFlow<List<String>>()
-        val deletions: SharedFlow<List<String>> = _deletions
+        private val _deletions = MutableSharedFlow<List<Uri>>()
+        val deletions: SharedFlow<List<Uri>> = _deletions
         fun remove(photoIds: List<String>, nextInLine: String = "") {
+            val uris = arrayListOf<Uri>().apply { photoIds.forEach { add(Uri.parse(it)) } }
             this.nextInLine = nextInLine
-            viewModelScope.launch { _deletions.emit(photoIds) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) viewModelScope.launch { _deletions.emit(uris) }
+            else delete(uris)
         }
         fun delete(uris: ArrayList<Uri>) {
             val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
