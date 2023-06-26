@@ -505,6 +505,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                 if (overflow) {
                     ivPhoto.run {
+                        foreground = null
                         imageTintList = ColorStateList.valueOf(Color.argb(0x70, 0x00, 0x00, 0x00))
                         imageTintMode = PorterDuff.Mode.SRC_ATOP
                         clearColorFilter()
