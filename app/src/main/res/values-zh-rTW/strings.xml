@@ -104,7 +104,7 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed修圖 - 替換</string>
     <string name="msg_no_media_found">沒找到任何圖片或視訊。</string>
     <string name="option_menu_empty_trash">清空回收站</string>
-    <string name="gallery_name">本機圖庫</string>
+    <string name="gallery_name">圖庫</string>
     <string name="same_file_found">同名檔案已存在。</string>
     <string name="verify_ssl_certificate_title">SSL證書驗證失敗</string>
     <string name="verify_ssl_certificate_message">伺服器%1$s的證書無法通過驗證，是否信任該伺服器並繼續？</string>
@@ -168,7 +168,7 @@
     <string name="prefer_day_in_history">那時今日</string>
     <string name="prefer_random">隨意（以上各項無結果時亦使用此項）</string>
     <string name="http_toggle_helper_text">\u2B11點選字首切換非安全HTTP連線</string>
-    <string name="gallery_as_album_title">在相冊列表中顯示本機相冊</string>
+    <string name="gallery_as_album_title">在相冊列表中顯示本機圖庫</string>
     <string name="relogin_title">重新登入</string>
     <string name="relogin_summary">假如你在伺服器端意外撤銷了Les Pas的應用授權。</string>
     <string name="auto_replay_title">自動重複播放影片</string>
