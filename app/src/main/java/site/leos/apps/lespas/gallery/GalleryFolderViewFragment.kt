@@ -214,7 +214,32 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 MediaAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object: SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && key.isNotEmpty()
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean {
+                    return when {
+                        galleryModel.isPreparingShareOut() -> false                                     // Can't select when sharing out
+                        key.isEmpty() -> false                                                          // Empty space in list
+                        key.startsWith("content") -> true                                        // Normal media items
+                        else -> {                                                                       // Date items
+                            val startPos = mediaAdapter.getPhotoPosition(key)
+                            var index = startPos
+                            var selectWholeDate = false
+                            val keys = arrayListOf<String>()
+                            while(true) {
+                                index++
+                                if (index == mediaAdapter.currentList.size) break                       // End of list
+                                if (mediaAdapter.currentList[index].photo.mimeType.isEmpty()) break     // Next date
+                                mediaAdapter.getPhotoId(index).let { id ->
+                                    keys.add(id)
+                                    if (!selectionTracker.isSelected(id)) selectWholeDate = true
+                                }
+                            }
+
+                            selectionTracker.setItemsSelected(keys, selectWholeDate)
+
+                            false
+                        }
+                    }
+                }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
@@ -627,17 +652,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                     tvDate.tag = item.photo.id
                 }
+            }
 
-                tvDate.setOnLongClickListener {
-                    var index = currentList.indexOf(item)
-                    while(true) {
-                        index++
-                        if (index == currentList.size) break
-                        if (currentList[index].photo.mimeType.isEmpty()) break
-                        selectionTracker.select(currentList[index].photo.id)
-                    }
-                    true
-                }
+            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<String>() {
+                override fun getPosition(): Int = bindingAdapterPosition
+                override fun getSelectionKey(): String = getPhotoId(bindingAdapterPosition)
             }
         }
 
@@ -691,6 +710,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     recyclerView.getChildViewHolder(it).let { holder ->
                         if (holder is MediaViewHolder) return holder.getItemDetails()
+                        if (holder is DateViewHolder) return holder.getItemDetails()
                     }
                 }
                 return stubItemDetails()
