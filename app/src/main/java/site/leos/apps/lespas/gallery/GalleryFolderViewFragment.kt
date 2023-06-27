@@ -50,6 +50,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
+import androidx.core.view.forEach
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -265,6 +266,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
                         } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+
+                        // Disable sub folder chips when in selection mode
+                        val enableChips = selectionSize <= 0
+                        subFolderChipGroup.forEach { it.isEnabled = enableChips }
                     }
                 })
             }
@@ -701,7 +706,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         fun getDateByPosition(position: Int): Long = currentList[position].photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
         fun getAllItems(): List<NCShareViewModel.RemotePhoto> = currentList.filter { it.photo.mimeType.isNotEmpty() }
 
-        class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_MAPPED) {
+        class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
