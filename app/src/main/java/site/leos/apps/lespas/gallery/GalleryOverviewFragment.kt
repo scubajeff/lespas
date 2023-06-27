@@ -653,15 +653,21 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
         class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String> {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     return when(val holder = recyclerView.getChildViewHolder(it)) {
                         is MediaViewHolder -> holder.getItemDetails()
-                        is OverflowHolder -> if (holder.canSelect()) holder.getItemDetails() else null
-                        else -> null
+                        is OverflowHolder -> if (holder.canSelect()) holder.getItemDetails() else stubItemDetails()
+                        else -> stubItemDetails()
                     }
                 }
-                return null
+                return stubItemDetails()
+            }
+
+            // Default ItemDetailsLookup stub, to avoid clearing selection by clicking the empty area in the list
+            private fun stubItemDetails() = object : ItemDetails<String>() {
+                override fun getPosition(): Int = Int.MIN_VALUE
+                override fun getSelectionKey(): String = ""
             }
         }
 

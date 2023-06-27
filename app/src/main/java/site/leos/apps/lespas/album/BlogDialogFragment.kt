@@ -222,7 +222,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                 PhotoGridAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = true
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key.isNotEmpty()
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = true
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
@@ -368,7 +368,21 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
         class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? = recyclerView.findChildViewUnder(e.x, e.y)?.let { (recyclerView.getChildViewHolder(it) as PhotoViewHolder).getItemDetails() }
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String> {
+                recyclerView.findChildViewUnder(e.x, e.y)?.let {
+                    recyclerView.getChildViewHolder(it).let { holder ->
+                        if (holder is PhotoViewHolder) return holder.getItemDetails()
+                    }
+                }
+                return stubItemDetails()
+            }
+
+
+            // Default ItemDetailsLookup stub, to avoid clearing selection by clicking the empty area in the list
+            private fun stubItemDetails() = object : ItemDetails<String>() {
+                override fun getPosition(): Int = Int.MIN_VALUE
+                override fun getSelectionKey(): String = ""
+            }
         }
     }
 

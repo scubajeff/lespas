@@ -404,7 +404,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 PhotoGridAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && key != album.id
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && key.isNotEmpty()
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && (position != 0 || mAdapter.getPhotoAt(0).id != album.id)
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
@@ -1307,12 +1307,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
         class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String> {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     val holder = recyclerView.getChildViewHolder(it)
-                    return if (holder is PhotoViewHolder) holder.getItemDetails() else null
+                    if (holder is PhotoViewHolder) return holder.getItemDetails()
                 }
-                return null
+                return stubItemDetails()
+            }
+
+            // Default ItemDetailsLookup stub, to avoid clearing selection by clicking the empty area in the list
+            private fun stubItemDetails() = object : ItemDetails<String>() {
+                override fun getPosition(): Int = Int.MIN_VALUE
+                override fun getSelectionKey(): String = ""
             }
         }
 

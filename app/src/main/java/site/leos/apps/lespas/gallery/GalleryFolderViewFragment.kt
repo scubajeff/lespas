@@ -682,17 +682,24 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         fun getDateByPosition(position: Int): Long = currentList[position].photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
         fun getAllItems(): List<NCShareViewModel.RemotePhoto> = currentList.filter { it.photo.mimeType.isNotEmpty() }
 
-        class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
+        class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_MAPPED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
         class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String> {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
-                    val holder = recyclerView.getChildViewHolder(it)
-                    return if (holder is MediaViewHolder) holder.getItemDetails() else null
+                    recyclerView.getChildViewHolder(it).let { holder ->
+                        if (holder is MediaViewHolder) return holder.getItemDetails()
+                    }
                 }
-                return null
+                return stubItemDetails()
+            }
+
+            // Default ItemDetailsLookup stub, to avoid clearing selection by clicking the empty area in the list
+            private fun stubItemDetails() = object : ItemDetails<String>() {
+                override fun getPosition(): Int = Int.MIN_VALUE
+                override fun getSelectionKey(): String = ""
             }
         }
 

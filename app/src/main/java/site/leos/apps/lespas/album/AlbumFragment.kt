@@ -859,11 +859,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             override fun getPosition(key: String): Int = adapter.getPosition(key)
         }
         class AlbumDetailsLookup(private val recyclerView: RecyclerView) : ItemDetailsLookup<String>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String> {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     return (recyclerView.getChildViewHolder(it) as AlbumViewHolder).getItemDetails()
                 }
-                return null
+                return stubItemDetails()
+            }
+
+            // Default ItemDetailsLookup stub, to avoid clearing selection by clicking the empty area in the list
+            private fun stubItemDetails() = object : ItemDetails<String>() {
+                override fun getPosition(): Int = Int.MIN_VALUE
+                override fun getSelectionKey(): String = GalleryFragment.FROM_DEVICE_GALLERY
             }
         }
     }
