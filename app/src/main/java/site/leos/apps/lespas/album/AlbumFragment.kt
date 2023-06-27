@@ -202,7 +202,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
 
             // TODO only check first volume
-            getGallery(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
+            getGallery(MediaStore.getVersion(requireContext()), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
 
             with(PreferenceManager.getDefaultSharedPreferences(this)) {
                 registerOnSharedPreferenceChangeListener(showGalleryPreferenceListener)
@@ -526,7 +526,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         if (showGallery) {
             requireContext().apply {
-                val newVersion = MediaStore.getVersion(this)
+                val newVersion = MediaStore.getVersion(requireContext())
                 val newGeneration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L
                 if (newVersion != mediaStoreVersion) getGallery(newVersion, newGeneration).apply { mAdapter.setGalleryAlbum(this) }
                 else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getGallery(newVersion, newGeneration).apply { mAdapter.setGalleryAlbum(this) }
