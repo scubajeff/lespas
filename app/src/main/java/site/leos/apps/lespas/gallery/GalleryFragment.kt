@@ -93,7 +93,7 @@ class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity().contentResolver, imageLoaderModel) }
+    private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity().contentResolver, imageLoaderModel, actionModel) }
 
     private lateinit var mediaStoreObserver: ContentObserver
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
@@ -161,14 +161,6 @@ class GalleryFragment: Fragment() {
                 else galleryModel.delete(selectedUris)
             }
             selectedUris = arrayListOf()
-
-            // Immediately sync with server after adding photo to local album
-            AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
-                if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
-                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-                })
-            }
         }
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
@@ -384,6 +376,19 @@ class GalleryFragment: Fragment() {
         super.onDestroyView()
     }
 
+    override fun onDestroy() {
+        if (galleryModel.isSyncNeeded()) {
+            AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
+                if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                })
+            }
+        }
+
+        super.onDestroy()
+    }
+
     private fun finish() {
         if (tag == TAG_FROM_LAUNCHER) requireActivity().finish() else parentFragmentManager.popBackStack()
     }
@@ -499,11 +504,11 @@ class GalleryFragment: Fragment() {
         }
     }
 
-    class GalleryViewModelFactory(private val cr: ContentResolver,private val imageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
+    class GalleryViewModelFactory(private val cr: ContentResolver,private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModelProvider.NewInstanceFactory() {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = GalleryViewModel(cr, imageModel) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = GalleryViewModel(cr, imageModel, actionModel) as T
     }
-    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel): ViewModel() {
+    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModel() {
         private lateinit var playMarkDrawable: Drawable
         private lateinit var selectedMarkDrawable: Drawable
         private var loadJob: Job? = null
@@ -738,12 +743,20 @@ class GalleryFragment: Fragment() {
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
-        fun add(photoIds: List<String>) { viewModelScope.launch { _additions.emit(photoIds) }}
+        fun add(photoIds: List<String>) {
+            viewModelScope.launch { _additions.emit(photoIds) }
+            syncNeeded = true
+        }
 
         private val _deletions = MutableSharedFlow<List<Uri>>()
         val deletions: SharedFlow<List<Uri>> = _deletions
-        fun remove(photoIds: List<String>, nextInLine: String = "") {
+        fun remove(photoIds: List<String>, nextInLine: String = "", removeArchive: Boolean = false) {
             val uris = arrayListOf<Uri>().apply { photoIds.forEach { add(Uri.parse(it)) } }
+            if (removeArchive) {
+                val names = arrayListOf<String>().apply { _medias.value?.filter { it.media.photo.id in photoIds }?.forEach { add("${it.fullPath}${it.media.photo.name}") }}
+                if (names.isNotEmpty()) actionModel.deleteFileInArchive(names)
+                syncNeeded = true
+            }
             this.nextInLine = nextInLine
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) viewModelScope.launch { _deletions.emit(uris) }
             else delete(uris)
@@ -813,6 +826,9 @@ class GalleryFragment: Fragment() {
         fun getCurrentSubFolder(): String = currentSubFolder
         fun saveCurrentSubFolder(name: String) { currentSubFolder = name }
         fun resetCurrentSubFolder() { currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG }
+
+        private var syncNeeded = false
+        fun isSyncNeeded() = syncNeeded
     }
 
     data class LocalMedia(

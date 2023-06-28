@@ -334,7 +334,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         parentFragmentManager.setFragmentResultListener(GALLERY_FOLDERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos())
+                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
                 STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
                 EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.photo.id) }})
             }
@@ -473,7 +473,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 when {
                     folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(getSelectedPhotos())
                     Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotos())
-                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY, checkBoxText = getString(R.string.checkbox_text_remove_archive_copy)).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
 
                 true

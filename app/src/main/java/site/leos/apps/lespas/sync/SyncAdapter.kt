@@ -73,7 +73,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private lateinit var baseUrl: String
     private lateinit var userBase: String
     private lateinit var lespasBase: String
-    private lateinit var dcimBase: String
+    private lateinit var archiveBase: String
     private lateinit var localBaseFolder: String
     private lateinit var token: String
     private var blogSiteName = ""
@@ -215,7 +215,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             userBase = "${baseUrl}${application.getString(R.string.dav_files_endpoint)}${userName}"
             lespasBase = "${userBase}${Tools.getRemoteHome(application)}"
-            dcimBase = "${userBase}${Tools.getCameraArchiveHome(application)}"
+            archiveBase = "${userBase}${Tools.getArchiveHome(application)}/${Tools.getDeviceModel()}"
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
@@ -322,9 +322,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 */
 
-                Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> {
+                Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
                     // Property fileName holds the camera archive file's path, starts from the sub-folder named after device model
-                    webDav.delete("${dcimBase}/${action.fileName}")
+                    webDav.delete("${archiveBase}/${action.fileName}")
                 }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {

@@ -518,11 +518,13 @@ object Tools {
 
     fun getRemoteHome(context: Context): String = getPathOnServer(context, 1)
     fun getCameraArchiveHome(context: Context): String = getPathOnServer(context, 2)
+    fun getArchiveHome(context: Context): String = getPathOnServer(context, 3)
     private fun getPathOnServer(context: Context, id: Int): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
             1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "" else context.getString(R.string.local_base)
             2 -> "/DCIM"
+            3 -> "/Backup"
             else -> ""
         }
     }

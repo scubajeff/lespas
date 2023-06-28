@@ -123,6 +123,7 @@
     <string name="camera_roll_name">相機</string>
     <string name="msg_remove_old_files_warning">警告：如果您在首次啟用本資料夾備份時選擇了不備份現有檔案，那麼啟用此自動削除設定後，那些現有檔案也將被按設定削除！</string>
     <string name="button_text_i_understand">瞭解了</string>
+    <string name="checkbox_text_remove_archive_copy">同時刪除伺服器存檔中的備份副本</string>
     <string name="tooltips_search_album">在相冊中搜索</string>
     <string name="tooltips_search_gallery">在圖庫中搜索</string>
     <string name="title_in_album">相冊中的%1$s</string>

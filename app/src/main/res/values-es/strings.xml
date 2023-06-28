@@ -124,6 +124,7 @@
     <string name="camera_roll_name">Cámara</string>
     <string name="msg_remove_old_files_warning">ADVERTENCIA: Si eligió no hacer copia de seguridad de los archivos existentes cuando activó por primera vez la copia de seguridad para esta carpeta, esos archivos existentes TAMBIÉN SERÁN ELIMINADOS al activar esta opción.</string>
     <string name="button_text_i_understand">Comprendo</string>
+    <string name="checkbox_text_remove_archive_copy">Eliminar también la copia de seguridad en el archivo del servidor</string>
     <string name="tooltips_search_album">En álbumes</string>
     <string name="tooltips_search_gallery">Buscar en la galería</string>
     <string name="title_in_album">%1$s en álbumes</string>

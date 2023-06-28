@@ -241,6 +241,7 @@
     <string name="camera_roll_name">Appareil photo</string>
     <string name="msg_remove_old_files_warning">AVERTISSEMENT : Si vous avez choisi de ne pas sauvegarder les fichiers existants lorsque vous avez activé la sauvegarde pour ce dossier, ces fichiers seront également supprimés si vous activez ce paramètre !</string>
     <string name="button_text_i_understand">Je comprends</string>
+    <string name="checkbox_text_remove_archive_copy">Supprimer également la copie de sauvegarde dans les archives du serveur</string>
     <string name="tooltips_search_album">Rechercher dans les albums</string>
     <string name="tooltips_search_gallery">Recherche dans la galerie</string>
     <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>

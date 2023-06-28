@@ -243,7 +243,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         parentFragmentManager.setFragmentResultListener(GALLERY_OVERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)?.let { requestKey ->
                 when {
-                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos())
+                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
                     requestKey == STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
                     // When ConfirmDialogFragment launched to confirm backup existing media files, INDIVIDUAL_REQUEST_KEY is the folder name. TODO hope that no body use 'DELETE_REQUEST_KEY' and 'STRIP_REQUEST_KEY' as their folder name
                     requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) 0L else System.currentTimeMillis() / 1000)
@@ -400,7 +400,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             }
             R.id.remove -> {
                 if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(getSelectedPhotos())
-                else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY, checkBoxText = getString(R.string.checkbox_text_remove_archive_copy)).show(parentFragmentManager, CONFIRM_DIALOG)
 
                 true
             }

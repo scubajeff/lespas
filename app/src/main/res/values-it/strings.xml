@@ -254,6 +254,7 @@
     <string name="camera_roll_name">Macchina fotografica</string>
     <string name="msg_remove_old_files_warning">AVVERTENZA: se si è scelto di non eseguire il backup dei file esistenti quando si è abilitato il backup per questa cartella, i file esistenti verranno rimossi anche attivando questa impostazione!</string>
     <string name="button_text_i_understand">Capisco</string>
+    <string name="checkbox_text_remove_archive_copy">Eliminare anche la copia di backup nell\'archivio del server</string>
     <string name="tooltips_search_album">Cerca negli album</string>
     <string name="tooltips_search_gallery">Ricerca nella galleria</string>
     <string name="condition_to_perform_search">Per effettuare una ricerca è necessario almeno un album o il permesso di accesso all\'archivio.</string>

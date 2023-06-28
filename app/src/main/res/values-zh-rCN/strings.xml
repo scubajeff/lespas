@@ -123,6 +123,7 @@
     <string name="camera_roll_name">相机</string>
     <string name="msg_remove_old_files_warning">警告：如果您在首次启用本文件夹备份时选择了不备份现有文件，那么激活此自动删除设置后，那些现有文件也将被按设定删除！</string>
     <string name="button_text_i_understand">知道了</string>
+    <string name="checkbox_text_remove_archive_copy">同时删除服务器存档中的备份副本</string>
     <string name="tooltips_search_album">在相册中搜索</string>
     <string name="tooltips_search_gallery">在图库中搜索</string>
     <string name="title_in_album">相册中的%1$s</string>

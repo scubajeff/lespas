@@ -238,6 +238,7 @@
     <string name="camera_roll_name">Câmera</string>
     <string name="msg_remove_old_files_warning">AVISO: Se você optou por não fazer backup dos arquivos existentes quando ativou o backup para essa pasta pela primeira vez, esses arquivos existentes TAMBÉM SERÃO REMOVIDOS ao ativar essa configuração!</string>
     <string name="button_text_i_understand">Eu entendo</string>
+    <string name="checkbox_text_remove_archive_copy">Excluir também a cópia de backup no arquivo do servidor</string>
     <string name="tooltips_search_album">Pesquisar nos álbuns</string>
     <string name="tooltips_search_gallery">Pesquisar na galeria</string>
     <string name="condition_to_perform_search">Para pesquisar é necessário existir pelo menos um álbum ou ter a permissão de acesso ao armazenamento.</string>

@@ -175,7 +175,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                                 if (action[1].substringBefore('/') == "DCIM") getString(R.string.camera_roll_name) else action[1].substringAfterLast('/'),
                                 action[2].substringAfterLast('/')
                             )
-                        Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4].substringAfterLast('/'))
+                        Action.ACTION_DELETE_FILE_IN_ARCHIVE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4].substringAfterLast('/'))
                         Action.ACTION_PATCH_PROPERTIES -> String.format(getString(R.string.sync_status_action_patch_property), action[4])
                         Action.ACTION_CREATE_BLOG_POST -> String.format(getString(R.string.sync_status_action_create_blog), action[2])
 
