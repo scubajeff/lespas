@@ -31,6 +31,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
+import android.provider.MediaStore
+import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -57,6 +59,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okio.ByteString.Companion.decodeBase64
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
@@ -93,6 +96,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 */
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var installSnapseedLauncher: ActivityResultLauncher<Intent>
+    private lateinit var manageMediaPermissionRequestLauncher: ActivityResultLauncher<Intent>
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels { NCLoginFragment.AuthenticateViewModelFactory(requireActivity()) }
 
@@ -159,6 +163,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
             if (!isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = true
         }
+
+        manageMediaPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
         actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
@@ -285,6 +291,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                         }
                     }
 */
+                    MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) manageMediaPermissionRequestLauncher.launch(Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, Uri.parse("package:${BuildConfig.APPLICATION_ID}")))
                 }
             } else {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
@@ -526,6 +533,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
             getString(R.string.blog_name_pref_key) -> ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateBlogSiteTitle()
             //getString(R.string.pictures_sub_folder_exclusion_pref_key) -> { findPreference<MultiSelectListPreference>(key)?.run { updatePicturesBackupExclusionSummary(this) }}
+            getString(R.string.sync_deletion_perf_key) ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))
+                    if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sync_deletion_rational), positiveButtonText = getString(R.string.proceed_request), individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
             else -> {}
         }
     }
@@ -691,6 +701,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         private const val BACKUP_OLD_CAMERA_ROLL_DIALOG = "BACKUP_OLD_CAMERA_ROLL_DIALOG"
         private const val BACKUP_OLD_PICTURES_DIALOG = "BACKUP_OLD_PICTURES_DIALOG"
 */
+        private const val MANAGE_MEDIA_PERMISSION_DIALOG = "MANAGE_MEDIA_PERMISSION_DIALOG"
+        private const val MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST = "MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST"
 
         private const val STATISTIC_SUMMARY_STRING = "STATISTIC_SUMMARY_STRING"
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"

@@ -216,6 +216,7 @@ class MainActivity : AppCompatActivity() {
             AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
             //SettingsFragment.LAST_BACKUP_CAMERA,
             //SettingsFragment.LAST_BACKUP_PICTURE,
+            getString(R.string.sync_deletion_perf_key),
             getString(R.string.backup_status_pref_key),
             getString(R.string.sync_status_local_action_pref_key),
             getString(R.string.sync_status_pref_key) -> {}

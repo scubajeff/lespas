@@ -404,4 +404,6 @@
     <string name="msg_archive_location">L\'archivio si trova sul server nella cartella %1$s</string>
     <string name="manage_media_access_permission_rationale">Per consentire a Les Pas di rimuovere i file di backup, è necessario concedergli l\'autorizzazione Gestione supporti.</string>
     <string name="confirm_empty_trash">Sei sicuro di voler svuotare il cestino?</string>
+    <string name="sync_deletion_title">Sincronizzazione dell\'eliminazione della galleria con l\'archivio del server</string>
+    <string name="sync_deletion_rational">Per ottenere una maggiore flessibilità nella decisione di sincronizzazione di ogni cancellazione, è necessario concedere a Les Pas il permesso Manage Media.</string>
 </resources>

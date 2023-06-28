@@ -339,4 +339,6 @@
     <string name="msg_archive_location">Puede encontrar el archivo en el servidor en la carpeta %1$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que Les Pas elimine los archivos de las copias de seguridad, debes concederle el permiso Gestionar medios.</string>
     <string name="confirm_empty_trash">¿Seguro que quieres vaciar la papelera?</string>
+    <string name="sync_deletion_title">Sincronizar la eliminación de galerías con el archivo del servidor</string>
+    <string name="sync_deletion_rational">Para tener más flexibilidad a la hora de tomar decisiones de sincronización en cada borrado, deberías conceder a Les Pas el permiso Gestionar Medios.</string>
 </resources>

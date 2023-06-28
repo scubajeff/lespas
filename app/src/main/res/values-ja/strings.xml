@@ -337,4 +337,6 @@
     <string name="msg_archive_location">アーカイブはサーバー上のフォルダ %1$s にあります</string>
     <string name="manage_media_access_permission_rationale">Les Pasにバックアップされたファイルの削除を許可するには、Manage Media権限を付与する必要があります。</string>
     <string name="confirm_empty_trash">本当にゴミ箱を空にしていいんですか？</string>
+    <string name="sync_deletion_title">ギャラリーの削除をサーバーアーカイブに同期</string>
+    <string name="sync_deletion_rational">削除のたびに同期を決定する柔軟性を高めるには、Les Pasにメディア管理権限を付与する必要があります。</string>
 </resources>

@@ -52,6 +52,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
             (requireArguments().getString(CHECK_BOX_TEXT) ?: "").let {
                 if (it.isNotEmpty()) {
                     text = it
+                    isChecked = this@ConfirmDialogFragment.requireArguments().getBoolean(CHECK_BOX_CHECKED)
                     isVisible = true
                 }
             }
@@ -89,9 +90,10 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         private const val NEGATIVE_BUTTON = "NEGATIVE_BUTTON"
         private const val CANCELABLE = "CANCELABLE"
         private const val CHECK_BOX_TEXT = "CHECK_BOX_TEXT"
+        private const val CHECK_BOX_CHECKED = "CHECK_BOX_CHECKED"
 
         @JvmStatic
-        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY, checkBoxText: String = "") = ConfirmDialogFragment().apply {
+        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY, checkBoxText: String = "", checkBoxChecked: Boolean = false) = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
                 putString(POSITIVE_BUTTON, positiveButtonText)
@@ -100,6 +102,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
                 putString(INDIVIDUAL_REQUEST_KEY, individualKey)
                 putString(REQUEST_KEY, requestKey)
                 putString(CHECK_BOX_TEXT, checkBoxText)
+                putBoolean(CHECK_BOX_CHECKED, checkBoxChecked)
             }
         }
     }

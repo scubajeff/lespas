@@ -374,4 +374,6 @@
     <string name="msg_archive_location">L\'archive se trouve sur le serveur dans le dossier %1$s</string>
     <string name="manage_media_access_permission_rationale">Pour permettre à Les Pas de supprimer des fichiers sauvegardés, vous devez lui accorder le droit de gérer les médias.</string>
     <string name="confirm_empty_trash">Êtes-vous sûr de vouloir vider la corbeille ?</string>
+    <string name="sync_deletion_title">Synchronisation de la suppression des galeries avec les archives du serveur</string>
+    <string name="sync_deletion_rational">Pour bénéficier d\'une plus grande souplesse dans la prise de décision de synchronisation pour chaque suppression, vous devez accorder à Les Pas l\'autorisation de gérer les médias.</string>
 </resources>

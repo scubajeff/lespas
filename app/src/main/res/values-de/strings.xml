@@ -389,4 +389,6 @@
     <string name="msg_archive_location">Sie können das Archiv auf dem Server im Ordner %1$s finden</string>
     <string name="manage_media_access_permission_rationale">Damit Les Pas gesicherte Dateien entfernen kann, müssen Sie ihm die Berechtigung \"Medien verwalten\" erteilen.</string>
     <string name="confirm_empty_trash">Sind Sie sicher, dass Sie den Papierkorb leeren wollen?</string>
+    <string name="sync_deletion_title">Synchronisierung der Galerie-Löschung mit dem Server-Archiv</string>
+    <string name="sync_deletion_rational">Um die Flexibilität zu erhöhen, bei jeder Löschung eine Synchronisationsentscheidung zu treffen, sollten Sie Les Pas die Berechtigung Medien verwalten erteilen.</string>
 </resources>

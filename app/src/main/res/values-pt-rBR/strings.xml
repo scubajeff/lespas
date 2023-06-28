@@ -401,4 +401,6 @@
     <string name="msg_archive_location">Você pode encontrar o arquivo no servidor na pasta %1$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que o Les Pas remova os arquivos de backup, você deve conceder a ele a permissão Manage Media (Gerenciar mídia).</string>
     <string name="confirm_empty_trash">Tem certeza de que deseja esvaziar a lixeira?</string>
+    <string name="sync_deletion_title">Sincronização da exclusão da galeria com o arquivo do servidor</string>
+    <string name="sync_deletion_rational">Para obter mais flexibilidade na tomada de decisões de sincronização em cada exclusão, você deve conceder a Les Pas a permissão Manage Media (Gerenciar mídia).</string>
 </resources>

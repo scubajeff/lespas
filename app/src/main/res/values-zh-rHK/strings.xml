@@ -336,4 +336,6 @@
     <string name="msg_archive_location">備份儲存在伺服器資料夾%1$s</string>
     <string name="manage_media_access_permission_rationale">為了允許Les Pas在備份期間刪除已備份文件，你必須授予佢管理媒體之權限。</string>
     <string name="confirm_empty_trash">確定要清空回收站嗎？</string>
+    <string name="sync_deletion_title">同步圖庫刪除到伺服器</string>
+    <string name="sync_deletion_rational">授予Les Pas管理媒體的權限後，可以在每次刪除時決定是否同步。</string>
 </resources>
