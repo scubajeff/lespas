@@ -23,6 +23,7 @@ import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.StateListDrawable
 import android.os.Build
@@ -522,6 +523,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
                     text = subFolder.key
                     tag = subFolder.key
+                    setOnCheckedChangeListener { buttonView, isChecked -> (buttonView as Chip).typeface = if (isChecked) Typeface.DEFAULT_BOLD else Typeface.DEFAULT }
                 }
             )
         }
@@ -530,6 +532,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
                     text = subFolder.key.dropLast(1).substringAfterLast('/')
                     tag = subFolder.key
+                    setOnCheckedChangeListener { buttonView, isChecked -> (buttonView as Chip).typeface = if (isChecked) Typeface.DEFAULT_BOLD else Typeface.DEFAULT }
                 }
             )
         }
