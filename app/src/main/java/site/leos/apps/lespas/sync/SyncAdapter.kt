@@ -215,7 +215,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             userBase = "${baseUrl}${application.getString(R.string.dav_files_endpoint)}${userName}"
             lespasBase = "${userBase}${Tools.getRemoteHome(application)}"
-            archiveBase = "${userBase}${Tools.getArchiveHome(application)}/${Tools.getDeviceModel()}"
+            archiveBase = "${lespasBase}${ARCHIVE_BASE}/${Tools.getDeviceModel()}"
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
