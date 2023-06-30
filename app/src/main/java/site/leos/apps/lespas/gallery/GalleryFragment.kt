@@ -820,7 +820,7 @@ class GalleryFragment: Fragment() {
         fun setNextInLine() { if (nextInLine.isNotEmpty()) currentPhotoId = nextInLine }
 
         fun getFullPath(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.fullPath ?: ""
-        fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.volume ?: ""
+        fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id.substringAfterLast('/') == photoId }?.volume ?: ""
 
         private var currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG
         fun getCurrentSubFolder(): String = currentSubFolder
