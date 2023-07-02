@@ -152,7 +152,10 @@ class GalleryFragment: Fragment() {
 
         // Removing item from MediaStore for Android 11 or above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) galleryModel.setNextInLine()
+            if (result.resultCode == Activity.RESULT_OK) {
+                galleryModel.syncDeletionToArchive()
+                galleryModel.setNextInLine()
+            }
         }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { delete ->
@@ -750,14 +753,15 @@ class GalleryFragment: Fragment() {
 
         private val _deletions = MutableSharedFlow<List<Uri>>()
         val deletions: SharedFlow<List<Uri>> = _deletions
+        private val syncDeletionWaitingList = arrayListOf<String>()
         fun remove(photoIds: List<String>, nextInLine: String = "", removeArchive: Boolean = false) {
-            val uris = arrayListOf<Uri>().apply { photoIds.forEach { add(Uri.parse(it)) } }
+            syncDeletionWaitingList.clear()
             if (removeArchive) {
-                val names = arrayListOf<String>().apply { _medias.value?.filter { it.media.photo.id in photoIds }?.forEach { add("${it.fullPath}${it.media.photo.name}") }}
-                if (names.isNotEmpty()) actionModel.deleteFileInArchive(names)
-                syncNeeded = true
+                _medias.value?.filter { it.media.photo.id in photoIds }?.forEach { syncDeletionWaitingList.add("${it.fullPath}${it.media.photo.name}") }
             }
             this.nextInLine = nextInLine
+
+            val uris = arrayListOf<Uri>().apply { photoIds.forEach { add(Uri.parse(it)) } }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) viewModelScope.launch { _deletions.emit(uris) }
             else delete(uris)
         }
@@ -765,7 +769,14 @@ class GalleryFragment: Fragment() {
             val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
             cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
 
+            syncDeletionToArchive()
             setNextInLine()
+        }
+        fun syncDeletionToArchive() {
+            if (syncDeletionWaitingList.isNotEmpty()) {
+                actionModel.deleteFileInArchive(syncDeletionWaitingList)
+                syncNeeded = true
+            }
         }
 
         private val _restorations = MutableSharedFlow<List<String>>()
@@ -817,7 +828,12 @@ class GalleryFragment: Fragment() {
 
         // Next in line to show after current item deleted, for GallerySlideFragment only
         private var nextInLine = ""
-        fun setNextInLine() { if (nextInLine.isNotEmpty()) currentPhotoId = nextInLine }
+        fun setNextInLine() {
+            if (nextInLine.isNotEmpty()) {
+                currentPhotoId = nextInLine
+                nextInLine = ""
+            }
+        }
 
         fun getFullPath(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.fullPath ?: ""
         fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id.substringAfterLast('/') == photoId }?.volume ?: ""
