@@ -399,11 +399,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.remove -> {
-                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))) galleryModel.remove(getSelectedPhotos())
-                else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(
-                    getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
-                    checkBoxText = getString(R.string.checkbox_text_remove_archive_copy), checkBoxChecked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
-                ).show(parentFragmentManager, CONFIRM_DIALOG)
+                val defaultSyncDeletionSetting = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
+                when {
+                    Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotos(), removeArchive = defaultSyncDeletionSetting)
+                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
+                        getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
+                        checkBoxText = getString(R.string.checkbox_text_remove_archive_copy), checkBoxChecked = defaultSyncDeletionSetting
+                    ).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
 
                 true
             }

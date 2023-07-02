@@ -233,12 +233,13 @@ class GallerySlideFragment : Fragment() {
                     else -> mediaAdapter.getPhotoAt(mediaList.currentItem - 1).photo.id                                                         // Item to be deleted is the last one in the list and there are more than one left after deletion, next in line will be the previous one
                 }
                 mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
+                    val defaultSyncDeletionSetting = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
                     when {
                         folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(listOf(photo.id), nextInLine)
-                        Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(listOf(photo.id), nextInLine)
+                        Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(listOf(photo.id), nextInLine, removeArchive = defaultSyncDeletionSetting)
                         parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
                             getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY,
-                            checkBoxText = getString(R.string.checkbox_text_remove_archive_copy), checkBoxChecked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
+                            checkBoxText = getString(R.string.checkbox_text_remove_archive_copy), checkBoxChecked = defaultSyncDeletionSetting
                         ).show(parentFragmentManager, CONFIRM_DIALOG)
                     }
                 }
