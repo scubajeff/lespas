@@ -16,7 +16,6 @@
 
 package site.leos.apps.lespas.gallery
 
-import android.accounts.AccountManager
 import android.app.Activity
 import android.content.ClipData
 import android.content.ContentResolver
@@ -83,7 +82,6 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
-import site.leos.apps.lespas.sync.SyncAdapter
 import java.lang.Long.min
 import java.time.Instant
 import java.time.LocalDateTime
@@ -377,19 +375,6 @@ class GalleryFragment: Fragment() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
 
         super.onDestroyView()
-    }
-
-    override fun onDestroy() {
-        if (galleryModel.isSyncNeeded()) {
-            AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
-                if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
-                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-                })
-            }
-        }
-
-        super.onDestroy()
     }
 
     private fun finish() {
@@ -746,10 +731,7 @@ class GalleryFragment: Fragment() {
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
-        fun add(photoIds: List<String>) {
-            viewModelScope.launch { _additions.emit(photoIds) }
-            syncNeeded = true
-        }
+        fun add(photoIds: List<String>) { viewModelScope.launch { _additions.emit(photoIds) }}
 
         private val _deletions = MutableSharedFlow<List<Uri>>()
         val deletions: SharedFlow<List<Uri>> = _deletions
@@ -772,12 +754,7 @@ class GalleryFragment: Fragment() {
             syncDeletionToArchive()
             setNextInLine()
         }
-        fun syncDeletionToArchive() {
-            if (syncDeletionWaitingList.isNotEmpty()) {
-                actionModel.deleteFileInArchive(syncDeletionWaitingList)
-                syncNeeded = true
-            }
-        }
+        fun syncDeletionToArchive() { if (syncDeletionWaitingList.isNotEmpty()) { actionModel.deleteFileInArchive(syncDeletionWaitingList) }}
 
         private val _restorations = MutableSharedFlow<List<String>>()
         val restorations: SharedFlow<List<String>> = _restorations
@@ -842,9 +819,6 @@ class GalleryFragment: Fragment() {
         fun getCurrentSubFolder(): String = currentSubFolder
         fun saveCurrentSubFolder(name: String) { currentSubFolder = name }
         fun resetCurrentSubFolder() { currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG }
-
-        private var syncNeeded = false
-        fun isSyncNeeded() = syncNeeded
     }
 
     data class LocalMedia(
