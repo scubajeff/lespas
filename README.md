@@ -47,7 +47,7 @@ Features:
 
 <p float="left">
   <img alt="Adding Photo" title="Adding Photos" src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_adding_photos.png" width="200" />
-  <img alt="Browsing Camera Roll" title="Manage Camera Roll and Archive" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" />
+  <img alt="Browsing Camera Roll" title="Manage Device Gallery" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_device_gallery.png" width="200" />
   <img alt="Publishing Album" title="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/07_publish.png" width="200" />
   <img alt="Search by Objects" title="AI Search" src="fastlane//metadata/android/en-US/images/phoneScreenshots/08_search.png" width="200" />
 </p>
