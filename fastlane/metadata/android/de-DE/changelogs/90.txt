@@ -1,0 +1,3 @@
+* Ansicht der Unterordner im Hauptverzeichnis der Galerie
+* Synchronisierung des Löschvorgangs in der Galerie mit dem Server-Archiv
+* Weitere Verbesserungen und Fehlerkorrekturen

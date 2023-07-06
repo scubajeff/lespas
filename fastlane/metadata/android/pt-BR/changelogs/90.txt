@@ -1,0 +1,3 @@
+* Visualização de subpastas na tela do diretório principal da galeria
+* Sincronização da exclusão na galeria com o arquivo do servidor
+* Outros aprimoramentos e correções de bugs

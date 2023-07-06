@@ -1,0 +1,3 @@
+* Visualizzazione delle sottocartelle nella schermata della directory principale della galleria
+* Sincronizzazione dell'eliminazione nella galleria con l'archivio del server
+* Altri miglioramenti e correzioni di bug

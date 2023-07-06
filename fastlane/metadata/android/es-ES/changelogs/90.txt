@@ -1,0 +1,3 @@
+* Vista de subcarpetas en la pantalla del directorio principal de la galería
+* Sincronización del borrado en la galería con el archivo del servidor
+* Otras mejoras y correcciones de errores

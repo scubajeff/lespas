@@ -1,0 +1,3 @@
+* Sub folder view in Gallery's primary directory screen
+* Sync deletion in gallery to server archive
+* Other improvements and bugs fixes

@@ -1,0 +1,3 @@
+* Vue des sous-dossiers dans l'écran du répertoire principal de la galerie
+* Synchronisation de la suppression dans la galerie avec l'archive du serveur
+* Autres améliorations et corrections de bugs

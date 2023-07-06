@@ -1,3 +1,7 @@
+## Version 2.9.1
+* Sub folder view in Gallery's primary directory screen
+* Sync deletion in gallery to server archive
+
 ## Version 2.9.0
 * Replace Camera Roll with new Gallery, manage all media files in your device now and have separate backup setting for each folder
 * Home folder on server no longer need to have a hardcoded name of 'lespas', you can find whichever folder you want to house you albums
