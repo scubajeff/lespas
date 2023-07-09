@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
   ~
   ~   Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +15,6 @@
   -->
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="#80ffffff" android:state_checked="false" />
-    <item android:color="@color/color_on_primary" />
+    <item android:state_checked="false" android:drawable="@drawable/ic_baseline_cloud_off_24" />
+    <item android:state_checked="true" android:drawable="@drawable/ic_baseline_cloud_upload_24" />
 </selector>

@@ -62,7 +62,7 @@
         app:layout_constraintBaseline_toBaselineOf="@id/name"
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginLeft="@dimen/small_padding"
-        android:button="@drawable/ic_baseline_cloud_upload_24"
+        android:button="@drawable/gallery_backup_switch"
         android:tooltipText="@string/tooltips_enable_backup"
         android:contentDescription="@string/tooltips_enable_backup"
         tools:ignore="UnusedAttribute" />

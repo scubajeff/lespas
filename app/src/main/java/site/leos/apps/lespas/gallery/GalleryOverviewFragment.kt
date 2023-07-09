@@ -579,12 +579,12 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     cbEnableBackup.isVisible = true
                     cbEnableBackup.run {
                         setOnCheckedChangeListener(null)
-                        isChecked = item.media.coverBaseLine == BACKUP_ENDABLED
+                        isChecked = item.media.coverBaseLine == BACKUP_ENABLED
                         setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
                     }
 
                     ivBackupSetting.run {
-                        isVisible = item.media.coverBaseLine == BACKUP_ENDABLED
+                        isVisible = item.media.coverBaseLine == BACKUP_ENABLED
                         setOnClickListener { backupOptionClickListener(item.folder) }
                     }
                 }
