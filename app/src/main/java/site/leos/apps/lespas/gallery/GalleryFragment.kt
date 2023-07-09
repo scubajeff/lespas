@@ -156,8 +156,14 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        // After media files moved to album
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { delete ->
             if (delete) {
+                arrayListOf<String>().let { photoIds ->
+                    selectedUris.forEach { item -> photoIds.add(item.toString()) }
+                    if (photoIds.isNotEmpty()) galleryModel.prepareDeletionWaitingList(photoIds)
+                }
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) removeFilesSAF(selectedUris)
                 else galleryModel.delete(selectedUris)
             }
@@ -170,14 +176,6 @@ class GalleryFragment: Fragment() {
                 else finish()
             }
         })
-/*
-        childFragmentBackPressedCallback = object: OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                childFragmentManager.popBackStack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(this, childFragmentBackPressedCallback)
-*/
 
         shareOutBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -192,12 +190,7 @@ class GalleryFragment: Fragment() {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
-/*
 
-        childFragmentManager.addOnBackStackChangedListener {
-            childFragmentBackPressedCallback.isEnabled = childFragmentManager.backStackEntryCount > 1
-        }
-*/
         childFragmentManager.addOnBackStackChangedListener {
             if (childFragmentManager.backStackEntryCount == 0) {
                 // When all medias deleted
@@ -245,7 +238,7 @@ class GalleryFragment: Fragment() {
                 }
             }
             launch {
-                galleryModel.shareOut.collect { strip ->
+                galleryModel.strippingEXIF.collect { strip ->
                     waitingMsg = Tools.getPreparingSharesSnackBar(requireView(), strip) {
                         imageLoaderModel.cancelShareOut()
                         shareOutBackPressedCallback.isEnabled = false
@@ -289,7 +282,7 @@ class GalleryFragment: Fragment() {
                         if (type!!.startsWith("image")) type = "image/*"
                         this.clipData = clipData
                         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
                     }, null))
 
                     galleryModel.setIsPreparingShareOut(false)
@@ -736,12 +729,8 @@ class GalleryFragment: Fragment() {
         private val _deletions = MutableSharedFlow<List<Uri>>()
         val deletions: SharedFlow<List<Uri>> = _deletions
         private val syncDeletionWaitingList = arrayListOf<String>()
-        fun remove(photoIds: List<String>, nextInLine: String = "", removeArchive: Boolean = false) {
-            syncDeletionWaitingList.clear()
-            if (removeArchive) {
-                _medias.value?.filter { it.media.photo.id in photoIds }?.forEach { syncDeletionWaitingList.add("${it.fullPath}${it.media.photo.name}") }
-            }
-            this.nextInLine = nextInLine
+        fun remove(photoIds: List<String>, removeArchive: Boolean = false) {
+            if (removeArchive) prepareDeletionWaitingList(photoIds)
 
             val uris = arrayListOf<Uri>().apply { photoIds.forEach { add(Uri.parse(it)) } }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) viewModelScope.launch { _deletions.emit(uris) }
@@ -755,6 +744,11 @@ class GalleryFragment: Fragment() {
             setNextInLine()
         }
         fun syncDeletionToArchive() { if (syncDeletionWaitingList.isNotEmpty()) { actionModel.deleteFileInArchive(syncDeletionWaitingList) }}
+        fun prepareDeletionWaitingList(photoIds: List<String>) {
+            // When moving media files to album, prepare the deletion waiting list here
+            syncDeletionWaitingList.clear()
+            _medias.value?.filter { it.media.photo.id in photoIds }?.forEach { syncDeletionWaitingList.add("${it.fullPath}${it.media.photo.name}") }
+        }
 
         private val _restorations = MutableSharedFlow<List<String>>()
         val restorations: SharedFlow<List<String>> = _restorations
@@ -767,12 +761,12 @@ class GalleryFragment: Fragment() {
         val emptyTrash: SharedFlow<List<String>> = _emptyTrash
         fun emptyTrash(photoIds: List<String>) { viewModelScope.launch { _emptyTrash.emit(photoIds) }}
 
-        private val _shareOut = MutableSharedFlow<Boolean>()
-        val shareOut: SharedFlow<Boolean> = _shareOut
+        private val _strippingEXIF = MutableSharedFlow<Boolean>()
+        val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
         fun shareOut(photoIds: List<String>, strip: Boolean, isRemote: Boolean = false, remotePath: String = "") {
             viewModelScope.launch(Dispatchers.IO) {
                 stripOrNot = strip
-                _shareOut.emit(stripOrNot)
+                _strippingEXIF.emit(stripOrNot)
                 setIsPreparingShareOut(true)
 
                 // Collect photos for sharing
@@ -784,6 +778,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        // Flag to disable selection when sharing out is working in the background for GalleryFolderViewFragment and GalleryOverviewFragment
         private var isSharingOut = false
         fun setIsPreparingShareOut(newState: Boolean) { isSharingOut = newState }
         fun isPreparingShareOut(): Boolean = isSharingOut
@@ -805,6 +800,7 @@ class GalleryFragment: Fragment() {
 
         // Next in line to show after current item deleted, for GallerySlideFragment only
         private var nextInLine = ""
+        fun registerNextInLine(nextInLine: String) { this.nextInLine = nextInLine }
         fun setNextInLine() {
             if (nextInLine.isNotEmpty()) {
                 currentPhotoId = nextInLine
