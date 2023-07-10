@@ -191,7 +191,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && holder is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder) holder.getAnimatedDrawable().clearAnimationCallbacks()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && holder is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder) holder.getAnimatedDrawable()?.clearAnimationCallbacks()
 
         super.onViewDetachedFromWindow(holder)
     }
@@ -301,7 +301,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         }
 
         @RequiresApi(Build.VERSION_CODES.P)
-        fun getAnimatedDrawable(): AnimatedImageDrawable = ivMedia.drawable as AnimatedImageDrawable
+        fun getAnimatedDrawable(): AnimatedImageDrawable? = try  { ivMedia.drawable as AnimatedImageDrawable } catch (_: ClassCastException) { null }
     }
 
     @SuppressLint("ClickableViewAccessibility")

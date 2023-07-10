@@ -347,7 +347,7 @@ class StoryFragment : Fragment() {
                     animate().cancel()
                     clearAnimation()
                 }
-                is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) getAnimatedDrawable().run {
+                is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) getAnimatedDrawable()?.run {
                     clearAnimationCallbacks()
                     stop()
                 }
@@ -403,7 +403,7 @@ class StoryFragment : Fragment() {
                     is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> {
                         fadeInBGM()
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            getAnimatedDrawable().let {
+                            getAnimatedDrawable()?.let {
                                 it.repeatCount = 1
 
                                 // This callback is unregistered when this AnimatedViewHolder is detached from window in SeamlessMediaSliderAdapter
