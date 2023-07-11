@@ -16,6 +16,8 @@
 
 package site.leos.apps.lespas.gallery
 
+import android.accounts.AccountManager
+import android.content.ContentResolver
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.ColorMatrix
@@ -93,6 +95,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
 
+    private var syncRequired = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -114,6 +118,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             }
                         }
                     }
+
+                    syncRequired = true
                 } else backupSettingModel.disableBackup(folder)
             },
             { folder -> if (parentFragmentManager.findFragmentByTag(BACKUP_OPTION_DIALOG) == null) GalleryBackupSettingDialogFragment.newInstance(folder).show(parentFragmentManager, BACKUP_OPTION_DIALOG) },
@@ -375,6 +381,13 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroyView() {
         overviewList.adapter = null
+        if (syncRequired) {
+            val accounts = AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))
+            if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            })
+        }
         super.onDestroyView()
     }
 
