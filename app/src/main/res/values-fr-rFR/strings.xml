@@ -36,7 +36,7 @@
     <string name="untrusted_ssl_certificate_message">De l\'objet du certificat :\n%1$s\n\nDélivreur :\n%2$s\n\nSHA-256 Empreinte digitale :\n%3$s\n\nPas avant : %4$s\n\nPas après : %5$s\n\n\nVous voulez faire confiance à ce serveur ?</string>
     <string name="accept_certificate">Lui faire confiance !</string>
     <string name="host_address_validation_error">Hôte non valide.</string>
-    <string name="host_not_valid">Adresse non valide.</string>
+    <string name="host_not_valid">Adresse non valide (%1$d).</string>
     <string name="unknown_host">Serveur non trouvé.</string>
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
     <string name="certificate_error">Erreur de certificat du site.</string>

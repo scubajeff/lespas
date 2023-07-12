@@ -22,7 +22,7 @@
     <string name="host_textinput_label">服务器网址</string>
     <string name="url_helper_text">例如：https://example.com/nextcloud</string>
     <string name="host_address_validation_error">网址不正确</string>
-    <string name="host_not_valid">服务器未响应</string>
+    <string name="host_not_valid">服务器未响应 (%1$d)</string>
     <string name="unknown_host">找不到该服务器</string>
     <string name="network_error">网络异常，请稍后重试</string>
     <string name="fab_add_photos">添加照片</string>

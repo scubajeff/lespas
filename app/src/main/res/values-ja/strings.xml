@@ -31,7 +31,7 @@
     <string name="untrusted_ssl_certificate_message">主体者:\n%1$s\n\n発行者:\n%2$s\n\nSHA-256指紋:\n%3$s\n\n有効期間開始: %4$s\n\n有効期間満了: %5$s\n\n\nこのサーバーを信用しますか？</string>
     <string name="accept_certificate">信頼</string>
     <string name="host_address_validation_error">URLが正しくない</string>
-    <string name="host_not_valid">サーバーが応答しない</string>
+    <string name="host_not_valid">サーバーが応答しない (%1$d)</string>
     <string name="unknown_host">サーバーが見つからない</string>
     <string name="network_error">ネットワークに異常が発生しました、後でもう一度お試しください</string>
     <string name="certificate_error">セキュリティ証明書の検証に失敗しました。</string>

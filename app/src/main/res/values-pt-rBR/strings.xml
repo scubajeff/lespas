@@ -39,7 +39,7 @@
     <string name="accept_certificate">Confiar nele!</string>
 
     <string name="host_address_validation_error">Nome de rede inválido.</string>
-    <string name="host_not_valid">Endereço inválido.</string>
+    <string name="host_not_valid">Endereço inválido (%1$d).</string>
     <string name="unknown_host">Servidor não encontrado.</string>
     <string name="network_error">Erro de rede, tente novamente.</string>
     <string name="certificate_error">Erro de certificado remoto.</string>

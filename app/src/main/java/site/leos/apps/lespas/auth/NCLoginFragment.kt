@@ -298,7 +298,7 @@ class NCLoginFragment: Fragment() {
             999-> getString(R.string.network_error)
             404, 1000-> getString(R.string.unknown_host)
             1001-> getString(R.string.certificate_error)
-            else-> getString(R.string.host_not_valid)
+            else-> getString(R.string.host_not_valid, errorCode)
         }
     }
 

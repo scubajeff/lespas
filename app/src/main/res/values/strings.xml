@@ -49,7 +49,7 @@
     <string name="accept_certificate">Trust it!</string>
 
     <string name="host_address_validation_error">Host not valid.</string>
-    <string name="host_not_valid">Address not valid.</string>
+    <string name="host_not_valid">Address not valid (%1$d).</string>
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
     <string name="certificate_error">Site certificate error.</string>

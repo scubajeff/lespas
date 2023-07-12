@@ -39,7 +39,7 @@
     <string name="accept_certificate">Mi fido!</string>
 
     <string name="host_address_validation_error">Host non valido.</string>
-    <string name="host_not_valid">Indirizzo non valido.</string>
+    <string name="host_not_valid">Indirizzo non valido (%1$d).</string>
     <string name="unknown_host">Server non trovato.</string>
     <string name="network_error">Errore di rete, riprova.</string>
     <string name="certificate_error">Errore del certificato del sito.</string>

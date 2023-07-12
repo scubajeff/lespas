@@ -23,7 +23,7 @@
     <string name="host_textinput_label">Dirección del servidor</string>
     <string name="url_helper_text">Por ejemplo, https://example.com/nextcloud</string>
     <string name="host_address_validation_error">El anfitrión no es válido.</string>
-    <string name="host_not_valid">La dirección no es válida.</string>
+    <string name="host_not_valid">La dirección no es válida (%1$d).</string>
     <string name="unknown_host">No se encontró el servidor.</string>
     <string name="network_error">Error de red, inténtalo de nuevo.</string>
     <string name="fab_add_photos">Agregar fotos</string>

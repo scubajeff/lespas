@@ -39,7 +39,7 @@
     <string name="accept_certificate">Zertifikat trotzdem akzeptieren!</string>
 
     <string name="host_address_validation_error">Hostadresse ungültig.</string>
-    <string name="host_not_valid">Ungültiger Host.</string>
+    <string name="host_not_valid">Ungültiger Host (%1$d).</string>
     <string name="unknown_host">Nextcloud-Server nicht gefunden.</string>
     <string name="network_error">Netzwerkfehler, versuchen Sie es erneut.</string>
     <string name="certificate_error">Fehler im SSL-Zertifikat.</string>
