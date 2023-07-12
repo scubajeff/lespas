@@ -112,11 +112,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".auth.NCLoginActivity"
-            android:theme="@style/Theme.LesPas"
-            android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustPan" />
         <service
             android:name=".auth.NCAuthenticatorService"
             android:enabled="true"

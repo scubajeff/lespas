@@ -22,6 +22,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.widget.Toast
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import java.net.URL
 
@@ -97,7 +98,7 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
     }
 
     private fun getBundle(response: AccountAuthenticatorResponse?): Bundle {
-        val intent = Intent(mContext, NCLoginActivity::class.java)
+        val intent = Intent(mContext, MainActivity::class.java)
         //intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, accountType)
         //intent.putExtra(AuthenticatorActivity.ARG_AUTH_TYPE, authTokenType)
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response)
