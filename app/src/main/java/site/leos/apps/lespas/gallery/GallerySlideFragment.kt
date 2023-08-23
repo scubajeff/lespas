@@ -69,6 +69,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.VideoPlayerViewModel
 import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.ActionViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -85,8 +86,10 @@ class GallerySlideFragment : Fragment() {
     private lateinit var removeButton: ImageButton
     private lateinit var folderArgument: String
 
-    private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
+    private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
+    //private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
+    private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireContext().contentResolver, imageLoaderModel, actionModel) }
     private lateinit var playerViewModel: VideoPlayerViewModel
 
     private lateinit var window: Window

@@ -74,6 +74,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.BackupSettingViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -91,9 +92,11 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     private var trashMenuItem: MenuItem? = null
 
-    private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
-    private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
+    private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
+    //private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
+    private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireContext().contentResolver, imageLoaderModel, actionModel) }
+    private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
 
     private var syncRequired = false
 
