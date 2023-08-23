@@ -295,6 +295,7 @@ class GallerySlideFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
+        outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
         mediaAdapter.setPauseVideo(false)
     }
 
@@ -307,6 +308,8 @@ class GallerySlideFragment : Fragment() {
 
     override fun onDestroy() {
         // BACK TO NORMAL UI
+        handlerBottomControl.removeCallbacksAndMessages(null)
+
         Tools.quitImmersive(window)
 
         (requireActivity() as AppCompatActivity).run {
