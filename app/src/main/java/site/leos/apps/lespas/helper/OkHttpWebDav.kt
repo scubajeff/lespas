@@ -48,6 +48,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
@@ -159,10 +160,18 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
         httpClient.newCall(Request.Builder().url(csrfEndpoint).get().build()).execute().use { response ->
             if (response.isSuccessful) {
+                // Get session cookies in response header
+                val instanceIDPattern = Pattern.compile("^oc[a-zA-Z0-9]{10}=.*")
+                var instanceCookie = ""
+
                 response.headers.values("Set-Cookie").forEach { cookie ->
-                    cookies = "$cookies$cookie; "
+                    // Sometimes server response with multiple set-cookie for "oc<10 characters id>", use the last one
+                    if (instanceIDPattern.matcher(cookie).matches()) instanceCookie = cookie
+                    else cookies = "$cookies$cookie; "
                 }
-                cookies = cookies.substringBeforeLast("; ")
+                cookies += instanceCookie
+
+                // Get session token is in response body in JSON format
                 response.body?.string()?.let { json-> csrfToken = JSONObject(json).getString("token") }
             }
         }
