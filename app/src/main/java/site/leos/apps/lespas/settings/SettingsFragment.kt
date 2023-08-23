@@ -631,7 +631,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             storageStatisticSummaryString = storageStatisticSummaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().filesDir.freeSpace), getString(R.string.internal_storage))
 
             if (volume.size > 1 && volume[1].state == Environment.MEDIA_MOUNTED )
-                storageStatisticSummaryString = storageStatisticSummaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().getExternalFilesDirs(null)[1].freeSpace), getString(R.string.external_storage))
+                try {
+                    storageStatisticSummaryString = storageStatisticSummaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().getExternalFilesDirs(null)[1].freeSpace), getString(R.string.external_storage))
+                } catch (_: NullPointerException) {}
 
             withContext(Dispatchers.Main) { preference.summary = storageStatisticSummaryString }
         }
