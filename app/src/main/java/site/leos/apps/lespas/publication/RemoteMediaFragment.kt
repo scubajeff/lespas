@@ -291,9 +291,9 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onStop() {
         super.onStop()
-        if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({
-            playerViewModel.pause(Uri.EMPTY)
-        }, 300)
+        try {
+            if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300)
+        } catch (_: IndexOutOfBoundsException) {}
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

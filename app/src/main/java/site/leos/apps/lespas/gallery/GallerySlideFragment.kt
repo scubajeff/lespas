@@ -284,9 +284,9 @@ class GallerySlideFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        if (mediaAdapter.currentList.isNotEmpty() && mediaAdapter.getPhotoAt(mediaList.currentItem).photo.mimeType.startsWith("video")) handler.postDelayed({
-            playerViewModel.pause(Uri.EMPTY)
-        }, 300)
+        try {
+            if (mediaAdapter.currentList.isNotEmpty() && mediaAdapter.getPhotoAt(mediaList.currentItem).photo.mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300)
+        } catch (_: IndexOutOfBoundsException) {}
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
