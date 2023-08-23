@@ -324,6 +324,7 @@ class NCLoginFragment: Fragment() {
             color = ContextCompat.getColor(context, R.color.color_background)
             textColor = ContextCompat.getColor(context, R.color.lespas_black)
         }
+        private val userAgent = "LesPas_${context.getString(R.string.lespas_version)}"
         private var pingJob: Job? = null
         private var httpCall: Call? = null
 
@@ -370,6 +371,8 @@ class NCLoginFragment: Fragment() {
                                 }
                                 hostnameVerifier { _, _ -> true }
                             }
+                            // To avoid being block by OPNsense bot protection filter, replace OKHttp default user agent with ours
+                            addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent).build())) }
                             readTimeout(20, TimeUnit.SECONDS)
                             writeTimeout(20, TimeUnit.SECONDS)
                         }.build().newCall(Request.Builder().url("${credential.serverUrl}${NEXTCLOUD_CAPABILITIES_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
