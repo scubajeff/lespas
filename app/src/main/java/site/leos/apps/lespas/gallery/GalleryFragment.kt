@@ -109,6 +109,9 @@ class GalleryFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize GalleryViewModel ASAP, avoid race condition of child fragment accessing parent fragment's viewmodel which is still not ready
+        resources.getInteger(R.integer.cameraroll_grid_span_count).let { spanCount -> galleryModel.setDrawables(Tools.getPlayMarkDrawable(requireActivity(), (0.32f / spanCount)), Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / spanCount)) }
+
         mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
@@ -204,7 +207,6 @@ class GalleryFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        resources.getInteger(R.integer.cameraroll_grid_span_count).let { spanCount -> galleryModel.setDrawables(Tools.getPlayMarkDrawable(requireActivity(), (0.32f / spanCount)), Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / spanCount)) }
         savedInstanceState ?: run { storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray()) }
         requireActivity().contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
         requireActivity().contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
