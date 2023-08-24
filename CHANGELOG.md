@@ -1,3 +1,6 @@
+## Version 2.9.2
+* Bug fixes release
+
 ## Version 2.9.1
 * Sub folder view in Gallery's primary directory screen
 * Sync deletion in gallery to server archive
