@@ -18,6 +18,7 @@ package site.leos.apps.lespas.gallery
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -84,6 +85,7 @@ class GallerySlideFragment : Fragment() {
     private lateinit var tvDate: TextView
     private lateinit var tvSize: TextView
     private lateinit var removeButton: ImageButton
+    private lateinit var useAsButton: ImageButton
     private lateinit var folderArgument: String
 
     private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
@@ -190,6 +192,7 @@ class GallerySlideFragment : Fragment() {
                             tvDate.text = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
                             tvSize.text = Tools.humanReadableByteCountSI(photo.shareId.toLong()) + if (photo.width > 0) ",  ${photo.width} × ${photo.height}" else ""
                             removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX
+                            useAsButton.isEnabled = photo.mimeType.startsWith("image")
                         }
                     } catch (_: IndexOutOfBoundsException) {}
 
@@ -244,8 +247,20 @@ class GallerySlideFragment : Fragment() {
                 }
             }
         }
+        useAsButton = view.findViewById<ImageButton>(R.id.use_as_button).apply {
+            // TODO Needs modification if working on server archive
+            setOnClickListener {
+                mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_ATTACH_DATA
+                        setDataAndType(Uri.parse(photo.id), photo.mimeType)
+                        putExtra("mimeType", photo.mimeType)
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    }, null))
+                }
+            }
+        }
         view.findViewById<ImageButton>(R.id.share_button).setOnClickListener {
-            //galleryModel.registerNextInLine(getNextInLine())
             mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
                 if (photo.mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
 
