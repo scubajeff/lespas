@@ -156,7 +156,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-            setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
             setDateStrings(getString(R.string.today), getString(R.string.yesterday))
         }
 
@@ -202,6 +201,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }
+        mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
         mediaList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = mediaAdapter
 

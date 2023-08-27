@@ -165,7 +165,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-            setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
             with("${Tools.getRemoteHome(requireContext())}${SyncAdapter.ARCHIVE_BASE}/${Tools.getDeviceModel()}/") { setFootNote(getString(R.string.msg_archive_location, "<br><a href=\"${imageLoaderModel.getServerBaseUrl()}/apps/files/?dir=${Uri.encode(this)}\">$this</a>")) }
         }
 
@@ -198,6 +197,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
 
+        overviewAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
         overviewList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = overviewAdapter
 
