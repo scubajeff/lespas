@@ -39,6 +39,7 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumRepository
@@ -102,10 +103,12 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
-                        Thread {
-                            val album = AlbumRepository(this.application).getThisAlbum(it)
-                            supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(album, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit()
-                        }.start()
+                        var album: Album? = null
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            album = AlbumRepository(this@MainActivity.application).getThisAlbum(it)
+                        }.invokeOnCompletion {
+                            album?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(it, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit() }
+                        }
                     } ?: run {
                         lifecycleScope.launch {
                             // If storage permission is granted, request ACCESS_MEDIA_LOCATION if running on Android Q and above, else disable Snapseed integration, camera roll backup and camera roll as album feature
