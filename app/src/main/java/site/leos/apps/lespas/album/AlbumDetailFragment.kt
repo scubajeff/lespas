@@ -333,7 +333,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             uri?.let {
                 // TODO check file extension
                 parentFragmentManager.findFragmentByTag(TAG_IMPORT_GPX_DIALOG) ?: run {
-                    GPXImportDialogFragment.newInstance(it, album, mAdapter.currentList).show(parentFragmentManager, TAG_IMPORT_GPX_DIALOG)
+                    GPXImportDialogFragment.newInstance(it, album, mAdapter.currentList.drop(1)).show(parentFragmentManager, TAG_IMPORT_GPX_DIALOG)
                 }
             }
         }
