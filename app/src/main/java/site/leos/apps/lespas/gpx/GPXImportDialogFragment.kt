@@ -397,7 +397,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 if (actions.isNotEmpty()) {
                     actionRepository.addActions(actions)
                     // Remove remote album cache, so that the updated image file could be retrieve in MetaDataDialogFragment
-                    File("${Tools.getLocalRoot(context)}/cache").deleteRecursively()
+                    if (Tools.isRemoteAlbum(album)) File("${Tools.getLocalRoot(context)}/cache").deleteRecursively()
                 }
 
                 // Signaling end of progress
