@@ -325,8 +325,9 @@
     <string name="checkbox_text_overwrite">覆盖现有的地理信息</string>
     <string name="button_text_tag">标记</string>
     <string name="msg_invalid_gpx_file">%1$s无效，或其中没有找到时间戳!</string>
-    <string name="hint_gpx_offset">分钟时间差</string>
+    <string name="suffix_gpx_offset">分钟时间差</string>
     <string name="item_export_gpx">导出GPX</string>
+    <string name="checkbox_text_dst">夏令时修正</string>
     <string name="hint_gpx_export_file_location">文件将被保存在 \"Download\"文件夹中。</string>
     <string name="trash_name">回收站</string>
     <string name="gallery_backup_option_dialog_title">\'%1$s\'的选项</string>

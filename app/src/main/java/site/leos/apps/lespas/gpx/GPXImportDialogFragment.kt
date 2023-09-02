@@ -64,12 +64,13 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionRepository
 import java.io.File
 import java.time.Instant
-import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.*
 import kotlin.math.abs
 
 class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import_dialog) {
     private lateinit var overwriteCheckBox: CheckBox
+    private lateinit var dstCheckBox: CheckBox
     private lateinit var offsetEditText: TextInputEditText
     private lateinit var okButton: MaterialButton
     private lateinit var mapView: MapView
@@ -109,6 +110,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         }
 
         overwriteCheckBox = view.findViewById<CheckBox?>(R.id.overwrite).apply { setOnClickListener { hideSoftKeyboard(it) }}
+        dstCheckBox = view.findViewById<CheckBox?>(R.id.dst).apply { setOnClickListener { hideSoftKeyboard(it) }}
         offsetEditText = view.findViewById<TextInputEditText>(R.id.offset_textinputedittext).apply { setOnFocusChangeListener { v, hasFocus -> if (!hasFocus) hideSoftKeyboard(v) }}
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener {
             hideSoftKeyboard(it)
@@ -120,7 +122,11 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 if (text == getString(R.string.button_text_tag)) {
                     hideSoftKeyboard(it)
                     isEnabled = false
-                    taggingViewModel.run(requireActivity().application, requireArguments().parcelable(ALBUM)!!, requireArguments().parcelableArray<Photo>(PHOTOS)!!.toList(), trackPoints, overwriteCheckBox.isChecked, offsetEditText.text.toString().toInt() * 60000L, ViewModelProvider(requireActivity())[NCShareViewModel::class.java])
+                    overwriteCheckBox.isEnabled = false
+                    dstCheckBox.isEnabled = false
+                    offsetEditText.isEnabled = false
+
+                    taggingViewModel.run(requireActivity().application, requireArguments().parcelable(ALBUM)!!, requireArguments().parcelableArray<Photo>(PHOTOS)!!.toList(), trackPoints, overwriteCheckBox.isChecked, if (dstCheckBox.isChecked) 3600000L else 0L, offsetEditText.text.toString().toInt() * 60000L, ViewModelProvider(requireActivity())[NCShareViewModel::class.java])
                 } else dismiss()
             }
         }
@@ -183,7 +189,12 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                             XmlPullParser.END_TAG -> {
                                 when (parser.name) {
                                     "ele" -> trackPoint.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
-                                    "time" -> trackPoint.timeStamp = try { Instant.parse(text).toEpochMilli() } catch (_: Exception) { 0L }
+                                    "time" -> trackPoint.timeStamp = try {
+                                        // Automatically adjust track point's timestamp base on track point's timezone offset. Java Timezone library DST data is not reliable, for example, Egypt observers DST during summer time but is not correctly reported
+                                        Instant.parse(text).toEpochMilli() +
+                                            if (trackPoint.latitude != Photo.NO_GPS_DATA && trackPoint.longitude != Photo.NO_GPS_DATA) TimeZone.getTimeZone(TimezoneMapper.latLngToTimezoneString(trackPoint.latitude, trackPoint.longitude)).rawOffset
+                                            else 0
+                                    } catch (_: Exception) { 0L }
                                     "cmt" -> trackPoint.caption = text
                                     "trkpt", "wpt" -> {
                                         // Only way point with timestamp is needed
@@ -195,9 +206,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                         }
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            } catch (e: Exception) { e.printStackTrace() }
 
             if (trackPoints.isEmpty()) {
                 // If GPX file is not valid or does not contain any way point with timestamp
@@ -220,6 +229,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                     }
                     mapView.invalidate()
                     overwriteCheckBox.isEnabled = false
+                    dstCheckBox.isEnabled = false
                     offsetEditText.isEnabled = false
                     okButton.isEnabled = false
                 }
@@ -267,6 +277,9 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
     private fun setStatusDone() {
         okButton.text = getString(R.string.button_text_done)
         okButton.isEnabled = true
+        overwriteCheckBox.isEnabled = true
+        dstCheckBox.isEnabled = true
+        offsetEditText.isEnabled = true
     }
 
     class GeoTaggingViewModel: ViewModel() {
@@ -275,11 +288,12 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
 
         private var job: Job? = null
 
-        fun run(context: Application, album: Album, photos: List<Photo>, trackPoints: List<GPXTrackPoint>, overwrite: Boolean, diffAllowed: Long, ncModel: NCShareViewModel) {
+        fun run(context: Application, album: Album, photos: List<Photo>, trackPoints: List<GPXTrackPoint>, overwrite: Boolean, dstOffset: Long, diffAllowed: Long, ncModel: NCShareViewModel) {
             job = viewModelScope.launch(Dispatchers.IO) {
                 val localLesPasFolder = Tools.getLocalRoot(context)
                 val remoteLesPasFolder = "${Tools.getRemoteHome(context)}/${album.name}"
                 val actions = mutableListOf<Action>()
+                val updatedPhotos = mutableListOf<Photo>()
                 val photoRepository = PhotoRepository(context)
                 val actionRepository = ActionRepository(context)
                 val nominatim = GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID)
@@ -289,35 +303,34 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 var diff: Long
                 var minDiff: Long
                 var takenTime: Long
-                val defaultZoneOffset = OffsetDateTime.now().offset
 
                 photos.sortedBy { it.dateTaken }.forEach { photo ->
                     // GPS location data won't work on playable media
                     if (Tools.isMediaPlayable(photo.mimeType)) return@forEach
 
-                    // Try finding the nearest match in GPX
-                    match = NO_MATCH
-                    minDiff = Long.MAX_VALUE
-                    takenTime = photo.dateTaken.toInstant(defaultZoneOffset).toEpochMilli()
-                    for (i in startWith until trackPoints.size) {
-                        diff = abs(takenTime - trackPoints[i].timeStamp)
-                        if (diff < diffAllowed && diff < minDiff) {
-                            minDiff = diff
-                            match = i
+                    if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
+                        // If photo does not have location data yet or user choose to overwrite existing ones
+
+                        // Try finding the nearest match in GPX
+                        match = NO_MATCH
+                        minDiff = Long.MAX_VALUE
+                        takenTime = photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()
+
+                        for (i in startWith until trackPoints.size) {
+                            diff = abs(takenTime - trackPoints[i].timeStamp - dstOffset)
+                            if (diff < diffAllowed && diff < minDiff) {
+                                minDiff = diff
+                                match = i
+                            }
                         }
-                    }
 
-                    if (match != NO_MATCH) {
-                        // Got matched, show progress on track
-                        _progress.emit(match)
+                        if (match != NO_MATCH) {
+                            _progress.emit(match)
 
-                        if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
-                            // If photo does not have location data yet or user choose to overwrite existing ones
-
-                            // Update EXIF
                             val targetFile = File(localLesPasFolder, photo.name)
                             ensureActive()
                             try {
+                                // Update EXIF
                                 if (Tools.isRemoteAlbum(album)) {
                                     // For remote album's uploaded photo, download original
                                     if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) ncModel.downloadFile("${remoteLesPasFolder}/${photo.name}", targetFile)
@@ -328,8 +341,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                         if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
                                         saveAttributes()
                                     }
-                                }
-                                else {
+                                } else {
                                     // For local album, update local photo directly so that MetaDataDialogFragment will show updated information immediately
                                     val sourceFile = File(localLesPasFolder, if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) photo.name else photo.id)
 
@@ -367,19 +379,25 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                 photo.latitude = trackPoints[match].latitude
                                 photo.longitude = trackPoints[match].longitude
                                 photo.altitude = trackPoints[match].altitude
-                                photoRepository.upsert(photo)
 
+                                // Prepare batch update list
+                                updatedPhotos.add(photo)
                                 actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, photo.mimeType, album.name, photo.id, photo.name, System.currentTimeMillis(), album.shareId))
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
 
-                            // Sync updated photos to server
-                            if (actions.isNotEmpty()) actionRepository.addActions(actions)
+                            startWith = match
                         }
-                        
-                        startWith = match
                     }
+                }
+
+                // Local DB batch update and upload modified image file to server
+                if (updatedPhotos.isNotEmpty()) photoRepository.upsert(updatedPhotos)
+                if (actions.isNotEmpty()) {
+                    actionRepository.addActions(actions)
+                    // Remove remote album cache, so that the updated image file could be retrieve in MetaDataDialogFragment
+                    File("${Tools.getLocalRoot(context)}/cache").deleteRecursively()
                 }
 
                 // Signaling end of progress

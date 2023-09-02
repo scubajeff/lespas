@@ -393,8 +393,9 @@
     <string name="checkbox_text_overwrite">Sovrascrivere i dati di localizzazione esistenti</string>
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s non è valido o non è stato trovato alcun timestamp!</string>
-    <string name="hint_gpx_offset">minuti di differenza consentiti</string>
+    <string name="suffix_gpx_offset">minuti di differenza consentiti</string>
     <string name="item_export_gpx">Esportazione GPX</string>
+    <string name="checkbox_text_dst">Correzione DST</string>
     <string name="hint_gpx_export_file_location">Il file verrà salvato nella cartella \"Download\".</string>
     <string name="trash_name">Cestino</string>
     <string name="gallery_backup_option_dialog_title">Impostazioni di \'%1$s\'</string>

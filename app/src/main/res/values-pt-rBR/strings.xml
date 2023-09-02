@@ -390,8 +390,9 @@
     <string name="checkbox_text_overwrite">Sobregravar os dados de localização existentes</string>
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s é inválido, ou nenhum carimbo de tempo encontrado!</string>
-    <string name="hint_gpx_offset">diferença de minutos permitida</string>
+    <string name="suffix_gpx_offset">diferença de minutos permitida</string>
     <string name="item_export_gpx">Exportar GPX</string>
+    <string name="checkbox_text_dst">Correção DST</string>
     <string name="hint_gpx_export_file_location">O arquivo será salvo na pasta \'Download\'.</string>
     <string name="trash_name">Lixeira</string>
     <string name="gallery_backup_option_dialog_title">Configurações de \'%1$s\'</string>

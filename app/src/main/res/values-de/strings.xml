@@ -378,8 +378,9 @@
     <string name="checkbox_text_overwrite">Vorhandene Standortdaten überschreiben</string>
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s ist ungültig, oder es wurde kein Zeitstempel gefunden!</string>
-    <string name="hint_gpx_offset">Erlaubte Minuten Differenz</string>
+    <string name="suffix_gpx_offset">Erlaubte Minuten Differenz</string>
     <string name="item_export_gpx">GPX exportieren</string>
+    <string name="checkbox_text_dst">Sommerzeit-Korrektur</string>
     <string name="hint_gpx_export_file_location">Die Datei wird im Ordner \"Download\" gespeichert.</string>
     <string name="trash_name">Papierkorb</string>
     <string name="gallery_backup_option_dialog_title">Einstellungen von \'%1$s\'</string>

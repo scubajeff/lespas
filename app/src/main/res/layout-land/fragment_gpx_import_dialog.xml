@@ -37,7 +37,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/controls"
-            app:layout_constraintWidth_percent="0.35"
+            app:layout_constraintWidth_percent="0.4"
             android:layout_margin="@dimen/small_padding"/>
 
         <TextView
@@ -64,7 +64,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toRightOf="@id/map"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintWidth_percent="0.65">
+            app:layout_constraintWidth_percent="0.6">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/offset_textinputlayout"
@@ -74,7 +74,7 @@
                 android:padding="@dimen/small_padding"
                 style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
                 app:boxStrokeColor="?attr/colorSecondaryVariant"
-                app:suffixText="@string/hint_gpx_offset">
+                app:suffixText="@string/suffix_gpx_offset">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/offset_textinputedittext"
@@ -91,12 +91,20 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <CheckBox
-                android:id="@+id/overwrite"
+                android:id="@+id/dst"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@+id/offset_textinputlayout"
                 app:layout_constraintLeft_toLeftOf="parent"
                 android:layout_marginTop="@dimen/small_padding"
+                android:text="@string/checkbox_text_dst" />
+
+            <CheckBox
+                android:id="@+id/overwrite"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@+id/dst"
+                app:layout_constraintLeft_toLeftOf="parent"
                 android:text="@string/checkbox_text_overwrite"
                 android:lines="2"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
