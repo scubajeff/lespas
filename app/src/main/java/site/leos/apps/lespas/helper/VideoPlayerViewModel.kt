@@ -48,7 +48,6 @@ import java.time.LocalDateTime
 class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
-    private var addedListener: Player.Listener? = null
     private var window = activity.window
     private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
     private val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -101,11 +100,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         if (!slideshowMode) with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
     }
 
-    fun addListener(listener: Player.Listener) {
-        addedListener?.let { videoPlayer.removeListener(it) }
-        addedListener = listener
-        videoPlayer.addListener(listener)
-    }
+    fun addListener(listener: Player.Listener) { videoPlayer.addListener(listener) }
 
     fun play() { videoPlayer.play() }
 
@@ -218,15 +213,13 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     fun isMuted(): Boolean = videoPlayer.volume == 0f
 */
 
+/*
     fun resetPlayer() {
         videoMap.clear()
         videoPlayer.clearMediaItems()
         videoPlayer.clearVideoSurface()
-        addedListener?.let {
-            videoPlayer.removeListener(it)
-            addedListener = null
-        }
     }
+*/
 
     override fun onCleared() {
         videoPlayer.release()
