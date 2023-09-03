@@ -303,18 +303,24 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 var diff: Long
                 var minDiff: Long
                 var takenTime: Long
+                val minDate = trackPoints.first().timeStamp + dstOffset
+                val maxDate = trackPoints.last().timeStamp + dstOffset
 
                 photos.sortedBy { it.dateTaken }.forEach { photo ->
                     // GPS location data won't work on playable media
                     if (Tools.isMediaPlayable(photo.mimeType)) return@forEach
 
+                    // If picture's taken date doesn't fall into track points period, continue to next picture or quit
+                    takenTime = photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()
+                    if (takenTime < minDate) return@forEach
+                    if (takenTime > maxDate) return@launch
+
+                    // If photo does not have location data yet or user choose to overwrite existing ones
                     if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
-                        // If photo does not have location data yet or user choose to overwrite existing ones
 
                         // Try finding the nearest match in GPX
                         match = NO_MATCH
                         minDiff = Long.MAX_VALUE
-                        takenTime = photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()
 
                         for (i in startWith until trackPoints.size) {
                             diff = abs(takenTime - trackPoints[i].timeStamp - dstOffset)
