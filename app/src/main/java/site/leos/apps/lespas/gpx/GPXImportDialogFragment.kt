@@ -189,6 +189,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                             XmlPullParser.END_TAG -> {
                                 when (parser.name) {
                                     "ele" -> trackPoint.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    "course" -> trackPoint.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     "time" -> trackPoint.timeStamp = try {
                                         // Automatically adjust track point's timestamp base on track point's timezone offset. Java Timezone library DST data is not reliable, for example, Egypt observers DST during summer time but is not correctly reported
                                         Instant.parse(text).toEpochMilli() +
@@ -385,6 +386,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                 photo.latitude = trackPoints[match].latitude
                                 photo.longitude = trackPoints[match].longitude
                                 photo.altitude = trackPoints[match].altitude
+                                //photo.bearing = trackPoints[match].bearing
 
                                 // Prepare batch update list
                                 updatedPhotos.add(photo)
@@ -431,6 +433,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         var latitude: Double = Photo.NO_GPS_DATA,
         var longitude: Double = Photo.NO_GPS_DATA,
         var altitude: Double = Photo.NO_GPS_DATA,
+        var bearing: Double = Photo.NO_GPS_DATA,
         var timeStamp: Long = 0L,
         var caption: String = "",
     )
