@@ -51,6 +51,7 @@ import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.gallery.GalleryFragment
+import site.leos.apps.lespas.gpx.TimezoneMapper
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -690,8 +691,9 @@ object Tools {
     private const val A = 6378245.0
     fun wGS84ToGCJ02(latLong: DoubleArray): DoubleArray {
         // Out of China
-        if (latLong[0] < 0.8293 || latLong[0] > 55.8271) return latLong
-        if (latLong[1] < 72.004 || latLong[1] > 137.8347) return latLong
+        if (TimezoneMapper.latLngToTimezoneString(latLong[0], latLong[1]) != "Asia/Shanghai") return latLong
+        //if (latLong[0] < 0.8293 || latLong[0] > 55.8271) return latLong
+        //if (latLong[1] < 72.004 || latLong[1] > 137.8347) return latLong
 
         var dLat = translateLat(latLong[1] - 105.0, latLong[0] - 35.0)
         var dLong = translateLong(latLong[1] - 105.0, latLong[0] - 35.0)
