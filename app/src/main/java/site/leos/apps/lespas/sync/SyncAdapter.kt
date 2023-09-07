@@ -1004,6 +1004,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Skip blog folder
                 if (remoteAlbum.name == BLOG_FOLDER || remoteAlbum.name == BLOG_FOLDER.drop(1)) return@forEach
 
+                // Skip archive folder
+                if (remoteAlbum.name == ARCHIVE_BASE.drop(1)) return@forEach
+
                 // Collecting remote album ids, including hidden albums, for deletion syncing
                 remoteAlbumIds.add(remoteAlbum.fileId)
                 hidden = remoteAlbum.name.startsWith('.')
