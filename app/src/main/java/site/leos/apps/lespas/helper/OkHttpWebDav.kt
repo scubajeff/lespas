@@ -476,7 +476,6 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             // Upload chunks
             // Longer timeout adapting to slow connection
             val uploadHttpClient = httpClient.newBuilder().readTimeout(10, TimeUnit.MINUTES).writeTimeout(10, TimeUnit.MINUTES).build()
-            val chunkUploadHeader = Headers.Builder().add("OC-Chunked", "true").add("OC-Total-Length", size.toString()).build()
             while(index < size) {
                 if (sp.getBoolean(wifionlyKey, true)) {
                     if ((ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
@@ -487,7 +486,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 with(size - index) { if (this < CHUNK_SIZE) chunkSize = this }
                 //Log.e(">>>>>>", chunkName)
 
-                uploadHttpClient.newCall(Request.Builder().url(chunkName).headers(chunkUploadHeader).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
+                uploadHttpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
                     if (!response.isSuccessful) {
                         // Upload interrupted, delete uploaded chunks
                         //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
