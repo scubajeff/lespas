@@ -195,6 +195,14 @@ class PublicationDetailFragment: Fragment() {
             }
         }
         if (showName) requireActivity().onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
+
+        // Get publication photo list and possibly BGM here instead of onViewCreated to avoid redundant fetching when getting back from RemoteMediaFragment or StoryFragment
+        lifecycleScope.launch(Dispatchers.IO) {
+            shareModel.getRemotePhotoList(share, false)
+            // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
+            shareModel.downloadFile(source = "${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", dest = File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), useCache = false)
+        }
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -225,44 +233,40 @@ class PublicationDetailFragment: Fragment() {
 
         currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner) { currentItem = it }
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) {
-            photoListAdapter.setList(it, currentQuery) {
-                // Setup UI in this submitList commitCallback
-                loadingIndicator?.run {
-                    isEnabled = false
-                    isVisible = false
-                }
-                slideshowMenuItem?.run {
-                    isEnabled = true
-                    isVisible = true
-                }
-                (if (showName) searchMenuItem else showMetaMenuItem)?.run {
-                    isVisible = true
-                    isEnabled = true
-                }
-                if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
-                    isVisible = true
-                    isEnabled = true
-                }
+            if (it.isNotEmpty()) {
+                photoListAdapter.setList(it, currentQuery) {
+                    // Setup UI in this submitList commitCallback
+                    loadingIndicator?.run {
+                        isEnabled = false
+                        isVisible = false
+                    }
+                    slideshowMenuItem?.run {
+                        isEnabled = true
+                        isVisible = true
+                    }
+                    (if (showName) searchMenuItem else showMetaMenuItem)?.run {
+                        isVisible = true
+                        isEnabled = true
+                    }
+                    if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
+                        isVisible = true
+                        isEnabled = true
+                    }
 
-                it.forEach { remotePhoto ->
-                    if (remotePhoto.photo.mimeType.startsWith("image/") && remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
-                        mapMenuItem?.isVisible = true
-                        mapMenuItem?.isEnabled = true
+                    it.forEach { remotePhoto ->
+                        if (remotePhoto.photo.mimeType.startsWith("image/") && remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
+                            mapMenuItem?.isVisible = true
+                            mapMenuItem?.isEnabled = true
 
-                        return@setList
+                            return@setList
+                        }
                     }
                 }
-            }
 
-            if (currentItem != -1) with(currentPositionModel.getLastRange()) {
-                if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as RecyclerView.LayoutManager).scrollToPosition(currentItem)
+                if (currentItem != -1) with(currentPositionModel.getLastRange()) {
+                    if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as RecyclerView.LayoutManager).scrollToPosition(currentItem)
+                }
             }
-        }
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            shareModel.getRemotePhotoList(share, false)
-            // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
-            shareModel.downloadFile(source = "${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", dest = File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), useCache = false)
         }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
@@ -431,7 +435,6 @@ class PublicationDetailFragment: Fragment() {
     }
 
     override fun onDestroy() {
-        shareModel.resetPublicationContentMeta()
         try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (_:Exception) {}
 
         (requireActivity() as AppCompatActivity).supportActionBar?.run {

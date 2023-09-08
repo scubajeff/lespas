@@ -574,10 +574,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
-    fun resetPublicationContentMeta() {
-        _publicationContentMeta.value = mutableListOf()
-    }
-
     fun getCameraRollArchive(): List<Photo> {
         val result = mutableListOf<Photo>()
         try {
@@ -608,6 +604,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var doRefresh = false
 
         withContext(Dispatchers.IO) {
+            // Clear current data
+            _publicationContentMeta.value = mutableListOf()
+
             try {
                 webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
                     if (forceNetwork && !this.second) doRefresh = true
