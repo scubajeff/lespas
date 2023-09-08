@@ -605,12 +605,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean) {
-        var doRefresh = true
+        var doRefresh = false
 
         withContext(Dispatchers.IO) {
             try {
                 webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
-                    if (forceNetwork || this.second) doRefresh = false
+                    if (forceNetwork && !this.second) doRefresh = true
                     this.first.use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder, true) }
                 }
 
