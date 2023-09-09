@@ -25,6 +25,7 @@ import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.Animatable2
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.BitmapDrawable
@@ -138,10 +139,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val photoRepository = PhotoRepository(application)
 
     private val videoPlayerCache: SimpleCache?
-
-    fun interface LoadCompleteListener {
-        fun onLoadComplete()
-    }
 
     init {
         AccountManager.get(application).run {
@@ -667,7 +664,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     drawable?.let { drawAvatar(it, view) }
                 }
 
-                callBack?.onLoadComplete()
+                callBack?.onLoadComplete(true)
             }
         }
 
@@ -1090,8 +1087,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val decoderJobMap = HashMap<Int, Job>()
     private val httpCallMap = HashMap<Job, Call>()
     private val mediaMetadataRetriever by lazy { MediaMetadataRetriever() }
+    fun interface LoadCompleteListener {
+        fun onLoadComplete(fullSize: Boolean)
+    }
 
-    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
+    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, animationCallback: Animatable2.AnimationCallback? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         // For full image, show a cached thumbnail version first
@@ -1099,7 +1099,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                 // Show cached low resolution bitmap first before loading full size bitmap
                 view.setImageBitmap(it)
-                callBack?.onLoadComplete()
+                callBack?.onLoadComplete(false)
             } ?: run {
                 // For camera roll items, load thumbnail if cache missed
                 if (imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) {
@@ -1114,7 +1114,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         })?.let {
                             view.setImageBitmap(it)
-                            callBack?.onLoadComplete()
+                            callBack?.onLoadComplete(false)
                         }
                     } catch (_: Exception) {}
                 } else view.setImageDrawable(null)
@@ -1126,7 +1126,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             view.background = (if (viewType == TYPE_FULL) loadingDrawableLV else loadingDrawable).apply { start() }
 
             // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
-            if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete()
+            if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete(false)
         }
 
         val job = viewModelScope.launch(downloadDispatcher) {
@@ -1221,12 +1221,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     ensureActive()
                                                     tempFile.outputStream().run { sourceStream.copyTo(this, 8192) }
                                                     ensureActive()
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(tempFile)).apply {
-                                                        if (this is AnimatedImageDrawable) {
-                                                            if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                                                            start()
-                                                        }
-                                                    }
+                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(tempFile))
                                                     tempFile.delete()
                                                     null
                                                 } else {
@@ -1319,12 +1314,25 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
-                    animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
+                    animatedDrawable?.apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P  && this is AnimatedImageDrawable) {
+                            when {
+                                animationCallback != null -> {
+                                    registerAnimationCallback(animationCallback)
+                                    repeatCount = 1
+                                }
+                                sp.getBoolean(autoReplayKey, true) -> repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                            }
+
+                            start()
+                        }
+                        view.setImageDrawable(this)
+                    } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
 
                     // Stop loading indicator
                     view.setBackgroundResource(0)
+                    callBack?.onLoadComplete(true)
                 }
-                callBack?.onLoadComplete()
             }
         }.apply {
             invokeOnCompletion {

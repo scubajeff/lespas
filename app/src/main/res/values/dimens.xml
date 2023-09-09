@@ -46,4 +46,7 @@
 
     <dimen name="publishing_tab_label_height">44dp</dimen>
     <dimen name="recipients_list_maximum_height">220dp</dimen>
+
+    <item name="story_caption_layout_width" format="integer" type="dimen">-1</item>
+    <dimen name="story_caption_layout_height">256dp</dimen>
 </resources>
