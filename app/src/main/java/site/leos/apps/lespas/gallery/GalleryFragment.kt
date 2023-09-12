@@ -91,7 +91,7 @@ class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity().contentResolver, imageLoaderModel, actionModel) }
+    private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
 
     private lateinit var mediaStoreObserver: ContentObserver
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
@@ -108,9 +108,6 @@ class GalleryFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize GalleryViewModel ASAP, avoid race condition of child fragment accessing parent fragment's viewmodel which is still not ready
-        resources.getInteger(R.integer.cameraroll_grid_span_count).let { spanCount -> galleryModel.setDrawables(Tools.getPlayMarkDrawable(requireActivity(), (0.32f / spanCount)), Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / spanCount)) }
 
         mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
@@ -487,13 +484,18 @@ class GalleryFragment: Fragment() {
         }
     }
 
-    class GalleryViewModelFactory(private val cr: ContentResolver,private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModelProvider.NewInstanceFactory() {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = GalleryViewModel(cr, imageModel, actionModel) as T
+    class GalleryViewModelFactory(private val context: Activity, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            // TODO: won't get correct spanCount in later screen rotations
+            val spanCount = context.resources.getInteger(R.integer.cameraroll_grid_span_count)
+            return modelClass.cast(GalleryViewModel(
+                context.contentResolver, imageModel, actionModel,
+                Tools.getPlayMarkDrawable(context, 0.32f / spanCount),
+                Tools.getSelectedMarkDrawable(context, 0.25f / spanCount)
+            ))!!
+        }
     }
-    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModel() {
-        private lateinit var playMarkDrawable: Drawable
-        private lateinit var selectedMarkDrawable: Drawable
+    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable): ViewModel() {
         private var loadJob: Job? = null
         private var autoRemoveDone = false
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
@@ -788,10 +790,6 @@ class GalleryFragment: Fragment() {
         private var stripOrNot: Boolean = false
         fun getCurrentStripSetting() = stripOrNot
 
-        fun setDrawables(playMark: Drawable, selectedMark: Drawable) {
-            playMarkDrawable = playMark
-            selectedMarkDrawable = selectedMark
-        }
         fun getPlayMark() = playMarkDrawable
         fun getSelectedMark() = selectedMarkDrawable
 
