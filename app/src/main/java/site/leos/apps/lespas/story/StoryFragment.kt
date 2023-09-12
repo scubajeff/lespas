@@ -52,22 +52,13 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -108,13 +99,10 @@ class StoryFragment : Fragment() {
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var playerViewModel: VideoPlayerViewModel
+    private lateinit var bgmModel: BGMViewModel
 
     private var previousTitleBarDisplayOption = 0
 
-    private var hasBGM = false
-    private lateinit var bgmPlayer: ExoPlayer
-    private var fadingJob: Job? = null
-    private lateinit var localPath: String
     private val animatableCallback = AnimatedDrawableCallback { advanceSlide() }
 
     private lateinit var gestureDetector: GestureDetectorCompat
@@ -146,7 +134,7 @@ class StoryFragment : Fragment() {
                 super.onPlaybackStateChanged(playbackState)
                 if (playbackState == Player.STATE_ENDED) {
                     advanceSlide(300)
-                    if (slider.currentItem < total && !pAdapter.isSlideVideo(slider.currentItem + 1)) fadeInBGM()
+                    if (slider.currentItem < total && !pAdapter.isSlideVideo(slider.currentItem + 1)) bgmModel.fadeInBGM()
                 }
             }
         })
@@ -196,26 +184,13 @@ class StoryFragment : Fragment() {
         requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { wipeActionBar() }
 
         // Prepare BGM playing
-        localPath = Tools.getLocalRoot(requireContext())
-        bgmPlayer = ExoPlayer.Builder(requireContext()).build()
-        bgmPlayer.run {
-            repeatMode = ExoPlayer.REPEAT_MODE_ONE
-            playWhenReady = false
-
-            var bgmFile = "$localPath/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-            if (File(bgmFile).exists()) setBGM(bgmFile)
-            else {
-                // BGM for publication downloaded in cache folder in PublicationDetailFragment
-                bgmFile = "${requireContext().cacheDir}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-                if (File(bgmFile).exists()) setBGM(bgmFile)
-            }
-
-            if (hasBGM) {
-                bgmPlayer.volume = 0f
-                bgmPlayer.prepare()
-            }
-            setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
+        var bgmFile: String? = "${Tools.getLocalRoot(requireContext())}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+        if (!File(bgmFile!!).exists()) {
+            // BGM for publication downloaded in cache folder in PublicationDetailFragment
+            bgmFile = "${requireContext().cacheDir}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+            if (!File(bgmFile).exists()) bgmFile = null
         }
+        bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), bgmFile))[BGMViewModel::class.java]
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_story, container, false)
@@ -307,7 +282,7 @@ class StoryFragment : Fragment() {
 
         controlFAB = view.findViewById<FloatingActionButton?>(R.id.fab).apply {
             setOnClickListener {
-                bgmPlayer.seekTo(0L)
+                bgmModel.rewind()
                 checkSlide(0)
                 slider.setCurrentItem(0, false)
                 captionTextView.text = pAdapter.getCaption(0)
@@ -346,11 +321,7 @@ class StoryFragment : Fragment() {
 
     override fun onDestroy() {
         animationHandler.removeCallbacksAndMessages(null)
-
-        bgmPlayer.release()
-
         Tools.quitImmersive(requireActivity().window)
-
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.run {
                 displayOptions = previousTitleBarDisplayOption
@@ -363,7 +334,7 @@ class StoryFragment : Fragment() {
 
     private fun checkSlide(position: Int) {
         // fade out BGM if next slide is video, do it here to prevent audio mix up
-        if (pAdapter.isSlideVideo(position)) fadeOutBGM() else fadeInBGM()
+        if (pAdapter.isSlideVideo(position)) bgmModel.fadeOutBGM() else bgmModel.fadeInBGM()
 
         // With offscreenPageLimit greater than 0, the next slide will be preloaded, however if two consecutive slides are both video, pre-fetch of the 2nd one will ruin the playback of the 1st one
         slider.offscreenPageLimit = if (position < total && pAdapter.isSlideVideo(position) && pAdapter.isSlideVideo(position + 1)) ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT else 1
@@ -428,11 +399,11 @@ class StoryFragment : Fragment() {
             }, 500)
 
             // Continue playing BGM for 1.5 sec, then fade out
-            if (hasBGM) animationHandler.postDelayed({ fadeOutBGM() }, 1500)
+            animationHandler.postDelayed({ bgmModel.fadeOutBGM() }, 1500)
         }
         else {
             animationState = STATE_PAUSED
-            fadeOutBGM()
+            bgmModel.fadeOutBGM()
         }
     }
 
@@ -493,7 +464,7 @@ class StoryFragment : Fragment() {
             pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
                 when (this) {
                     is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> {
-                        fadeInBGM()
+                        bgmModel.fadeInBGM()
                         getPhotoView().let { photoView ->
                             // Stop any existing animation
                             photoView.animation?.cancel()
@@ -525,7 +496,7 @@ class StoryFragment : Fragment() {
                     is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> {
                         // For animated image, auto advance is handled by passing a Animatable2.AnimationCallback implementation which call advanceSlide() when play back ended to NCShareViewModel.setImagePhoto(...)
                         // setImagePhoto(...) will register this callback after the animated drawable decoded
-                        fadeInBGM()
+                        bgmModel.fadeInBGM()
                     }
 
                     is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
@@ -568,49 +539,6 @@ class StoryFragment : Fragment() {
             slowSwipeAnimator?.start()
         }
         else stopSlideshow(endOfSlideshow = true)
-    }
-
-    private fun setBGM(bgmFile: String) {
-        bgmPlayer.setMediaItem(MediaItem.fromUri("file://${bgmFile}"))
-        hasBGM = true
-    }
-
-    private fun fadeInBGM() {
-        if (hasBGM) {
-            fadingJob?.cancel()
-
-            if (bgmPlayer.volume < 1f) fadingJob = lifecycleScope.launch {
-                bgmPlayer.play()
-                while (isActive) {
-                    delay(75)
-
-                    if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
-                    else {
-                        bgmPlayer.volume = 1f
-                        break
-                    }
-                }
-            }
-        }
-    }
-
-    private fun fadeOutBGM() {
-        if (hasBGM) {
-            fadingJob?.cancel()
-
-            if (bgmPlayer.volume > 0f) fadingJob = lifecycleScope.launch {
-                while (isActive) {
-                    delay(75)
-
-                    if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
-                    else {
-                        bgmPlayer.volume = 0f
-                        bgmPlayer.pause()
-                        break
-                    }
-                }
-            }
-        }
     }
 
     private fun wipeActionBar() {
@@ -709,7 +637,7 @@ class StoryFragment : Fragment() {
         }
     }
 
-    class StoryAdapter(context: Context, displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (NCShareViewModel.RemotePhoto) -> VideoItem, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
+    private class StoryAdapter(context: Context, displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (NCShareViewModel.RemotePhoto) -> VideoItem, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, null, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
