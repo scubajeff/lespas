@@ -565,7 +565,7 @@ class StoryFragment : Fragment() {
                         when {
                             position <= -1f -> { // [-Infinity, -1)
                                 // This page is way off-screen to the left
-                                translationX = 1f
+                                translationX = 1.1f
 
                                 // Reset scale and alpha to normal
                                 alpha = 1f
@@ -612,7 +612,7 @@ class StoryFragment : Fragment() {
                             }
                             else -> { // (1, +Infinity]
                                 // This page is way off-screen to the right
-                                translationX = -1f
+                                translationX = -1.1f
                                 translationZ = -1f
 
                                 // Scale and alpha should be normal
