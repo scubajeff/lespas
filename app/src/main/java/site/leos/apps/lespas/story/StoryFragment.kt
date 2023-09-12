@@ -184,13 +184,7 @@ class StoryFragment : Fragment() {
         requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { wipeActionBar() }
 
         // Prepare BGM playing
-        var bgmFile: String? = "${Tools.getLocalRoot(requireContext())}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-        if (!File(bgmFile!!).exists()) {
-            // BGM for publication downloaded in cache folder in PublicationDetailFragment
-            bgmFile = "${requireContext().cacheDir}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-            if (!File(bgmFile).exists()) bgmFile = null
-        }
-        bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), bgmFile))[BGMViewModel::class.java]
+        bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), if (isPublication) album.bgmId else "file://${Tools.getLocalRoot(requireContext())}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"))[BGMViewModel::class.java]
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_story, container, false)

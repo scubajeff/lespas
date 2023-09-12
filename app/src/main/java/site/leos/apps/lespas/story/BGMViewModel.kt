@@ -22,19 +22,26 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
-class BGMViewModel(context: Context, bgmFile: String?): ViewModel() {
+@androidx.annotation.OptIn(UnstableApi::class)
+class BGMViewModel(context: Context, callFactory: OkHttpClient, bgmFile: String): ViewModel() {
     private val bgmPlayer: ExoPlayer
-    private var hasBGM = false
     private var fadingJob: Job? = null
 
     init {
-        bgmPlayer = ExoPlayer.Builder(context).build()
+        bgmPlayer = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(context, OkHttpDataSource.Factory(callFactory))))
+            .build()
 
         with(bgmPlayer) {
             repeatMode = ExoPlayer.REPEAT_MODE_ONE
@@ -42,47 +49,40 @@ class BGMViewModel(context: Context, bgmFile: String?): ViewModel() {
             volume = 0f
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
 
-            bgmFile?.let {
-                setMediaItem(MediaItem.fromUri("file://${bgmFile}"))
-                hasBGM = true
-                bgmPlayer.prepare()
-            }
+            setMediaItem(MediaItem.fromUri(bgmFile))
+            bgmPlayer.prepare()
         }
     }
 
     fun fadeInBGM() {
-        if (hasBGM) {
-            fadingJob?.cancel()
+        fadingJob?.cancel()
 
-            if (bgmPlayer.volume < 1f) fadingJob = viewModelScope.launch {
-                bgmPlayer.play()
-                while (isActive) {
-                    delay(75)
+        if (bgmPlayer.volume < 1f) fadingJob = viewModelScope.launch {
+            bgmPlayer.play()
+            while (isActive) {
+                delay(75)
 
-                    if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
-                    else {
-                        bgmPlayer.volume = 1f
-                        break
-                    }
+                if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
+                else {
+                    bgmPlayer.volume = 1f
+                    break
                 }
             }
         }
     }
 
     fun fadeOutBGM() {
-        if (hasBGM) {
-            fadingJob?.cancel()
+        fadingJob?.cancel()
 
-            if (bgmPlayer.volume > 0f) fadingJob = viewModelScope.launch {
-                while (isActive) {
-                    delay(75)
+        if (bgmPlayer.volume > 0f) fadingJob = viewModelScope.launch {
+            while (isActive) {
+                delay(75)
 
-                    if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
-                    else {
-                        bgmPlayer.volume = 0f
-                        bgmPlayer.pause()
-                        break
-                    }
+                if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
+                else {
+                    bgmPlayer.volume = 0f
+                    bgmPlayer.pause()
+                    break
                 }
             }
         }

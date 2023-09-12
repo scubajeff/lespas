@@ -388,7 +388,8 @@ class PublicationDetailFragment: Fragment() {
                                 name = share.albumName,
                                 eTag = Photo.ETAG_FAKE,
                                 shareId = Album.REMOTE_ALBUM,
-                                lastModified = LocalDateTime.MIN
+                                lastModified = LocalDateTime.MIN,
+                                bgmId = "${shareModel.getResourceRoot()}${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}"
                             )
                         ), StoryFragment::class.java.canonicalName).addToBackStack(null).commit()
                         true

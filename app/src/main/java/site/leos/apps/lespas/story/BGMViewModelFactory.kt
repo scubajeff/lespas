@@ -19,7 +19,8 @@ package site.leos.apps.lespas.story
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import okhttp3.OkHttpClient
 
-class BGMViewModelFactory(private val context: Context, private val bgmFile: String?): ViewModelProvider.NewInstanceFactory() {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(BGMViewModel(context, bgmFile))!!
+class BGMViewModelFactory(private val context: Context, private val callFactory: OkHttpClient, private val bgmFile: String): ViewModelProvider.NewInstanceFactory() {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(BGMViewModel(context, callFactory, bgmFile))!!
 }
