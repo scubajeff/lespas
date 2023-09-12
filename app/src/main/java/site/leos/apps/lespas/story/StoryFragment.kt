@@ -87,6 +87,7 @@ class StoryFragment : Fragment() {
     private var animationState = STATE_UNKNOWN
 
     private val animationHandler = Handler(Looper.getMainLooper())
+    private val knobAnimationHandler = Handler(Looper.getMainLooper())
     private var slowSwipeAnimator: ValueAnimator? = null
 
     private lateinit var pAdapter: StoryAdapter
@@ -266,8 +267,8 @@ class StoryFragment : Fragment() {
                         knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
                     }
 
-                    animationHandler.removeCallbacks(hideSettingCallback)
-                    animationHandler.postDelayed(hideSettingCallback, 1000)
+                    knobAnimationHandler.removeCallbacks(hideSettingCallback)
+                    knobAnimationHandler.postDelayed(hideSettingCallback, 1000)
                 }
 
                 return true
@@ -315,6 +316,7 @@ class StoryFragment : Fragment() {
 
     override fun onDestroy() {
         animationHandler.removeCallbacksAndMessages(null)
+        knobAnimationHandler.removeCallbacksAndMessages(null)
         Tools.quitImmersive(requireActivity().window)
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.run {
