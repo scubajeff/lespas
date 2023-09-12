@@ -114,9 +114,8 @@ class LocationSearchHostFragment: Fragment() {
         this.isVisible = true
     }
 
-    @Suppress("UNCHECKED_CAST")
     class LocationSearchViewModelFactory(private val application: Application, private val searchScope: Int, private val remoteImageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchScope, remoteImageModel) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(LocationSearchViewModel(application, searchScope, remoteImageModel))!!
     }
 
     class LocationSearchViewModel(application: Application, searchScope: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(application) {

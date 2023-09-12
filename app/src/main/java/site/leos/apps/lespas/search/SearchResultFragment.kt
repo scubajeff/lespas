@@ -190,10 +190,9 @@ class SearchResultFragment : Fragment() {
         super.onDestroyView()
     }
 
-    @Suppress("UNCHECKED_CAST")
     class AdhocAdhocSearchViewModelFactory(private val application: Application, private val categoryId: String, private val searchTarget: Int, private val remoteImageModel: NCShareViewModel
     ): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchTarget, remoteImageModel) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(AdhocSearchViewModel(application, categoryId, searchTarget, remoteImageModel))!!
     }
 
     class AdhocSearchViewModel(app: Application, categoryId: String, searchTarget: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(app) {

@@ -33,7 +33,13 @@ import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.*
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
@@ -154,9 +160,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
-    @Suppress("UNCHECKED_CAST")
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(AcquiringViewModel(application, uris, album))!!
     }
 
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album): AndroidViewModel(application) {
