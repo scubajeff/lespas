@@ -43,11 +43,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.*
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -71,9 +67,10 @@ import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.story.BGMViewModel
+import site.leos.apps.lespas.story.BGMViewModelFactory
 import java.io.File
 import java.lang.Double.max
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
@@ -99,11 +96,10 @@ class PhotosInMapFragment: Fragment() {
     private var isSlideshowPlaying = false
     private var spaceHeight = 0
 
-    private lateinit var muteMenuItem: MenuItem
-    private var hasBGM = false
+    private var bgmModel: BGMViewModel? = null
     private var isMuted = false
-    private lateinit var bgmPlayer: ExoPlayer
-    private var fadingJob: Job? = null
+    private var hasBGM = false
+    private var muteMenuItem: MenuItem? = null
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var remotePath: String
@@ -125,7 +121,7 @@ class PhotosInMapFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                album?.let { if (hasBGM) fadeOutBGM(true) }
+                album?.let { bgmModel?.fadeOutBGM() }
                 closeAllInfoWindow()
                 mapView.overlayManager.clear()
                 mapView.controller.zoomTo(max(mapView.zoomLevelDouble - 5, 0.0), 400)
@@ -137,33 +133,26 @@ class PhotosInMapFragment: Fragment() {
 
         album?.run {
             window = requireActivity().window
-            bgmPlayer = ExoPlayer.Builder(requireContext()).build()
-            bgmPlayer.run {
-                repeatMode = ExoPlayer.REPEAT_MODE_ONE
-                playWhenReady = true
-
-                var bgmFile = "$localPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-                if (File(bgmFile).exists()) setBGM(bgmFile)
-                else {
-                    // BGM for publication downloaded in cache folder in PublicationDetailFragment
-                    bgmFile = "${requireContext().cacheDir}/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-                    if (File(bgmFile).exists()) setBGM(bgmFile)
-                }
-
-                // Mute the video sound during late night hours
-                with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) isMuted = true }
-                setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
-            }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
             remotePhotos = mutableListOf()
             //requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$remotePath/${album!!.name}")) }
             requireArguments().parcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$remotePath/${album!!.name}")) }
-        }
-    }
 
-    private fun setBGM(bgmFile: String) {
-        bgmPlayer.setMediaItem(MediaItem.fromUri("file://${bgmFile}"))
-        hasBGM = true
+            // Prepare for BGM playing
+            lifecycleScope.launch(Dispatchers.IO) {
+                var bgmFile = ""
+                if (eTag == Photo.ETAG_FAKE) {
+                    if (imageLoaderModel.isExisted(bgmId)) bgmFile = bgmId
+                } else {
+                    if (File("$localPath/${id}${BGMDialogFragment.BGM_FILE_SUFFIX}").exists()) bgmFile = "file://${Tools.getLocalRoot(requireContext())}/${id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                }
+                if (bgmFile.isNotEmpty()) withContext(Dispatchers.Main) {
+                    hasBGM = true
+                    muteMenuItem?.isVisible = true
+                    bgmModel = ViewModelProvider(this@PhotosInMapFragment, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), bgmFile))[BGMViewModel::class.java]
+                }
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photos_in_map, container, false)
@@ -276,13 +265,8 @@ class PhotosInMapFragment: Fragment() {
                 }
 
                 override fun onPrepareMenu(menu: Menu) {
-                    with(muteMenuItem) {
-                        if (hasBGM) setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
-                        else {
-                            isVisible = false
-                            isEnabled = false
-                        }
-                    }
+                    if (hasBGM) muteMenuItem?.setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
+                    else muteMenuItem?.isVisible = false
                 }
 
                 override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -291,7 +275,6 @@ class PhotosInMapFragment: Fragment() {
                             if (isSlideshowPlaying) slideshowJob?.cancel()
                             else {
                                 mapView.keepScreenOn = true
-
                                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                                 isSlideshowPlaying = true
                                 playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
@@ -307,10 +290,7 @@ class PhotosInMapFragment: Fragment() {
                                     var lastPos = (mapView.overlays[1] as Marker).position
                                     //var poiCenter: Int
 
-                                    if (hasBGM) {
-                                        bgmPlayer.volume = if (isMuted) 0f else 1f
-                                        bgmPlayer.prepare()
-                                    }
+                                    if (!isMuted) bgmModel?.fadeInBGM()
 
                                     // Loop through all POIs
                                     try {
@@ -359,12 +339,12 @@ class PhotosInMapFragment: Fragment() {
                         }
                         R.id.option_menu_mute -> {
                             isMuted = !isMuted
-                            muteMenuItem.setIcon(
+                            muteMenuItem?.setIcon(
                                 if (isMuted) {
-                                    fadeOutBGM()
+                                    if (isSlideshowPlaying) bgmModel?.fadeOutBGM()
                                     R.drawable.ic_baseline_volume_off_24
                                 } else {
-                                    fadeInBGM()
+                                    if (isSlideshowPlaying) bgmModel?.fadeInBGM()
                                     R.drawable.ic_baseline_volume_on_24
                                 }
                             )
@@ -396,45 +376,8 @@ class PhotosInMapFragment: Fragment() {
     override fun onDestroy() {
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        album?.run { bgmPlayer.release() }
 
         super.onDestroy()
-    }
-
-    private fun fadeInBGM() {
-        fadingJob?.cancel()
-
-        fadingJob = lifecycleScope.launch {
-            while(isActive) {
-                delay(75)
-
-                if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
-                else {
-                    bgmPlayer.volume = 1f
-                    break
-                }
-            }
-        }
-    }
-
-    private fun fadeOutBGM(stopPlaying: Boolean = false) {
-        fadingJob?.cancel()
-
-        fadingJob = lifecycleScope.launch {
-            while(isActive) {
-                delay(75)
-
-                if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
-                else {
-                    bgmPlayer.volume = 0f
-                    if (stopPlaying) {
-                        bgmPlayer.stop()
-                        bgmPlayer.seekTo(0)
-                    }
-                    break
-                }
-            }
-        }
     }
 
     private fun stopSlideshow() {
@@ -444,7 +387,7 @@ class PhotosInMapFragment: Fragment() {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
-        if (hasBGM) fadeOutBGM(true)
+        bgmModel?.fadeOutBGM()
         mapView.keepScreenOn = false
     }
 

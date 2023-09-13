@@ -51,7 +51,6 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.LesPasGetMediaContract
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
@@ -61,7 +60,6 @@ import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.story.StoryFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
-import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -197,11 +195,7 @@ class PublicationDetailFragment: Fragment() {
         if (showName) requireActivity().onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
 
         // Get publication photo list and possibly BGM here instead of onViewCreated to avoid redundant fetching when getting back from RemoteMediaFragment or StoryFragment
-        lifecycleScope.launch(Dispatchers.IO) {
-            shareModel.getRemotePhotoList(share, false)
-            // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
-            shareModel.downloadFile(source = "${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", dest = File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), useCache = false)
-        }
+        lifecycleScope.launch(Dispatchers.IO) { shareModel.getRemotePhotoList(share, false) }
 
     }
 
@@ -369,7 +363,8 @@ class PublicationDetailFragment: Fragment() {
                                 name = share.albumName,
                                 eTag = Photo.ETAG_FAKE,
                                 shareId = Album.REMOTE_ALBUM,
-                                lastModified = LocalDateTime.MIN
+                                lastModified = LocalDateTime.MIN,
+                                bgmId = "${shareModel.getResourceRoot()}${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}",
                             ),
                             Tools.getPhotosWithCoordinate(
                                 mutableListOf<Photo>().apply { photoListAdapter.currentList.forEach { add(it.photo) }},
@@ -436,8 +431,6 @@ class PublicationDetailFragment: Fragment() {
     }
 
     override fun onDestroy() {
-        try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (_:Exception) {}
-
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             displayOptions = androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP or androidx.appcompat.app.ActionBar.DISPLAY_SHOW_TITLE
             customView = null

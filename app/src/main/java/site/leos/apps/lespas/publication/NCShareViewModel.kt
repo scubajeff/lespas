@@ -817,6 +817,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 */
+    fun isExisted(source: String): Boolean {
+        return try { webDav.isExisted(source) } catch (e: Exception) { false }
+    }
 
     fun downloadFile(source: String, dest: File, useCache: Boolean = true): Boolean {
         var call: Call? = null
