@@ -233,13 +233,13 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         val selectionSize = selectionTracker.selection.size()
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
-                            actionMode?.let { it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize) }
+                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionSize()})" }
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
-                        } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionSize()})"
                     }
                 })
             }
@@ -659,6 +659,12 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             else -> if (position == currentList.size - 1 || currentList[position + 1].media.photo.mimeType.isEmpty()) TYPE_OVERFLOW else TYPE_MEDIA
         }
 
+        internal fun getSelectionSize(): String {
+            var size = 0L
+            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.shareId }}
+
+            return Tools.humanReadableByteCountSI(size)
+        }
         internal fun toSpan(position: Int): Boolean = getItemViewType(position) == TYPE_HEADER || getItemViewType(position) == TYPE_FOOTNOTE
         internal fun setFootNote(message: String) { footNoteMessage = message }
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {

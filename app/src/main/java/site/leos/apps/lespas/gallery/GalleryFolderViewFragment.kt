@@ -263,13 +263,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         val selectionSize = selectionTracker.selection.size()
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
-                            actionMode?.let { it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize) }
+                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionSize()})" }
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
-                        } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionSize()})"
 
                         // Disable sub folder chips when in selection mode
                         val enableChips = selectionSize <= 0
@@ -693,6 +693,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         override fun getItemViewType(position: Int): Int = if (currentList[position].photo.mimeType.isEmpty()) TYPE_DATE else TYPE_MEDIA
 
+        internal fun getSelectionSize(): String {
+            var size = 0L
+            selectionTracker.selection.forEach { selected -> currentList.find { it.photo.id == selected }?.let { size += it.photo.shareId }}
+
+            return Tools.humanReadableByteCountSI(size)
+        }
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
