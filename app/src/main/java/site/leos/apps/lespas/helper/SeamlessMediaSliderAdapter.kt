@@ -191,8 +191,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && holder is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder) holder.getAnimatedDrawable()?.clearAnimationCallbacks()
-
         super.onViewDetachedFromWindow(holder)
     }
 

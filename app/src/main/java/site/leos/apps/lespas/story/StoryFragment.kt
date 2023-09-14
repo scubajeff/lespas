@@ -18,6 +18,7 @@ package site.leos.apps.lespas.story
 
 import android.animation.Animator
 import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
@@ -45,6 +46,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
@@ -86,16 +88,20 @@ class StoryFragment : Fragment() {
     private var startAt = 0
     private var animationState = STATE_UNKNOWN
 
-    private val animationHandler = Handler(Looper.getMainLooper())
-    private val knobAnimationHandler = Handler(Looper.getMainLooper())
-    private var slowSwipeAnimator: ValueAnimator? = null
-
     private lateinit var pAdapter: StoryAdapter
     private lateinit var slider: ViewPager2
     private lateinit var container: ConstraintLayout
     private lateinit var captionCrank: ScrollView
     private lateinit var captionTextView: TextView
     private lateinit var controlFAB: FloatingActionButton
+
+    private val animationHandler = Handler(Looper.getMainLooper())
+    private val knobAnimationHandler = Handler(Looper.getMainLooper())
+    private lateinit var slowSwipeAnimator: ValueAnimator
+    private lateinit var captionCrankAnimator: ObjectAnimator
+    private lateinit var dreamyAnimator: ObjectAnimator
+    private lateinit var hideSettingRunnable: Runnable
+    private val animatableCallback = AnimatedDrawableCallback { if (animationState == STATE_STARTED) advanceSlide() }
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -104,12 +110,9 @@ class StoryFragment : Fragment() {
 
     private var previousTitleBarDisplayOption = 0
 
-    private val animatableCallback = AnimatedDrawableCallback { advanceSlide() }
-
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var volumeDrawable: Drawable
     private lateinit var brightnessDrawable: Drawable
-    private lateinit var hideSettingCallback: Runnable
     private var displayWidth = 0
     private lateinit var knobLayout: FrameLayout
     private lateinit var knobIcon: ImageView
@@ -163,7 +166,7 @@ class StoryFragment : Fragment() {
                 // Usually slideshow triggered in slider's onPageScrollStateChanged callback. But during the initial launch, onPageScrollStateChanged won't be called, need to do it here
                 // For photos and animatables, load the full size image before starting the show; for videos, video player will handle the loading and buffering, show can be started right away
                 //if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type, animatableCallback) { fullSize -> if (needKickOff && fullSize) startFirstSlide() }
-                if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type, animatableCallback) { fullSize -> if (needKickOff) startFirstSlide() }
+                if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type, animatableCallback) { if (needKickOff) startFirstSlide() }
                 else if (needKickOff) startFirstSlide()
             },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
@@ -205,7 +208,9 @@ class StoryFragment : Fragment() {
 
                 // Activate slide animation here, rather than in onPageSelected, because onPageSelected is called before page transformer animation ends
                 // Start the show by setting the caption textview
-                if (state == ViewPager2.SCROLL_STATE_IDLE) { captionTextView.text = pAdapter.getCaption(slider.currentItem) }
+                if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                    if (animationState == STATE_STARTED) captionTextView.text = pAdapter.getCaption(slider.currentItem)
+                }
             }
 
             override fun onPageSelected(position: Int) {
@@ -225,22 +230,19 @@ class StoryFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) { showCurrentSlide() }
         })
 
-        if (isPublication) {
-            imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { if (it.isNotEmpty()) loadSlideshow(it, startAt) }
-        } else {
-            albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
-                Tools.sortPhotos(photos, album.sortOrder).run {
-                    val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
-                    forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
-                    loadSlideshow(rpList, startAt)
-                }
+        if (isPublication) imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { if (it.isNotEmpty()) loadSlideshow(it, startAt) }
+        else albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
+            Tools.sortPhotos(photos, album.sortOrder).run {
+                val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
+                forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
+                loadSlideshow(rpList, startAt)
             }
         }
 
         // Controls
         volumeDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_volume_on_24)!!
         brightnessDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_brightness_24)!!
-        hideSettingCallback = Runnable { knobLayout.isVisible = false }
+        hideSettingRunnable = Runnable { knobLayout.isVisible = false }
         knobLayout = view.findViewById(R.id.knob)
         knobIcon = view.findViewById(R.id.knob_icon)
         knobPosition = view.findViewById(R.id.knob_position)
@@ -267,8 +269,8 @@ class StoryFragment : Fragment() {
                         knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
                     }
 
-                    knobAnimationHandler.removeCallbacks(hideSettingCallback)
-                    knobAnimationHandler.postDelayed(hideSettingCallback, 1000)
+                    knobAnimationHandler.removeCallbacks(hideSettingRunnable)
+                    knobAnimationHandler.postDelayed(hideSettingRunnable, 1000)
                 }
 
                 return true
@@ -289,6 +291,11 @@ class StoryFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.touch).run { setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }}
+
+        // Initialize animators
+        slowSwipeAnimator = ValueAnimator()
+        captionCrankAnimator = ObjectAnimator()
+        dreamyAnimator = ObjectAnimator()
     }
 
     override fun onResume() {
@@ -338,13 +345,12 @@ class StoryFragment : Fragment() {
 
     private var needKickOff = true
     private fun startFirstSlide() {
-        //Log.e(">>>>>>>>", "==============================startFirstSlide: ${slider.currentItem}", )
         needKickOff = false
         captionTextView.text = pAdapter.getCaption(slider.currentItem)
+        animationState = STATE_STARTED
     }
 
     private fun loadSlideshow(photos: List<NCShareViewModel.RemotePhoto>, startAt: Int) {
-        //Log.e(">>>>>>>>", "***********************************loadSlideshow: $startAt", )
         total = photos.size - 1
         slider.endFakeDrag()
         pAdapter.setPhotos(photos) {
@@ -354,22 +360,30 @@ class StoryFragment : Fragment() {
     }
 
     private fun stopSlideshow(endOfSlideshow: Boolean) {
+        // Set status flag asap
+        animationState = STATE_PAUSED
+
+        // Stop animation both running or scheduled
         animationHandler.removeCallbacksAndMessages(null)
-
-        // Stop animations
-        captionCrank.apply {
-            isVisible = false
-            animation?.cancel()
-            clearAnimation()
-            scrollTo(0, 0)
+        // Immediately stop all animation listeners to cut off chained effect
+        if (dreamyAnimator.isRunning) {
+            dreamyAnimator.removeAllListeners()
+            dreamyAnimator.cancel()
         }
+        if (captionCrankAnimator.isRunning) {
+            captionCrankAnimator.removeAllListeners()
+            captionCrankAnimator.cancel()
+        }
+        if (slowSwipeAnimator.isRunning) {
+            slowSwipeAnimator.removeAllUpdateListeners()
+            slowSwipeAnimator.cancel()
+        }
+        slider.animation?.cancel()
+        slider.clearAnimation()
 
+        // Stop playing video and animatable
         pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
             when(this) {
-                is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> getPhotoView().run {
-                    animation?.cancel()
-                    clearAnimation()
-                }
                 is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) getAnimatedDrawable()?.run {
                         clearAnimationCallbacks()
@@ -379,11 +393,17 @@ class StoryFragment : Fragment() {
                 is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> pause()
             }
         }
-        slowSwipeAnimator?.let { if (it.isStarted) it.cancel() }
 
-        slider.animation?.cancel()
-        slider.clearAnimation()
+        captionCrank.apply {
+            isVisible = false
+            clearAnimation()
+            scrollTo(0, 0)
+        }
 
+        // Stop BGM
+        bgmModel.fadeOutBGM()
+
+        // Stop at the end of the show and provide way to restart
         if (endOfSlideshow) {
             animationState = STATE_ENDED
             animationHandler.postDelayed({
@@ -397,17 +417,12 @@ class StoryFragment : Fragment() {
             // Continue playing BGM for 1.5 sec, then fade out
             animationHandler.postDelayed({ bgmModel.fadeOutBGM() }, 1500)
         }
-        else {
-            animationState = STATE_PAUSED
-            bgmModel.fadeOutBGM()
-        }
     }
 
     private fun showCurrentSlide() {
         animationState = STATE_STARTED
         captionCrank.scrollY = 0
         captionCrank.isVisible = captionTextView.text.isNotEmpty()
-        //captionCrank.isVisible = pAdapter.getCaption(slider.currentItem).isNotEmpty()
 
         if (captionCrank.isVisible) showCaption() else animateSlide()
     }
@@ -417,7 +432,6 @@ class StoryFragment : Fragment() {
 
         // Make sure view has been layout so that view's height is available
         captionTextView.post {
-            //Log.e(">>>>>>>>", "showCaption: ${captionCrank.height} ${captionTextView.height} ${captionCrank.scrollY} ${captionCrank.top} ${captionCrank.bottom} ${captionTextView.top} ${captionTextView.bottom} ${captionTextView.lineHeight} ${captionTextView.lineSpacingExtra}",)
             val pageHeight = (captionCrank.height - captionCrank.paddingTop - captionCrank.paddingBottom) * 4 / 5
             val maxScrollPosition = captionTextView.bottom - captionCrank.height + captionCrank.paddingBottom
             // Auto scroll caption
@@ -426,24 +440,20 @@ class StoryFragment : Fragment() {
                 CAPTION_PAGE_VIEWING_TIME *
                     when {
                         maxScrollPosition == 0 -> (captionTextView.lineCount * captionTextView.lineHeight) / captionCrank.height.toFloat()  // One page only
-                        remain == 0 -> (maxScrollPosition % pageHeight) / captionCrank.height.toFloat() // Next page will be the last one
-                        else -> 1.0f    // There are still pages down below
+                        remain == 0 -> (maxScrollPosition % pageHeight) / captionCrank.height.toFloat()                                     // Next page will be the last one
+                        else -> 1.0f                                                                                                        // There are still pages down below
                     }
             ).toLong()
             animationHandler.postDelayed({
                 if (remain > 0) {
                     // Stop any existing animation
                     captionCrank.clearAnimation()
-                    ObjectAnimator.ofInt(captionCrank, "scrollY", captionCrank.scrollY + min(pageHeight, remain)).setDuration(3000).apply {
-                        addListener(object : Animator.AnimatorListener {
-                            override fun onAnimationStart(animation: Animator) {}
-                            override fun onAnimationCancel(animation: Animator) {}
-                            override fun onAnimationRepeat(animation: Animator) {}
-                            override fun onAnimationEnd(animation: Animator) { showCaption() }
-                        })
-                    }.start()
+                    captionCrankAnimator = ObjectAnimator.ofInt(captionCrank, "scrollY", captionCrank.scrollY + min(pageHeight, remain)).setDuration(3000).apply {
+                        doOnEnd { if (animationState == STATE_STARTED) showCaption() }
+                    }
+                    captionCrankAnimator.start()
                 } else animateSlide()
-            }, kotlin.math.max(delay, 3000L))
+            }, kotlin.math.max(delay, CAPTION_PAGE_MINIMUM_VIEWING_TIME))
         }
     }
 
@@ -470,22 +480,11 @@ class StoryFragment : Fragment() {
                             // Start a dreamy animation by scaling image a little by 5% in a long period of time of 5s
                             photoView.scaleX = 1.0f
                             photoView.scaleY = 1.0f
-                            photoView.animate().setDuration(5000).scaleX(DREAMY_SCALE_FACTOR).scaleY(DREAMY_SCALE_FACTOR).setListener(object : Animator.AnimatorListener {
-                                var finished = true
-                                override fun onAnimationStart(animation: Animator) {}
-                                override fun onAnimationRepeat(animation: Animator) {}
-                                override fun onAnimationCancel(animation: Animator) {
-                                    finished = false
-                                    photoView.scaleX = 1.0f
-                                    photoView.scaleY = 1.0f
-                                    photoView.alpha = 1.0f
-                                }
-
-                                // Programmatically advance to the next slide after animation end
-                                override fun onAnimationEnd(animation: Animator) {
-                                    if (finished) advanceSlide()
-                                }
-                            })
+                            dreamyAnimator = ObjectAnimator.ofPropertyValuesHolder(photoView, PropertyValuesHolder.ofFloat(View.SCALE_X, DREAMY_SCALE_FACTOR), PropertyValuesHolder.ofFloat(View.SCALE_Y, DREAMY_SCALE_FACTOR)).setDuration(5000).apply {
+                                // Advance to the next slide after dreamy animation ended
+                                doOnEnd { advanceSlide() }
+                            }
+                            dreamyAnimator.start()
                         }
                     }
 
@@ -493,6 +492,12 @@ class StoryFragment : Fragment() {
                         // For animated image, auto advance is handled by passing a Animatable2.AnimationCallback implementation which call advanceSlide() when play back ended to NCShareViewModel.setImagePhoto(...)
                         // setImagePhoto(...) will register this callback after the animated drawable decoded
                         bgmModel.fadeInBGM()
+
+                        // Need this to restart animatable playing after onPause(), which means animatable is stopped and callback had been removed
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) getAnimatedDrawable()?.apply {
+                            registerAnimationCallback(animatableCallback)
+                            start()
+                        }
                     }
 
                     is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
@@ -511,13 +516,13 @@ class StoryFragment : Fragment() {
         if (slider.currentItem < total) {
             checkSlide(slider.currentItem + 1)
             // Slow down the default page transformation speed
-            slowSwipeAnimator = ValueAnimator.ofInt(0, slider.width).apply {
-                var prevValue = 0
+            slowSwipeAnimator = ValueAnimator.ofFloat(0f, slider.width.toFloat()).apply {
+                var prevValue = 0f
                 duration = 800
                 //interpolator = AccelerateDecelerateInterpolator()
                 addUpdateListener {
-                    (it.animatedValue as Int).run {
-                        slider.fakeDragBy((prevValue - this).toFloat())
+                    (it.animatedValue as Float).run {
+                        slider.fakeDragBy(prevValue - this)
                         prevValue = this
                     }
                 }
@@ -530,9 +535,9 @@ class StoryFragment : Fragment() {
                     override fun onAnimationCancel(animation: Animator) { slider.endFakeDrag() }
                     override fun onAnimationRepeat(animation: Animator) {}
                 })
-                if (delay > 0) startDelay = delay
+         
+                start()
             }
-            slowSwipeAnimator?.start()
         }
         else stopSlideshow(endOfSlideshow = true)
     }
@@ -641,7 +646,7 @@ class StoryFragment : Fragment() {
 
         fun setPhotos(photos: List<NCShareViewModel.RemotePhoto>, callback: () -> Unit) { submitList(photos.toMutableList()) { callback() }}
 
-        fun isSlideVideo(position: Int): Boolean = currentList[position].photo.mimeType.startsWith("video")
+        fun isSlideVideo(position: Int): Boolean = try { currentList[position].photo.mimeType.startsWith("video") } catch (_: Exception) { false }
         fun getCaption(position: Int): String = currentList[position].photo.caption
 
         // Maintaining a map between adapter position and it's ViewHolder
@@ -657,6 +662,10 @@ class StoryFragment : Fragment() {
 
         override fun onViewDetachedFromWindow(holder: ViewHolder) {
             vhMap.remove(holder)
+
+            // Remove animatable's callback
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && holder is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder) holder.getAnimatedDrawable()?.clearAnimationCallbacks()
+
             super.onViewDetachedFromWindow(holder)
         }
 
@@ -683,6 +692,7 @@ class StoryFragment : Fragment() {
         private const val STATE_PAUSED = 2
 
         private const val CAPTION_PAGE_VIEWING_TIME = 8000
+        private const val CAPTION_PAGE_MINIMUM_VIEWING_TIME = 4000L
         private const val DREAMY_SCALE_FACTOR = 1.05f
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
         private const val KEY_START_AT = "KEY_START_AT"
