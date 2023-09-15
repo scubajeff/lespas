@@ -247,7 +247,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
-            }).build().apply {
+            }).build()
+            selectionTracker.apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -263,22 +264,23 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         val selectionSize = selectionTracker.selection.size()
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
-                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionSize()})" }
+                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})" }
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
-                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionSize()})"
+                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})"
 
                         // Disable sub folder chips when in selection mode
                         val enableChips = selectionSize <= 0
                         subFolderChipGroup.forEach { it.isEnabled = enableChips }
                     }
                 })
+
+                mediaAdapter.setSelectionTracker(this)
+                savedInstanceState?.let { onRestoreInstanceState(it) }
             }
-            mediaAdapter.setSelectionTracker(selectionTracker)
-            savedInstanceState?.let { selectionTracker.onRestoreInstanceState(it) }
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 private val hideHandler = Handler(Looper.getMainLooper())
@@ -362,7 +364,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                                 listGroupedByDate.add(media.media)
                             }
 
-                            if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
+                            if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else {
+                                mediaAdapter.submitList(listGroupedByDate)
+                                val selectionSize = selectionTracker.selection.size()
+                                actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})" }
+                            }
                         }
                     }
                     GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { prepareList(it) }
@@ -554,6 +560,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         setList()
+
+        val selectionSize = selectionTracker.selection.size()
+        actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})" }
     }
 
     private fun setList() {
@@ -693,7 +702,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         override fun getItemViewType(position: Int): Int = if (currentList[position].photo.mimeType.isEmpty()) TYPE_DATE else TYPE_MEDIA
 
-        internal fun getSelectionSize(): String {
+        internal fun getSelectionFileSize(): String {
             var size = 0L
             selectionTracker.selection.forEach { selected -> currentList.find { it.photo.id == selected }?.let { size += it.photo.shareId }}
 

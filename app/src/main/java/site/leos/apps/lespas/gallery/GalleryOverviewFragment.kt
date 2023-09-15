@@ -217,7 +217,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && key.isNotEmpty()
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
-            }).build().apply {
+            }).build()
+            selectionTracker.apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -233,18 +234,19 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         val selectionSize = selectionTracker.selection.size()
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
-                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionSize()})" }
+                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
-                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionSize()})"
+                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})"
                     }
                 })
+
+                overviewAdapter.setSelectionTracker(this)
+                savedInstanceState?.let { onRestoreInstanceState(it) }
             }
-            overviewAdapter.setSelectionTracker(selectionTracker)
-            savedInstanceState?.let { selectionTracker.onRestoreInstanceState(it) }
 
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_phone_android_24)!!))
         }
@@ -315,7 +317,11 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                 overview.plus(GalleryFragment.LocalMedia(FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
                             } else overview
                         }
-                    }.collect { overviewAdapter.submitList(it) }
+                    }.collect {
+                        overviewAdapter.submitList(it)
+                        val selectionSize = selectionTracker.selection.size()
+                        actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
+                    }
                 }
                 launch {
                     galleryModel.trash.collect { trashMenuItem?.isEnabled = !it.isNullOrEmpty() }
@@ -659,7 +665,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             else -> if (position == currentList.size - 1 || currentList[position + 1].media.photo.mimeType.isEmpty()) TYPE_OVERFLOW else TYPE_MEDIA
         }
 
-        internal fun getSelectionSize(): String {
+        internal fun getSelectionFileSize(): String {
             var size = 0L
             selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.shareId }}
 
