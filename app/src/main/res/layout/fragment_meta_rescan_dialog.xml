@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/shape_background"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/tiny_padding">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/extra_padding">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+            android:text="@string/msg_preserve_meta" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/title"
+            app:layout_constraintBottom_toTopOf="@id/ok_button"
+            android:layout_marginTop="@dimen/small_padding"
+            android:layout_marginBottom="@dimen/extra_padding"
+            android:orientation="horizontal"
+            app:selectionRequired="false"
+            app:singleSelection="false">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/caption"
+                style="@style/Theme.LesPas.Toggle.Button"
+                app:icon="@drawable/ic_baseline_meta_on_24"
+                app:iconGravity="top"
+                android:text="@string/button_text_caption"
+                android:textSize="12sp"
+                android:autoSizeTextType="uniform"
+                tools:ignore="UnusedAttribute" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/location"
+                style="@style/Theme.LesPas.Toggle.Button"
+                app:icon="@drawable/ic_baseline_location_marker_24"
+                app:iconGravity="top"
+                android:text="@string/button_text_location"
+                android:textSize="12sp"
+                android:autoSizeTextType="uniform"
+                tools:ignore="UnusedAttribute" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/taken_date"
+                style="@style/Theme.LesPas.Toggle.Button"
+                app:icon="@drawable/ic_baseline_taken_date_24"
+                app:iconGravity="top"
+                android:text="@string/button_text_taken_date"
+                android:textSize="12sp"
+                android:autoSizeTextType="uniform"
+                tools:ignore="UnusedAttribute" />
+
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ok_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            style="@style/Theme.LesPas.TextButton"
+            android:text="@string/button_text_rescan"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@id/ok_button"
+            app:layout_constraintRight_toLeftOf="@id/ok_button"
+            style="@style/Theme.LesPas.TextButton"
+            android:text="@android:string/cancel"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

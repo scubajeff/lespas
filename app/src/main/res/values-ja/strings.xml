@@ -36,6 +36,11 @@
     <string name="network_error">ネットワークに異常が発生しました、後でもう一度お試しください</string>
     <string name="certificate_error">セキュリティ証明書の検証に失敗しました。</string>
     <string name="fab_add_photos">写真の追加</string>
+    <string name="msg_preserve_meta">既存の維持</string>
+    <string name="button_text_rescan">スキャン</string>
+    <string name="button_text_caption">写真注釈</string>
+    <string name="button_text_location">所在地</string>
+    <string name="button_text_taken_date">撮影日</string>
     <string name="confirm_delete">本当にこの操作を行ってもいいのでしょうか？</string>
     <string name="yes_delete">削除に同意しました</string>
     <string name="rename_album">アルバム名の変更</string>

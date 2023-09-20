@@ -56,6 +56,11 @@
     <string name="not_hiding">Os seguintes nomes já existiam na lista de álbuns escondidos: %1$s</string>
 
     <!-- AlbumDetail fragment -->
+    <string name="msg_preserve_meta">Preservar o existente</string>
+    <string name="button_text_rescan">Rescan</string>
+    <string name="button_text_caption">Legenda</string>
+    <string name="button_text_location">Localização</string>
+    <string name="button_text_taken_date">Date</string>
     <string name="confirm_delete">Tem certeza que quer excluir?</string>
     <string name="yes_delete">Sim, excluir</string>
     <string name="rename_album">Mudar nome do álbum para</string>

@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.album.Cover
+import site.leos.apps.lespas.album.MetaRescanDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -236,7 +237,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     }
     fun updateBlogSiteTitle() { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_BLOG_SITE_TITLE, "", "", "", "", System.currentTimeMillis(), 1)) }}
 
-    fun rescan(albumIds: List<String>) {
+    fun rescan(albumIds: List<String>, preserveCaption: Boolean, preserveLocation: Boolean, preserveDate: Boolean, ) {
         viewModelScope.launch(Dispatchers.IO) {
             val actions = mutableListOf<Action>()
             val albums = mutableListOf<Album>()
@@ -246,7 +247,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                     albums.add(album)
                     actions.add(Action(null, Action.ACTION_META_RESCAN, album.id, album.name, "", "", timestamp, 1))
                     try {
-                        ObjectOutputStream(FileOutputStream("${localRootFolder}/${album.id}${SyncAdapter.CAPTION_BACKUP_FILENAME_SUFFIX}")).use { oos -> oos.writeObject(photoRepository.getAllCaptionsInAlbum(album.id)) }
+                        // Save photo's meta for later restoration, even when user don't want to preserve any meta data, we still need to save photo's blog exclusion setting
+                        ObjectOutputStream(FileOutputStream("${localRootFolder}/${album.id}${SyncAdapter.SIDECAR_FILENAME_SUFFIX}")).use { oos -> oos.writeObject(MetaRescanDialogFragment.Sidecar(preserveCaption, preserveLocation, preserveDate, photoRepository.getPhotoSidecar(album.id))) }
                     } catch (e: Exception) {
                         e.printStackTrace()
                         // TODO handle exceptions

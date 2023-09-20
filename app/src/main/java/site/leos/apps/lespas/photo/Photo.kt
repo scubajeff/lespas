@@ -61,10 +61,11 @@ data class Photo(
         const val DEFAULT_PHOTO_FLAG = 0
         const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices
         const val NEED_REFRESH = 1 shl 1        // Need to refresh photo's preview from server
-        const val EXCLUDE_FROM_BLOG = 1 shl 2   // Exclude from blog post
+        const val EXCLUDE_FROM_BLOG = 1 shl 2   // Exclude from blog post, TODO should this be saved in content-meta?
 
+        // Some default values
         const val NO_GPS_DATA = -1000.0         // Photo does not contain GPS data
-        const val GPS_DATA_UNKNOWN = -10000.0   // Use in processing camera roll server archive, GPS data not yet available, need extracting from EXIF
+        const val GPS_DATA_UNKNOWN = -10000.0   // Use in processing camera roll server archive, GPS data not yet available, need extracting from EXIF. It's not a typo, it's really -10000.0
         const val NO_ADDRESS = ""
         const val NO_CLASSIFICATION = ""
         const val DEFAULT_MIMETYPE = "image/jpeg"
@@ -78,14 +79,7 @@ data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateT
 data class MuzeiPhoto(val id: String, val name: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int, val orientation: Int, val eTag: String, val locality: String)
 // Photo extras which don't go with the physical image file like EXIF
 data class PhotoExtras(val id: String, val caption: String, val locality: String, val country: String, val countryCode: String, val classificationId: String)
-@Parcelize
-data class PhotoWithCoordinate(
-    val photo: Photo,
-    val lat: Double,
-    val long: Double,
-): Parcelable
-
-data class PhotoCaption(val id: String, val caption: String, val shareId: Int): java.io.Serializable
+data class PhotoSidecar(val id: String, var dateTaken: LocalDateTime, val shareId: Int, val caption: String, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double, val locality: String, val country: String, val countryCode: String): java.io.Serializable
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
@@ -209,11 +203,6 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND (shareId & ${Photo.EXCLUDE_FROM_BLOG} = 0)")
     abstract fun getPhotosForBlog(albumId: String): List<Photo>
 
-    @Query("SELECT id, caption, shareId FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
-    abstract fun getAllCaptionsInAlbum(albumId: String): List<PhotoCaption>
-
-    @Query("UPDATE ${Photo.TABLE_NAME} SET caption = :newCaption, shareId = :exclusionSetting WHERE id = :photoId")
-    abstract fun updateCaptionAndBlogSetting(photoId: String, newCaption: String, exclusionSetting: Int)
-    @Transaction
-    open fun restoreCaptionsInAlbum(captionList: List<PhotoCaption>) { captionList.forEach { updateCaptionAndBlogSetting(it.id, it.caption, it.shareId) }}
+    @Query("SELECT id, dateTaken, shareId, caption, latitude, longitude, altitude, bearing, locality, country, countryCode FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    abstract fun getPhotoSidecar(albumId: String): List<PhotoSidecar>
 }

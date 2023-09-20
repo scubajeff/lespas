@@ -48,6 +48,11 @@
     <string name="fab_add_photos">Fotos hinzufügen</string>
 
     <!-- AlbumDetail fragment -->
+    <string name="msg_preserve_meta">Bestehendes bewahren</string>
+    <string name="button_text_rescan">Neu scannen</string>
+    <string name="button_text_caption">Untertitel</string>
+    <string name="button_text_location">Ort</string>
+    <string name="button_text_taken_date">Datum</string>
     <string name="confirm_delete">Sind Sie sicher, dass Sie löschen wollen?</string>
     <string name="yes_delete">Ja, löschen!</string>
     <string name="rename_album">Album umbenennen in</string>

@@ -632,7 +632,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.rescan -> {
-                actionModel.rescan(selectionTracker.selection.toList())
+                if (parentFragmentManager.findFragmentByTag(RESCAN_DIALOG) == null) MetaRescanDialogFragment.newInstance(selectionTracker.selection.toList()).show(parentFragmentManager, RESCAN_DIALOG)
+                selectionTracker.clearSelection()
                 true
             }
             else -> false
@@ -957,6 +958,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         const val TAG_ACQUIRING_DIALOG = "ALBUM_FRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUM_FRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val RESCAN_DIALOG = "RESCAN_DIALOG"
         private const val ALBUM_REQUEST_KEY = "ALBUM_REQUEST_KEY"
         private const val CONFIRM_DELETE_REQUEST = "CONFIRM_DELETE_REQUEST"
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"

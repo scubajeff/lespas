@@ -27,6 +27,11 @@
     <string name="unknown_host">No se encontró el servidor.</string>
     <string name="network_error">Error de red, inténtalo de nuevo.</string>
     <string name="fab_add_photos">Agregar fotos</string>
+    <string name="msg_preserve_meta">Preservar lo existente</string>
+    <string name="button_text_rescan">Reescanear</string>
+    <string name="button_text_caption">Leyenda</string>
+    <string name="button_text_location">Ubicación</string>
+    <string name="button_text_taken_date">Fecha</string>
     <string name="confirm_delete">¿Estás seguro de borrar?</string>
     <string name="yes_delete">Sí, borrar</string>
     <string name="rename_album">Cambiar el nombre del álbum a</string>

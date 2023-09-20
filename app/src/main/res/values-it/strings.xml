@@ -61,6 +61,11 @@
     <string name="not_hiding">I seguenti nomi esistono già nell\'elenco degli album nascosti: %1$s</string>
 
     <!-- AlbumDetail fragment -->
+    <string name="msg_preserve_meta">Preservare l\'esistente</string>
+    <string name="button_text_rescan">Rescan</string>
+    <string name="button_text_caption">Didascalia</string>
+    <string name="button_text_location">Posizione</string>
+    <string name="button_text_taken_date">Data</string>
     <string name="confirm_delete">Confermi di voler eliminare\?</string>
     <string name="yes_delete">Sì, elimina</string>
     <string name="rename_album">Cambia il nome dell\'album in</string>

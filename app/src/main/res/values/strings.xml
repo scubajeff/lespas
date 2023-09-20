@@ -80,6 +80,13 @@
     <string name="hidden_albums">Hidden Albums:</string>
     <string name="not_hiding">The following names already existed in hidden album list: %1$s</string>
 
+    <!-- Album fragment, MetaRescanDialog fragment -->
+    <string name="msg_preserve_meta">Preserve existing</string>
+    <string name="button_text_rescan">Rescan</string>
+    <string name="button_text_caption">Caption</string>
+    <string name="button_text_location">Location</string>
+    <string name="button_text_taken_date">Date</string>
+
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
     <string name="yes_delete">Yes, delete</string>

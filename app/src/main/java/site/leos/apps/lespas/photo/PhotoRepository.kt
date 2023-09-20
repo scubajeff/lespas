@@ -68,6 +68,5 @@ class PhotoRepository(application: Application) {
     fun setExcludeFromBlog(photoIds: List<String>, exclude: Boolean) { if (exclude) photoDao.setExcludeFromBlog(photoIds) else photoDao.setIncludeInBlog(photoIds) }
     fun getThisPhoto(photoId: String): Photo = photoDao.getThisPhoto(photoId)
     fun getPhotosForBlog(albumId: String): List<Photo> = photoDao.getPhotosForBlog(albumId)
-    fun getAllCaptionsInAlbum(albumId: String): List<PhotoCaption> = photoDao.getAllCaptionsInAlbum(albumId)
-    fun restoreCaptionsInAlbum(captionList: List<PhotoCaption>) { photoDao.restoreCaptionsInAlbum(captionList) }
+    fun getPhotoSidecar(albumId: String): List<PhotoSidecar> = photoDao.getPhotoSidecar(albumId)
 }

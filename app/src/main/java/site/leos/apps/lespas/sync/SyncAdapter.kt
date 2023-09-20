@@ -47,7 +47,6 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoCaption
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -514,6 +513,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_META_RESCAN -> {
                     // Property folderId holds target folder Id
                     // Property folderName holds target folder name
+                    // Remove content meta file on server to prevent quick sync from running, hence meta rescan happens later
                     webDav.delete("${lespasBase}/${action.folderName}/${action.folderId}${CONTENT_META_FILE_SUFFIX}")
                 }
             }
@@ -1525,25 +1525,49 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
+                // Restore blog exclusion setting and/or captions, location, date taken from local sidecar backup during meta re-scan
+                try {
+                    File(localBaseFolder, "${changedAlbum.id}${SIDECAR_FILENAME_SUFFIX}").let { sidecarFile ->
+                        if (sidecarFile.exists()) {
+                            (ObjectInputStream(FileInputStream(sidecarFile)).readObject() as MetaRescanDialogFragment.Sidecar).let { sidecar ->
+                                val photos = photoRepository.getAlbumPhotos(changedAlbum.id)
+
+                                photos.forEach { photo ->
+                                    sidecar.photoSidecarData.find { it.id == photo.id }?.let {
+                                        if (sidecar.restoreCaption) photo.caption = it.caption
+                                        if (sidecar.restoreLocation) {
+                                            photo.latitude = it.latitude
+                                            photo.longitude = it.longitude
+                                            photo.altitude = it.altitude
+                                            photo.bearing = it.bearing
+                                            photo.locality = it.locality
+                                            photo.country = it.country
+                                            photo.countryCode = it.countryCode
+                                        }
+                                        if (sidecar.restoreTakenDate) photo.dateTaken = it.dateTaken
+
+                                        // Restore blog exclusion setting
+                                        photo.shareId = Photo.DEFAULT_PHOTO_FLAG or (it.shareId and Photo.EXCLUDE_FROM_BLOG)
+                                    }
+                                }
+
+                                photoRepository.upsert(photos)
+                            }
+                        }
+
+                        // Remove sidecar
+                        sidecarFile.delete()
+                    }
+                } catch (e: Exception) { e.printStackTrace() }
+
                 // Force update album start and end date when album content changed whether there are photo files got added/deleted or simply just name changed
                 with(photoRepository.getAlbumDuration(changedAlbum.id)) {
                     if (first < changedAlbum.startDate) changedAlbum.startDate = first
                     if (second > changedAlbum.endDate) changedAlbum.endDate = second
                 }
 
-                // Restore captions and blog exclusion setting from local backup during meta re-scan
-                try {
-                    File(localBaseFolder, "${changedAlbum.id}${CAPTION_BACKUP_FILENAME_SUFFIX}").let { backup ->
-                        if (backup.exists()) {
-                            @Suppress("UNCHECKED_CAST")
-                            photoRepository.restoreCaptionsInAlbum(ObjectInputStream(FileInputStream(backup)).readObject() as List<PhotoCaption>)
-                        }
-                        backup.delete()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
-                //Log.e(TAG, "finish syncing album ${changedAlbum.name}")
+                //Log.e(">>>>>>>>", "finish syncing album ${changedAlbum.name}")
                 albumRepository.upsert(changedAlbum)
 
                 //*********************************************************************************************************************************************************************
@@ -2163,7 +2187,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         const val PREFERENCE_BACKUP_ON_SERVER = ".mobile_preference"
         const val PREFERENCE_BACKUP_SEPARATOR = "\u0000"
-        const val CAPTION_BACKUP_FILENAME_SUFFIX = "-captions"
+        const val SIDECAR_FILENAME_SUFFIX = "-sidecar"
         const val BGM_FILENAME_ON_SERVER = ".bgm"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val MIME_TYPE_JSON = "application/json"

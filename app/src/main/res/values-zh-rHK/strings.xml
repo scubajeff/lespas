@@ -26,6 +26,11 @@
     <string name="unknown_host">搵不到伺服器</string>
     <string name="network_error">網絡異常，請稍後再試</string>
     <string name="fab_add_photos">添加照片</string>
+    <string name="msg_preserve_meta">保留現有的</string>
+    <string name="button_text_rescan">開始掃描</string>
+    <string name="button_text_caption">照片説明</string>
+    <string name="button_text_location">地理信息</string>
+    <string name="button_text_taken_date">拍攝時間</string>
     <string name="confirm_delete">您確定執行此項操作嗎？</string>
     <string name="rename_album">更改相冊名</string>
     <string name="total_photo">%1$d張相</string>

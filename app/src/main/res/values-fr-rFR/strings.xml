@@ -58,6 +58,11 @@
     <string name="hidden_albums">Albums cachés :</string>
     <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
     <!-- AlbumDetail fragment -->
+    <string name="msg_preserve_meta">Préserver les</string>
+    <string name="button_text_rescan">Rescan</string>
+    <string name="button_text_caption">Légende</string>
+    <string name="button_text_location">Lieu</string>
+    <string name="button_text_taken_date">Date</string>
     <string name="confirm_delete">Êtes-vous sûr de vouloir supprimer ?</string>
     <string name="yes_delete">Supprimer</string>
     <string name="rename_album">Changer le nom de l\'album en</string>
