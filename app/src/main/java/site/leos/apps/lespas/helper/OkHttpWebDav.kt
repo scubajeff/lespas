@@ -91,7 +91,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun copy(source: String, dest: String): Pair<String, String> { return copyOrMove(true, source, dest) }
 
     fun createFolder(folderName: String): String {
-        httpClient.newCall(Request.Builder().url(folderName).method("MKCOL", null).build()).execute().use { response ->
+        httpClient.newCall(Request.Builder().url(Uri.encode(folderName, "/:")).method("MKCOL", null).build()).execute().use { response ->
             return when {
                 response.isSuccessful -> response.header("oc-fileid", "") ?: ""
                 // Ignore folder already existed error
@@ -102,7 +102,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun delete(targetName: String) {
-        httpClient.newCall(Request.Builder().url(targetName).delete().build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(Uri.encode(targetName, "/:")).delete().build()).execute().use { response->
             when {
                 response.isSuccessful -> return
                 response.code == 404 -> return
@@ -122,7 +122,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 */
 
     fun download(source: String, dest: String, cacheControl: CacheControl?) {
-        val reqBuilder = Request.Builder().url(source)
+        val reqBuilder = Request.Builder().url(Uri.encode(source, "/:"))
         cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
         httpClient.newCall(reqBuilder.get().build()).execute().use { response->
             if (response.isSuccessful) File(dest).sink(false).buffer().use { it.writeAll(response.body!!.source()) }
@@ -132,7 +132,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
 /*
     fun download(source: String, dest: File, cacheControl: CacheControl?) {
-        val reqBuilder = Request.Builder().url(source)
+        val reqBuilder = Request.Builder().url(Uri.encode(source, "/:"))
         cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
         httpClient.newCall(reqBuilder.get().build()).execute().use { response->
             if (response.isSuccessful) dest.sink(false).buffer().use { it.writeAll(response.body!!.source()) }
@@ -144,7 +144,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun getCallFactory() = httpClient
 
     fun getCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Call {
-        val reqBuilder = Request.Builder().url(source)
+        val reqBuilder = Request.Builder().url(Uri.encode(source, "/:"))
         return (if (useCache) {
             cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
             cachedHttpClient!!.newCall(reqBuilder.get().build())
@@ -152,7 +152,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             httpClient.newCall(reqBuilder.get().build())
         })
     }
-    fun getRangeCall(source: String, rangeStartAt: Long): Call = httpClient.newCall(Request.Builder().url(source).header("Range", "bytes=${rangeStartAt}-").get().build())
+    fun getRangeCall(source: String, rangeStartAt: Long): Call = httpClient.newCall(Request.Builder().url(Uri.encode(source, "/:")).header("Range", "bytes=${rangeStartAt}-").get().build())
 
     fun getCSRFToken(csrfEndpoint: String): Pair<String, String> {
         var cookies = ""
@@ -180,7 +180,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun getRawResponse(source: String, useCache: Boolean): Response {
-        val reqBuilder = Request.Builder().url(source)
+        val reqBuilder = Request.Builder().url(Uri.encode(source, "/:"))
         return (if (useCache) cachedHttpClient!!.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
     }
 
@@ -197,7 +197,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         }
     }
     fun getStreamBool(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Boolean> {
-        val reqBuilder = Request.Builder().url(source)
+        val reqBuilder = Request.Builder().url(Uri.encode(source, "/:"))
         (if (useCache) {
             cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
             cachedHttpClient!!.newCall(reqBuilder.get().build())
@@ -214,7 +214,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun isExisted(targetName: String): Boolean {
         var result = false
-        httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response ->
+        httpClient.newCall(Request.Builder().url(Uri.encode(targetName, "/:")).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response ->
             result = when {
                 response.isSuccessful -> true
                 response.code == 404 -> false
@@ -229,7 +229,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun list(targetName: String, depth: String, forceNetwork: Boolean = true): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        httpClient.newCall(Request.Builder().url(targetName).apply { if (forceNetwork) cacheControl(CacheControl.FORCE_NETWORK) }.method("PROPFIND", PROPFIND_EXTRA_BODY.trimIndent().toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(Uri.encode(targetName, "/:")).apply { if (forceNetwork) cacheControl(CacheControl.FORCE_NETWORK) }.method("PROPFIND", PROPFIND_EXTRA_BODY.trimIndent().toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             if (response.isSuccessful) {
                 try {
                     val parser = XmlPullParserFactory.newInstance().newPullParser()
@@ -291,7 +291,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
         // Build a new client without read timeout, since the archive could be hugh
         httpClient.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS).build()
-            .newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.trimIndent().toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
+            .newCall(Request.Builder().url(Uri.encode(targetName, "/:")).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.trimIndent().toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             @Suppress("UNUSED_VARIABLE") var currentFolderId = ""
             val prefix = targetName.substringAfter("//").substringAfter("/")
 
@@ -370,17 +370,17 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun move(source: String, dest: String): Pair<String, String> { return copyOrMove(false, source, dest) }
 
     fun ocsDelete(url: String) {
-        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()).execute().use {}
+        httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()).execute().use {}
     }
 
     fun ocsGet(url: String): JSONObject? =
-        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response ->
+        httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response ->
             if (response.isSuccessful) response.body?.string()?.let { json-> try { JSONObject(json).getJSONObject("ocs") } catch (_: Exception) { null }}
             else null
         }
 
     fun ocsPost(url: String, body: RequestBody): JSONObject? {
-        return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use { response ->
+        return httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use { response ->
             when(response.code) {
                 100, 200, 400, 403, 404, 409 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
                 else -> null
@@ -389,7 +389,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun ocsPut(url: String, body: RequestBody): JSONObject? {
-        return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").put(body).build()).execute().use { response ->
+        return httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").put(body).build()).execute().use { response ->
             when(response.code) {
                 100, 200, 400, 403, 404, 409 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
                 else -> null
@@ -398,12 +398,12 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun patch(url: String, payload: String) {
-        httpClient.newCall(Request.Builder().url(url).cacheControl(CacheControl.FORCE_NETWORK).method("PROPPATCH", String.format(Locale.ROOT, PROPPATCH_EXTRA_META_BODY, payload).toRequestBody("text/xml".toMediaType())).header("Brief", "t").build()).execute().use {}
+        httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).cacheControl(CacheControl.FORCE_NETWORK).method("PROPPATCH", String.format(Locale.ROOT, PROPPATCH_EXTRA_META_BODY, payload).toRequestBody("text/xml".toMediaType())).header("Brief", "t").build()).execute().use {}
     }
 
     fun read(source: String): String? {
         var result: String? = null
-        httpClient.newCall(Request.Builder().url(source).get().build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(Uri.encode(source, "/:")).get().build()).execute().use { response->
             if (response.isSuccessful) response.body?.string()?.let { result = it }
             else throw OkHttpWebDavException(response)
         }
@@ -412,7 +412,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun upload(source: String, dest: String, mimeType: String): Pair<String, String> {
-        httpClient.newCall(Request.Builder().url(dest).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(Uri.encode(dest, "/:")).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
             else throw OkHttpWebDavException(response)
         }
@@ -421,7 +421,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun upload(source: File, dest: String, mimeType: String, ctx: Context): Pair<String, String> {
         source.length().run {
             if (this > CHUNK_SIZE) return chunksUpload(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this, ctx)
-            else httpClient.newCall(Request.Builder().url(dest).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+            else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "/:")).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                 else throw OkHttpWebDavException(response)
             }
@@ -431,7 +431,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long, ctx: Context): Pair<String, String> {
         contentResolver.openInputStream(source)?.use { input->
             if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx)
-            else httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), size)).build()).execute().use { response->
+            else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "/:")).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), size)).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                 else throw OkHttpWebDavException(response)
             }
@@ -450,7 +450,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             var chunkSize = CHUNK_SIZE
 
             // Create upload folder on server
-            httpClient.newCall(Request.Builder().url(chunkFolder).method("MKCOL", null).build()).execute().use { response->
+            httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "/:")).method("MKCOL", null).build()).execute().use { response->
                 when {
                     response.isSuccessful-> {}
                     response.code == 405-> {
@@ -486,10 +486,10 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 with(size - index) { if (this < CHUNK_SIZE) chunkSize = this }
                 //Log.e(">>>>>>", chunkName)
 
-                uploadHttpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
+                uploadHttpClient.newCall(Request.Builder().url(Uri.encode(chunkName, "/:")).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
                     if (!response.isSuccessful) {
                         // Upload interrupted, delete uploaded chunks
-                        //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        //try { httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "/:")).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
                         throw OkHttpWebDavException(response)
                     }
                 }
@@ -498,11 +498,11 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
-                uploadHttpClient.newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", Uri.encode(dest, "/:")).add("OVERWRITE", "T").build()).build()).execute().use { response ->
+                uploadHttpClient.newCall(Request.Builder().url(Uri.encode("${chunkFolder}/.file", "/:")).method("MOVE", null).headers(Headers.Builder().add("DESTINATION", Uri.encode(dest, "/:")).add("OVERWRITE", "T").build()).build()).execute().use { response ->
                     if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                     else {
                         // Upload interrupted, delete uploaded chunks
-                        //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        //try { httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "/:")).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
                         throw OkHttpWebDavException(response)
                     }
                 }
@@ -519,7 +519,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun copyOrMove(copy: Boolean, source: String, dest: String): Pair<String, String> {
         val copyHttpClient = httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).build()
         val hb = Headers.Builder().add("DESTINATION", Uri.encode(dest, "/:")).add("OVERWRITE", "T")
-        copyHttpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
+        copyHttpClient.newCall(Request.Builder().url(Uri.encode(source, "/:")).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
             else throw OkHttpWebDavException(response)
         }
