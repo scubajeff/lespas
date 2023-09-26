@@ -206,4 +206,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE  ${Album.TABLE_NAME} SET coverFileName = :newCoverFileName WHERE id = :albumId")
     abstract fun changeCoverFileName(albumId: String, newCoverFileName: String)
+
+    @Query("UPDATE  ${Album.TABLE_NAME} SET startDate = :startDate, endDate = :endDate WHERE id = :albumId")
+    abstract fun setDates(albumId: String, startDate: LocalDateTime, endDate: LocalDateTime)
 }

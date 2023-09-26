@@ -120,9 +120,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         // Chosen an existing album
                         lifecycleScope.launch(Dispatchers.IO) {
                             destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
-                            val theAlbum: Album = if (remoteAlbum.shareBy.isNotEmpty())
-                            album.copy(id = Album.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id)
-                            else album
+                            val theAlbum: Album = if (remoteAlbum.shareBy.isNotEmpty()) album.copy(id = Album.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id) else album
 
                             withContext(Dispatchers.Main) {
                                 destinationModel.setDestination(theAlbum)

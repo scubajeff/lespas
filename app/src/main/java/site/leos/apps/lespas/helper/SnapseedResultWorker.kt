@@ -38,7 +38,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
     override suspend fun doWork(): Result {
         var result = Result.failure()
 
-        @Suppress("DEPRECATION")
         val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val appRootFolder = Tools.getLocalRoot(context)
 
@@ -81,7 +80,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Make a copy of this file after imageName, e.g. the photo name, so that when new eTag synced back from server, file will not need to be downloaded
                     // If we share this photo to Snapseed again, the share function will use this new name, then snapseed will append another "-01" to the result filename
                     try {
-                        @Suppress("BlockingMethodInNonBlockingContext")
                         cr.openInputStream(uri)?.use { input ->
                             // Name new photo filename after Snapseed's output name
                             File(appRootFolder, imageName).outputStream().use { output ->
@@ -97,7 +95,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Replace content of file name after photo ID too, since ImageLoaderViewModel recognize photo ID only
                     // We can't simply change this photo ID to imageName, since that will reorder the photo list
                     try {
-                        @Suppress("BlockingMethodInNonBlockingContext")
                         File(appRootFolder, imageName).inputStream().use { input ->
                             File(appRootFolder, originalPhoto.id).outputStream().use { output ->
                                 input.copyTo(output)
@@ -111,13 +108,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Update local database
-                    @Suppress("BlockingMethodInNonBlockingContext")
                     exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
                         // Mark sync status by setting eTag to empty
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
-                        id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
+                        //id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
+                        id = originalPhoto.id, albumId = album.id, name = imageName
                     )
                     // Preserve original caption
                     if (originalPhoto.caption.isNotEmpty()) newPhoto.caption = originalPhoto.caption
@@ -158,7 +155,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
                     // Copy file to our private storage area
                     try {
-                        @Suppress("BlockingMethodInNonBlockingContext")
                         cr.openInputStream(uri)?.use { input ->
                             File(appRootFolder, fileName).outputStream().use { output ->
                                 input.copyTo(output)
@@ -170,11 +166,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Create new photo in local database
-                    @Suppress("BlockingMethodInNonBlockingContext")
                     exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     photoDao.insert(
                         Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName)
-                            .copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED)
+                            //.copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED)
+                            .copy(id = fileName, albumId = album.id, name = fileName)
                             // Preserve original caption
                             .apply { if (originalPhoto.caption.isNotEmpty()) this.caption = originalPhoto.caption }
                     )

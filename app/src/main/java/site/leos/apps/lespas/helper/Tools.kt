@@ -682,7 +682,7 @@ object Tools {
         }
     }
 
-    fun isRemoteAlbum(album: Album): Boolean = (album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM
+    fun isRemoteAlbum(album: Album): Boolean = (album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM || album.id == Album.JOINT_ALBUM_ID
     fun isExcludedAlbum(album: Album): Boolean = (album.shareId and Album.EXCLUDED_ALBUM) == Album.EXCLUDED_ALBUM
     fun isWideListAlbum(sortOrder: Int): Boolean = sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..200
 

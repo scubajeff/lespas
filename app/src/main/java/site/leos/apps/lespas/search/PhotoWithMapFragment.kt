@@ -108,9 +108,9 @@ class PhotoWithMapFragment: Fragment() {
                     if (it.isShownOrQueued) {
                         imageLoaderModel.cancelShareOut()
                         it.dismiss()
-                        isEnabled = false
-                    } else isEnabled = false
-                } ?: run { isEnabled = false }
+                    }
+                }
+                isEnabled = false
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
@@ -166,7 +166,6 @@ class PhotoWithMapFragment: Fragment() {
                 if (destinationModel.doOnServer()) {
                     val actions = mutableListOf<Action>()
 
-                    @Suppress("DEPRECATION")
                     when (targetAlbum.id) {
                         "" -> {
                             // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
@@ -181,7 +180,7 @@ class PhotoWithMapFragment: Fragment() {
                         remotePhoto.remotePath,
                         if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${remoteBase}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
                         "",
-                        "${remotePhoto.photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}",
+                        "${remotePhoto.photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}|${Tools.isRemoteAlbum(targetAlbum)}",
                         System.currentTimeMillis(), 1
                     ))
 

@@ -51,4 +51,5 @@ class AlbumRepository(application: Application){
     fun getAllAlbumAttribute(): List<IDandAttribute> = albumDao.getAllAlbumAttribute()
     fun setWideList(albumId: String, wideList: Boolean) { if (wideList) albumDao.enableWideList(albumId) else albumDao.disableWideList(albumId) }
     fun changeCoverFileName(albumId: String, newCoverFileName: String) { albumDao.changeCoverFileName(albumId, newCoverFileName) }
+    fun setDates(albumId: String, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.setDates(albumId, startDate, endDate) }
 }

@@ -327,6 +327,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
+                    // Property folderId holds the fake album id
+                    // Property folderName holds the album name
+                    // Property fileName holds the cover photo id, it's not the correct fileId at this moment, will be fixed later
                     webDav.createFolder("$lespasBase/${action.folderName}").apply {
                         // Recreating the existing folder will return empty string
                         if (this.isNotEmpty()) this.substring(0, 8).toInt().toString().also { fileId ->
@@ -401,34 +404,63 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
                     // folderId is source folder path, starts from lespasBase, dcimBase or share_to_me base
                     // folderName is target folder path, starts from lespasBase or share_to_me base
-                    // fileId holds string "target album's id|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
-                    // fileName is a string "file name|ture or false, whether it's joint album. file name might contain subfolder name when the source is camera roll archive"
+                    // fileId holds string "target album's id(only valid for Joint Album)|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // fileName is a string "file name|ture or false, whether it's joint album|ture or false, whether it's remote album. fileName might contain subfolder name when the source is camera roll archive"
 
                     //Log.e(">>>>>>>>", "syncLocalChanges: ${action.fileName} ${action.folderId} ${action.folderName}")
                     val fileName: String
                     val targetIsJointAlbum: Boolean
+                    val targetIsRemoteAlbum: Boolean
                     action.fileName.split('|').let {
                         fileName = it[0]
                         targetIsJointAlbum = it[1].toBoolean()
+                        targetIsRemoteAlbum = it[2].toBoolean()
                     }
                     try {
-                        // webdav copy/move target file path will be sent in http call's header, need to be encoded here
-                        webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}").run {
+                        //webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}").run {
+                        webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName}").run {
                             if (action.fileId.isNotEmpty()) {
+                                val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
+
                                 // If meta sent
-                                if (targetIsJointAlbum)
+                                if (targetIsJointAlbum) {
                                     // If target is in joint album, try best effort group patching
-                                    logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
-                                else
-                                    // If target is own album, patch target file directly. Only for 'caption' for now, won't retry on exception
+                                    logChangeToFile(action.fileId, newId, fileName)
+                                }
+                                else {
+                                    // Prepare media file
                                     try {
-                                        webDav.patch("${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}", "<oc:${OkHttpWebDav.LESPAS_CAPTION}>" + action.fileId.split('|')[6] + "</oc:${OkHttpWebDav.LESPAS_CAPTION}>")
-                                    } catch (_: Exception) {}
+                                        // If local image file exist, rename it
+                                        File(localBaseFolder, action.fileName).let {
+                                            if (it.exists()) {
+                                                if (targetIsRemoteAlbum) {
+                                                    // Delete local media file in target album is remote album
+                                                    it.delete()
+                                                    if (action.fileId.split('|')[2].startsWith("video")) File(localBaseFolder, "${fileName}.thumbnail").let { thumbnail -> if (thumbnail.exists()) thumbnail.delete() }
+                                                }
+                                                else {
+                                                    // For local album, rename media file from filename to fileId
+                                                    it.renameTo(File(localBaseFolder, newId))
+                                                    if (action.fileId.split('|')[2].startsWith("video")) File(localBaseFolder, "${fileName}.thumbnail").let { thumbnail -> if (thumbnail.exists()) thumbnail.renameTo(File(localBaseFolder, "${newId}.thumbnail")) }
+                                                }
+                                            } else {
+                                                // When source is remote album or other's publication, media file is not available locally, if target album is local, we should download it from server now
+                                                if (!targetIsRemoteAlbum) webDav.download("${userBase}/${action.folderName}/${fileName}", "$localBaseFolder/${newId}", null)
+                                            }
+                                        }
+                                    } catch (e: Exception) { e.printStackTrace() }
+
+                                    // Update photo's id to the real fileId and latest eTag now
+                                    // Some version of Nextcloud won't return 'oc-etag' header after webdav COPY or MOVE call, denote with ETAG_MISSING so that syncRemoteChange() will fill in the correct eTag later
+                                    photoRepository.fixPhotoIdEtag(fileName, newId, this.second.ifEmpty { ETAG_MISSING }, targetIsRemoteAlbum)
+                                }
                             }
                         }
                     } catch (e: OkHttpWebDavException) {
-                        // WebDAV return 403 if file already existed in target folder
-                        if (e.statusCode != 403) throw e
+                        if (e.statusCode != 403) {
+                            // WebDAV return 403 if file already existed in target folder
+                            throw e
+                        }
                     }
                 }
                 Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
@@ -1023,23 +1055,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbum.fileId, remoteAlbum.name)
                         }
                         else changedAlbums.add(
-/*
-                            Album(
-                                id = remoteAlbum.fileId,             // Either local or remote version is fine
-                                name = remoteAlbum.name,               // Use remote version, since it might be changed on server
-                                startDate = localAlbum[0].startDate,        // Preserve local data
-                                endDate = localAlbum[0].endDate,          // Preserve local data
-                                cover = localAlbum[0].cover,            // Preserve local data
-                                coverBaseline = localAlbum[0].coverBaseline,    // Preserve local data
-                                coverWidth = localAlbum[0].coverWidth,       // Preserve local data
-                                coverHeight = localAlbum[0].coverHeight,      // Preserve local data
-                                remoteAlbum.modified,           // Use remote version
-                                localAlbum[0].sortOrder,        // Preserve local data
-                                remoteAlbum.eTag,               // Use remote eTag for unhidden albums
-                                if (remoteAlbum.isShared) localAlbum[0].shareId or Album.SHARED_ALBUM else localAlbum[0].shareId and Album.SHARED_ALBUM.inv(),    // shareId's 1st bit denotes album shared status
-                                1f,                  // Default to finished
-                            )
-*/
                             localAlbum[0].copy(
                                 // Use remote version, since it might be changed on server or hidden state toggled
                                 name = remoteAlbum.name,
@@ -1063,20 +1078,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // No hit on local, a new album from server, (make sure the 'cover' property is set to Album.NO_COVER, denotes a new album which will NOT be included in album list)
                     // Default album attribute set to "Remote" for any album not created by this device
                     changedAlbums.add(
-/*
-                        Album(
-                            remoteAlbum.fileId,
-                            remoteAlbum.name,
-                            LocalDateTime.MAX, LocalDateTime.MIN,
-                            Album.NO_COVER,
-                            0, 0, 0,
-                            remoteAlbum.modified,
-                            sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC,
-                            remoteAlbum.eTag,
-                            Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
-                            1f,
-                        )
-*/
                         Album(
                             id = remoteAlbum.fileId,
                             name = remoteAlbum.name,
@@ -1143,6 +1144,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             if (localPhotoETags[remotePhotoId] != remotePhoto.eTag) {
                                 // Since null is comparable, this also matches newly created photo id from server, e.g. there is no such remotePhotoId in local table
 
+                                if (localPhotoETags[remotePhotoId] == ETAG_MISSING ) {
+                                    // Local photo with eTag "ETAG_MISSING" is created in ACTION_COPY_ON_SERVER or ACTION_MOVE_ON_SERVER where some version of Nextcloud server won't return correct oc-etag header after webdav COPY or MOVE call
+                                    photoRepository.updateETag(remotePhotoId, remotePhoto.eTag)
+                                    return@forEach
+                                }
+
                                 if (File(localBaseFolder, remotePhoto.name).exists()) {
                                     // If there is local file with remote photo's name, that means it's a local added photo which is now coming back from server.
                                     //Log.e("<><><>", "coming back now ${remotePhoto.name}")
@@ -1157,12 +1164,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         try { File(localBaseFolder, "${remotePhoto.name}.thumbnail").renameTo(File(localBaseFolder, "${remotePhotoId}.thumbnail")) } catch (e: Exception) { Log.e(TAG, e.stackTraceToString()) }
                                     }
 
-                                    localPhotoNamesReverse[remotePhoto.name]?.apply {
+                                    localPhotoNamesReverse[remotePhoto.name]?.let { oldId ->
                                         // Update it's id to the real fileId and also eTag now
-                                        photoRepository.fixPhoto(this, remotePhotoId, remotePhoto.name, remotePhoto.eTag, remotePhoto.modified)
+                                        photoRepository.fixPhoto(oldId, remotePhotoId, remotePhoto.name, remotePhoto.eTag, remotePhoto.modified)
                                         // Taking care the cover
                                         // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
-                                        if (changedAlbum.cover == this) {
+                                        if (changedAlbum.cover == oldId) {
                                             //Log.e("=======", "fixing cover from ${changedAlbum.cover} to $remotePhotoId")
                                             albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
                                             changedAlbum.cover = remotePhotoId
@@ -1170,6 +1177,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             metaUpdatedNeeded.add(changedAlbum.name)
                                         }
                                     }
+                                    // content meta update already set by Action.ACTION_ADD_FILES_ON_SERVER
                                 } else {
                                     // A new photo created on server, or an existing photo updated on server, or album attribute changed back to local, or on first sync with server
                                     changedPhotos.add(Photo(id = remotePhotoId, albumId = changedAlbum.id, name = remotePhoto.name, eTag = remotePhoto.eTag, mimeType = remotePhoto.contentType, dateTaken = LocalDateTime.now(), lastModified = remotePhoto.modified, caption = remotePhoto.caption))
@@ -2043,8 +2051,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private fun updateMeta() {
         mutableListOf<String>().apply { addAll(metaUpdatedNeeded) }.forEach { albumName->
             albumRepository.getAlbumByName(albumName)?.apply {
-                //if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), photoRepository.getPhotoName(cover), sortOrder)
-                if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
+                var coverId = cover
+                //if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
+                // TODO what if the cover file name do not contain suffix, or even worst is all digits
+                if (cover.contains('.')) {
+                    // Cover is not fileId base, fix it here
+                    coverId = photoRepository.getPhotoIdByNameInAlbum(id, cover)
+                    albumRepository.fixCoverId(id, coverId)
+                }
+                updateAlbumMeta(id, name, Cover(coverId, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
             }
 
             // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
@@ -2205,6 +2220,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val SYNC_STATUS_BACKUP_MESSAGE_FORMAT = "%s|%s|%d|%d|%d"
 
         private const val TAG = "SyncAdapter: "
+        private const val ETAG_MISSING = "ETAG_MISSING"
 
         const val BLOG_FOLDER = ".__picoblog__"
         const val BLOG_CONTENT_FOLDER = "${BLOG_FOLDER}/content"

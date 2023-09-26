@@ -33,6 +33,7 @@ import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.FileOutputStream
 import java.io.ObjectOutputStream
+import java.time.LocalDateTime
 
 class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val actionRepository = ActionRepository(application)
@@ -120,9 +121,12 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             // Get remaining photos in album, the return list is sort by dateTaken ASC
             val photosLeft = photoRepository.getAlbumPhotos(photos[0].albumId)
             if (photosLeft.isNotEmpty()) {
-                album.startDate = photosLeft.first().dateTaken
-                album.endDate = photosLeft.last().dateTaken
-                albumRepository.update(album)
+                if (album.startDate != photosLeft.first().dateTaken || album.endDate != photosLeft.last().dateTaken) {
+                    album.startDate = photosLeft.first().dateTaken
+                    album.endDate = photosLeft.last().dateTaken
+                    albumRepository.update(album)
+                    actions.add(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", album.name, "", "", System.currentTimeMillis(), 1))
+                }
             } else {
                 // All photos under this album removed, delete album
                 albumRepository.deleteById(photos[0].albumId)
@@ -138,14 +142,28 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun deletePhotosLocalRecord(photos: List<Photo>) {
-        photos.forEach { photo ->
-            // Remove local media file only if photo has finished uploading. Since this is for moving photos among albums, let those uploading finished first, then the actually deletion will be synced back
-            //  to local in the next sync
-            if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) removeLocalMediaFile(photo)
-        }
+    fun deletePhotosLocalRecord(photos: List<Photo>, album: Album) {
+        viewModelScope.launch(Dispatchers.IO) {
+            photoRepository.deletePhotos(photos)
 
-        viewModelScope.launch(Dispatchers.IO) { photoRepository.deletePhotos(photos) }
+            if (!Tools.isRemoteAlbum(album)) {
+                photos.forEach { photo ->
+                    // Remove local media file only if photo has finished uploading. Since this is for moving photos among albums, let those uploading finished first, then the actually deletion will be synced back
+                    //  to local in the next sync
+                    if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) removeLocalMediaFile(photo)
+                }
+            }
+
+            // Maintain album's dates
+            photoRepository.getAlbumPhotos(album.id).let {
+                if (album.startDate != it.first().dateTaken || album.endDate != it.last().dateTaken) {
+                    album.startDate = it.first().dateTaken
+                    album.endDate = it.last().dateTaken
+                    albumRepository.update(album)
+                    actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", album.name, "", "", System.currentTimeMillis(), 1))
+                }
+            }
+        }
     }
 
     fun renameAlbum(albumId: String, oldName: String, newName: String, sharedAlbum: Boolean) {
@@ -272,4 +290,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             if (actions.isNotEmpty()) actionRepository.addActions(actions)
         }
     }
+
+    fun addPhotosAtLocal(photos: List<Photo>) { viewModelScope.launch(Dispatchers.IO) { photoRepository.insert(photos) }}
+    fun addAlbumAtLocal(album: Album) { viewModelScope.launch(Dispatchers.IO) { albumRepository.upsert(album) }}
+    fun updateAlbumDates(albumId: String, startDate: LocalDateTime, endDate: LocalDateTime) { viewModelScope.launch(Dispatchers.IO) { albumRepository.setDates(albumId, startDate, endDate) }}
 }

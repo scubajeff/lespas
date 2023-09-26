@@ -58,7 +58,8 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
-import java.time.ZoneId
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlin.math.min
 
 class RemoteMediaFragment: Fragment() {
@@ -249,36 +250,62 @@ class RemoteMediaFragment: Fragment() {
         // When DestinationDialog returns
         destinationModel.getDestination().observe(viewLifecycleOwner) {
             it?.let { targetAlbum ->
+                val targetIsRemoteAlbum = Tools.isRemoteAlbum(targetAlbum)
                 destinationModel.getRemotePhotos()[0].let { remotePhoto ->
-                    ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(mutableListOf<Action>().apply {
-                        //val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
-                        val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.atZone(ZoneId.of("Z")).toInstant().toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
-                        if (targetAlbum.id == Album.JOINT_ALBUM_ID) {
-                            targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
-                                add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
-                                    targetFolder,
-                                    metaString,
-                                    "${remotePhoto.photo.name}|true",
-                                    System.currentTimeMillis(), 1
-                                ))
-
-                                // Target album is Joint Album, update it's content metadata file
-                                add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
-                            }
-                        } else {
-                            if (targetAlbum.id.isEmpty()) {
-                                // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
-                                add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
-                            }
-
-                            add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
-                                "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}",
+                    val actionModel = ViewModelProvider(requireActivity())[ActionViewModel::class.java]
+                    val actions = mutableListOf<Action>()
+                    val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
+                    if (targetAlbum.id == Album.JOINT_ALBUM_ID) {
+                        targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
+                            actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
+                                targetFolder,
                                 metaString,
-                                "${remotePhoto.photo.name}|false",
+                                "${remotePhoto.photo.name}|true|true",
                                 System.currentTimeMillis(), 1
                             ))
+
+                            // Target album is Joint Album, update it's content metadata file
+                            actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
                         }
-                    })
+                    } else {
+                        val targetAlbumId = targetAlbum.id.ifEmpty { System.currentTimeMillis().toString() }
+
+                        // Target album is own album, create new records in local DB now, ACTION_COPY_ON_SERVER taken in SyncAdapter will fill in the correct fileId and eTag later
+                        actionModel.addPhotosAtLocal(mutableListOf<Photo>().apply { add(remotePhoto.photo.copy(id = remotePhoto.photo.name, albumId = targetAlbumId, eTag = Photo.ETAG_NOT_YET_UPLOADED, lastModified = LocalDateTime.now())) })
+
+                        if (targetAlbum.id.isEmpty()) {
+                            // Current system time as fake ID for new album
+                            with(remotePhoto.photo) {
+                                targetAlbum.coverBaseline = if (mimeType == "image/jpeg" || mimeType == "image/png") (height - (width * 9 / 21)) / 2 else Album.SPECIAL_COVER_BASELINE
+                                targetAlbum.coverWidth = width
+                                targetAlbum.coverHeight = height
+                                targetAlbum.cover = name
+                                targetAlbum.coverFileName = name
+                                targetAlbum.coverMimeType = mimeType
+                                targetAlbum.coverOrientation = orientation
+                                targetAlbum.sortOrder = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
+                                targetAlbum.startDate = dateTaken
+                                targetAlbum.endDate = dateTaken
+                                targetAlbum.id = targetAlbumId
+                            }
+                            // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                            actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, targetAlbumId, targetAlbum.name, "", remotePhoto.photo.name, System.currentTimeMillis(), 1))
+                            // Create album record in local DB now
+                            actionModel.addAlbumAtLocal(targetAlbum)
+                        }
+
+                        actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
+                            "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}",
+                            metaString,
+                            "${remotePhoto.photo.name}|false|${targetIsRemoteAlbum}",
+                            System.currentTimeMillis(), 1
+                        ))
+
+                        actions.add(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                        actions.add(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                    }
+
+                    actionModel.addActions(actions)
                 }
             }
         }

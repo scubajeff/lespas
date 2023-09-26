@@ -324,7 +324,7 @@ class GalleryFragment: Fragment() {
 
                     destinationModel.getRemotePhotos().forEach { remotePhoto ->
                         remotePhoto.photo.let { photo ->
-                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}|${Tools.isRemoteAlbum(targetAlbum)}", System.currentTimeMillis(), 1))
                             removeList.add(photo.id)
                         }
                     }

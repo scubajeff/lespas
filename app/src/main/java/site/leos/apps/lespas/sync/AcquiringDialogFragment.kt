@@ -269,7 +269,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             val meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
-                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
+                            //newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
+                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId))
 
                             // Update album start and end dates accordingly
                             date = newPhotos.last().dateTaken
@@ -298,6 +299,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.coverFileName.substringBeforeLast('/'), "", "", System.currentTimeMillis(), 1))
                     } else {
                         if (album.id == fakeAlbumId) {
+/*
                             // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
                             // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
                             var validCover = newPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
@@ -313,11 +315,21 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                 album.coverMimeType = mimeType
                                 album.coverOrientation = orientation
                             }
-
+*/
+                            newPhotos[0].run {
+                                album.coverBaseline = if (mimeType == "image/jpeg" || mimeType == "image/png") (height - (width * 9 / 21)) / 2 else Album.SPECIAL_COVER_BASELINE
+                                album.coverWidth = width
+                                album.coverHeight = height
+                                album.cover = id
+                                album.coverFileName = name
+                                album.coverMimeType = mimeType
+                                album.coverOrientation = orientation
+                            }
                             album.sortOrder = PreferenceManager.getDefaultSharedPreferences(application).getString(application.getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
 
                             // Create new album first, store cover, e.g. first photo in new album, in property filename
-                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
+                            //actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
+                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].id, System.currentTimeMillis(), 1))
                         }
 
                         photoRepository.insert(newPhotos)

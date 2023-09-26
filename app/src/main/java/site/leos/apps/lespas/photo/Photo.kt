@@ -116,10 +116,12 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newName, eTag = :eTag, lastModified = :lastModified WHERE id = :oldId")
     abstract fun fixPhoto(oldId: String, newId: String, newName: String, eTag: String, lastModified: LocalDateTime)
 
-    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = shareId & ~${Photo.NOT_YET_UPLOADED} WHERE id = :oldId")
+    //@Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = shareId & ~${Photo.NOT_YET_UPLOADED} WHERE id = :oldId")
+    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag WHERE id = :oldId")
     abstract fun fixPhotoIdEtag(oldId: String, newId: String, eTag: String)
 
-    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = ((shareId & ~${Photo.NOT_YET_UPLOADED}) | ${Photo.NEED_REFRESH}) WHERE id = :oldId")
+    //@Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = ((shareId & ~${Photo.NOT_YET_UPLOADED}) | ${Photo.NEED_REFRESH}) WHERE id = :oldId")
+    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = (shareId | ${Photo.NEED_REFRESH}) WHERE id = :oldId")
     abstract fun fixPhotoIdEtagRefresh(oldId: String, newId: String, eTag: String)
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET shareId = shareId & ~${Photo.NEED_REFRESH} WHERE id = :photoId")
@@ -205,4 +207,10 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT id, dateTaken, shareId, caption, latitude, longitude, altitude, bearing, locality, country, countryCode FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun getPhotoSidecar(albumId: String): List<PhotoSidecar>
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET eTag = :eTag WHERE id = :photoId")
+    abstract fun updateETag(photoId: String, eTag: String)
+
+    @Query("SELECT id FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND name = :photoName LIMIT 1")
+    abstract fun getPhotoIdByNameInAlbum(albumId: String, photoName: String): String
 }

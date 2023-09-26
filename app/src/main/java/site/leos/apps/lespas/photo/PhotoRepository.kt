@@ -69,4 +69,6 @@ class PhotoRepository(application: Application) {
     fun getThisPhoto(photoId: String): Photo = photoDao.getThisPhoto(photoId)
     fun getPhotosForBlog(albumId: String): List<Photo> = photoDao.getPhotosForBlog(albumId)
     fun getPhotoSidecar(albumId: String): List<PhotoSidecar> = photoDao.getPhotoSidecar(albumId)
+    fun updateETag(photoId: String, eTag: String) { photoDao.updateETag(photoId, eTag) }
+    fun getPhotoIdByNameInAlbum(albumId: String, photoName: String): String = photoDao.getPhotoIdByNameInAlbum(albumId, photoName)
 }

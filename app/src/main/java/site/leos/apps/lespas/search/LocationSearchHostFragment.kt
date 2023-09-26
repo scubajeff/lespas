@@ -183,6 +183,7 @@ class LocationSearchHostFragment: Fragment() {
                                         // Patch WebDAV properties in archive
                                         // exif.dateTimeOriginal, exif.dateTimeDigitized both return timestamp in UTC time zone
                                         // Property folder name should "/DCIM" here, SyncAdapter will handle user base correctly
+                                        // FIXME foldername under new backup folder structure
                                         patchActions.add(Action(null, Action.ACTION_PATCH_PROPERTIES, "","/DCIM",
                                             "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
