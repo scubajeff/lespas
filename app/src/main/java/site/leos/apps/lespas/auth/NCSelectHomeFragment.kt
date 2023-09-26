@@ -28,6 +28,7 @@ import android.transition.TransitionManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -61,6 +62,7 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var folderTextView: TextView
     private lateinit var selectButton: MaterialButton
     private lateinit var createButton: MaterialButton
+    private lateinit var waitingSign: ProgressBar
     private var grayOutColor = 0
 
     private lateinit var folderList: RecyclerView
@@ -117,7 +119,11 @@ class NCSelectHomeFragment: Fragment() {
                     fetchJob?.cancel()
                     setTouchable(true)
                     folderTextView.text = selectedFolder.ifEmpty { "/" }
-                    folderAdapter.submitList(currentList) { folderList.isVisible = true }
+                    folderAdapter.submitList(currentList) {
+                        TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
+                        folderList.isVisible = true
+                        waitingSign.isVisible = false
+                    }
                 }
                 else if (selectedFolder.isNotEmpty()) {
                     fetchFolder(selectedFolder.substringBeforeLast("/"))
@@ -155,6 +161,7 @@ class NCSelectHomeFragment: Fragment() {
                 if (parentFragmentManager.findFragmentByTag(NEW_FOLDER_DIALOG) == null) RenameDialogFragment.newInstance("", arrayListOf(), RenameDialogFragment.REQUEST_TYPE_NEW).show(parentFragmentManager, NEW_FOLDER_DIALOG)
             }
         }
+        waitingSign = view.findViewById(R.id.waiting_sign)
 
         parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle ->
             bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { folderName ->
@@ -215,13 +222,14 @@ class NCSelectHomeFragment: Fragment() {
         if (folderList.isVisible) {
             TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
             folderList.isVisible = false
+            waitingSign.isVisible = true
         }
 
         fetchJob = lifecycleScope.launch(Dispatchers.IO) {
             val nameList = mutableListOf<String>()
             try {
                 webDav.list("${resourceRoot}/${target}", OkHttpWebDav.FOLDER_CONTENT_DEPTH, forceNetwork = false).drop(1).forEach {
-                    if (it.isFolder) nameList.add(it.name)
+                    if (it.isFolder && it.name.first() != '.') nameList.add(it.name)
                 }
                 nameList.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.TERTIARY }) { it })
                 if (target.isNotEmpty()) nameList.add(0, PARENT_FOLDER)
@@ -229,7 +237,11 @@ class NCSelectHomeFragment: Fragment() {
 
             withContext(Dispatchers.Main) {
                 folderAdapter.clearList()
-                folderAdapter.submitList(nameList) { folderList.isVisible = true }
+                folderAdapter.submitList(nameList) {
+                    TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
+                    folderList.isVisible = true
+                    waitingSign.isVisible = false
+                }
                 selectedFolder = target
                 setTouchable(true)
             }

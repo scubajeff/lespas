@@ -107,11 +107,14 @@
         tools:listitem="@layout/recyclerview_item_folder" />
 
     <ProgressBar
+        android:id="@+id/waiting_sign"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/home_folder_label"
         android:indeterminateTint="@android:color/darker_gray"
         android:layout_marginTop="@dimen/big_padding"
-        android:indeterminate="true" />
+        android:indeterminate="true"
+        android:visibility="invisible"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
