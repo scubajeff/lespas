@@ -110,14 +110,10 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Update local database
                     exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(
-                        //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
-                        // Mark sync status by setting eTag to empty
-                        //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
-                        //id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
-                        id = originalPhoto.id, albumId = album.id, name = imageName
+                        id = originalPhoto.id, albumId = album.id, name = imageName,
+                        // Preserve original meta
+                        dateTaken = originalPhoto.dateTaken, caption = originalPhoto.caption, latitude = originalPhoto.latitude, longitude = originalPhoto.longitude, altitude = originalPhoto.altitude, bearing = originalPhoto.bearing, locality = originalPhoto.locality, country = originalPhoto.country, countryCode = originalPhoto.countryCode,
                     )
-                    // Preserve original caption
-                    if (originalPhoto.caption.isNotEmpty()) newPhoto.caption = originalPhoto.caption
 
                     photoDao.update(newPhoto)
                     if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
@@ -168,11 +164,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Create new photo in local database
                     exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     photoDao.insert(
-                        Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName)
-                            //.copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED)
-                            .copy(id = fileName, albumId = album.id, name = fileName)
-                            // Preserve original caption
-                            .apply { if (originalPhoto.caption.isNotEmpty()) this.caption = originalPhoto.caption }
+                        Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(
+                            id = fileName, albumId = album.id, name = fileName,
+                            // Preserve original meta
+                            dateTaken = originalPhoto.dateTaken, caption = originalPhoto.caption, latitude = originalPhoto.latitude, longitude = originalPhoto.longitude, altitude = originalPhoto.altitude, bearing = originalPhoto.bearing, locality = originalPhoto.locality, country = originalPhoto.country, countryCode = originalPhoto.countryCode,
+                        )
                     )
 
                     with(mutableListOf<Action>()) {
