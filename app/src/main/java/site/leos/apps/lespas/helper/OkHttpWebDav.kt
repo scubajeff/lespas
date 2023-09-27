@@ -370,17 +370,17 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun move(source: String, dest: String): Pair<String, String> { return copyOrMove(false, source, dest) }
 
     fun ocsDelete(url: String) {
-        httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()).execute().use {}
+        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()).execute().use {}
     }
 
     fun ocsGet(url: String): JSONObject? =
-        httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response ->
+        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response ->
             if (response.isSuccessful) response.body?.string()?.let { json-> try { JSONObject(json).getJSONObject("ocs") } catch (_: Exception) { null }}
             else null
         }
 
     fun ocsPost(url: String, body: RequestBody): JSONObject? {
-        return httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use { response ->
+        return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use { response ->
             when(response.code) {
                 100, 200, 400, 403, 404, 409 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
                 else -> null
@@ -389,7 +389,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun ocsPut(url: String, body: RequestBody): JSONObject? {
-        return httpClient.newCall(Request.Builder().url(Uri.encode(url, "/:")).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").put(body).build()).execute().use { response ->
+        return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").put(body).build()).execute().use { response ->
             when(response.code) {
                 100, 200, 400, 403, 404, 409 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
                 else -> null
