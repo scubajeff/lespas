@@ -1,3 +1,12 @@
+## Version 2.9.3
+* Enhanced slideshow play back experience with auto scroll caption display, pause state for sliding back and forth, support screen rotate during play back, etc.
+* Enhanced geotagging, tag photo base on geo point's timezone and support optional DST adjustment
+* Option to preserve caption, location and taken date meta data when performing meta data rescan
+* When photo being copied or moved, saved meta data got transferred too
+* When editing by Snapseed, saved meta data got copied to new photo
+* Fixed sync error when album name contain special characters which need escaping
+* Fixed app hanging when choosing home folder during login
+
 ## Version 2.9.2
 * Bug fixes release
 

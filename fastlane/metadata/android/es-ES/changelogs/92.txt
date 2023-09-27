@@ -1,0 +1,8 @@
+* Experiencia de reproducción de diapositivas mejorada con visualización de subtítulos de desplazamiento automático, estado de pausa para deslizar hacia adelante y hacia atrás, rotación de pantalla durante la reproducción, etc.
+* Geoetiquetado mejorado, etiquetado de fotos basado en la zona horaria del punto geográfico y ajuste DST opcional.
+* Opción de preservar el pie de foto, la ubicación y la fecha en que se tomó la foto al volver a escanear los metadatos.
+* Al copiar o mover una foto, los metadatos guardados también se transfieren.
+* Al editar con Snapseed, los metadatos guardados se copian en la nueva foto.
+* Corregido el error de sincronización cuando el nombre del álbum contiene caracteres especiales que necesitan ser escapados.
+* Se ha corregido el bloqueo de la aplicación al seleccionar la carpeta de inicio durante el inicio de sesión.
+* Varias mejoras y correcciones de errores

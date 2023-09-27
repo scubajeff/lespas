@@ -1,0 +1,8 @@
+* Esperienza di riproduzione della presentazione migliorata con visualizzazione automatica delle didascalie, stato di pausa per lo scorrimento avanti e indietro, supporto della rotazione dello schermo durante la riproduzione, ecc.
+* Miglioramento del geotagging, taggando le foto in base al fuso orario del punto geografico e supportando la regolazione DST opzionale.
+* Opzione per preservare i meta-dati relativi alla didascalia, alla posizione e alla data di scatto quando si esegue una nuova scansione dei meta-dati.
+* Quando la foto viene copiata o spostata, vengono trasferiti anche i metadati salvati.
+* Quando si modifica la foto con Snapseed, i metadati salvati vengono copiati nella nuova foto.
+* Errore di sincronizzazione corretto quando il nome dell'album contiene caratteri speciali che necessitano di escape
+* Correzione dell'errore di sincronizzazione quando il nome dell'album contiene caratteri speciali che necessitano di escape.
+* Vari miglioramenti e correzioni di bug

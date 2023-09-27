@@ -1,0 +1,8 @@
+* Experiência aprimorada de reprodução de apresentação de slides com exibição de legenda de rolagem automática, estado de pausa para deslizar para frente e para trás, suporte à rotação de tela durante a reprodução etc.
+* Marcação geográfica aprimorada, marcação de fotos com base no fuso horário do ponto geográfico e suporte ao ajuste opcional de horário de verão.
+* Opção para preservar a legenda, o local e os metadados da data da foto ao fazer uma nova varredura dos metadados
+* Quando a foto é copiada ou movida, os metadados salvos também são transferidos
+* Ao editar pelo Snapseed, os metadados salvos eram copiados para a nova foto.
+* Corrigido o erro de sincronização quando o nome do álbum continha caracteres especiais que precisavam ser escapados.
+* Correção do travamento do aplicativo ao escolher a pasta inicial durante o login
+* Vários aprimoramentos e correções de bugs
