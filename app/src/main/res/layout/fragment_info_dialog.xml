@@ -163,9 +163,9 @@
                 android:gravity="center_vertical"
                 android:padding="@dimen/mini_padding"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:visibility="gone"
+                android:visibility="invisible"
                 tools:visibility="visible"
-                tools:text="San Jose"/>
+                tools:text="San José"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ok_button"

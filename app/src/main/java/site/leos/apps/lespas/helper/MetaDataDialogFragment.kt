@@ -45,6 +45,8 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.osmdroid.bonuspack.location.GeocoderNominatim
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -56,8 +58,10 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
+import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -220,7 +224,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 }
                 invalidate()
 
-                isVisible = true
+                this.isVisible = true
             }
 
             with(photo) {
@@ -239,11 +243,30 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         isVisible = true
                     }
                 }
-                // TODO use map text overlay instead
                 if (locality.isNotEmpty() && country.isNotEmpty()) {
+                    // TODO use map text overlay instead
                     localityTextView.run {
-                        visibility = View.VISIBLE
                         text = String.format("%s, %s", locality, country)
+                        isVisible = true
+                    }
+                } else {
+                    // TODO robust way to detect if media is from publications
+                    if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
+                        GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latitude, longitude, 1)
+                    } catch (e: IOException) { null }?.get(0)?.let { address ->
+                        if (address.countryName != null) {
+                            val locality = address.locality ?: address.adminArea ?: Photo.NO_ADDRESS
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
+
+                                withContext(Dispatchers.Main) {
+                                    localityTextView.run {
+                                        text = String.format("%s, %s", locality, address.countryName)
+                                        isVisible = true
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
