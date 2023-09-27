@@ -48,6 +48,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
+import androidx.core.transition.doOnEnd
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -61,6 +62,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.transition.platform.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -94,6 +96,8 @@ class StoryFragment : Fragment() {
     private lateinit var captionCrank: ScrollView
     private lateinit var captionTextView: TextView
     private lateinit var controlFAB: FloatingActionButton
+    private lateinit var endSign: TextView
+    private lateinit var pauseSign: ImageView
 
     private val animationHandler = Handler(Looper.getMainLooper())
     private val knobAnimationHandler = Handler(Looper.getMainLooper())
@@ -137,8 +141,10 @@ class StoryFragment : Fragment() {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
                 if (playbackState == Player.STATE_ENDED) {
-                    advanceSlide(300)
-                    if (slider.currentItem < total && !pAdapter.isSlideVideo(slider.currentItem + 1)) bgmModel.fadeInBGM()
+                    if (animationState == STATE_STARTED) {
+                        advanceSlide(300)
+                        //if (slider.currentItem < total && !pAdapter.isSlideVideo(slider.currentItem + 1)) bgmModel.fadeInBGM()
+                    }
                 }
             }
         })
@@ -247,48 +253,106 @@ class StoryFragment : Fragment() {
         knobIcon = view.findViewById(R.id.knob_icon)
         knobPosition = view.findViewById(R.id.knob_position)
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent): Boolean = true
+            override fun onDown(e: MotionEvent): Boolean = animationState == STATE_STARTED
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (animationState == STATE_STARTED) {
+                    stopSlideshow(false)
+
+                    TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply {
+                        duration = 300
+                        doOnEnd {
+                            animationHandler.postDelayed({
+                                TransitionManager.beginDelayedTransition(container, MaterialContainerTransform().apply {
+                                    duration = 500
+                                    startView = pauseSign
+                                    endView = controlFAB
+                                    scrimColor = Color.TRANSPARENT
+                                    this.fadeMode = MaterialContainerTransform.FADE_MODE_THROUGH
+                                    addTarget(controlFAB)
+                                })
+                                pauseSign.isVisible = false
+                                controlFAB.isVisible = true
+
+                                pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
+                                    // Restore photoview state, other view types are handled in function stopSlideshow(...)
+                                    if (this is SeamlessMediaSliderAdapter<*>.PhotoViewHolder) {
+                                        getPhotoView().apply {
+                                            scaleX = 1.0f
+                                            scaleY = 1.0f
+                                            alpha = 1.0f
+                                        }
+                                    }
+                                }
+
+                                // Allow swiping
+                                slider.isUserInputEnabled = true
+                                slider.setPageTransformer(null)
+                                slider.offscreenPageLimit = ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT
+                            }, 500)
+                        }
+                    })
+                    pauseSign.isVisible = true
+                    controlFAB.isVisible = false
+                    controlFAB.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+
+                    return true
+                } else return false
+            }
 
             override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-                // Ignore flings
-                if (abs(distanceY) > 15) return false
+                if (animationState == STATE_STARTED) {
+                    // Ignore flings
+                    if (abs(distanceY) > 15) return false
 
-                if (abs(distanceX) < abs(distanceY)) {
-                    knobLayout.isVisible = true
-                    // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
-                    if (e1.x > displayWidth / 2) {
-                        knobIcon.setImageDrawable(volumeDrawable)
-                        // Affect both video player and bgm player
-                        playerViewModel.setVolume(distanceY / 300)
-                        knobPosition.progress = (playerViewModel.getVolume() * 100).toInt()
+                    if (abs(distanceX) < abs(distanceY)) {
+                        knobLayout.isVisible = true
+                        // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
+                        if (e1.x > displayWidth / 2) {
+                            knobIcon.setImageDrawable(volumeDrawable)
+                            // Affect both video player and bgm player
+                            playerViewModel.setVolume(distanceY / 300)
+                            knobPosition.progress = (playerViewModel.getVolume() * 100).toInt()
+                        } else {
+                            knobIcon.setImageDrawable(brightnessDrawable)
+                            // Affect both video player and bgm player
+                            playerViewModel.setBrightness(distanceY / 300)
+                            knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
+                        }
+
+                        knobAnimationHandler.removeCallbacks(hideSettingRunnable)
+                        knobAnimationHandler.postDelayed(hideSettingRunnable, 1000)
                     }
-                    else {
-                        knobIcon.setImageDrawable(brightnessDrawable)
-                        // Affect both video player and bgm player
-                        playerViewModel.setBrightness(distanceY / 300)
-                        knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
-                    }
 
-                    knobAnimationHandler.removeCallbacks(hideSettingRunnable)
-                    knobAnimationHandler.postDelayed(hideSettingRunnable, 1000)
-                }
-
-                return true
+                    return true
+                } else return false
             }
         })
 
         controlFAB = view.findViewById<FloatingActionButton?>(R.id.fab).apply {
             setOnClickListener {
-                bgmModel.rewind()
-                checkSlide(0)
-                slider.setCurrentItem(0, false)
-                captionTextView.text = pAdapter.getCaption(0)
+                when(animationState) {
+                    STATE_ENDED -> {
+                        bgmModel.rewind()
+                        checkSlide(0)
+                        slider.setCurrentItem(0, false)
+                        captionTextView.text = pAdapter.getCaption(0)
 
-                TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply { duration = 800 })
-                controlFAB.isVisible = false
-                Tools.goImmersive(requireActivity().window)
+                        TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply { duration = 800 })
+                        controlFAB.isVisible = false
+                        Tools.goImmersive(requireActivity().window)
+                    }
+                    STATE_PAUSED -> {
+                        TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply { duration = 800 })
+                        controlFAB.isVisible = false
+                        checkSlide(slider.currentItem)
+                        captionTextView.text = pAdapter.getCaption(slider.currentItem)
+                    }
+                }
             }
         }
+        endSign = view.findViewById(R.id.end_sign)
+        pauseSign = view.findViewById(R.id.pause_sign)
 
         view.findViewById<View>(R.id.touch).run { setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }}
 
@@ -406,13 +470,31 @@ class StoryFragment : Fragment() {
         // Stop at the end of the show and provide way to restart
         if (endOfSlideshow) {
             animationState = STATE_ENDED
-            animationHandler.postDelayed({
-                TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply { duration = 800 })
-                controlFAB.isVisible = true
-                // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-                @Suppress("DEPRECATION")
-                requireActivity().window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-            }, 500)
+
+            TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply {
+                duration = 300
+                doOnEnd {
+                    animationHandler.postDelayed({
+                        TransitionManager.beginDelayedTransition(container, MaterialContainerTransform().apply {
+                            duration = 500
+                            startView = endSign
+                            endView = controlFAB
+                            scrimColor = Color.TRANSPARENT
+                            this.fadeMode = MaterialContainerTransform.FADE_MODE_THROUGH
+                            addTarget(controlFAB)
+                        })
+                        endSign.isVisible = false
+                        controlFAB.isVisible = true
+
+                        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
+                        @Suppress("DEPRECATION")
+                        requireActivity().window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+                    }, 1200)
+                }
+            })
+            endSign.isVisible = true
+            controlFAB.isVisible = false
+            controlFAB.setImageResource(R.drawable.ic_baseline_replay_24)
 
             // Continue playing BGM for 1.5 sec, then fade out
             animationHandler.postDelayed({ bgmModel.fadeOutBGM() }, 1500)
@@ -421,6 +503,9 @@ class StoryFragment : Fragment() {
 
     private fun showCurrentSlide() {
         animationState = STATE_STARTED
+        slider.isUserInputEnabled = false
+        slider.setPageTransformer(ZoomInPageTransformer())
+        controlFAB.isVisible = false
         captionCrank.scrollY = 0
         captionCrank.isVisible = captionTextView.text.isNotEmpty()
 
@@ -482,7 +567,7 @@ class StoryFragment : Fragment() {
                             photoView.scaleY = 1.0f
                             dreamyAnimator = ObjectAnimator.ofPropertyValuesHolder(photoView, PropertyValuesHolder.ofFloat(View.SCALE_X, DREAMY_SCALE_FACTOR), PropertyValuesHolder.ofFloat(View.SCALE_Y, DREAMY_SCALE_FACTOR)).setDuration(5000).apply {
                                 // Advance to the next slide after dreamy animation ended
-                                doOnEnd { advanceSlide() }
+                                doOnEnd { if (animationState == STATE_STARTED) advanceSlide() }
                             }
                             dreamyAnimator.start()
                         }
@@ -602,7 +687,7 @@ class StoryFragment : Fragment() {
                                 translationZ = 0f
                                 // keep scale factor intact, remove glitch between dreamy zoom and slide zoom out
                             }
-                            position <= 1f -> { // (0, 1]
+                            position < 1f -> { // (0, 1)
                                 // This page is moving into screen
                                 alpha = 1f - position
                                 // Counteract the default slide transition
@@ -615,10 +700,10 @@ class StoryFragment : Fragment() {
                                     scaleY = this
                                 }
                             }
-                            else -> { // (1, +Infinity]
+                            else -> { // [1, +Infinity]
                                 // This page is way off-screen to the right
                                 translationX = -1.1f
-                                translationZ = -1f
+                                translationZ = 1f
 
                                 // Scale and alpha should be normal
                                 alpha = 1.0f
