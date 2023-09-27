@@ -1,4 +1,4 @@
-## Version 2.9.3
+## Version 2.9.4
 * Enhanced slideshow play back experience with auto scroll caption display, pause state for sliding back and forth, support screen rotate during play back, etc.
 * Enhanced geotagging, tag photo base on geo point's timezone and support optional DST adjustment
 * Option to preserve caption, location and taken date meta data when performing meta data rescan

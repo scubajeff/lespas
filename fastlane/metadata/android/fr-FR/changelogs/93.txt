@@ -1,0 +1,8 @@
+* Amélioration de l'expérience de lecture du diaporama avec l'affichage de la légende par défilement automatique, l'état de pause pour le glissement vers l'avant et vers l'arrière, la prise en charge de la rotation de l'écran pendant la lecture, etc.
+* Amélioration de la géolocalisation, marquage des photos en fonction du fuseau horaire du point géographique et prise en charge de l'ajustement optionnel de l'heure d'été.
+* Option permettant de conserver la légende, la localisation et la date de prise de vue lors de l'analyse des métadonnées.
+* Lorsque la photo est copiée ou déplacée, les métadonnées sauvegardées sont également transférées.
+* Lors de l'édition par Snapseed, les métadonnées sauvegardées sont copiées sur la nouvelle photo.
+* Correction de l'erreur de synchronisation lorsque le nom de l'album contient des caractères spéciaux qui doivent être échappés.
+* Correction d'une erreur de synchronisation lorsque le nom de l'album contient des caractères spéciaux qui doivent être échappés.
+* Diverses améliorations et corrections de bugs

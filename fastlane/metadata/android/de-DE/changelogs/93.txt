@@ -1,0 +1,8 @@
+* Verbesserte Diashow-Wiedergabe mit automatischer Anzeige der Bildunterschrift, Pausenstatus zum Vor- und Zurückschieben, Unterstützung der Bildschirmdrehung während der Wiedergabe usw.
+* Verbessertes Geotagging, Kennzeichnung von Fotos auf Basis der Zeitzone des Geopunkts und Unterstützung optionaler Sommerzeitanpassung
+* Option zur Beibehaltung von Bildunterschrift, Ort und Aufnahmedatum beim erneuten Scannen der Metadaten
+* Wenn ein Foto kopiert oder verschoben wird, werden die gespeicherten Metadaten ebenfalls übertragen.
+* Bei der Bearbeitung mit Snapseed werden die gespeicherten Metadaten auf das neue Foto kopiert.
+* Sync-Fehler behoben, wenn der Albumname Sonderzeichen enthielt, die entschlüsselt werden mussten
+* Behoben, dass die App bei der Auswahl des Home-Ordners während des Logins hängen bleibt
+* Verschiedene Verbesserungen und Fehlerkorrekturen
