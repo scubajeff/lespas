@@ -21,7 +21,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -35,7 +34,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -44,8 +42,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
@@ -131,11 +129,6 @@ class GallerySlideFragment : Fragment() {
             stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
         }
 
-        // Listener for our UI controls to show/hide with System UI
-        this.window = requireActivity().window
-        @Suppress("DEPRECATION")
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
-
 
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
@@ -143,23 +136,20 @@ class GallerySlideFragment : Fragment() {
                 if (names?.isNotEmpty() == true) mediaList.getChildAt(0)?.findViewById<View>(R.id.media)?.run { sharedElements?.put(names[0], this) }
             }
         })
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) requireActivity().window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        postponeEnterTransition()
 
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            previousTitleBarDisplayOption = savedInstanceState?.run {
-                // During fragment recreate, wipe actionbar to avoid flash
-                wipeActionBar()
-
-                getInt(KEY_DISPLAY_OPTION)
-            } ?: displayOptions
-        }
+        this.window = requireActivity().window
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_gallery_slide, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        (activity as AppCompatActivity).supportActionBar?.hide()
+        Tools.setImmersive(window, true)
+
+        return inflater.inflate(R.layout.fragment_gallery_slide, container, false)
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
 
         tvPath = view.findViewById(R.id.path)
         tvDate = view.findViewById(R.id.date)
@@ -200,11 +190,6 @@ class GallerySlideFragment : Fragment() {
             })
         }
 
-        mediaList.doOnLayout {
-            // Get into immersive mode
-            Tools.goImmersive(window, savedInstanceState == null)
-        }
-
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -214,8 +199,8 @@ class GallerySlideFragment : Fragment() {
         // Controls
         controlsContainer = view.findViewById<ConstraintLayout>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
-                @Suppress("DEPRECATION")
-                v.updatePadding(bottom = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) window.decorView.rootWindowInsets.stableInsetBottom else with(window.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())) { bottom - top })
+                v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
+                followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
         }
@@ -318,22 +303,19 @@ class GallerySlideFragment : Fragment() {
         handler.removeCallbacksAndMessages(null)
         mediaList.adapter = null
 
+        // Quick immersive
+        Tools.setImmersive(window, false)
+        (requireActivity() as AppCompatActivity).apply {
+            requestedOrientation = previousOrientationSetting
+            supportActionBar?.show()
+        }
+
         super.onDestroyView()
     }
 
     override fun onDestroy() {
         // BACK TO NORMAL UI
         handlerBottomControl.removeCallbacksAndMessages(null)
-
-        Tools.quitImmersive(window)
-
-        (requireActivity() as AppCompatActivity).run {
-            supportActionBar?.run {
-                displayOptions = previousTitleBarDisplayOption
-                setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)))
-            }
-            requestedOrientation = previousOrientationSetting
-        }
 
         super.onDestroy()
     }
@@ -368,19 +350,9 @@ class GallerySlideFragment : Fragment() {
         handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
-    private val hideSystemUI = Runnable { Tools.goImmersive(window) }
+    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.navigationBars()) }
     private val showSystemUI = Runnable {
-        @Suppress("DEPRECATION")
-        /*
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
-                // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-                else window.insetsController?.show(WindowInsets.Type.systemBars())
-        */
-        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars())
         handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
@@ -390,16 +362,6 @@ class GallerySlideFragment : Fragment() {
             TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
-
-        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
-        wipeActionBar()
-    }
-
-    private fun wipeActionBar() {
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
     }
 
     class MediaSlideAdapter(

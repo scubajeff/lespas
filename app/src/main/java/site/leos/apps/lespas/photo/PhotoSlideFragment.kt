@@ -16,11 +16,15 @@
 
 package site.leos.apps.lespas.photo
 
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.database.ContentObserver
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -30,7 +34,11 @@ import android.provider.MediaStore
 import android.text.method.ScrollingMovementMethod
 import android.transition.Slide
 import android.transition.TransitionManager
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -39,7 +47,11 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -52,24 +64,35 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.viewpager2.widget.ViewPager2
-import androidx.work.*
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.coroutines.*
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
-import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.MediaSliderTransitionListener
+import site.leos.apps.lespas.helper.MetaDataDialogFragment
+import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
+import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
+import site.leos.apps.lespas.helper.SingleLiveEvent
+import site.leos.apps.lespas.helper.SnapseedResultWorker
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.helper.VideoPlayerViewModel
+import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
-import java.lang.Runnable
-import java.util.*
 import kotlin.math.min
 
 class PhotoSlideFragment : Fragment() {
@@ -78,7 +101,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var window: Window
     //private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
-    private var previousTitleBarDisplayOption = 0
+    //private var previousTitleBarDisplayOption = 0
 
     private lateinit var controlsContainer: LinearLayout
     private lateinit var removeButton: Button
@@ -179,7 +202,6 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }
-        //requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
         ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
 
         // Content observer looking for Snapseed output
@@ -214,36 +236,7 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        // Listener for our UI controls to show/hide with System UI
-        this.window = requireActivity().window
-        @Suppress("DEPRECATION")
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
-/*
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-                followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom)
-            }
-        } else {
-            window.decorView.setOnApplyWindowInsetsListener { _, insets ->
-                followSystemBar(insets.isVisible(WindowInsets.Type.navigationBars()), insets.getInsets(WindowInsets.Type.navigationBars()).bottom)
-                insets
-            }
-        }
-*/
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) requireActivity().window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        postponeEnterTransition()
-
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            previousTitleBarDisplayOption = savedInstanceState?.run {
-                // During fragment recreate, wipe actionbar to avoid flash
-                wipeActionBar()
-
-                getInt(KEY_DISPLAY_OPTION)
-            } ?: displayOptions
-        }
 
         shareOutBackPressedCallback = object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -258,11 +251,21 @@ class PhotoSlideFragment : Fragment() {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
+
+        this.window = requireActivity().window
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photoslide, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        (activity as AppCompatActivity).supportActionBar?.hide()
+        Tools.setImmersive(window, true)
+
+        return inflater.inflate(R.layout.fragment_photoslide, container, false)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -305,11 +308,6 @@ class PhotoSlideFragment : Fragment() {
             })
         }
 
-        slider.doOnLayout {
-            // Get into immersive mode
-            Tools.goImmersive(window, savedInstanceState == null)
-        }
-
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -321,8 +319,9 @@ class PhotoSlideFragment : Fragment() {
         // Controls
         controlsContainer = view.findViewById<LinearLayout>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
-                @Suppress("DEPRECATION")
-                v.updatePadding(bottom = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) window.decorView.rootWindowInsets.stableInsetBottom else with(window.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())) { bottom - top })
+                v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
+                // Listener for our UI controls to show/hide with System UI
+                followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
         }
@@ -534,7 +533,7 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
+        //outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
         outState.putBoolean(KEY_SHAREOUT_RUNNING, waitingMsg?.isShownOrQueued == true)
         outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
         outState.putInt(KEY_SHAREOUT_TYPE, shareOutType)
@@ -551,27 +550,19 @@ class PhotoSlideFragment : Fragment() {
 
         if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
 
+        // Quit immersive
+        Tools.setImmersive(window, false)
+        (requireActivity() as AppCompatActivity).apply {
+            requestedOrientation = previousOrientationSetting
+            supportActionBar?.show()
+        }
+
         super.onDestroyView()
     }
 
     override fun onDestroy() {
         // BACK TO NORMAL UI
         handlerBottomControl.removeCallbacksAndMessages(null)
-
-        Tools.quitImmersive(window)
-
-        (requireActivity() as AppCompatActivity).run {
-            supportActionBar?.run {
-                displayOptions = previousTitleBarDisplayOption
-                setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)))
-            }
-            requestedOrientation = previousOrientationSetting
-        }
-
-        requireContext().apply {
-            unregisterReceiver(snapseedCatcher)
-            contentResolver.unregisterContentObserver(snapseedOutputObserver)
-        }
 
         super.onDestroy()
     }
@@ -583,19 +574,9 @@ class PhotoSlideFragment : Fragment() {
         handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
-    private val hideSystemUI = Runnable { Tools.goImmersive(window) }
+    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.navigationBars()) }
     private val showSystemUI = Runnable {
-        @Suppress("DEPRECATION")
-/*
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
-        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-        else window.insetsController?.show(WindowInsets.Type.systemBars())
-*/
-        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars())
 
         // trigger auto hide, timeout length adapted to caption's length
         val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
@@ -623,16 +604,6 @@ class PhotoSlideFragment : Fragment() {
         if (show) {
             val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
             handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
-        }
-
-        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
-        wipeActionBar()
-    }
-
-    private fun wipeActionBar() {
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
         }
     }
 
@@ -725,7 +696,7 @@ class PhotoSlideFragment : Fragment() {
         private const val SHARE_TO_SNAPSEED = 1
         private const val SHARE_TO_WALLPAPER = 2
 
-        private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
+        //private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
         private const val KEY_SHAREOUT_RUNNING = "KEY_SHAREOUT_RUNNING"
         private const val KEY_SHAREOUT_STRIP = "KEY_SHAREOUT_STRIP"
         private const val KEY_SHAREOUT_MIMETYPE = "KEY_SHAREOUT_MIMETYPE"

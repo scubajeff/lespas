@@ -20,7 +20,6 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -29,7 +28,11 @@ import android.os.Looper
 import android.text.method.ScrollingMovementMethod
 import android.transition.Slide
 import android.transition.TransitionManager
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -39,7 +42,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.view.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -52,8 +59,14 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.MediaSliderTransitionListener
+import site.leos.apps.lespas.helper.MetaDataDialogFragment
+import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelableArray
+import site.leos.apps.lespas.helper.VideoPlayerViewModel
+import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
+import site.leos.apps.lespas.helper.doOnEachNextLayout
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -109,9 +122,6 @@ class RemoteMediaFragment: Fragment() {
             }
         })
 
-        @Suppress("DEPRECATION")
-        requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
-
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -124,26 +134,23 @@ class RemoteMediaFragment: Fragment() {
             }
         }
 
-        this.window = requireActivity().window
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        postponeEnterTransition()
-
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            previousTitleBarDisplayOption = savedInstanceState?.run {
-                // During fragment recreate, wipe actionbar to avoid flash
-                wipeActionBar()
-
-                getInt(KEY_DISPLAY_OPTION)
-            } ?: displayOptions
-        }
-
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
+
+        this.window = requireActivity().window
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_remote_media, container, false)
+        (activity as AppCompatActivity).supportActionBar?.hide()
+        Tools.setImmersive(window, true)
+
+        return inflater.inflate(R.layout.fragment_remote_media, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
 
         captionTextView = view.findViewById<TextView>(R.id.caption).apply {
             movementMethod =  ScrollingMovementMethod()
@@ -181,15 +188,11 @@ class RemoteMediaFragment: Fragment() {
                 }
             })
         }
-        slider.doOnLayout {
-            // Get into immersive mode
-            Tools.goImmersive(window, savedInstanceState == null)
-        }
 
         controlsContainer = view.findViewById<LinearLayoutCompat>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
-                @Suppress("DEPRECATION")
-                v.updatePadding(bottom = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) window.decorView.rootWindowInsets.stableInsetBottom else with(window.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())) { bottom - top })
+                v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
+                followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
         }
@@ -230,12 +233,6 @@ class RemoteMediaFragment: Fragment() {
         }.apply {
             addListener(MediaSliderTransitionListener(slider))
         }
-
-        return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         (requireArguments().parcelableArray<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)!!).run {
             pAdapter.submitList(toMutableList()) {
@@ -334,22 +331,14 @@ class RemoteMediaFragment: Fragment() {
         handler.removeCallbacksAndMessages(null)
         slider.adapter = null
 
-        super.onDestroyView()
-    }
-
-    override fun onDestroy() {
-        // BACK TO NORMAL UI
-        Tools.quitImmersive(window)
-
-        (requireActivity() as AppCompatActivity).run {
-            supportActionBar?.apply {
-                displayOptions = previousTitleBarDisplayOption
-                setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)))
-            }
+        // Quit immersive
+        Tools.setImmersive(window, false)
+        (requireActivity() as AppCompatActivity).apply {
             requestedOrientation = previousOrientationSetting
+            supportActionBar?.show()
         }
 
-        super.onDestroy()
+        super.onDestroyView()
     }
 
     private fun toggleSystemUI(state: Boolean?) {
@@ -357,16 +346,9 @@ class RemoteMediaFragment: Fragment() {
         handler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
-    private val hideSystemUI = Runnable { Tools.goImmersive(window) }
-    @Suppress("DEPRECATION")
+    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.navigationBars()) }
     private val showSystemUI = Runnable {
-        window.run {
-/*
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-            else insetsController?.show(WindowInsets.Type.systemBars())
-*/
-            decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-        }
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars())
 
         captionTextView.text.isNotEmpty().let {
             // Use View.INVISIBLE so that caption's lines can be count even if it's empty
@@ -389,12 +371,6 @@ class RemoteMediaFragment: Fragment() {
 */
 
     private fun followSystemBar(show: Boolean) {
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
-
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
             TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
@@ -403,16 +379,6 @@ class RemoteMediaFragment: Fragment() {
 
         // auto hide, now triggered by caption view layout adapting to caption's length
         //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-
-        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
-        wipeActionBar()
-    }
-
-    private fun wipeActionBar() {
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
     }
 
     private fun saveMedia() {

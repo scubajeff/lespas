@@ -34,12 +34,13 @@ import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.transition.TransitionManager
+import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
+import android.view.Window
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ScrollView
@@ -50,7 +51,11 @@ import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.transition.doOnEnd
 import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -77,8 +82,10 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
 import java.lang.Integer.min
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class StoryFragment : Fragment() {
+    private lateinit var window: Window
     private lateinit var album: Album
     private var isRemote: Boolean = false
     private var isPublication: Boolean = false
@@ -178,26 +185,18 @@ class StoryFragment : Fragment() {
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
-        // Prepare display
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) requireActivity().window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            previousTitleBarDisplayOption = savedInstanceState?.run {
-                // During fragment recreate, wipe actionbar to avoid flash
-                wipeActionBar()
-
-                getInt(KEY_DISPLAY_OPTION)
-            } ?: displayOptions
-        }
-        Tools.goImmersive(requireActivity().window)
-        @Suppress("DEPRECATION")
-        requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { wipeActionBar() }
-
         // Prepare BGM playing
         bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), if (isPublication) album.bgmId else "file://${Tools.getLocalRoot(requireContext())}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"))[BGMViewModel::class.java]
+
+        this.window = requireActivity().window
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_story, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        (activity as AppCompatActivity).supportActionBar?.hide()
+        Tools.setImmersive(window, true)
+
+        return inflater.inflate(R.layout.fragment_story, container, false)
+    }
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -340,7 +339,8 @@ class StoryFragment : Fragment() {
 
                         TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply { duration = 800 })
                         controlFAB.isVisible = false
-                        Tools.goImmersive(requireActivity().window)
+
+                        WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
                     }
                     STATE_PAUSED -> {
                         TransitionManager.beginDelayedTransition(container, android.transition.Fade().apply { duration = 800 })
@@ -349,6 +349,17 @@ class StoryFragment : Fragment() {
                         captionTextView.text = pAdapter.getCaption(slider.currentItem)
                     }
                 }
+            }
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    val fixedMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics).roundToInt()
+                    val navbar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                    bottomMargin = Integer.max(navbar.bottom + 24, fixedMargin)
+                    rightMargin = Integer.max(navbar.right + 24, fixedMargin)
+                }
+                insets
             }
         }
         endSign = view.findViewById(R.id.end_sign)
@@ -382,19 +393,15 @@ class StoryFragment : Fragment() {
         // Make sure onViewDetachedFromWindow called in SeamlessMediaSliderAdapter
         slider.adapter = null
 
+        Tools.setImmersive(window, false)
+        (requireActivity() as AppCompatActivity).supportActionBar?.show()
+
         super.onDestroyView()
     }
 
     override fun onDestroy() {
         animationHandler.removeCallbacksAndMessages(null)
         knobAnimationHandler.removeCallbacksAndMessages(null)
-        Tools.quitImmersive(requireActivity().window)
-        (requireActivity() as AppCompatActivity).run {
-            supportActionBar?.run {
-                displayOptions = previousTitleBarDisplayOption
-                setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)))
-            }
-        }
 
         super.onDestroy()
     }
@@ -486,9 +493,7 @@ class StoryFragment : Fragment() {
                         endSign.isVisible = false
                         controlFAB.isVisible = true
 
-                        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-                        @Suppress("DEPRECATION")
-                        requireActivity().window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+                        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
                     }, 1200)
                 }
             })
