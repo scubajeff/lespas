@@ -1,0 +1,3 @@
+* Caricamento fisso dell'immagine di anteprima
+* Integrazione fissa di Snapseed
+* Vari miglioramenti e correzioni di bug

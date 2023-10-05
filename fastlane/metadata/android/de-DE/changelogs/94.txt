@@ -1,0 +1,3 @@
+* Behobenes Laden von Vorschaubildern
+* Behobene Snapseed-Integration
+* Verschiedene Verbesserungen und Fehlerkorrekturen

@@ -1,3 +1,7 @@
+## Version 2.9.5
+* Fixed preview image loading
+* Fixed Snapseed integration
+
 ## Version 2.9.4
 * Enhanced slideshow play back experience with auto scroll caption display, pause state for sliding back and forth, support screen rotate during play back, etc.
 * Enhanced geotagging, tag photo base on geo point's timezone and support optional DST adjustment

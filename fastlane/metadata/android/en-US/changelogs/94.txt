@@ -1,0 +1,3 @@
+* Fixed preview image loading
+* Fixed Snapseed integration
+* Various improvements and bugs fixes

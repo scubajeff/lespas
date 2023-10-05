@@ -1,0 +1,3 @@
+* Correção do carregamento da imagem de visualização
+* Correção da integração com o Snapseed
+* Vários aprimoramentos e correções de bugs
