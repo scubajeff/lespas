@@ -104,7 +104,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         // Show basic information
         view.findViewById<TextView>(R.id.info_filename).text = remotePhoto.photo.name.substringAfterLast("/")
         view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", remotePhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), remotePhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
-        if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA) lifecycleScope.launch(mapDisplayThread) { showMap(remotePhoto.photo) }
+        if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA && !isMapInitialized) lifecycleScope.launch(mapDisplayThread) { showMap(remotePhoto.photo) }
 
         exifModel.getPhotoMeta().observe(viewLifecycleOwner) { photoMeta ->
             handler.removeCallbacksAndMessages(null)
@@ -142,7 +142,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 }
                 photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM))) }
 
-                if (latitude != Photo.NO_GPS_DATA && latitude != remotePhoto.photo.latitude && longitude != remotePhoto.photo.longitude) lifecycleScope.launch(mapDisplayThread) { showMap(photoMeta.photo) }
+                if (!isMapInitialized && latitude != Photo.NO_GPS_DATA && latitude != remotePhoto.photo.latitude && longitude != remotePhoto.photo.longitude) lifecycleScope.launch(mapDisplayThread) { showMap(photoMeta.photo) }
             }
         }
     }
@@ -178,6 +178,8 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         try {
             with(mapView) {
                 if (!isMapInitialized) {
+                    isMapInitialized = true
+
                     // Initialization
                     setMultiTouchControls(true)
                     setUseDataConnection(true)
@@ -195,8 +197,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                         false
                     }
-
-                    isMapInitialized = true
                 }
 
                 // Show the map
