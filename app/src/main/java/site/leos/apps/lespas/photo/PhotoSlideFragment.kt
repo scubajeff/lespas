@@ -167,7 +167,6 @@ class PhotoSlideFragment : Fragment() {
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                //if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                 if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
@@ -179,8 +178,6 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }
-        //requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
-        ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -485,6 +482,7 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
+        ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
@@ -546,6 +544,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onDestroyView() {
         handler.removeCallbacksAndMessages(null)
 
+        requireContext().unregisterReceiver(snapseedCatcher)
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         slider.adapter = null
 
@@ -568,10 +567,7 @@ class PhotoSlideFragment : Fragment() {
             requestedOrientation = previousOrientationSetting
         }
 
-        requireContext().apply {
-            unregisterReceiver(snapseedCatcher)
-            contentResolver.unregisterContentObserver(snapseedOutputObserver)
-        }
+        requireContext().contentResolver.unregisterContentObserver(snapseedOutputObserver)
 
         super.onDestroy()
     }

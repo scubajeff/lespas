@@ -101,7 +101,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                                     input.copyTo(output)
                                 }
                             }
-
                         } catch (e: Exception) {
                             e.printStackTrace()
                             // Quit when exception happens during file copy
@@ -109,17 +108,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         }
 
                         // Update local database
-                        exifInterface = try {
-                            ExifInterface("$appRootFolder/$imageName")
-                        } catch (_: Exception) {
-                            null
-                        } catch (_: OutOfMemoryError) {
-                            null
-                        }
+                        exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                         val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(
-                            id = originalPhoto.id,
-                            albumId = album.id,
-                            name = imageName,
+                            id = originalPhoto.id, albumId = album.id, name = imageName,
                             // Preserve original meta
                             dateTaken = originalPhoto.dateTaken,
                             caption = originalPhoto.caption,
@@ -132,21 +123,19 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                             countryCode = originalPhoto.countryCode,
                         )
 
+                        // Update local DB, result will be shown immediately, take care album cover too
                         photoDao.update(newPhoto)
                         if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
                         // Invalid image cache to show new image and change CurrentPhotoModel's filename
                         //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
 
-                        /*
-                    // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
-                    try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
+/*
+                        // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
+                        try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
 */
 
                         // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any, e.g. only send the latest version
-                        try {
-                            File(appRootFolder, originalPhoto.name).delete()
-                        } catch (_: Exception) {
-                        }
+                        try { File(appRootFolder, originalPhoto.name).delete() } catch (_: Exception) {}
 
 
                         // Update server
@@ -155,17 +144,16 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                             add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                             add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
                             if (album.cover == newPhoto.id) add(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-                            /*
-                        // Replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
-                        add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))
-                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
+/*
+                            // Replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
+                            add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))
+                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
 */
 
                             actionDao.insert(this)
                         }
                     } else {
                         /* Copy Snapseed output */
-
                         // Append content uri _id as suffix to make a unique filename, this will be use as both fileId and filename
                         val fileName = "${imageName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${imageName.substringAfterLast('.')}"
 
@@ -178,22 +166,15 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
+                            // Quit when exception happens during file copy
                             return@withContext
                         }
 
                         // Create new photo in local database
-                        exifInterface = try {
-                            ExifInterface("$appRootFolder/$fileName")
-                        } catch (_: Exception) {
-                            null
-                        } catch (_: OutOfMemoryError) {
-                            null
-                        }
+                        exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                         photoDao.insert(
                             Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(
-                                id = fileName,
-                                albumId = album.id,
-                                name = fileName,
+                                id = fileName, albumId = album.id, name = fileName,
                                 // Preserve original meta
                                 dateTaken = originalPhoto.dateTaken,
                                 caption = originalPhoto.caption,
@@ -216,18 +197,10 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Remove cache copy
-                    try {
-                        File(context.cacheDir, originalPhoto.name).delete()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                    try { File(context.cacheDir, originalPhoto.name).delete() } catch (_: Exception) {}
 
                     // Remove snapseed output if running on Android Q or lower
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try {
-                        cr.delete(uri, null, null)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try {  cr.delete(uri, null, null) } catch (_: Exception) {}
 
                     result = Result.success()
                 }

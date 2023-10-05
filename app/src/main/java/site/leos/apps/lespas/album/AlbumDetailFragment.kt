@@ -253,8 +253,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                //@Suppress("DEPRECATION")
-                //if ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java) else intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT))?.packageName!!.substringAfterLast('.') == "snapseed") {
                 if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
@@ -270,8 +268,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }
-        //requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
-        ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(PhotoSlideFragment.CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -499,6 +495,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             })
         }
 
+        ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_NOT_EXPORTED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         currentQuery = currentPhotoModel.getCurrentQuery()
@@ -973,15 +970,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         recyclerView.adapter = null
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+        requireContext().unregisterReceiver(snapseedCatcher)
 
         super.onDestroyView()
     }
 
     override fun onDestroy() {
-        requireContext().apply {
-            unregisterReceiver(snapseedCatcher)
-            contentResolver.unregisterContentObserver(snapseedOutputObserver)
-        }
+        requireContext().contentResolver.unregisterContentObserver(snapseedOutputObserver)
 
         super.onDestroy()
     }
