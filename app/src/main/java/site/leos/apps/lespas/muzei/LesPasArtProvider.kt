@@ -142,7 +142,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
             setClass(context!!, MainActivity::class.java)
             putExtra(FROM_MUZEI_PHOTO, artwork.token)
             putExtra(FROM_MUZEI_ALBUM, artwork.metadata!!.split(',')[0])
-            flags = Intent.FLAG_ACTIVITY_NO_HISTORY
+            //flags = Intent.FLAG_ACTIVITY_NO_HISTORY
         }
 
         return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
