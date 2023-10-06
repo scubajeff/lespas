@@ -182,6 +182,7 @@
     <!-- ActionMode -->
     <style name="Theme.LesPas.ActionMode" parent="@style/Widget.AppCompat.ActionMode">
         <item name="android:layout_marginLeft">-24dp</item>
+        <item name="background">?colorPrimary</item>
         <item name="titleTextStyle">@style/ThemeOverlay.LesPas.ActionMode.Title</item>
     </style>
 
