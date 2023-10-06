@@ -56,6 +56,6 @@
     <color name="color_secondary_variant_fade_true_black">#40E9E7D8</color>
     <color name="color_error_date_picker_true_black">@color/color_error</color>
 
-    <color name="abc_decor_view_status_guard_light" tools:override="true">@color/color_primary</color>
-    <color name="abc_decor_view_status_guard" tools:override="true">@color/color_primary</color>
+    <color name="abc_decor_view_status_guard_light" tools:override="true">@android:color/transparent</color>
+    <color name="abc_decor_view_status_guard" tools:override="true">@android:color/transparent</color>
 </resources>
