@@ -316,12 +316,17 @@ class PhotoSlideFragment : Fragment() {
             addListener(MediaSliderTransitionListener(slider))
         }
 
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            @Suppress("DEPRECATION")
+            window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) }
+        }
+
         // Controls
         controlsContainer = view.findViewById<LinearLayout>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
                 v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
                 // Listener for our UI controls to show/hide with System UI
-                followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
         }
@@ -551,6 +556,10 @@ class PhotoSlideFragment : Fragment() {
         if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
 
         // Quit immersive
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            @Suppress("DEPRECATION")
+            window.decorView.setOnSystemUiVisibilityChangeListener(null)
+        }
         Tools.setImmersive(window, false)
         (requireActivity() as AppCompatActivity).apply {
             requestedOrientation = previousOrientationSetting

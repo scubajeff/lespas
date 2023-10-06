@@ -196,11 +196,16 @@ class GallerySlideFragment : Fragment() {
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }.apply { addListener(MediaSliderTransitionListener(mediaList)) }
 
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            @Suppress("DEPRECATION")
+            window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) }
+        }
+
         // Controls
         controlsContainer = view.findViewById<ConstraintLayout>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
                 v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
-                followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
         }
@@ -304,6 +309,10 @@ class GallerySlideFragment : Fragment() {
         mediaList.adapter = null
 
         // Quick immersive
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            @Suppress("DEPRECATION")
+            window.decorView.setOnSystemUiVisibilityChangeListener(null)
+        }
         Tools.setImmersive(window, false)
         (requireActivity() as AppCompatActivity).apply {
             requestedOrientation = previousOrientationSetting
