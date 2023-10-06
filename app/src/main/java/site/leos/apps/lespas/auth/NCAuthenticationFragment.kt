@@ -107,6 +107,7 @@ class NCAuthenticationFragment: Fragment() {
             currentLoginName = authenticateModel.getCredential().loginName
         }
 
+
         actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
 
@@ -116,6 +117,7 @@ class NCAuthenticationFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Set content below action toolbar if launch from Setting
         if (reLogin) view.setPadding(view.paddingLeft, actionBarHeight, view.paddingRight, 0)
+        else (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
         authWebpageBG = view.findViewById(R.id.webview_background)
         authWebpage = view.findViewById<WebView>(R.id.webview).apply {

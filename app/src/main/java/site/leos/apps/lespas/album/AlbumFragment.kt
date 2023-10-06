@@ -30,7 +30,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.TypedValue
 import android.view.*
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.CheckedTextView
 import android.widget.ImageView
 import android.widget.TextView
@@ -43,10 +45,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import androidx.core.view.MenuProvider
-import androidx.core.view.ViewCompat
-import androidx.core.view.doOnPreDraw
-import androidx.core.view.isVisible
+import androidx.core.view.*
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
@@ -81,10 +80,12 @@ import site.leos.apps.lespas.publication.PublicationListFragment
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.*
+import java.lang.Integer.max
 import java.text.Collator
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlin.math.roundToInt
 
 class AlbumFragment : Fragment(), ActionMode.Callback {
     private var actionMode: ActionMode? = null
@@ -239,7 +240,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onViewCreated(view, savedInstanceState)
 
         recyclerView = view.findViewById(R.id.albumlist)
-        fab = view.findViewById(R.id.fab)
+        fab = view.findViewById<FloatingActionButton>(R.id.fab).apply {
+            setOnClickListener { addFileLauncher.launch("*/*") }
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<MarginLayoutParams> {
+                    val fixedMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.displayMetrics).roundToInt()
+                    val navbar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                    bottomMargin = max(navbar.bottom + 24, fixedMargin)
+                    rightMargin = max(navbar.right + 24, fixedMargin)
+                }
+                insets
+            }
+        }
 
         if (!(savedInstanceState == null && doSync)) postponeEnterTransition()
         view.doOnPreDraw {
@@ -334,8 +348,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
             resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
         )
-
-        fab.setOnClickListener { addFileLauncher.launch("*/*") }
 
         // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ALBUM_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
@@ -521,7 +533,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 setDisplayShowTitleEnabled(true)
                 title = getString(R.string.app_name)
             }
-            window.statusBarColor = Tools.getAttributeColor(this, android.R.attr.colorPrimary)
         }
 
         if (showGallery) {

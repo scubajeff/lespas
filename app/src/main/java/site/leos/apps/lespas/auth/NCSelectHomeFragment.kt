@@ -130,14 +130,14 @@ class NCSelectHomeFragment: Fragment() {
                 }
             }
         })
-
-        // Hide actionbar after screen rotated, because account is saved by now and MainActivity will load Theme.LesPas
-        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_select_home, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Hide actionbar after screen rotated, because account is saved by now and MainActivity will load Theme.LesPas
+        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
         grayOutColor = ContextCompat.getColor(requireContext(), R.color.color_gray_out)
         val buttonTextColor = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf(-android.R.attr.state_enabled)), intArrayOf(serverTheme.textColor, grayOutColor))

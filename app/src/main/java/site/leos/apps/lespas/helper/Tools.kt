@@ -42,6 +42,9 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
@@ -570,87 +573,18 @@ object Tools {
         return BitmapDrawable(context.resources, bmp)
     }
 
-    @Suppress("DEPRECATION")
-    fun goImmersive(window: Window, delayTranslucentEffect: Boolean = false) {
-        window.apply {
-/*
-            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                previousNavBarColor = navigationBarColor
-                navigationBarColor = systemBarBackground
-                statusBarColor = systemBarBackground
-                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                setDecorFitsSystemWindows(false)
-            } else {
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            }
-*/
-            //previousNavBarColor = navigationBarColor
-            //navigationBarColor = Color.TRANSPARENT
-            //statusBarColor = Color.TRANSPARENT
-            if (delayTranslucentEffect) Handler(Looper.getMainLooper()).postDelayed({ addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) }, 1000) else addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-        }
-        if (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN != View.SYSTEM_UI_FLAG_FULLSCREEN) window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_IMMERSIVE or
-            // Set the content to appear under the system bars so that the
-            // content doesn't resize when the system bars hide and show.
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-            // Hide the nav bar and status bar
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_FULLSCREEN
-        )
-/*
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE or
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                // Hide the nav bar and status bar
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-            )
-        } else {
-            window.insetsController?.apply {
-                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                hide(WindowInsets.Type.systemBars())
+    fun setImmersive(window: Window, on: Boolean) {
+        if (on) {
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                hide(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         }
-*/
-    }
-
-    @Suppress("DEPRECATION")
-    fun quitImmersive(window: Window) {
-        window.run {
-/*
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-                decorView.setOnSystemUiVisibilityChangeListener(null)
-            } else {
-                insetsController?.apply {
-                    show(WindowInsets.Type.systemBars())
-                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
-                }
-                statusBarColor = resources.getColor(R.color.color_primary)
-                setDecorFitsSystemWindows(true)
-                decorView.setOnApplyWindowInsetsListener(null)
+        else {
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                show(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
             }
-*/
-            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            //statusBarColor = resources.getColor(R.color.color_primary)
-            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-            decorView.setOnSystemUiVisibilityChangeListener(null)
-            //navigationBarColor = previousNavBarColor
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
         }
     }
 

@@ -22,20 +22,29 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.StatFs
 import android.os.storage.StorageManager
 import android.view.MenuItem
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.work.WorkManager
+import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -72,11 +81,32 @@ class MainActivity : AppCompatActivity() {
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
+            setSupportActionBar(findViewById(R.id.toolbar))
             if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
         } else {
             Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
+            setSupportActionBar(findViewById(R.id.toolbar))
+
+            // Edge to edge
+            ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, windowInsets ->
+                windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.let { statusBarHeight ->
+                    view.findViewById<FragmentContainerView>(R.id.container_root)?.updatePadding(top = statusBarHeight)
+
+                    view.findViewById<AppBarLayout>(R.id.appbar_layout)?.let { toolBar ->
+                        toolBar.background = ColorDrawable(if (statusBarHeight > 0) Tools.getAttributeColor(this@MainActivity, androidx.appcompat.R.attr.colorPrimary) else Color.TRANSPARENT)
+
+                        // Should apply horizontal padding, so that action mode would work in 3-button navigation mode
+                        val displayCutoutInset = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
+                        val systemBarInset = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                        toolBar.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
+                    }
+                }
+                windowInsets
+            }
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
             supportFragmentManager.setFragmentResultListener(MAIN_ACTIVITY_REQUEST_KEY, this) { _, bundle ->
                 if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
@@ -152,8 +182,6 @@ class MainActivity : AppCompatActivity() {
 
             // Setup observer to fire up SyncAdapter
             actionsPendingModel.allPendingActions.observe(this) { actions -> if (actions.isNotEmpty()) requestSync() }
-
-            //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
     }
 

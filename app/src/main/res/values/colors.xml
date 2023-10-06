@@ -15,7 +15,7 @@
   ~   limitations under the License.
   -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <color name="frosted_glass">#A0000000</color>
     <color name="progressbar_background">#C0C0C0C0</color>
     <color name="lespas_white">#F9F7E8</color>
@@ -55,4 +55,7 @@
     <color name="color_secondary_variant_true_black">#E9E7D8</color>
     <color name="color_secondary_variant_fade_true_black">#40E9E7D8</color>
     <color name="color_error_date_picker_true_black">@color/color_error</color>
+
+    <color name="abc_decor_view_status_guard_light" tools:override="true">@android:color/transparent</color>
+    <color name="abc_decor_view_status_guard" tools:override="true">@android:color/transparent</color>
 </resources>

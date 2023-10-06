@@ -36,8 +36,7 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="actionModeStyle">@style/Theme.LesPas.ActionMode</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:navigationBarColor">@color/bottom_bar_background</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <!-- Primary theme -->
@@ -183,7 +182,6 @@
     <!-- ActionMode -->
     <style name="Theme.LesPas.ActionMode" parent="@style/Widget.AppCompat.ActionMode">
         <item name="android:layout_marginLeft">-24dp</item>
-        <item name="background">?colorPrimary</item>
         <item name="titleTextStyle">@style/ThemeOverlay.LesPas.ActionMode.Title</item>
     </style>
 

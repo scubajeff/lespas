@@ -50,9 +50,11 @@ import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.forEach
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -199,6 +201,17 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     fillColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.color_error))
                     shapeAppearanceModel = ShapeAppearanceModel.builder().setTopLeftCorner(CornerFamily.CUT, yearIndicator.height.toFloat()).build()
                 }
+            }
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        bottomMargin = navbar.bottom
+                        rightMargin = navbar.right
+                    }
+                }
+                insets
             }
         }
         mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
