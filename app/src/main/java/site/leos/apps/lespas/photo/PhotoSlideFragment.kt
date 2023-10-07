@@ -69,6 +69,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.launch
@@ -279,6 +280,9 @@ class PhotoSlideFragment : Fragment() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
                     if (state == ViewPager2.SCROLL_STATE_SETTLING) handlerBottomControl.post(hideSystemUI)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && state == ViewPager2.SCROLL_STATE_IDLE) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
+                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
+                    }
                 }
 
                 override fun onPageSelected(position: Int) {

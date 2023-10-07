@@ -57,6 +57,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -168,6 +169,9 @@ class GallerySlideFragment : Fragment() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
                     if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideSystemUI)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && state == ViewPager2.SCROLL_STATE_IDLE) mediaList.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
+                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
+                    }
                 }
 
                 @SuppressLint("SetTextI18n")

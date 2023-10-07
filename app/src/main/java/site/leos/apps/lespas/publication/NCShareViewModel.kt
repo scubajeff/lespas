@@ -1102,6 +1102,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                 // Show cached low resolution bitmap first before loading full size bitmap
                 view.setImageBitmap(it)
+                view.setTag(R.id.HDR_TAG, false)
                 callBack?.onLoadComplete(false)
             } ?: run {
                 // For camera roll items, load thumbnail if cache missed
@@ -1117,6 +1118,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         })?.let {
                             view.setImageBitmap(it)
+                            view.setTag(R.id.HDR_TAG, false)
                             callBack?.onLoadComplete(false)
                         }
                     } catch (_: Exception) {}
@@ -1330,7 +1332,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             start()
                         }
                         view.setImageDrawable(this)
-                    } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
+                        view.setTag(R.id.HDR_TAG, false)
+                    } ?: run {
+                        bitmap?.let {
+                            view.setImageBitmap(it)
+                            view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && viewType == TYPE_FULL && it.hasGainmap())
+                        } ?: run {
+                            view.setImageBitmap(placeholderBitmap)
+                            view.setTag(R.id.HDR_TAG, false)
+                        }
+                    }
 
                     // Stop loading indicator
                     view.setBackgroundResource(0)

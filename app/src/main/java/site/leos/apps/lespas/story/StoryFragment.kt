@@ -22,6 +22,7 @@ import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.Animatable2
 import android.graphics.drawable.ColorDrawable
@@ -65,6 +66,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.platform.MaterialContainerTransform
@@ -215,6 +217,9 @@ class StoryFragment : Fragment() {
                 // Start the show by setting the caption textview
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
                     if (animationState == STATE_STARTED) captionTextView.text = pAdapter.getCaption(slider.currentItem)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
+                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
+                    }
                 }
             }
 
