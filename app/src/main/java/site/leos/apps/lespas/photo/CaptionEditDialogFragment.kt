@@ -30,6 +30,7 @@ class CaptionEditDialogFragment: LesPasDialogFragment(R.layout.fragment_caption_
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        isCancelable = false
 
         requireDialog().window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
 
