@@ -788,7 +788,7 @@ class StoryFragment : Fragment() {
         private const val STATE_ENDED = 1
         private const val STATE_PAUSED = 2
 
-        private const val CAPTION_PAGE_VIEWING_TIME = 8000
+        private const val CAPTION_PAGE_VIEWING_TIME = 10000
         private const val CAPTION_PAGE_MINIMUM_VIEWING_TIME = 4000L
         private const val DREAMY_SCALE_FACTOR = 1.05f
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"

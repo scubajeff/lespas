@@ -94,7 +94,6 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
-import kotlin.math.min
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -592,9 +591,13 @@ class PhotoSlideFragment : Fragment() {
     private val showSystemUI = Runnable {
         WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars())
 
+/*
         // trigger auto hide, timeout length adapted to caption's length
         val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
         handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
+*/
+        // Trigger auto hide only if there is no caption
+        if (captionTextView.text.isEmpty()) handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
 /*
@@ -615,10 +618,12 @@ class PhotoSlideFragment : Fragment() {
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
         // auto hide, timeout length adapted to caption's length
+/*
         if (show) {
             val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
             handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
         }
+*/
     }
 
     private fun showCoverAppliedStatus(appliedStatus: Boolean) {

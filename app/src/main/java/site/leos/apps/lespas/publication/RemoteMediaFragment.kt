@@ -67,14 +67,12 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelableArray
 import site.leos.apps.lespas.helper.VideoPlayerViewModel
 import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
-import site.leos.apps.lespas.helper.doOnEachNextLayout
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import kotlin.math.min
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -153,16 +151,7 @@ class RemoteMediaFragment: Fragment() {
 
         postponeEnterTransition()
 
-        captionTextView = view.findViewById<TextView>(R.id.caption).apply {
-            movementMethod =  ScrollingMovementMethod()
-            doOnEachNextLayout {
-                // Hide bottom control with delay adapted to caption's length
-                (it as TextView).let { caption ->
-                    handler.removeCallbacks(hideSystemUI)
-                    handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + if (caption.text.isNotEmpty()) min(caption.lineCount, caption.maxLines) * 800 else 0)
-                }
-            }
-        }
+        captionTextView = view.findViewById<TextView>(R.id.caption).apply { movementMethod =  ScrollingMovementMethod() }
         dividerView = view.findViewById(R.id.divider)
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
@@ -363,14 +352,14 @@ class RemoteMediaFragment: Fragment() {
     private val showSystemUI = Runnable {
         WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars())
 
-        captionTextView.text.isNotEmpty().let {
+        captionTextView.text.isNotEmpty().let { hasCaption ->
             // Use View.INVISIBLE so that caption's lines can be count even if it's empty
-            captionTextView.visibility = if (it) View.VISIBLE else View.INVISIBLE
-            dividerView.isVisible = it
-        }
+            captionTextView.isVisible = hasCaption
+            dividerView.isVisible = hasCaption
 
-        // auto hide, now triggered by caption view layout adapting to caption's length
-        //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+            // Trigger auto hide only if there is no caption
+            if (!hasCaption) handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        }
     }
 
 /*
