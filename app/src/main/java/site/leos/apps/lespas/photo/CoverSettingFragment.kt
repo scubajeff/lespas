@@ -133,7 +133,7 @@ class CoverSettingFragment : Fragment() {
                 return true
             }
 
-            override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+            override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
                 newBias -= distanceY / screenHeight
                 if (newBias < scrollTop) newBias = scrollTop
                 if (newBias > scrollBottom) newBias = scrollBottom

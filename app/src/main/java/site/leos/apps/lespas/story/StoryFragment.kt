@@ -299,31 +299,33 @@ class StoryFragment : Fragment() {
                 } else return false
             }
 
-            override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-                if (animationState == STATE_STARTED) {
-                    // Ignore flings
-                    if (abs(distanceY) > 15) return false
+            override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                if (e1 != null) {
+                    if (animationState == STATE_STARTED) {
+                        // Ignore flings
+                        if (abs(distanceY) > 15) return false
 
-                    if (abs(distanceX) < abs(distanceY)) {
-                        knobLayout.isVisible = true
-                        // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
-                        if (e1.x > displayWidth / 2) {
-                            knobIcon.setImageDrawable(volumeDrawable)
-                            // Affect both video player and bgm player
-                            playerViewModel.setVolume(distanceY / 300)
-                            knobPosition.progress = (playerViewModel.getVolume() * 100).toInt()
-                        } else {
-                            knobIcon.setImageDrawable(brightnessDrawable)
-                            // Affect both video player and bgm player
-                            playerViewModel.setBrightness(distanceY / 300)
-                            knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
+                        if (abs(distanceX) < abs(distanceY)) {
+                            knobLayout.isVisible = true
+                            // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
+                            if (e1.x > displayWidth / 2) {
+                                knobIcon.setImageDrawable(volumeDrawable)
+                                // Affect both video player and bgm player
+                                playerViewModel.setVolume(distanceY / 300)
+                                knobPosition.progress = (playerViewModel.getVolume() * 100).toInt()
+                            } else {
+                                knobIcon.setImageDrawable(brightnessDrawable)
+                                // Affect both video player and bgm player
+                                playerViewModel.setBrightness(distanceY / 300)
+                                knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
+                            }
+
+                            knobAnimationHandler.removeCallbacks(hideSettingRunnable)
+                            knobAnimationHandler.postDelayed(hideSettingRunnable, 1000)
                         }
 
-                        knobAnimationHandler.removeCallbacks(hideSettingRunnable)
-                        knobAnimationHandler.postDelayed(hideSettingRunnable, 1000)
-                    }
-
-                    return true
+                        return true
+                    } else return false
                 } else return false
             }
         })
