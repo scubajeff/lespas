@@ -349,18 +349,7 @@ class RemoteMediaFragment: Fragment() {
     }
 
     private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.navigationBars()) }
-    private val showSystemUI = Runnable {
-        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars())
-
-        captionTextView.text.isNotEmpty().let { hasCaption ->
-            // Use View.INVISIBLE so that caption's lines can be count even if it's empty
-            captionTextView.isVisible = hasCaption
-            dividerView.isVisible = hasCaption
-
-            // Trigger auto hide only if there is no caption
-            if (!hasCaption) handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-        }
-    }
+    private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars()) }
 
 /*
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
@@ -381,6 +370,15 @@ class RemoteMediaFragment: Fragment() {
 
         // auto hide, now triggered by caption view layout adapting to caption's length
         //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+
+        captionTextView.text.isNotEmpty().let { hasCaption ->
+            // Use View.INVISIBLE so that caption's lines can be count even if it's empty
+            captionTextView.isVisible = hasCaption
+            dividerView.isVisible = hasCaption
+
+            // Trigger auto hide only if there is no caption
+            if (show && !hasCaption) handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        }
     }
 
     private fun saveMedia() {
