@@ -367,11 +367,8 @@ class GallerySlideFragment : Fragment() {
     private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars()) }
 
     private fun followSystemBar(show: Boolean) {
-        // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
-        try {
-            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
-            controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
-        } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
+        TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
+        controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
 
         handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
