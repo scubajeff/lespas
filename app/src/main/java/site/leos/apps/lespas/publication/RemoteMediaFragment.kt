@@ -189,7 +189,7 @@ class RemoteMediaFragment: Fragment() {
 
         controlsContainer = view.findViewById<LinearLayoutCompat>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
-                v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom)
+                v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom, right = insets.getInsets(WindowInsetsCompat.Type.systemBars()).right, left = insets.getInsets(WindowInsetsCompat.Type.systemBars()).left)
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
