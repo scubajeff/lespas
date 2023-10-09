@@ -341,6 +341,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             })
 
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_footprint_24)!!))
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        rightMargin = navbar.right
+                        leftMargin = navbar.left
+                    }
+                }
+                insets
+            }
         }
         LesPasFastScroller(
             recyclerView,

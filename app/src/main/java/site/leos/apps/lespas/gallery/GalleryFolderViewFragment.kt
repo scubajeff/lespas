@@ -193,7 +193,20 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         chipForAll = view.findViewById(R.id.chip_for_all)
         currentCheckedTag = galleryModel.getCurrentSubFolder()
-        subFolderChipGroup = view.findViewById<ChipGroup?>(R.id.sub_chips).apply { if (folderArgument == GalleryFragment.TRASH_FOLDER) isVisible = false }
+        subFolderChipGroup = view.findViewById<ChipGroup?>(R.id.sub_chips).apply {
+            if (folderArgument == GalleryFragment.TRASH_FOLDER) isVisible = false
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        rightMargin = navbar.right
+                        leftMargin = navbar.left
+                    }
+                }
+                insets
+            }
+        }
 
         yearIndicator = view.findViewById<TextView>(R.id.year_indicator).apply {
             doOnLayout {
@@ -342,6 +355,17 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                 }
             })
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        rightMargin = navbar.right
+                        leftMargin = navbar.left
+                    }
+                }
+                insets
+            }
         }
 
         LesPasFastScroller(

@@ -27,7 +27,9 @@ import android.widget.TextView
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -109,6 +111,17 @@ class LocationResultSingleLocalityFragment: Fragment() {
         photoList.run {
             adapter = photoAdapter
             ViewCompat.setTransitionName(this, locality)
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        rightMargin = navbar.right
+                        leftMargin = navbar.left
+                    }
+                }
+                insets
+            }
         }
 
         searchViewModel.getResult().observe(viewLifecycleOwner) { resultList ->

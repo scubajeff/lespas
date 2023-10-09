@@ -30,7 +30,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -97,6 +100,17 @@ class PublicationListFragment: Fragment() {
 
         shareListRecyclerView = view.findViewById<RecyclerView>(R.id.sharelist).apply {
             adapter = shareListAdapter
+
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        rightMargin = navbar.right
+                        leftMargin = navbar.left
+                    }
+                }
+                insets
+            }
         }
 
         shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { shareListAdapter.submitList(it) }

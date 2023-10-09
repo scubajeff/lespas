@@ -42,7 +42,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -317,6 +320,19 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
         findPreference<PreferenceCategory>(getString(R.string.blog_category_pref_key))?.isVisible = ViewModelProvider(requireActivity())[NCShareViewModel::class.java].isBlogSiteAvailable()
+
+        listView.run {
+            // Avoid window inset overlapping
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
+                        rightMargin = navbar.right
+                        leftMargin = navbar.left
+                    }
+                }
+                insets
+            }
+        }
     }
 
     override fun onResume() {
