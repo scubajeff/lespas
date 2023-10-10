@@ -696,9 +696,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
             view.findViewById<AutoCompleteTextView>(R.id.cache_size)?.run {
                 setText(sp.getInt(CACHE_SIZE, 800).toString())
-                setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf<Int>().apply { for (i in 1..10) add(i*100) }))
+                setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf<Int>().apply {
+                    for (i in 1..10) add(i*100)
+                    add(5000)
+                }))
                 setOnItemClickListener { _, _, position, _ ->
-                    sp.edit().putInt(CACHE_SIZE, (position + 1) * 100).apply()
+                    sp.edit().putInt(CACHE_SIZE, (if (position < 10) position + 1 else 50) * 100).apply()
                     dismiss()
                 }
             }
