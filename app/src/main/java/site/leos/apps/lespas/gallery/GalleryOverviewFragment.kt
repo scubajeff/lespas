@@ -250,7 +250,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 savedInstanceState?.let { onRestoreInstanceState(it) }
             }
 
-            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_phone_android_24)!!))
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             // Avoid window inset overlapping
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->

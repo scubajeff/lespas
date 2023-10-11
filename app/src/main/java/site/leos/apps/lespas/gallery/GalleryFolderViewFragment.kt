@@ -342,7 +342,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
             })
 
-            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_phone_android_24)!!))
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
                 override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {

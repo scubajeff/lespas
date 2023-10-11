@@ -130,7 +130,7 @@ class SearchResultFragment : Fragment() {
                 when(searchScope) {
                     R.id.search_album -> R.drawable.ic_baseline_footprint_24
                     R.id.search_archive -> R.drawable.ic_baseline_archive_24
-                    else -> R.drawable.ic_baseline_phone_android_24
+                    else -> R.drawable.ic_baseline_device_24
                 }
             )!!))
 

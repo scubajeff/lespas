@@ -758,7 +758,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
             init {
                 val titleDrawableSize = tvTitle.textSize.toInt()
-                deviceDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_phone_android_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+                deviceDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_device_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
                 cloudDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
             }
 
