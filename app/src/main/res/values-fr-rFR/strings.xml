@@ -207,7 +207,7 @@
     <string name="item_settings">Paramètres</string>
     <string name="item_search">Rechercher</string>
     <string name="item_location_search">Lieu</string>
-    <string name="item_unhide">Albums cachés</string>
+    <string name="item_unhide">Dévoiler</string>
     <string name="item_rename">Renommer l\'album</string>
     <string name="item_publish">Publier l\'album</string>
     <string name="item_bgm">Gérer la musique de fond</string>
