@@ -65,6 +65,7 @@ import androidx.media3.common.Player
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -115,6 +116,8 @@ class StoryFragment : Fragment() {
     private lateinit var dreamyAnimator: ObjectAnimator
     private lateinit var hideSettingRunnable: Runnable
     private val animatableCallback = AnimatedDrawableCallback { if (animationState == STATE_STARTED) advanceSlide() }
+    private val zoomInPageTransformer = ZoomInPageTransformer()
+    private val defaultPageTransformer = MarginPageTransformer(0)
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -206,7 +209,16 @@ class StoryFragment : Fragment() {
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
             isUserInputEnabled = false
-            setPageTransformer(ZoomInPageTransformer())
+            setPageTransformer(zoomInPageTransformer)
+
+            // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
+            val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply{ isAccessible = true }).get(this) as RecyclerView
+            (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
+                isAccessible = true
+                set(recyclerView, (get(recyclerView) as Int) * 4)
+            }
+
+            keepScreenOn = true
         }
 
         slider.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
@@ -290,9 +302,12 @@ class StoryFragment : Fragment() {
                                 }
 
                                 // Allow swiping
-                                slider.isUserInputEnabled = true
-                                slider.setPageTransformer(null)
-                                slider.offscreenPageLimit = ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT
+                                slider.run {
+                                    isUserInputEnabled = true
+                                    setPageTransformer(defaultPageTransformer)
+                                    offscreenPageLimit = 1
+                                    keepScreenOn = false
+                                }
                             }, 500)
                         }
                     })
@@ -515,11 +530,17 @@ class StoryFragment : Fragment() {
 
     private fun showCurrentSlide() {
         animationState = STATE_STARTED
-        slider.isUserInputEnabled = false
-        slider.setPageTransformer(ZoomInPageTransformer())
         controlFAB.isVisible = false
-        captionCrank.scrollY = 0
-        captionCrank.isVisible = captionTextView.text.isNotEmpty()
+
+        slider.run {
+            isUserInputEnabled = false
+            setPageTransformer(zoomInPageTransformer)
+            keepScreenOn = true
+        }
+        captionCrank.run {
+            scrollY = 0
+            isVisible = captionTextView.text.isNotEmpty()
+        }
 
         if (captionCrank.isVisible) showCaption() else animateSlide()
     }
@@ -665,48 +686,37 @@ class StoryFragment : Fragment() {
                     }
                     else -> {
                         when {
-                            position <= -1f -> { // [-Infinity, -1)
+                            position <= -1f -> { // [-Infinity, -1]
                                 // This page is way off-screen to the left
-                                translationX = 1.1f
+
+                                // Leave horizontal position unchanged
+                                translationX = 0f
 
                                 // Reset scale and alpha to normal
                                 alpha = 1f
                                 scaleX = 1f
                                 scaleY = 1f
-                                translationZ = 1f
-/*
-                                alpha = 0f
-                                scaleX = 1f + DREAMY_SCALE_FACTOR
-                                scaleY = 1f + DREAMY_SCALE_FACTOR
-*/
                             }
-                            position < 0f -> { // [-1, 0)
+                            position < 0f -> { // (-1, 0)
                                 // This page is moving off-screen
 
                                 alpha = 1f + position
                                 // Counteract the default slide transition
                                 translationX = width * -position
-                                // Move it above the page on the right, which is the one becoming the center piece
-                                translationZ = 1f
                                 (DREAMY_SCALE_FACTOR - position).run {
                                     scaleX = this
                                     scaleY = this
                                 }
                             }
                             position == 0f -> {
-                                alpha = 1f
-                                translationX = 0f
-                                translationZ = 0f
-                                // keep scale factor intact, remove glitch between dreamy zoom and slide zoom out
+                                // This branch is necessary to prevent glitch between dreamy zoom and slide zoom out, because picture in current center position has been scaled by dreamy animation in animateSlide()
                             }
                             position < 1f -> { // (0, 1)
                                 // This page is moving into screen
+
                                 alpha = 1f - position
                                 // Counteract the default slide transition
                                 translationX = width * -position
-                                translationZ = 0f
-                                //(0.5f * (1 - position) + 0.5f).run {
-                                //(0.5f * (2f - position)).run {
                                 (1f - position * 0.5f).run {
                                     scaleX = this
                                     scaleY = this
@@ -714,19 +724,14 @@ class StoryFragment : Fragment() {
                             }
                             else -> { // [1, +Infinity]
                                 // This page is way off-screen to the right
-                                translationX = -1.1f
-                                translationZ = 1f
+
+                                // Leave horizontal position unchanged
+                                translationX = 0f
 
                                 // Scale and alpha should be normal
                                 alpha = 1.0f
                                 scaleX = 1.0f
                                 scaleY = 1.0f
-/*
-                                alpha = 0f
-                                translationZ = -1f
-                                scaleX = 0.5f
-                                scaleY = 0.5f
-*/
                             }
                         }
                     }
