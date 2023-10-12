@@ -347,6 +347,20 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     LESPAS_LONGITUDE -> res.longitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     LESPAS_ALTITUDE -> res.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     LESPAS_BEARING -> res.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    NC_IMAGE_RESOLUTION -> if (res.width == 0 && res.height == 0) {
+                                        // Fall back to Nextcloud exposed metadata of image resolution
+                                        ("{\"width\":(.*),\"height\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (width, height) ->
+                                            res.width = try { width.toInt() } catch (e: NumberFormatException) { 0 }
+                                            res.height = try { height.toInt() } catch (e: NumberFormatException) { 0 }
+                                        }
+                                    }
+                                    NC_IMAGE_GPS -> if (res.latitude == Photo.NO_GPS_DATA && res.longitude == Photo.NO_GPS_DATA) {
+                                        // Fall back to Nextcloud exposed metadata of image GPS location
+                                        ("{\"latitude\":(.*),\"longitude\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (latitude, longitude) ->
+                                            res.latitude = try { latitude.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                            res.longitude = try { longitude.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                        }
+                                    }
                                     RESPONSE_TAG -> {
                                         text = ""
                                         if (res.dateTaken == LocalDateTime.MIN) res.dateTaken = res.modified
@@ -569,7 +583,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         // PROPFIND properties namespace
         private const val DAV_NS = "DAV:"
         private const val OC_NS = "http://owncloud.org/ns"
-        //private const val NC_NS = "http://nextcloud.org/ns"
+        private const val NC_NS = "http://nextcloud.org/ns"
 
         // Standard properties
         private const val DAV_GETETAG = "getetag"
@@ -586,6 +600,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         //private const val NC_HASPREVIEW = "has-preview"
         //private const val OC_SIZE = "size"
         //private const val OC_DATA_FINGERPRINT = "data-fingerprint"
+        private const val NC_IMAGE_RESOLUTION = "file-metadata-size"
+        private const val NC_IMAGE_GPS = "file-metadata-gps"
 
         // LesPas properties
         const val LESPAS_DATE_TAKEN = "pictureDateTaken"
@@ -599,12 +615,12 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         const val LESPAS_CAPTION = "pictureCaption"
 
         private const val XML_HEADER = "<?xml version=\"1.0\"?>"
-        private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
+        //private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\" xmlns:nc=\"$NC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
         //private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/><oc:$LESPAS_LATITUDE/><oc:$LESPAS_LONGITUDE/><oc:$LESPAS_ALTITUDE/><oc:$LESPAS_BEARING/></d:prop></d:propfind>"
         private const val PROPFIND_EXTRA_BODY =
             """
                 $XML_HEADER
-                <d:propfind xmlns:d="$DAV_NS" xmlns:oc="$OC_NS">
+                <d:propfind xmlns:d="$DAV_NS" xmlns:oc="$OC_NS" xmlns:nc="$NC_NS">
                 <d:prop>
                   <oc:$OC_UNIQUE_ID/>
                   <d:$DAV_GETCONTENTTYPE/>
@@ -621,6 +637,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                   <oc:$LESPAS_ALTITUDE/>
                   <oc:$LESPAS_BEARING/>
                   <oc:$LESPAS_CAPTION/>
+                  <nc:$NC_IMAGE_RESOLUTION/>
+                  <nc:$NC_IMAGE_GPS/>
                 </d:prop>
                 </d:propfind>
             """
