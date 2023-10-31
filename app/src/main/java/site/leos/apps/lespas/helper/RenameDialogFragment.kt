@@ -16,13 +16,13 @@
 
 package site.leos.apps.lespas.helper
 
-import android.content.DialogInterface
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import site.leos.apps.lespas.R
@@ -30,12 +30,14 @@ import site.leos.apps.lespas.R
 class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog) {
     private lateinit var usedNames: ArrayList<String>
     private var requestType: Int = REQUEST_TYPE_ALBUM
+    private lateinit var nameTextView: TextInputEditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         usedNames = requireArguments().getStringArrayList(USED_NAMES) ?: arrayListOf()
         requestType = requireArguments().getInt(REQUEST_TYPE, REQUEST_TYPE_ALBUM)
+        isCancelable = false
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -49,7 +51,8 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
             REQUEST_TYPE_NEW -> getString(R.string.tooltips_text_create_folder)
             else -> ""
         }
-        view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
+        nameTextView = view.findViewById(R.id.rename_textinputedittext)
+        nameTextView.run {
             // Use append to move cursor to the end of text
             if (savedInstanceState == null) append(arguments?.getString(OLD_NAME))
 
@@ -59,13 +62,7 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
                 if (actionId == EditorInfo.IME_ACTION_GO || keyEvent.keyCode == KeyEvent.KEYCODE_ENTER) {
                     error ?: run {
                         val name = this.text.toString().trim()    // Trim the leading and trailing blank
-                        if (name.isNotEmpty()) {
-                            if (requireArguments().getString(OLD_NAME)?.equals(name) != true) parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply {
-                                putString(RESULT_KEY_NEW_NAME, name)
-                                putInt(REQUEST_TYPE, requestType)
-                            })
-                            dismiss()
-                        }
+                        if (name.isNotEmpty()) returnNewName(name)
                     }
                 }
                 true
@@ -74,15 +71,28 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
             requestFocus()
         }
 
+        view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {nameTextView.text?.let { name -> if (name.isNotEmpty()) returnNewName(name.toString()) }}
+        view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener {
+            cancelRename()
+            dismiss()
+        }
+
         requireDialog().window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 
-    override fun onCancel(dialog: DialogInterface) {
+    private fun returnNewName(newName: String) {
+        if (requireArguments().getString(OLD_NAME)?.equals(newName) != true) parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply {
+            putString(RESULT_KEY_NEW_NAME, newName)
+            putInt(REQUEST_TYPE, requestType)
+        })
+        dismiss()
+    }
+
+    private fun cancelRename() {
         parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply {
             putString(RESULT_KEY_NEW_NAME, null)
             putInt(REQUEST_TYPE, requestType)
         })
-        super.onCancel(dialog)
     }
 
     companion object {
