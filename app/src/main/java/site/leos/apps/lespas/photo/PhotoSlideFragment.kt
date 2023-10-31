@@ -67,11 +67,13 @@ import androidx.viewpager2.widget.ViewPager2
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -220,10 +222,14 @@ class PhotoSlideFragment : Fragment() {
                         WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 
                         WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
-                            if (workInfo != null) {
+                            if (workInfo != null && workInfo[0].state == WorkInfo.State.SUCCEEDED) {
                                 if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
                                     // When replacing original with Snapseed result, refresh image cache of all size
-                                    imageLoaderModel.invalidPhoto(pAdapter.getPhotoAt(slider.currentItem).id)
+                                    val photoId = pAdapter.getPhotoAt(slider.currentItem).id
+                                    imageLoaderModel.invalidPhoto(photoId)
+                                    if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) {
+                                        File(Tools.getLocalRoot(requireContext()), photoId).delete()
+                                    }
                                 }
                             }
                         }

@@ -85,6 +85,7 @@ import androidx.transition.TransitionManager
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.android.material.shape.CornerFamily
@@ -297,12 +298,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
                         getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
-                            if (workInfo != null) {
+                            if (workInfo != null && workInfo[0].state == WorkInfo.State.SUCCEEDED) {
                                 // If replace original is on, remove old bitmaps from cache and take care of cover too
                                 if (sp.getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
                                     imageLoaderModel.invalidPhoto(sharedPhoto.id)
-                                    // Update cover if needed
-                                    if (sharedPhoto.id == album.cover) mAdapter.updateCover()
+                                    if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) {
+                                        File(Tools.getLocalRoot(requireContext()), sharedPhoto.id).delete()
+                                    }
                                 }
                             }
                         }
@@ -1375,7 +1377,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo? = try { currentList.last { it.id == photoId }} catch (e: NoSuchElementException) { null }
-        internal fun updateCover() { notifyItemChanged(0) }
+        //internal fun updateCover() { notifyItemChanged(0) }
 
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
