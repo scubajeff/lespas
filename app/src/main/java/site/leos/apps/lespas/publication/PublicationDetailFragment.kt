@@ -22,6 +22,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -32,6 +33,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -320,6 +322,13 @@ class PublicationDetailFragment: Fragment() {
                         setOnCloseListener {
                             nameFilterBackPressedCallback.isEnabled = false
                             false
+                        }
+
+                        findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
+                            ContextCompat.getColor(requireContext(), R.color.lespas_white).let {
+                                setTextColor(it)
+                                setHintTextColor(ColorUtils.setAlphaComponent(it, 0xA0))
+                            }
                         }
                     }
                 }

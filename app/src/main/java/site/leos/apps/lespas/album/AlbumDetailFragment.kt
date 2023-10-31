@@ -45,6 +45,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -55,6 +56,7 @@ import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -809,6 +811,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             return true
                         }
                     })
+
+                    actionView?.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
+                        ContextCompat.getColor(requireContext(), R.color.lespas_white).let {
+                            setTextColor(it)
+                            setHintTextColor(ColorUtils.setAlphaComponent(it, 0xA0))
+                        }
+                    }
                 }
                 blogOptionMenu = menu.findItem(R.id.option_menu_blog)
 

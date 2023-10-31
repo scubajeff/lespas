@@ -34,6 +34,7 @@ import android.util.TypedValue
 import android.view.*
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.CheckedTextView
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -45,6 +46,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.*
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.core.widget.TextViewCompat
@@ -427,6 +429,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                                 expandActionView()
                                 it.setQuery(this, false)
                                 nameFilterBackPressedCallback.isEnabled = true
+                            }
+                        }
+
+                        it.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
+                            ContextCompat.getColor(requireContext(), R.color.lespas_white).let {
+                                setTextColor(it)
+                                setHintTextColor(ColorUtils.setAlphaComponent(it, 0xA0))
                             }
                         }
                     }
