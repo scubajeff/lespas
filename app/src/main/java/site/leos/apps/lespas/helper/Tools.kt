@@ -432,7 +432,6 @@ object Tools {
         var coverMimeType: String
         var orientation: Int
 
-        @Suppress("DEPRECATION")
         //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
@@ -620,8 +619,8 @@ object Tools {
     fun isExcludedAlbum(album: Album): Boolean = (album.shareId and Album.EXCLUDED_ALBUM) == Album.EXCLUDED_ALBUM
     fun isWideListAlbum(sortOrder: Int): Boolean = sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..200
 
-    private const val PI = 3.1415926535897932384626
-    private const val EE = 0.00669342162296594323
+    private const val PI = 3.141592653589793
+    private const val EE = 0.006693421622965943
     private const val A = 6378245.0
     fun wGS84ToGCJ02(latLong: DoubleArray): DoubleArray {
         // Out of China
@@ -838,12 +837,14 @@ object Tools {
         return sortPhotos(result, albumSortOrder)
     }
 
+/*
     fun getAttributeResourceId(context: Context, attrId: Int): Int {
         TypedValue().let {
             context.theme.resolveAttribute(attrId, it, true)
             return it.resourceId
         }
     }
+*/
 
     fun getAttributeColor(context: Context, attrId: Int): Int {
         TypedValue().let {
