@@ -26,8 +26,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.method.ScrollingMovementMethod
-import android.transition.Slide
-import android.transition.TransitionManager
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -54,6 +52,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Slide
+import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.snackbar.Snackbar
@@ -107,7 +107,7 @@ class RemoteMediaFragment: Fragment() {
             Tools.getDisplayDimension(requireActivity()).first,
             shareModel.getResourceRoot(),
             playerViewModel,
-            { state-> toggleSystemUI(state) },
+            { state-> toggleBottomControls(state) },
             { media, imageView, type-> if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.setImagePhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
@@ -167,7 +167,7 @@ class RemoteMediaFragment: Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideSystemUI)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideBottomControls)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && state == ViewPager2.SCROLL_STATE_IDLE) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
                         window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
                     }
@@ -182,13 +182,10 @@ class RemoteMediaFragment: Fragment() {
             })
         }
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+        controlsContainer = view.findViewById(R.id.bottom_controls_container)
+        ViewCompat.setOnApplyWindowInsetsListener(controlsContainer) { v, insets->
             @Suppress("DEPRECATION")
-            window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) }
-        }
-
-        controlsContainer = view.findViewById<LinearLayoutCompat>(R.id.bottom_controls_container).apply {
-            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
+            if (insets.isVisible(WindowInsetsCompat.Type.navigationBars()) || window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) {
                 val systemBar = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
                 v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -196,14 +193,14 @@ class RemoteMediaFragment: Fragment() {
                     rightMargin = systemBar.right + displayCutout.right
                     leftMargin = systemBar.left + displayCutout.left
                 }
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
-                insets
             }
+            insets
         }
+
         view.findViewById<Button>(R.id.download_button).run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handler.post(hideSystemUI)
+                handler.post(hideBottomControls)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
@@ -215,7 +212,7 @@ class RemoteMediaFragment: Fragment() {
         view.findViewById<Button>(R.id.lespas_button).run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handler.post(hideSystemUI)
+                handler.post(hideBottomControls)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                     DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
@@ -223,7 +220,7 @@ class RemoteMediaFragment: Fragment() {
         view.findViewById<Button>(R.id.info_button).run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handler.post(hideSystemUI)
+                handler.post(hideBottomControls)
                 if (parentFragmentManager.findFragmentByTag(TAG_INFO_DIALOG) == null) {
                     MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]).show(parentFragmentManager, TAG_INFO_DIALOG)
                 }
@@ -349,13 +346,31 @@ class RemoteMediaFragment: Fragment() {
         super.onDestroyView()
     }
 
-    private fun toggleSystemUI(state: Boolean?) {
+    private fun toggleBottomControls(state: Boolean?) {
         handler.removeCallbacksAndMessages(null)
-        handler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handler.post(if (state ?: !controlsContainer.isVisible) showBottomControls else hideBottomControls)
     }
 
-    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars()) }
-    private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars()) }
+    private val hideBottomControls = Runnable {
+        WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
+
+        TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
+        controlsContainer.isVisible = false
+        handler.removeCallbacksAndMessages(null)
+    }
+    private val showBottomControls = Runnable {
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
+
+        TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
+        controlsContainer.isVisible = true
+        captionTextView.text.isNotEmpty().let { hasCaption ->
+            captionTextView.isVisible = hasCaption
+            dividerView.isVisible = hasCaption
+
+            // Trigger auto hide only if there is no caption
+            if (!hasCaption) handler.postDelayed(hideBottomControls, AUTO_HIDE_DELAY_MILLIS)
+        }
+    }
 
 /*
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
@@ -366,23 +381,6 @@ class RemoteMediaFragment: Fragment() {
         false
     }
 */
-
-    private fun followSystemBar(show: Boolean) {
-        TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
-        controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
-
-        // auto hide, now triggered by caption view layout adapting to caption's length
-        //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-
-        captionTextView.text.isNotEmpty().let { hasCaption ->
-            // Use View.INVISIBLE so that caption's lines can be count even if it's empty
-            captionTextView.isVisible = hasCaption
-            dividerView.isVisible = hasCaption
-
-            // Trigger auto hide only if there is no caption
-            if (show && !hasCaption) handler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-        }
-    }
 
     private fun saveMedia() {
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {

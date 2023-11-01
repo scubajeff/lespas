@@ -32,8 +32,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.text.method.ScrollingMovementMethod
-import android.transition.Slide
-import android.transition.TransitionManager
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -63,6 +61,8 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
+import androidx.transition.Slide
+import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
@@ -168,7 +168,7 @@ class PhotoSlideFragment : Fragment() {
                     }
                 }
             },
-            { state-> toggleSystemUI(state) },
+            { state-> toggleBottomControl(state) },
             { photo, imageView, type ->
                 if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
                 else imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else ""), imageView!!, type) { startPostponedEnterTransition() }
@@ -284,7 +284,7 @@ class PhotoSlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handlerBottomControl.post(hideSystemUI)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handlerBottomControl.post(hideBottomControls)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && state == ViewPager2.SCROLL_STATE_IDLE) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
                         window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
                     }
@@ -323,14 +323,11 @@ class PhotoSlideFragment : Fragment() {
             addListener(MediaSliderTransitionListener(slider))
         }
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            @Suppress("DEPRECATION")
-            window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) }
-        }
-
         // Controls
-        controlsContainer = view.findViewById<LinearLayout>(R.id.bottom_controls_container).apply {
-            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
+        controlsContainer = view.findViewById(R.id.bottom_controls_container)
+        ViewCompat.setOnApplyWindowInsetsListener(controlsContainer) { v, insets->
+            @Suppress("DEPRECATION")
+            if (insets.isVisible(WindowInsetsCompat.Type.navigationBars()) || window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) {
                 val systemBar = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
                 v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -338,11 +335,10 @@ class PhotoSlideFragment : Fragment() {
                     rightMargin = systemBar.right + displayCutout.right
                     leftMargin = systemBar.left + displayCutout.left
                 }
-                // Listener for our UI controls to show/hide with System UI
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
-                insets
             }
+            insets
         }
+
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)
         useAsButton = view.findViewById(R.id.set_as_button)
@@ -352,7 +348,7 @@ class PhotoSlideFragment : Fragment() {
         coverButton.run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handlerBottomControl.post(hideSystemUI)
+                handlerBottomControl.post(hideBottomControls)
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType) || currentMedia.mimeType == "image/gif") {
@@ -371,7 +367,7 @@ class PhotoSlideFragment : Fragment() {
                 if (mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
 
                 if (stripExif == getString(R.string.strip_ask_value)) {
-                    handlerBottomControl.post(hideSystemUI)
+                    handlerBottomControl.post(hideBottomControls)
 
                     if (Tools.hasExif(mimeType)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = PHOTO_SLIDE_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
@@ -389,7 +385,7 @@ class PhotoSlideFragment : Fragment() {
         view.findViewById<Button>(R.id.info_button).run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handlerBottomControl.post(hideSystemUI)
+                handlerBottomControl.post(hideBottomControls)
 
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) with(pAdapter.getPhotoAt(slider.currentItem)) {
                     if (isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED)
@@ -411,14 +407,14 @@ class PhotoSlideFragment : Fragment() {
             }
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handlerBottomControl.post(hideSystemUI)
+                handlerBottomControl.post(hideBottomControls)
                 shareOut(false, SHARE_TO_SNAPSEED)
             }
         }
         removeButton.run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handlerBottomControl.post(hideSystemUI)
+                handlerBottomControl.post(hideBottomControls)
 
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
                     ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = PHOTO_SLIDE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
@@ -427,7 +423,7 @@ class PhotoSlideFragment : Fragment() {
         captionTextView.run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                handlerBottomControl.post(hideSystemUI)
+                handlerBottomControl.post(hideBottomControls)
 
                 parentFragmentManager.findFragmentByTag(CAPTION_DIALOG) ?: run { CaptionEditDialogFragment.newInstance(captionTextView.text.toString()).show(parentFragmentManager, CAPTION_DIALOG) }
             }
@@ -594,13 +590,26 @@ class PhotoSlideFragment : Fragment() {
 
     // Toggle visibility of bottom controls and system decoView
     private val handlerBottomControl = Handler(Looper.getMainLooper())
-    private fun toggleSystemUI(state: Boolean?) {
+    private fun toggleBottomControl(state: Boolean?) {
         handlerBottomControl.removeCallbacksAndMessages(null)
-        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showBottomControls else hideBottomControls)
     }
 
-    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars()) }
-    private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars()) }
+    private val hideBottomControls = Runnable {
+        WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
+
+        TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
+        controlsContainer.isVisible = false
+        handlerBottomControl.removeCallbacksAndMessages(null)
+    }
+    private val showBottomControls = Runnable {
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
+
+        TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
+        controlsContainer.isVisible = true
+        // Trigger auto hide only if there is no caption
+        if (captionTextView.text.isEmpty()) handlerBottomControl.postDelayed(hideBottomControls, AUTO_HIDE_DELAY_MILLIS)
+    }
 
 /*
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
@@ -611,21 +620,6 @@ class PhotoSlideFragment : Fragment() {
         false
     }
 */
-
-    private fun followSystemBar(show: Boolean) {
-        TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
-        controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
-
-        // auto hide, timeout length adapted to caption's length
-/*
-        if (show) {
-            val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
-            handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
-        }
-*/
-        // Trigger auto hide only if there is no caption
-        if (show && captionTextView.text.isEmpty()) handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-    }
 
     private fun showCoverAppliedStatus(appliedStatus: Boolean) {
         Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)

@@ -27,8 +27,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.transition.Slide
-import android.transition.TransitionManager
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -56,6 +54,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Slide
+import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
@@ -116,7 +116,7 @@ class GallerySlideFragment : Fragment() {
             "${imageLoaderModel.getResourceRoot()}${remoteArchiveBaseFolder}",
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
-            { state -> toggleSystemUI(state) },
+            { state -> toggleBottomControls(state) },
             { localMedia, imageView, type ->
                 if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
                 else imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, type) { startPostponedEnterTransition() }
@@ -168,7 +168,7 @@ class GallerySlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideSystemUI)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handler.post(hideBottomControls)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && state == ViewPager2.SCROLL_STATE_IDLE) mediaList.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
                         window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
                     }
@@ -200,14 +200,11 @@ class GallerySlideFragment : Fragment() {
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }.apply { addListener(MediaSliderTransitionListener(mediaList)) }
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            @Suppress("DEPRECATION")
-            window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) }
-        }
-
         // Controls
-        controlsContainer = view.findViewById<ConstraintLayout>(R.id.bottom_controls_container).apply {
-            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
+        controlsContainer = view.findViewById(R.id.bottom_controls_container)
+        ViewCompat.setOnApplyWindowInsetsListener(controlsContainer) { v, insets->
+            @Suppress("DEPRECATION")
+            if (insets.isVisible(WindowInsetsCompat.Type.navigationBars()) || window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION == 0) {
                 val systemBar = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
                 v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -215,10 +212,10 @@ class GallerySlideFragment : Fragment() {
                     rightMargin = systemBar.right + displayCutout.right
                     leftMargin = systemBar.left + displayCutout.left
                 }
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
-                insets
             }
+            insets
         }
+
         view.findViewById<ImageButton>(R.id.info_button).setOnClickListener {
             if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
                 (if (photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) MetaDataDialogFragment.newInstance(photo) else MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))).show(parentFragmentManager, INFO_DIALOG)
@@ -364,19 +361,24 @@ class GallerySlideFragment : Fragment() {
 
     // Toggle visibility of bottom controls and system decoView
     private val handlerBottomControl = Handler(Looper.getMainLooper())
-    private fun toggleSystemUI(state: Boolean?) {
+    private fun toggleBottomControls(state: Boolean?) {
         handlerBottomControl.removeCallbacksAndMessages(null)
-        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showBottomControls else hideBottomControls)
     }
 
-    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars()) }
-    private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars()) }
+    private val hideBottomControls = Runnable {
+        WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
 
-    private fun followSystemBar(show: Boolean) {
-        TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
-        controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
+        TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
+        controlsContainer.isVisible = false
+        handlerBottomControl.removeCallbacksAndMessages(null)
+    }
+    private val showBottomControls = Runnable {
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
 
-        handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
+        controlsContainer.isVisible = true
+        handlerBottomControl.postDelayed(hideBottomControls, AUTO_HIDE_DELAY_MILLIS)
     }
 
     class MediaSlideAdapter(

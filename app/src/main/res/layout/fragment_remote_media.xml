@@ -62,7 +62,7 @@
             android:id="@+id/divider"
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_margin="@dimen/small_padding"
+            android:layout_marginTop="@dimen/small_padding"
             android:background="#646464"
             android:visibility="gone"
             tools:visibility="visible" />
@@ -70,6 +70,7 @@
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/small_padding"
             android:orientation="horizontal">
 
             <Button
