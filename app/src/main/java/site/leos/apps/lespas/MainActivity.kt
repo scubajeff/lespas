@@ -30,6 +30,7 @@ import android.os.Environment
 import android.os.StatFs
 import android.os.storage.StorageManager
 import android.view.MenuItem
+import android.view.View
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -91,7 +92,13 @@ class MainActivity : AppCompatActivity() {
 
             // Edge to edge
             ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, windowInsets ->
-                windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.let { statusBarHeight ->
+                windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.let {
+                    @Suppress("DEPRECATION")
+                    val statusBarHeight = when {
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> it
+                        window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 -> it
+                        else -> 0
+                    }
                     view.findViewById<FragmentContainerView>(R.id.container_root)?.updatePadding(top = statusBarHeight)
 
                     view.findViewById<AppBarLayout>(R.id.appbar_layout)?.let { toolBar ->
