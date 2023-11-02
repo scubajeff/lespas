@@ -105,8 +105,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
     //private var syncPreference: SwitchPreferenceCompat? = null
 
-    private var actionBarHeight = 0
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -168,8 +166,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
         manageMediaPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
-
-        actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -250,9 +246,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Set content below action toolbar
-        view.setPadding(0, actionBarHeight,0, 0)
-
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
@@ -324,11 +317,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         listView.run {
             // Avoid window inset overlapping
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                val displayCutoutInset = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+                val navigationBarInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
                 v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
-                        rightMargin = navbar.right
-                        leftMargin = navbar.left
-                    }
+                    rightMargin = displayCutoutInset.right + navigationBarInset.right
+                    leftMargin = displayCutoutInset.left + navigationBarInset.left
                 }
                 insets
             }
@@ -384,7 +377,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         super.onSaveInstanceState(outState)
         storageStatisticSummaryString?.let { outState.putString(STATISTIC_SUMMARY_STRING, it) }
         outState.putLong(STATISTIC_TOTAL_SIZE, totalSize)
-        outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
 
     override fun onStop() {
@@ -743,7 +735,5 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         const val CACHE_SIZE = "WEB_CACHE_SIZE"
         const val PICO_BLOG_ID = "PICO_BLOG_ID"
         const val PICO_BLOG_FOLDER = "PICO_BLOG_FOLDER"
-
-        private const val KEY_ACTION_BAR_HEIGHT = "KEY_ACTION_BAR_HEIGHT"
     }
 }

@@ -45,7 +45,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -208,7 +208,13 @@ class GallerySlideFragment : Fragment() {
         // Controls
         controlsContainer = view.findViewById<ConstraintLayout>(R.id.bottom_controls_container).apply {
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
-                v.updatePadding(bottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom, right = insets.getInsets(WindowInsetsCompat.Type.systemBars()).right, left = insets.getInsets(WindowInsetsCompat.Type.systemBars()).left)
+                val systemBar = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = systemBar.bottom
+                    rightMargin = systemBar.right + displayCutout.right
+                    leftMargin = systemBar.left + displayCutout.left
+                }
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) followSystemBar(insets.isVisible(WindowInsetsCompat.Type.navigationBars()))
                 insets
             }
@@ -363,8 +369,8 @@ class GallerySlideFragment : Fragment() {
         handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
-    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.navigationBars()) }
-    private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.navigationBars()) }
+    private val hideSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars()) }
+    private val showSystemUI = Runnable { WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.systemBars()) }
 
     private fun followSystemBar(show: Boolean) {
         TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })

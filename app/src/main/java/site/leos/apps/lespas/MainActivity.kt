@@ -22,15 +22,12 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.StatFs
 import android.os.storage.StorageManager
 import android.view.MenuItem
-import android.view.View
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -41,11 +38,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.work.WorkManager
-import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,6 +64,7 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var sp: SharedPreferences
+    private lateinit var toolbar: MaterialToolbar
 
     private lateinit var accounts: Array<Account>
 
@@ -90,26 +87,13 @@ class MainActivity : AppCompatActivity() {
             setContentView(R.layout.activity_main)
             setSupportActionBar(findViewById(R.id.toolbar))
 
+            toolbar = findViewById(R.id.toolbar)
             // Edge to edge
-            ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, windowInsets ->
-                windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top.let {
-                    @Suppress("DEPRECATION")
-                    val statusBarHeight = when {
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> it
-                        window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 -> it
-                        else -> 0
-                    }
-                    view.findViewById<FragmentContainerView>(R.id.container_root)?.updatePadding(top = statusBarHeight)
-
-                    view.findViewById<AppBarLayout>(R.id.appbar_layout)?.let { toolBar ->
-                        toolBar.background = ColorDrawable(if (statusBarHeight > 0) Tools.getAttributeColor(this@MainActivity, androidx.appcompat.R.attr.colorPrimary) else Color.TRANSPARENT)
-
-                        // Should apply horizontal padding, so that action mode would work in 3-button navigation mode
-                        val displayCutoutInset = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
-                        val systemBarInset = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-                        toolBar.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
-                    }
-                }
+            ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, windowInsets ->
+                // Should apply horizontal padding, so that action mode would work in 3-button navigation mode
+                val displayCutoutInset = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
+                val systemBarInset = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                toolbar.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
                 windowInsets
             }
             WindowCompat.setDecorFitsSystemWindows(window, false)

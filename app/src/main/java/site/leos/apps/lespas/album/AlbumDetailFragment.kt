@@ -394,7 +394,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
                         bottomMargin = navbar.bottom
-                        rightMargin = navbar.right
+                        rightMargin = navbar.right + insets.getInsets(WindowInsetsCompat.Type.displayCutout()).right
                     }
                 }
                 insets
@@ -513,11 +513,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             // Avoid window inset overlapping
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                val displayCutoutInset = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+                val navigationBarInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
                 v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    insets.getInsets(WindowInsetsCompat.Type.navigationBars()).let { navbar ->
-                        rightMargin = navbar.right
-                        leftMargin = navbar.left
-                    }
+                    rightMargin = displayCutoutInset.right + navigationBarInset.right
+                    leftMargin = displayCutoutInset.left + navigationBarInset.left
                 }
                 insets
             }

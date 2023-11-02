@@ -72,7 +72,6 @@ class NCAuthenticationFragment: Fragment() {
     private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
     private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
 
-    private var actionBarHeight = 0
     private var currentLoginName = ""
 
     private lateinit var webviewBackPressedCallback: OnBackPressedCallback
@@ -106,9 +105,6 @@ class NCAuthenticationFragment: Fragment() {
             // Get current account loginName
             currentLoginName = authenticateModel.getCredential().loginName
         }
-
-
-        actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_nc_authentication, container, false)
@@ -116,8 +112,7 @@ class NCAuthenticationFragment: Fragment() {
     @SuppressLint("SetJavaScriptEnabled", "ApplySharedPref")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Set content below action toolbar if launch from Setting
-        if (reLogin) view.setPadding(view.paddingLeft, actionBarHeight, view.paddingRight, 0)
-        else (requireActivity() as AppCompatActivity).supportActionBar?.hide()
+        if (!reLogin) (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
         authWebpageBG = view.findViewById(R.id.webview_background)
         authWebpage = view.findViewById<WebView>(R.id.webview).apply {
@@ -310,7 +305,6 @@ class NCAuthenticationFragment: Fragment() {
         super.onSaveInstanceState(outState)
         // UninitializedPropertyAccessException will throw when screen rotates in NCSelectHomeFragment
         try { authWebpage.saveState(outState) } catch(_: UninitializedPropertyAccessException) {}
-        outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
 
     override fun onDestroyView() {
@@ -402,8 +396,6 @@ class NCAuthenticationFragment: Fragment() {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val NC_AUTHENTICATION_REQUEST_KEY = "NC_AUTHENTICATION_REQUEST_KEY"
         private const val CONFIRM_NEW_ACCOUNT_DIALOG = "CONFIRM_NEW_ACCOUNT_DIALOG"
-
-        private const val KEY_ACTION_BAR_HEIGHT = "KEY_ACTION_BAR_HEIGHT"
 
         private const val KEY_RELOGIN = "KEY_RELOGIN"
         private const val KEY_THEMING = "KEY_THEMING"

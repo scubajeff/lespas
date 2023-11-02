@@ -22,7 +22,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingLeft="1dp"
-    android:paddingTop="?attr/actionBarSize"
     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
     app:spanCount="@integer/photo_grid_span_count"
     tools:ignore="RtlHardcoded,RtlSymmetry,SpeakableTextPresentCheck"
