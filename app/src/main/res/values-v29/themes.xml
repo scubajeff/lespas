@@ -103,29 +103,6 @@
         <item name="android:colorControlHighlight">?primaryTextWhite</item>
     </style>
 
-    <!-- Theme for first login page -->
-    <style name="Theme.LesPas.NoTitleBar" parent="Theme.LesPas.Base">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/color_primary</item>
-        <item name="colorPrimaryVariant">@color/color_primary_variant</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/color_secondary</item>
-        <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
-        <!-- Additional UI colors -->
-        <item name="colorError">@color/color_error</item>
-        <item name="android:colorBackground">@color/color_background</item>
-        <item name="colorSurface">@color/color_surface</item>
-        <item name="android:colorEdgeEffect">@color/color_on_primary</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimary</item>
-
-        <!-- fonts -->
-        <item name="fontFamily">@font/archer_bold</item>
-
-        <!-- Customize your theme here. -->
-        <item name="android:windowActivityTransitions">true</item>
-    </style>
-
     <!-- Normal Theme for ShareReceiverActivity -->
     <style name="Theme.LesPas.Transparent" parent="Theme.LesPas">
         <item name="android:windowIsTranslucent">true</item>

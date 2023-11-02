@@ -32,7 +32,6 @@ import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -71,24 +70,17 @@ class MainActivity : AppCompatActivity() {
     private var prefBackupNeeded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        setSupportActionBar(findViewById(R.id.toolbar))
+
         sp = PreferenceManager.getDefaultSharedPreferences(this)
-
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
-        if (accounts.isEmpty()) {
-            setTheme(R.style.Theme_LesPas_NoTitleBar)
-            sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_main)
-            setSupportActionBar(findViewById(R.id.toolbar))
-            if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
-        } else {
-            Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_main)
-            setSupportActionBar(findViewById(R.id.toolbar))
-
-            toolbar = findViewById(R.id.toolbar)
+        if (accounts.isEmpty() && savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
+        else {
             // Edge to edge
+            toolbar = findViewById(R.id.toolbar)
             ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, windowInsets ->
                 // Should apply horizontal padding, so that action mode would work in 3-button navigation mode
                 val displayCutoutInset = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
@@ -247,12 +239,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-/*
-    fun themeToolbar(themeColor: Int) {
-        toolbar.background = TransitionDrawable(arrayOf(ColorDrawable(ContextCompat.getColor(this, R.color.color_primary)), ColorDrawable(themeColor))).apply { startTransition(2000) }
-    }
-
-*/
 /*
     class MetaFileMaintenanceWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {

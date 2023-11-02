@@ -240,6 +240,11 @@ class NCLoginFragment: Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         try {
