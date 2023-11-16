@@ -37,7 +37,6 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
 
         usedNames = requireArguments().getStringArrayList(USED_NAMES) ?: arrayListOf()
         requestType = requireArguments().getInt(REQUEST_TYPE, REQUEST_TYPE_ALBUM)
-        isCancelable = false
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -78,6 +77,7 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
         }
 
         requireDialog().window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+        dialog?.setCanceledOnTouchOutside(false)
     }
 
     private fun returnNewName(newName: String) {
