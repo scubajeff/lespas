@@ -1197,10 +1197,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     // Photo is from remote album and is already uploaded
-                                    getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
+                                    try {
+                                        getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
+                                    } catch (e: OkHttpWebDavException) {
+                                        // Fall back to local, especially after replaced by Snapseed result, the remote image is gone and there is a local version of newly edited file named after photo id
+                                        File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
+                                    }
                                 }
                                 imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> {
-                                    // Photo is from local Camrea roll
+                                    // Photo is from local Camera roll
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
                                 else -> {
@@ -1442,21 +1447,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun getRemoteThumbnail(job: Job, imagePhoto: RemotePhoto, type: String, forceNetwork: Boolean = false): Bitmap? {
-        var bitmap: Bitmap?
+        var bitmap: Bitmap? = null
+        val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
+
+        // If replaced by Snapseed, photo.id is not gonna changed, and there is a local new file named after photo name, we need to show this one before the sync completed
+        if (forceNetwork) bitmap = BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
-        bitmap = try {
-            getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null, job).use {
-                job.ensureActive()
-                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
-            }
-        } catch(e: Exception) { null }
+        bitmap ?: run {
+            bitmap = try {
+                getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null, job).use {
+                    job.ensureActive()
+                    BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
+                }
+            } catch (e: Exception) { null }
+        }
 
         bitmap ?: run {
             // If preview is not available, we have to use the actual image file
             getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null, job).use {
                 job.ensureActive()
-                bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
+                bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
             }
             if (imagePhoto.photo.orientation != 0) bitmap?.let {
                 job.ensureActive()
