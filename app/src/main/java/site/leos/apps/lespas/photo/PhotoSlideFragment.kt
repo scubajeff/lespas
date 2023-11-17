@@ -581,7 +581,6 @@ class PhotoSlideFragment : Fragment() {
     }
 
     override fun onDestroy() {
-        // BACK TO NORMAL UI
         handlerBottomControl.removeCallbacksAndMessages(null)
 
         requireContext().contentResolver.unregisterContentObserver(snapseedOutputObserver)

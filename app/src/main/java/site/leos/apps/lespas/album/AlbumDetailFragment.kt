@@ -220,13 +220,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             .addToBackStack(null)
                             .commit()
                     } else {
-                        //ViewCompat.setTransitionName(recyclerView, null)
-                        reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                        ViewCompat.setTransitionName(recyclerView, null)
+                        reenterTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                         exitTransition = MaterialElevationScale(false).apply {
                             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                            excludeTarget(view, true)
-                            excludeTarget(android.R.id.statusBarBackground, true)
-                            excludeTarget(android.R.id.navigationBarBackground, true)
+                            //excludeTarget(view, true)
+                            //excludeTarget(android.R.id.statusBarBackground, true)
+                            //excludeTarget(android.R.id.navigationBarBackground, true)
                         }
 
                         parentFragmentManager.beginTransaction()
@@ -382,6 +382,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        postponeEnterTransition()
+
         dateIndicator = view.findViewById<TextView>(R.id.date_indicator).apply {
             doOnLayout {
                 background = MaterialShapeDrawable().apply {
@@ -401,8 +403,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
         recyclerView = view.findViewById(R.id.photo_grid)
-
-        postponeEnterTransition()
         ViewCompat.setTransitionName(recyclerView, album.id)
         if (scrollTo.isEmpty()) recyclerView.doOnLayout { startPostponedEnterTransition() }
 
