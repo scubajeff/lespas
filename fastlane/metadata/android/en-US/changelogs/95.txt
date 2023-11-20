@@ -1,0 +1,4 @@
+* Target Android 14
+* Support HDR image on Android 14
+* More choices for network cache setting
+* Various improvements and bugs fixes

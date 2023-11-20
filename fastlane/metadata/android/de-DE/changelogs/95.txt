@@ -1,0 +1,4 @@
+* Ziel Android 14
+* Unterstützung von HDR-Bildern unter Android 14
+* Mehr Auswahlmöglichkeiten für Netzwerk-Cache-Einstellungen
+* Verschiedene Verbesserungen und Fehlerkorrekturen

@@ -1,3 +1,8 @@
+## Version 2.9.6
+* Target Android 14
+* Support HDR image on Android 14
+* More choices for network cache setting
+
 ## Version 2.9.5
 * Fixed preview image loading
 * Fixed Snapseed integration

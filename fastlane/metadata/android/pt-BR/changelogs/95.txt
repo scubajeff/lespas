@@ -1,0 +1,4 @@
+* Direcionado ao Android 14
+* Suporte a imagens HDR no Android 14
+* Mais opções para configuração do cache de rede
+* Vários aprimoramentos e correções de bugs

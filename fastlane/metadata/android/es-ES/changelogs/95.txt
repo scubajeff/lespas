@@ -1,0 +1,4 @@
+* Objetivo Android 14
+* Soporta imagen HDR en Android 14
+* Más opciones para la configuración de caché de red
+* Varias mejoras y correcciones de errores
