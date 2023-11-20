@@ -70,8 +70,9 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
         requireComponentDialog().window!!.apply {
             // Set dialog width to a fixed ratio of screen width
             setLayout((resources.displayMetrics.widthPixels.toFloat() * resources.getInteger(R.integer.dialog_width_ratio) / 100).roundToInt(), WindowManager.LayoutParams.WRAP_CONTENT)
-            setDimAmount(0.6f)
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(0.6f)
         }
     }
 
