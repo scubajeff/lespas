@@ -184,7 +184,7 @@ class GallerySlideFragment : Fragment() {
                             galleryModel.setCurrentPhotoId(photo.id)
                             tvPath.text = "${galleryModel.getFullPath(photo.id)}${photo.name}"
                             tvDate.text = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-                            tvSize.text = Tools.humanReadableByteCountSI(photo.shareId.toLong()) + if (photo.width > 0) ",  ${photo.width} × ${photo.height}" else ""
+                            tvSize.text = Tools.humanReadableByteCountSI(photo.caption.toLong()) + if (photo.width > 0) ",  ${photo.width} × ${photo.height}" else ""
                             removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX
                             useAsButton.isEnabled = photo.mimeType.startsWith("image")
                         }

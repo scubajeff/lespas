@@ -302,15 +302,15 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                         }
 
                                         totalSize = 0L
-                                        group.value.forEach { totalSize += it.media.photo.shareId }
+                                        group.value.forEach { totalSize += it.media.photo.caption.toLong() }
 
                                         overview.add(
                                             GalleryFragment.LocalMedia(
                                                 group.key,
                                                 NCShareViewModel.RemotePhoto(
-                                                    // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size in KB stored in property shareId
+                                                    // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size stored in property caption
                                                     // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
-                                                    Photo(id = group.key, mimeType = "", shareId = (totalSize / 1000).toInt(), height = group.value.size, width = lastBackupDate.toInt(), dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
+                                                    Photo(id = group.key, mimeType = "", caption = totalSize.toString(), height = group.value.size, width = lastBackupDate.toInt(), dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
                                                     coverBaseLine = when {
                                                         //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
                                                         isEnabled -> BACKUP_ENABLED
@@ -601,7 +601,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             GalleryFragment.TRASH_FOLDER -> trashName
                             else -> item.folder
                         },
-                        Tools.humanReadableByteCountSI(item.media.photo.shareId.toLong() * 1000)
+                        Tools.humanReadableByteCountSI(item.media.photo.caption.toLong())
                     )
                     setOnClickListener { folderClickListener(item.folder) }
                 }
@@ -680,7 +680,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         internal fun getSelectionFileSize(): String {
             var size = 0L
-            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.shareId }}
+            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() }}
 
             return Tools.humanReadableByteCountSI(size)
         }

@@ -741,7 +741,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         internal fun getSelectionFileSize(): String {
             var size = 0L
-            selectionTracker.selection.forEach { selected -> currentList.find { it.photo.id == selected }?.let { size += it.photo.shareId }}
+            selectionTracker.selection.forEach { selected -> currentList.find { it.photo.id == selected }?.let { size += it.photo.caption.toLong() }}
 
             return Tools.humanReadableByteCountSI(size)
         }

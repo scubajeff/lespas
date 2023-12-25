@@ -619,8 +619,8 @@ class GalleryFragment: Fragment() {
                                             width = cursor.getInt(widthColumn),
                                             height = cursor.getInt(heightColumn),
                                             mimeType = mimeType,
-                                            shareId = cursor.getInt(sizeColumn),                  // Saving photo size value in shareId property
-                                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property, keep original orientation, CameraRollFragment will handle the rotation, TODO video length?
+                                            caption = cursor.getString(sizeColumn),               // Saving photo size value in caption property as String
+                                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in orientation property, keep original orientation, other fragments will handle the rotation, TODO video length?
                                         ),
                                         remotePath = "",    // Local media
                                         coverBaseLine = 0,  // Backup is disable by default
@@ -671,7 +671,7 @@ class GalleryFragment: Fragment() {
                 id = uri.toString(),                // fileUri shared in as photo's id in Camera Roll album
                 albumId = FROM_DEVICE_GALLERY,
                 name = filename,
-                shareId = size,                     // Temporarily use shareId for saving file's size TODO maximum 4GB
+                caption = size.toString(),          // Store file size in property caption
                 dateTaken = LocalDateTime.now(),
                 lastModified = LocalDateTime.MAX,   // LocalDateTime.MAX to mark it not removable
             )

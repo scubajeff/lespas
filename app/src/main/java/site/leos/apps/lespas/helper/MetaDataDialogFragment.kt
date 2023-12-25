@@ -296,8 +296,8 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                             }
                         } else {
-                            // Media from camera roll
-                            pm.size = rPhoto.photo.shareId.toLong()
+                            // Media from device gallery
+                            pm.size = rPhoto.photo.caption.toLong()
                             val pUri = Uri.parse(rPhoto.photo.id)
                             if (Tools.hasExif(rPhoto.photo.mimeType)) {
                                 exif = try {
