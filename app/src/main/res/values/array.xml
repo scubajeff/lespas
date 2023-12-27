@@ -41,17 +41,6 @@
         <item>3</item>
     </string-array>
 
-    <string-array name="strip_exif_entries">
-        <item>@string/strip_on_entry</item>
-        <item>@string/strip_off_entry</item>
-        <item>@string/strip_ask_entry</item>
-    </string-array>
-    <string-array name="strip_exif_values">
-        <item>@string/strip_on_value</item>
-        <item>@string/strip_off_value</item>
-        <item>@string/strip_ask_value</item>
-    </string-array>
-
     <string-array name="objects">
         <item>@string/object_unknown</item>
         <item>@string/object_animal</item>

@@ -93,10 +93,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private val storagePermission = Tools.getStoragePermissionsArray()
     private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var showGalleryPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
-/*
-    private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
-    private lateinit var backupPicturesPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
-*/
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var installSnapseedLauncher: ActivityResultLauncher<Intent>
     private lateinit var manageMediaPermissionRequestLauncher: ActivityResultLauncher<Intent>
@@ -658,7 +654,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
-            view.findViewById<TextView>(R.id.message_textview).apply { text = arguments?.getString(MESSAGE) }
+            view.findViewById<TextView>(R.id.meta_data_option).apply { text = arguments?.getString(MESSAGE) }
             view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {
                 WorkManager.getInstance(requireContext()).enqueueUniqueWork(TransferStorageWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<TransferStorageWorker>().build())
                 (activity as MainActivity).observeTransferWorker()

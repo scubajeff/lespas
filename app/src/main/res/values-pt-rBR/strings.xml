@@ -70,11 +70,9 @@
     <string name="duration_months">Meses: %1$d</string>
     <string name="duration_years">Anos: %1$d</string>
     <string name="published_to">Publicado para: %1$s</string>
-    <string name="strip_exif_msg">%1$s?</string>
-    <string name="strip_exif_yes">Sim</string>
-    <string name="strip_exif_no">Não</string>
+    <string name="yes">Sim</string>
+    <string name="no">Não</string>
     <string name="preparing_shares">Preparando compartilhamentos…</string>
-    <string name="striping_exif">Removendo dados EXIF…</string>
     <string name="msg_error_preparing_share_out_files">Falha ao preparar arquivos de mídia.</string>
     <string name="msg_check_network">Verifique sua conexão.</string>
 
@@ -113,11 +111,9 @@
     <string name="snapseed_replace_off_summary">Não, adicionar a versão salva pelo Snapseed ao álbum, duplicando a foto.</string>
 
     <string name="privacy_header">Privacidade</string>
-    <string name="strip_exif_title">Remover EXIF antes de compartilhar</string>
-    <string name="strip_on_entry">Sim, sempre remover.</string>
-    <string name="strip_off_entry">Não, deixe lá.</string>
-    <string name="strip_ask_entry">Sempre pergunte.</string>
+    <string name="remove_meta_data_before_sharing_title">Remova metadados confidenciais antes de compartilhar</string>
 
+    <string name="use_low_resolution_to_share_title">Diminua a resolução da imagem antes de compartilhá-la</string>
     <string name="storage_header">Armazenamento</string>
     <string name="transfer_to_internal">Transferir álbuns para armazenamento interno</string>
     <string name="transfer_to_external">Transferir álbuns para o cartão SD</string>
@@ -409,4 +405,9 @@
     <string name="confirm_empty_trash">Tem certeza de que deseja esvaziar a lixeira?</string>
     <string name="sync_deletion_title">Sincronização da exclusão da galeria com o arquivo do servidor</string>
     <string name="sync_deletion_rational">Para obter mais flexibilidade na tomada de decisões de sincronização em cada exclusão, você deve conceder a Les Pas a permissão Manage Media (Gerenciar mídia).</string>
+    <string name="title_sensitive_data">Metadados confidenciais</string>
+    <string name="button_text_keep_meta_data">Manter</string>
+    <string name="title_picture_resolution">Resolução da imagem</string>
+    <string name="button_text_use_original_size">"Usar original "</string>
+    <string name="button_text_use_thumbnail">Encolher</string>
 </resources>

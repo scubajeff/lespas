@@ -20,12 +20,18 @@ import android.content.ClipData
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.graphics.*
+import android.graphics.Color
+import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -47,12 +53,15 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.gallery.GalleryFragment
-import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.sync.*
-import java.util.*
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.ShareReceiverActivity
 
 class PhotoWithMapFragment: Fragment() {
     private lateinit var remotePhoto: NCShareViewModel.RemotePhoto
@@ -61,10 +70,8 @@ class PhotoWithMapFragment: Fragment() {
     private lateinit var mapView: MapView
     private lateinit var photoView: PhotoView
 
-    private var stripExif = "2"
     private var shareOutUri = arrayListOf<Uri>()
     private var shareOutType = GENERAL_SHARE
-    private var stripOrNot = false
     private var shareOutMimeType = ""
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
@@ -99,11 +106,9 @@ class PhotoWithMapFragment: Fragment() {
         @Suppress("DEPRECATION")
         setHasOptionsMenu(true)
 
-        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
-
         shareOutBackPressedCallback = object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                // Cancel EXIF stripping job if it's running
+                // Cancel share out job if it's running
                 waitingMsg?.let {
                     if (it.isShownOrQueued) {
                         imageLoaderModel.cancelShareOut()
@@ -153,12 +158,9 @@ class PhotoWithMapFragment: Fragment() {
             invalidate()
         }
 
-        parentFragmentManager.setFragmentResultListener(PHOTO_WITH_MAP_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY) {
-                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), GENERAL_SHARE)
-                }
-            }
+        // Share out dialog result handler
+        parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) shareOut(bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), GENERAL_SHARE)
         }
 
         destinationModel.getDestination().observe(viewLifecycleOwner) {
@@ -202,7 +204,7 @@ class PhotoWithMapFragment: Fragment() {
                 }
 
                 // Call system share chooser
-                when (shareOutType) {
+                if (uris.isNotEmpty()) when (shareOutType) {
                     GENERAL_SHARE -> {
                         startActivity(Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
@@ -269,19 +271,13 @@ class PhotoWithMapFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
-                if (target == R.id.search_cameraroll) shareOut(false, SHARE_TO_LESPAS)
+                if (target == R.id.search_cameraroll) shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_LESPAS)
                 else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 true
             }
             R.id.option_menu_share -> {
                 if (target == R.id.search_archive) imageLoaderModel.batchDownload(requireContext(), listOf(remotePhoto))
-                else {
-                    if (stripExif == getString(R.string.strip_ask_value)) {
-                        if (Tools.hasExif(remotePhoto.photo.mimeType)) {
-                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = PHOTO_WITH_MAP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
-                        } else shareOut(false, GENERAL_SHARE)
-                    } else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
-                }
+                else if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
                 true
             }
             R.id.option_menu_open_in_map_app -> {
@@ -298,10 +294,9 @@ class PhotoWithMapFragment: Fragment() {
         }
     }
 
-    private fun shareOut(strip: Boolean, shareType: Int) {
-        stripOrNot = strip
+    private fun shareOut(strip: Boolean, lowResolution: Boolean, shareType: Int) {
         shareOutType = shareType
-        waitingMsg = Tools.getPreparingSharesSnackBar(mapView, strip) {
+        waitingMsg = Tools.getPreparingSharesSnackBar(mapView) {
             imageLoaderModel.cancelShareOut()
             shareOutBackPressedCallback.isEnabled = false
         }
@@ -313,7 +308,7 @@ class PhotoWithMapFragment: Fragment() {
         }, 500)
 
         // Prepare media files for sharing
-        imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.photo.apply { shareOutMimeType = mimeType }), strip, remotePhoto.remotePath.isNotEmpty(), remotePhoto.remotePath)
+        imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.photo.apply { shareOutMimeType = mimeType }), strip, lowResolution, remotePhoto.remotePath.isNotEmpty(), remotePhoto.remotePath)
     }
 
     companion object {
@@ -325,9 +320,7 @@ class PhotoWithMapFragment: Fragment() {
 
         const val TAG_DESTINATION_DIALOG = "PHOTO_WITH_MAP_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "PHOTO_WITH_MAP_ACQUIRING_DIALOG"
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val PHOTO_WITH_MAP_REQUEST_KEY = "PHOTO_WITH_MAP_REQUEST_KEY"
-        private const val STRIP_REQUEST_KEY = "PHOTO_WITH_MAP_STRIP_REQUEST_KEY"
+        private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
 
         @JvmStatic
         fun newInstance(photo: NCShareViewModel.RemotePhoto, target: Int) = PhotoWithMapFragment().apply {

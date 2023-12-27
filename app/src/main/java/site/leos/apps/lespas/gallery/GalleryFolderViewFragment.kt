@@ -85,6 +85,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.LesPasFastScroller
+import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -119,7 +120,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     private val currentMediaList = mutableListOf<GalleryFragment.LocalMedia>()
 
-    private var stripExif = "2"
     private var currentCheckedTag = CHIP_FOR_ALL_TAG
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,10 +169,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, selectionBackPressedCallback)
-
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
-        }
 
         // Adjusting the shared element mapping
         setExitSharedElementCallback(object : SharedElementCallback() {
@@ -378,9 +374,14 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         parentFragmentManager.setFragmentResultListener(GALLERY_FOLDERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
-                STRIP_REQUEST_KEY -> galleryModel.shareOut(getSelectedPhotos(), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
                 EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.photo.id) }})
             }
+        }
+
+        // Share out dialog result handler
+        parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) galleryModel.shareOut(photoIds = getSelectedPhotos(), strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), isRemote = false)
+            else selectionTracker.clearSelection()
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -530,11 +531,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.share -> {
-                if (stripExif == getString(R.string.strip_ask_value)) {
-                    if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else galleryModel.shareOut(getSelectedPhotos(), false)
-                } else galleryModel.shareOut(getSelectedPhotos(), stripExif == getString(R.string.strip_on_value))
+                val photoIds = getSelectedPhotos(false)
+                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
+                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds))?.show(parentFragmentManager, SHARE_OUT_DIALOG)
+                    ?: run {
+                        selectionTracker.clearSelection()
+                        galleryModel.shareOut(photoIds, strip = false, lowResolution = false, isRemote = false)
+                    }
 
                 true
             }
@@ -637,17 +640,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    private fun hasExifInSelection(): Boolean {
-        for (photoId in selectionTracker.selection) {
-            galleryModel.getPhotoById(photoId.toString())?.let { if (Tools.hasExif(it.mimeType)) return true }
-        }
-
-        return false
-    }
-
-    private fun getSelectedPhotos(): List<String> = mutableListOf<String>().apply {
+    private fun getSelectedPhotos(clearSelection: Boolean = true): List<String> = mutableListOf<String>().apply {
         selectionTracker.selection.forEach { add(it) }
-        selectionTracker.clearSelection()
+        if (clearSelection) selectionTracker.clearSelection()
     }
 
     class MediaAdapter(private val clickListener: (View, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
@@ -802,8 +797,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
         private const val GALLERY_FOLDERVIEW_REQUEST_KEY = "GALLERY_FOLDERVIEW_REQUEST_KEY"
-        private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val EMPTY_TRASH_REQUEST_KEY = "EMPTY_TRASH_REQUEST_KEY"
 

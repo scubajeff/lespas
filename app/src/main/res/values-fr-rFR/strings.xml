@@ -73,11 +73,9 @@
     <string name="duration_months">Mois : %1$d</string>
     <string name="duration_years">Années : %1$d</string>
     <string name="published_to">Publié sur : %1$s</string>
-    <string name="strip_exif_msg">%1$s ?</string>
-    <string name="strip_exif_yes">Oui</string>
-    <string name="strip_exif_no">Non</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
     <string name="preparing_shares">Préparation des partages de fichiers…</string>
-    <string name="striping_exif">Suppression des données EXIF…</string>
     <string name="msg_error_preparing_share_out_files">Échec de la préparation des fichiers multimédias.</string>
     <string name="msg_check_network">Vérifiez votre connexion au serveur.</string>
     <string name="msg_server_operation">Les photos apparaîtront dans l\'album cible après la synchronisation avec le serveur.</string>
@@ -112,10 +110,8 @@
     <string name="snapseed_replace_on_summary">Oui, remplacer la photo originale par la version de Snapseed.</string>
     <string name="snapseed_replace_off_summary">Non, ajouter la version de Snapseed à l\'album. Gérez vous-même les doublons.</string>
     <string name="privacy_header">Vie privée</string>
-    <string name="strip_exif_title">Supprimer les données EXIF avant le partage</string>
-    <string name="strip_on_entry">Oui, toujours supprimer.</string>
-    <string name="strip_off_entry">Non, ne pas les supprimer.</string>
-    <string name="strip_ask_entry">Toujours demander.</string>
+    <string name="remove_meta_data_before_sharing_title">Supprimer les métadonnées sensibles avant de les partager</string>
+    <string name="use_low_resolution_to_share_title">Réduire la résolution de l\'image avant de la partager</string>
     <string name="storage_header">Stockage</string>
     <string name="transfer_to_internal">Transférer des albums vers le stockage interne</string>
     <string name="transfer_to_external">Transférer des albums sur une carte SD externe</string>
@@ -382,4 +378,9 @@
     <string name="confirm_empty_trash">Êtes-vous sûr de vouloir vider la corbeille ?</string>
     <string name="sync_deletion_title">Synchronisation de la suppression des galeries avec les archives du serveur</string>
     <string name="sync_deletion_rational">Pour bénéficier d\'une plus grande souplesse dans la prise de décision de synchronisation pour chaque suppression, vous devez accorder à Les Pas l\'autorisation de gérer les médias.</string>
+    <string name="title_sensitive_data">Métadonnées sensibles</string>
+    <string name="button_text_keep_meta_data">Conserver</string>
+    <string name="title_picture_resolution">Résolution de l\'image</string>
+    <string name="button_text_use_original_size">"Utiliser l'original "</string>
+    <string name="button_text_use_thumbnail">Réduire</string>
 </resources>

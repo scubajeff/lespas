@@ -138,6 +138,7 @@
     <string name="need_albums">請先創建相冊。</string>
     <string name="to_album">至相冊：</string>
     <string name="move_files">移動</string>
+    <string name="use_low_resolution_to_share_title">分享縮圖片</string>
     <string name="storage_header">存儲</string>
     <string name="transfer_to_internal">將照片遷移至內部存儲</string>
     <string name="transfer_to_external">將照片遷移至外置存儲卡</string>
@@ -181,19 +182,14 @@
     <string name="button_text_download">下載</string>
     <string name="button_text_add_to_lespas">加入相冊</string>
     <string name="downloading_message">媒體檔案%1$s將被保存到Download目錄下。</string>
-    <string name="strip_exif_title">分享照片前洗掉照片EXIF隱私資料</string>
+    <string name="remove_meta_data_before_sharing_title">分享前刪除圖片隱私後設資料</string>
     <string name="install_snapseed_dialog_msg">現在就安裝Snapseed修圖App嗎？</string>
     <string name="edit_header">圖片編輯</string>
     <string name="privacy_header">隱私保護</string>
-    <string name="strip_exif_no">不用</string>
-    <string name="strip_ask_entry">每次都詢問確定。</string>
-    <string name="strip_exif_msg">%1$s？</string>
-    <string name="strip_off_entry">不洗掉，無法保護你的隱私。</string>
-    <string name="strip_on_entry">一律洗掉，最大限度保護隱私。</string>
-    <string name="strip_exif_yes">好的</string>
+    <string name="no">不用</string>
+    <string name="yes">好的</string>
     <string name="action_reuse">至相冊…</string>
     <string name="preparing_shares">正在準備分享檔案……</string>
-    <string name="striping_exif">正在洗掉圖片EXIF隱私資料……</string>
     <string name="button_text_map">地圖App</string>
     <string name="object_location">拍照地點</string>
     <string name="item_location_search">拍照地點</string>
@@ -344,4 +340,9 @@
     <string name="confirm_empty_trash">確定要清空回收站嗎？</string>
     <string name="sync_deletion_title">同步圖庫刪除到伺服器</string>
     <string name="sync_deletion_rational">授予了Les Pas管理媒體的許可權後，可以在每次刪除時決定是否同步。</string>
+    <string name="title_sensitive_data">隱私後設資料</string>
+    <string name="button_text_keep_meta_data">保留</string>
+    <string name="title_picture_resolution">照片解析度</string>
+    <string name="button_text_use_original_size">原圖</string>
+    <string name="button_text_use_thumbnail">縮圖</string>
 </resources>

@@ -238,7 +238,7 @@ class GalleryFragment: Fragment() {
             }
             launch {
                 galleryModel.strippingEXIF.collect { strip ->
-                    waitingMsg = Tools.getPreparingSharesSnackBar(requireView(), strip) {
+                    waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
                         imageLoaderModel.cancelShareOut()
                         shareOutBackPressedCallback.isEnabled = false
                         galleryModel.setIsPreparingShareOut(false)
@@ -253,36 +253,37 @@ class GalleryFragment: Fragment() {
             }
             launch {
                 imageLoaderModel.shareOutUris.collect { uris ->
-
                     handler.removeCallbacksAndMessages(null)
                     if (waitingMsg?.isShownOrQueued == true) {
                         waitingMsg?.dismiss()
                         shareOutBackPressedCallback.isEnabled = false
                     }
 
-                    val cr = requireActivity().contentResolver
-                    val clipData = ClipData.newUri(cr, "", uris[0])
-                    for (i in 1 until uris.size) {
-                        if (isActive) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                            else clipData.addItem(ClipData.Item(uris[i]))
+                    if (uris.isNotEmpty()) {
+                        val cr = requireActivity().contentResolver
+                        val clipData = ClipData.newUri(cr, "", uris[0])
+                        for (i in 1 until uris.size) {
+                            if (isActive) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                else clipData.addItem(ClipData.Item(uris[i]))
+                            }
                         }
+                        startActivity(Intent.createChooser(Intent().apply {
+                            if (uris.size > 1) {
+                                action = Intent.ACTION_SEND_MULTIPLE
+                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                            } else {
+                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_STREAM, uris[0])
+                            }
+                            type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                            if (type!!.startsWith("image")) type = "image/*"
+                            this.clipData = clipData
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
+                        }, null))
                     }
-                    startActivity(Intent.createChooser(Intent().apply {
-                        if (uris.size > 1) {
-                            action = Intent.ACTION_SEND_MULTIPLE
-                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                        } else {
-                            // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                        }
-                        type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
-                        if (type!!.startsWith("image")) type = "image/*"
-                        this.clipData = clipData
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
-                    }, null))
 
                     galleryModel.setIsPreparingShareOut(false)
                 }
@@ -341,7 +342,7 @@ class GalleryFragment: Fragment() {
 
         savedInstanceState?.let {
             if (it.getBoolean(KEY_SHARING_OUT)) {
-                waitingMsg = Tools.getPreparingSharesSnackBar(requireView(), galleryModel.getCurrentStripSetting()) {
+                waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
                     imageLoaderModel.cancelShareOut()
                     shareOutBackPressedCallback.isEnabled = false
                     galleryModel.setIsPreparingShareOut(false)
@@ -767,10 +768,9 @@ class GalleryFragment: Fragment() {
 
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
-        fun shareOut(photoIds: List<String>, strip: Boolean, isRemote: Boolean = false, remotePath: String = "") {
+        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, isRemote: Boolean = false, remotePath: String = "") {
             viewModelScope.launch(Dispatchers.IO) {
-                stripOrNot = strip
-                _strippingEXIF.emit(stripOrNot)
+                _strippingEXIF.emit(strip)
                 setIsPreparingShareOut(true)
 
                 // Collect photos for sharing
@@ -778,7 +778,7 @@ class GalleryFragment: Fragment() {
                 for (id in photoIds) getPhotoById(id)?.let { photos.add(it) }
 
                 // Prepare media files for sharing
-                imageModel.prepareFileForShareOut(photos, strip, isRemote, remotePath)
+                imageModel.prepareFileForShareOut(photos, strip, lowResolution, isRemote, remotePath)
             }
         }
 
@@ -786,9 +786,6 @@ class GalleryFragment: Fragment() {
         private var isSharingOut = false
         fun setIsPreparingShareOut(newState: Boolean) { isSharingOut = newState }
         fun isPreparingShareOut(): Boolean = isSharingOut
-
-        private var stripOrNot: Boolean = false
-        fun getCurrentStripSetting() = stripOrNot
 
         fun getPlayMark() = playMarkDrawable
         fun getSelectedMark() = selectedMarkDrawable
@@ -808,6 +805,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        fun getMimeTypes(photoIds: List<String>): List<String> = mutableListOf<String>().apply { photoIds.forEach { photoId -> _medias.value?.find { it.media.photo.id == photoId }?.let { add(it.media.photo.mimeType) }}}
         fun getFullPath(photoId: String): String = _medias.value?.find { it.media.photo.id == photoId }?.fullPath ?: ""
         fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id.substringAfterLast('/') == photoId }?.volume ?: ""
 

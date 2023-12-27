@@ -98,11 +98,9 @@
     <string name="duration_months">Months: %1$d</string>
     <string name="duration_years">Years: %1$d</string>
     <string name="published_to">Published to: %1$s</string>
-    <string name="strip_exif_msg">%1$s?</string>
-    <string name="strip_exif_yes">Yes</string>
-    <string name="strip_exif_no">No</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="preparing_shares">Preparing shares…</string>
-    <string name="striping_exif">Striping EXIF data…</string>
     <string name="msg_error_preparing_share_out_files">Fail to prepare media files.</string>
     <string name="msg_check_network">Check your server connection.</string>
     <string name="msg_server_operation">Photos will appear in target album after synchronizing with server.</string>
@@ -160,14 +158,10 @@
     <string name="snapseed_replace_off_summary">No, add Snapseed\'s version to album. Manage duplicates yourself.</string>
 
     <string name="privacy_header">Privacy</string>
-    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF_CHOICE</string>
-    <string name="strip_exif_title">Strip EXIF before sharing</string>
-    <string name="strip_on_entry">Yes, always strip.</string>
-    <string name="strip_off_entry">No, leave it.</string>
-    <string name="strip_ask_entry">Always ask.</string>
-    <string name="strip_on_value" translatable="false">1</string>
-    <string name="strip_off_value" translatable="false">0</string>
-    <string name="strip_ask_value" translatable="false">2</string>
+    <string name="remove_meta_data_before_sharing_pref_key" translatable="false">STRIP_EXIF_BEFORE_SHARING</string>
+    <string name="remove_meta_data_before_sharing_title">Remove sensitive meta data before sharing</string>
+    <string name="use_low_resolution_to_share_pref_key" translatable="false">SHARE_LOW_RESOLUTION</string>
+    <string name="use_low_resolution_to_share_title">Lower picture resolution before sharing</string>
 
     <string name="storage_header">Storage</string>
     <string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>
@@ -444,6 +438,13 @@
     <string name="content_option_copyright_tooltips">Include copyright disclaimer at blog end.</string>
 -->
     <string name="notice">Please allow a moment to create blog pages on server.</string>
+
+    <!-- Share Out Dialog Fragment -->
+    <string name="title_sensitive_data">Sensitive Meta Data</string>
+    <string name="button_text_keep_meta_data">Keep</string>
+    <string name="title_picture_resolution">Picture Resolution</string>
+    <string name="button_text_use_original_size">Use Original</string>
+    <string name="button_text_use_thumbnail">Shrink</string>
 
     <!-- GPX -->
     <string name="checkbox_text_overwrite">Overwrite existing location data</string>

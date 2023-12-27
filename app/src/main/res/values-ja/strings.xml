@@ -63,6 +63,7 @@
     <string name="theme_dark_entries">暗いテーマで</string>
     <string name="theme_light_entries">明るいテーマで</string>
     <string name="theme_auto_entries">システムで自動的に決定</string>
+    <string name="use_low_resolution_to_share_title">サムネイル画像を共有する</string>
     <string name="storage_header">ストレージ</string>
     <string name="transfer_to_internal">内蔵ストレージへの写真の移行</string>
     <string name="transfer_to_external">外付けメモリーカードへの写真の移行</string>
@@ -181,19 +182,14 @@
     <string name="button_text_download">ダウンロード</string>
     <string name="button_text_add_to_lespas">アルバムに追加</string>
     <string name="downloading_message">ファイル %1$s は Download ディレクトリに保存されます。</string>
-    <string name="strip_exif_title">共有前にEXIFを削除</string>
+    <string name="remove_meta_data_before_sharing_title">共有前に画像のプライバシー・メタデータを削除する</string>
     <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>
     <string name="edit_header">リタッチ</string>
     <string name="privacy_header">個人情報保護</string>
-    <string name="strip_exif_no">いいえ</string>
-    <string name="strip_ask_entry">常に問いかける。</string>
-    <string name="strip_exif_msg">%1$s?</string>
-    <string name="strip_off_entry">いや、それは置いておいて。</string>
-    <string name="strip_on_entry">はい、必ず削除してください。</string>
-    <string name="strip_exif_yes">はい。</string>
+    <string name="no">いいえ</string>
+    <string name="yes">はい。</string>
     <string name="action_reuse">アルバムに……</string>
     <string name="preparing_shares">共有ファイルの準備……</string>
-    <string name="striping_exif">EXIFデータのストライピング……</string>
     <string name="button_text_map">地図アプリ</string>
     <string name="object_location">所在地</string>
     <string name="item_location_search">所在地</string>
@@ -345,4 +341,9 @@
     <string name="confirm_empty_trash">本当にゴミ箱を空にしていいんですか？</string>
     <string name="sync_deletion_title">ギャラリーの削除をサーバーアーカイブに同期</string>
     <string name="sync_deletion_rational">削除のたびに同期を決定する柔軟性を高めるには、Les Pasにメディア管理権限を付与する必要があります。</string>
+    <string name="title_sensitive_data">プライバシー・メタデータ</string>
+    <string name="button_text_keep_meta_data">予約</string>
+    <string name="title_picture_resolution">写真の解像度</string>
+    <string name="button_text_use_original_size">原図</string>
+    <string name="button_text_use_thumbnail">サムネイル</string>
 </resources>

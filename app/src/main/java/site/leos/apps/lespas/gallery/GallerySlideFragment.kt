@@ -65,6 +65,7 @@ import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
+import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.VideoPlayerViewModel
 import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
@@ -97,7 +98,6 @@ class GallerySlideFragment : Fragment() {
 
     private var previousOrientationSetting = 0
     private var previousTitleBarDisplayOption = 0
-    private var stripExif = "2"
     private var autoRotate = false
     private var nextInLine = ""
     private val handler = Handler(Looper.getMainLooper())
@@ -127,7 +127,6 @@ class GallerySlideFragment : Fragment() {
         previousOrientationSetting = requireActivity().requestedOrientation
         PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
             autoRotate = getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
         }
 
 
@@ -261,11 +260,8 @@ class GallerySlideFragment : Fragment() {
             mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
                 if (photo.mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
 
-                if (stripExif == getString(R.string.strip_ask_value)) {
-                    if (Tools.hasExif(photo.mimeType)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else galleryModel.shareOut(listOf(photo.id), false)
-                } else galleryModel.shareOut(listOf(photo.id), stripExif == getString(R.string.strip_on_value))
+                val photoIds = listOf(photo.id)
+                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { galleryModel.shareOut(photoIds, strip = false, lowResolution = false, isRemote = false) }
             }
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
@@ -276,8 +272,12 @@ class GallerySlideFragment : Fragment() {
         parentFragmentManager.setFragmentResultListener(GALLERY_SLIDE_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
-                STRIP_REQUEST_KEY -> galleryModel.shareOut(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), false)
             }
+        }
+
+        // Share out dialog result handler
+        parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) galleryModel.shareOut(photoIds = listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), isRemote = false)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -406,8 +406,8 @@ class GallerySlideFragment : Fragment() {
 
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val INFO_DIALOG = "INFO_DIALOG"
+        private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
         private const val GALLERY_SLIDE_REQUEST_KEY = "GALLERY_SLIDE_REQUEST_KEY"
-        private const val STRIP_REQUEST_KEY = "GALLERY_STRIP_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
 
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"

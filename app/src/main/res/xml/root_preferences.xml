@@ -98,14 +98,16 @@
     <PreferenceCategory
         app:title="@string/privacy_header"
         app:icon="@drawable/ic_baseline_privacy_24">
-        <ListPreference
-            app:key="@string/strip_exif_pref_key"
-            app:title="@string/strip_exif_title"
+        <SwitchPreferenceCompat
+            app:key="@string/remove_meta_data_before_sharing_pref_key"
+            app:title="@string/remove_meta_data_before_sharing_title"
             app:singleLineTitle="false"
-            app:entries="@array/strip_exif_entries"
-            app:entryValues="@array/strip_exif_values"
-            app:defaultValue="2"
-            app:useSimpleSummaryProvider="true" />
+            app:defaultValue="true" />
+        <SwitchPreferenceCompat
+            app:key="@string/use_low_resolution_to_share_pref_key"
+            app:title="@string/use_low_resolution_to_share_title"
+            app:singleLineTitle="false"
+            app:defaultValue="true" />
 
     </PreferenceCategory>
 
