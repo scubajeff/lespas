@@ -249,9 +249,9 @@ class PhotoSlideFragment : Fragment() {
                     if (it.isShownOrQueued) {
                         imageLoaderModel.cancelShareOut()
                         it.dismiss()
-                        isEnabled = false
-                    } else isEnabled = false
-                } ?: run { isEnabled = false }
+                    }
+                }
+                isEnabled = false
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
