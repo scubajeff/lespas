@@ -261,7 +261,7 @@ class GallerySlideFragment : Fragment() {
                 if (photo.mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
 
                 val photoIds = listOf(photo.id)
-                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { galleryModel.shareOut(photoIds, strip = false, lowResolution = false, isRemote = false) }
+                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaStore.canManageMedia(requireContext()) else false)?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { galleryModel.shareOut(photoIds, strip = false, lowResolution = false, removeAfterwards = false, isRemote = false) }
             }
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
@@ -277,7 +277,14 @@ class GallerySlideFragment : Fragment() {
 
         // Share out dialog result handler
         parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
-            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) galleryModel.shareOut(photoIds = listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), isRemote = false)
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true))
+                galleryModel.shareOut(
+                    photoIds = listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id),
+                    strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false),
+                    lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false),
+                    removeAfterwards = bundle.getBoolean(ShareOutDialogFragment.REMOVE_AFTERWARDS_RESULT_KEY, false),
+                    isRemote = false,
+                    )
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

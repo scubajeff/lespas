@@ -33,7 +33,7 @@
         android:paddingBottom="@dimen/small_padding">
 
         <TextView
-            android:id="@+id/meta_data_option"
+            android:id="@+id/dialog_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
@@ -47,7 +47,7 @@
             android:id="@+id/checkbox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/meta_data_option"
+            app:layout_constraintTop_toBottomOf="@id/dialog_title"
             app:layout_constraintLeft_toLeftOf="parent"
             android:layout_marginTop="@dimen/small_padding"
             style="@style/TextAppearance.MaterialComponents.Body2"

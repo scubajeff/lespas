@@ -19,6 +19,8 @@ package site.leos.apps.lespas.helper
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
+import android.widget.CheckBox
+import androidx.core.view.isVisible
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -27,6 +29,7 @@ import site.leos.apps.lespas.R
 class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_dialog) {
     private lateinit var stripExif: MaterialButtonToggleGroup
     private lateinit var useLowResolution: MaterialButtonToggleGroup
+    private lateinit var removeAfterwards: CheckBox
 
     private val buttonClickListener: View.OnClickListener = View.OnClickListener { v ->
         v?.id.let { viewId ->
@@ -36,6 +39,7 @@ class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_
                     if (this) {
                         putBoolean(STRIP_RESULT_KEY, stripExif.checkedButtonId == R.id.strip_on)
                         putBoolean(LOW_RESOLUTION_RESULT_KEY, useLowResolution.checkedButtonId == R.id.thumbnail)
+                        putBoolean(REMOVE_AFTERWARDS_RESULT_KEY, removeAfterwards.isChecked)
                     }
                 }
             })
@@ -62,6 +66,8 @@ class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_
             stripExif.isEnabled = requireArguments().getBoolean(SHOW_STRIP_OPTION, false)
             useLowResolution.isEnabled = requireArguments().getBoolean(SHOW_LOW_RESOLUTION_OPTION, false)
         }
+
+        removeAfterwards = view.findViewById<CheckBox>(R.id.remove_after_shared).apply { isVisible = requireArguments().getBoolean(SHOW_REMOVE_AFTERWARDS_OPTION) }
     }
 
     override fun onCancel(dialog: DialogInterface) {
@@ -75,12 +81,14 @@ class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_
         const val SHARE_OUT_DIALOG_RESULT_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
         const val STRIP_RESULT_KEY = "STRIP_RESULT_KEY"
         const val LOW_RESOLUTION_RESULT_KEY = "LOW_RESOLUTION_RESULT_KEY"
+        const val REMOVE_AFTERWARDS_RESULT_KEY = "REMOVE_AFTERWARDS_RESULT_KEY"
 
         private const val SHOW_STRIP_OPTION = "SHOW_STRIP_OPTION"
         private const val SHOW_LOW_RESOLUTION_OPTION = "SHOW_LOW_RESOLUTION_OPTION"
+        private const val SHOW_REMOVE_AFTERWARDS_OPTION = "SHOW_REMOVE_AFTERWARDS_OPTION"
 
         @JvmStatic
-        fun newInstance(mimeTypes: List<String>): ShareOutDialogFragment? {
+        fun newInstance(mimeTypes: List<String>, showRemoveAfterwards: Boolean = false): ShareOutDialogFragment? {
             var showStripOption = false
             var showLowResolutionOption = false
 
@@ -94,6 +102,7 @@ class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_
             return if (showStripOption || showLowResolutionOption) ShareOutDialogFragment().apply { arguments = Bundle().apply {
                     putBoolean(SHOW_STRIP_OPTION, showStripOption)
                     putBoolean(SHOW_LOW_RESOLUTION_OPTION, showLowResolutionOption)
+                    putBoolean(SHOW_REMOVE_AFTERWARDS_OPTION, showRemoveAfterwards)
             }}
             // If both options turn grey, no need to show the dialog
             else null

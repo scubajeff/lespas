@@ -413,4 +413,5 @@
     <string name="title_picture_resolution">Risoluzione dell\'immagine</string>
     <string name="button_text_use_original_size">"Utilizzare l'originale "</string>
     <string name="button_text_use_thumbnail">Restringimento</string>
+    <string name="checkbox_text_remove_afterwards">Rimuovere dopo la condivisione</string>
 </resources>

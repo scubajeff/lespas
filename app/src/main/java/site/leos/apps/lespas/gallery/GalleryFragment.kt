@@ -283,6 +283,9 @@ class GalleryFragment: Fragment() {
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
                         }, null))
+
+                        // IDs of photos meant to be deleted are saved in GalleryViewModel
+                        galleryModel.deleteAfterShared()
                     }
 
                     galleryModel.setIsPreparingShareOut(false)
@@ -358,8 +361,6 @@ class GalleryFragment: Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_SHARING_OUT, waitingMsg?.isShownOrQueued == true)
-
-        //childFragmentBackPressedCallback.isEnabled = childFragmentManager.backStackEntryCount > 1
     }
 
     override fun onDestroyView() {
@@ -768,7 +769,7 @@ class GalleryFragment: Fragment() {
 
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
-        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, isRemote: Boolean = false, remotePath: String = "") {
+        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean, isRemote: Boolean = false, remotePath: String = "") {
             viewModelScope.launch(Dispatchers.IO) {
                 _strippingEXIF.emit(strip)
                 setIsPreparingShareOut(true)
@@ -777,9 +778,18 @@ class GalleryFragment: Fragment() {
                 val photos = mutableListOf<Photo>()
                 for (id in photoIds) getPhotoById(id)?.let { photos.add(it) }
 
+                // Save photo id for deletion after shared
+                if (removeAfterwards) idsDeleteAfterwards.addAll(photoIds)
+                else idsDeleteAfterwards.clear()
+
                 // Prepare media files for sharing
                 imageModel.prepareFileForShareOut(photos, strip, lowResolution, isRemote, remotePath)
             }
+        }
+
+        private val idsDeleteAfterwards = mutableListOf<String>()
+        fun deleteAfterShared() {
+            remove(idsDeleteAfterwards)
         }
 
         // Flag to disable selection when sharing out is working in the background for GalleryFolderViewFragment and GalleryOverviewFragment

@@ -44,7 +44,7 @@
             android:visibility="gone"/>
 
         <TextView
-            android:id="@+id/meta_data_option"
+            android:id="@+id/dialog_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
@@ -58,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/meta_data_option"
+            app:layout_constraintTop_toBottomOf="@id/dialog_title"
             style="@style/Theme.LesPas.TextButton"
             android:text="@string/yes_transfer" />
 
@@ -66,7 +66,7 @@
             android:id="@+id/cancel_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/meta_data_option"
+            app:layout_constraintTop_toBottomOf="@id/dialog_title"
             app:layout_constraintRight_toLeftOf="@id/ok_button"
             style="@style/Theme.LesPas.TextButton"
             android:text="@android:string/cancel" />

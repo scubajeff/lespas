@@ -272,7 +272,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         // Share out dialog result handler
         parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
-            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) galleryModel.shareOut(photoIds = getSelectedPhotos(), strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), isRemote = false)
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true))
+                galleryModel.shareOut(
+                    photoIds = getSelectedPhotos(),
+                    strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false),
+                    lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false),
+                    removeAfterwards = bundle.getBoolean(ShareOutDialogFragment.REMOVE_AFTERWARDS_RESULT_KEY, false),
+                    isRemote = false
+                )
             else selectionTracker.clearSelection()
         }
 
@@ -449,10 +456,10 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             R.id.share -> {
                 val photoIds = getSelectedPhotos(false)
                 if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
-                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds))?.show(parentFragmentManager, SHARE_OUT_DIALOG)
+                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaStore.canManageMedia(requireContext()) else false)?.show(parentFragmentManager, SHARE_OUT_DIALOG)
                     ?: run {
                         selectionTracker.clearSelection()
-                        galleryModel.shareOut(photoIds, strip = false, lowResolution = false, isRemote = false)
+                        galleryModel.shareOut(photoIds, strip = false, lowResolution = false, removeAfterwards = false, isRemote = false)
                     }
 
                 true

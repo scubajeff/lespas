@@ -345,4 +345,5 @@
     <string name="title_picture_resolution">照片分辨率</string>
     <string name="button_text_use_original_size">原图</string>
     <string name="button_text_use_thumbnail">缩略图</string>
+    <string name="checkbox_text_remove_afterwards">分享后删除原文件</string>
 </resources>

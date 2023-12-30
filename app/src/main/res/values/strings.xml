@@ -445,6 +445,7 @@
     <string name="title_picture_resolution">Picture Resolution</string>
     <string name="button_text_use_original_size">Use Original</string>
     <string name="button_text_use_thumbnail">Shrink</string>
+    <string name="checkbox_text_remove_afterwards">Remove after shared</string>
 
     <!-- GPX -->
     <string name="checkbox_text_overwrite">Overwrite existing location data</string>

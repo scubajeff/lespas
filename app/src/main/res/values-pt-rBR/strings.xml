@@ -410,4 +410,5 @@
     <string name="title_picture_resolution">Resolução da imagem</string>
     <string name="button_text_use_original_size">"Usar original "</string>
     <string name="button_text_use_thumbnail">Encolher</string>
+    <string name="checkbox_text_remove_afterwards">Remover depois de compartilhado</string>
 </resources>

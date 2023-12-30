@@ -398,4 +398,5 @@
     <string name="title_picture_resolution">Bildauflösung</string>
     <string name="button_text_use_original_size">"Original verwenden "</string>
     <string name="button_text_use_thumbnail">Schrumpfen</string>
+    <string name="checkbox_text_remove_afterwards">Nach dem Teilen entfernen</string>
 </resources>

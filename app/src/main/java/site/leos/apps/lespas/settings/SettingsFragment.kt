@@ -654,7 +654,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
-            view.findViewById<TextView>(R.id.meta_data_option).apply { text = arguments?.getString(MESSAGE) }
+            view.findViewById<TextView>(R.id.dialog_title).apply { text = arguments?.getString(MESSAGE) }
             view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {
                 WorkManager.getInstance(requireContext()).enqueueUniqueWork(TransferStorageWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<TransferStorageWorker>().build())
                 (activity as MainActivity).observeTransferWorker()

@@ -15,8 +15,10 @@
   ~   limitations under the License.
   -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/shape_background"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -31,7 +33,7 @@
         android:paddingBottom="@dimen/small_padding">
 
         <TextView
-            android:id="@+id/meta_data_option"
+            android:id="@+id/meta_data_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
@@ -42,9 +44,9 @@
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/strip_options"
             style="@style/Theme.LesPas.Toggle.Group"
-            app:layout_constraintTop_toBottomOf="@id/meta_data_option"
+            app:layout_constraintTop_toBottomOf="@id/meta_data_title"
             app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_marginTop="@dimen/big_padding"
+            android:layout_marginTop="@dimen/small_padding"
             android:layout_marginHorizontal="@dimen/small_padding"
             app:singleSelection="true"
             app:selectionRequired="true">
@@ -65,7 +67,7 @@
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <TextView
-            android:id="@+id/resolution_option"
+            android:id="@+id/resolution_option_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/extra_padding"
@@ -76,9 +78,9 @@
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/resolution_options"
             style="@style/Theme.LesPas.Toggle.Group"
-            app:layout_constraintTop_toBottomOf="@id/resolution_option"
+            app:layout_constraintTop_toBottomOf="@id/resolution_option_title"
             app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_marginTop="@dimen/big_padding"
+            android:layout_marginTop="@dimen/small_padding"
             android:layout_marginHorizontal="@dimen/small_padding"
             app:singleSelection="true"
             app:selectionRequired="true">
@@ -98,6 +100,18 @@
             android:textSize="11sp" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
+        <CheckBox
+            android:id="@+id/remove_after_shared"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/resolution_options"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:layout_marginTop="@dimen/big_padding"
+            android:text="@string/checkbox_text_remove_afterwards"
+            android:checked="false"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cancel_button"
             android:layout_width="wrap_content"
@@ -111,11 +125,10 @@
             android:id="@+id/ok_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/resolution_options"
+            app:layout_constraintTop_toBottomOf="@id/remove_after_shared"
             app:layout_constraintRight_toRightOf="parent"
             style="@style/Theme.LesPas.TextButton"
             android:text="@string/action_share"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </LinearLayout>

@@ -348,4 +348,5 @@
     <string name="title_picture_resolution">Resolución de imagen</string>
     <string name="button_text_use_original_size">"Utilizar el original "</string>
     <string name="button_text_use_thumbnail">Retráctil</string>
+    <string name="checkbox_text_remove_afterwards">Eliminar después de compartir</string>
 </resources>
