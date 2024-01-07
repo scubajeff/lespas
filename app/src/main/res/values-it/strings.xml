@@ -242,6 +242,7 @@
     <string name="action_set_remote">Imposta come remoto</string>
     <string name="action_set_local">Imposta come locale</string>
     <string name="action_reuse">Nell\'album…</string>
+    <string name="action_export">Esportazione</string>
     <string name="action_rename_media">Rinomina</string>
     <string name="action_select_all">Seleziona tutto</string>
     <plurals name="selected_count">

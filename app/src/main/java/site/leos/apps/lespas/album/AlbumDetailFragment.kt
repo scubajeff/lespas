@@ -1128,6 +1128,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 true
             }
+            R.id.export -> {
+                val remotePath = if (Tools.isRemoteAlbum(album)) "/${Tools.getRemoteHome(requireContext())}/${album.name}" else ""
+                val rp = mutableListOf<NCShareViewModel.RemotePhoto>()
+                selectionTracker.selection.forEach { photoId ->
+                    mAdapter.getPhotoBy(photoId)?.let { photo -> rp.add(NCShareViewModel.RemotePhoto(photo, remotePath)) }
+                }
+                selectionTracker.clearSelection()
+                publishModel.batchDownload(requireContext(), rp)
+
+                true
+            }
             else -> false
         }
     }

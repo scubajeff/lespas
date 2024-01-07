@@ -355,6 +355,7 @@
     <string name="action_set_remote">Set as Remote</string>
     <string name="action_set_local">Set as Local</string>
     <string name="action_reuse">To album…</string>
+    <string name="action_export">Export</string>
     <string name="action_rename_media">Rename</string>
     <string name="action_select_all">Select all</string>
     <plurals name="selected_count">

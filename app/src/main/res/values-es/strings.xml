@@ -240,6 +240,7 @@
     <string name="map_header">Mapa</string>
     <string name="msg_server_operation">Las fotos aparecerán en el álbum de destino después de la sincronización con el servidor.</string>
     <string name="item_wide_list">Mostrar nombre</string>
+    <string name="action_export">Exportar</string>
     <string name="action_rename_media">Renombrar</string>
     <string name="rename_media">Nuevo nombre</string>
     <string name="nearby_convergence_title">Convergencia automática de fotos cercanas</string>

@@ -34,6 +34,11 @@
         android:icon="@drawable/ic_baseline_footprint_24"
         app:showAsAction="never" />
 
+    <item android:id="@+id/export"
+        android:title="@string/action_export"
+        android:icon="@drawable/ic_baseline_file_export_24"
+        app:showAsAction="never" />
+
     <item android:id="@+id/snapseed_edit"
         android:title="@string/button_text_edit_in_snapseed_replace"
         android:icon="@drawable/ic_baseline_snapseed_24"
