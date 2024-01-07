@@ -47,7 +47,6 @@ import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionRepository
-import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
@@ -207,7 +206,7 @@ class LocationSearchHostFragment: Fragment() {
                             if (photo.country.isEmpty()) {
                                 try {
                                     nominatim.getFromLocation(latLong[0], latLong[1], 1)
-                                } catch (e: IOException) { null }?.get(0)?.let {
+                                } catch (e: Exception) { null }?.get(0)?.let {
                                     if (it.countryName != null) {
                                         val locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
                                         if (searchScope == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: Photo.NO_ADDRESS)
