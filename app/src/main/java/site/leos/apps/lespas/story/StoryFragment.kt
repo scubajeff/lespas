@@ -230,7 +230,7 @@ class StoryFragment : Fragment() {
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
                     if (animationState == STATE_STARTED) captionTextView.text = pAdapter.getCaption(slider.currentItem)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
-                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
+                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean? == true) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
                     }
                 }
             }
