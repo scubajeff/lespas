@@ -22,6 +22,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -29,6 +30,8 @@ import android.os.StatFs
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import android.view.WindowManager
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -72,8 +75,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
         super.onCreate(savedInstanceState)
+        // Use dark theme system bar style so that status bar can always be seen in full screen mode. Force dark theme navigation bar in Android 10 and below
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT), navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)) else enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = false
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
@@ -88,7 +95,6 @@ class MainActivity : AppCompatActivity() {
                 toolbar.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
                 windowInsets
             }
-            WindowCompat.setDecorFitsSystemWindows(window, false)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
             supportFragmentManager.setFragmentResultListener(MAIN_ACTIVITY_REQUEST_KEY, this) { _, bundle ->
