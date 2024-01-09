@@ -99,12 +99,12 @@ class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_
                 }
             }
 
-            return if (showStripOption || showLowResolutionOption) ShareOutDialogFragment().apply { arguments = Bundle().apply {
+            return if (showRemoveAfterwards || showStripOption || showLowResolutionOption) ShareOutDialogFragment().apply { arguments = Bundle().apply {
                     putBoolean(SHOW_STRIP_OPTION, showStripOption)
                     putBoolean(SHOW_LOW_RESOLUTION_OPTION, showLowResolutionOption)
                     putBoolean(SHOW_REMOVE_AFTERWARDS_OPTION, showRemoveAfterwards)
             }}
-            // If both options turn grey, no need to show the dialog
+            // If all options turn grey, no need to show the dialog
             else null
         }
     }
