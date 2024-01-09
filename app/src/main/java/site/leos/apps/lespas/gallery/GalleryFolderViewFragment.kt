@@ -723,7 +723,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
             if (viewType == TYPE_MEDIA) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
-            else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
+            else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_date_horizontal, parent, false))
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is MediaViewHolder) holder.bind(currentList[position])
