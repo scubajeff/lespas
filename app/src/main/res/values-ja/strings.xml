@@ -324,7 +324,7 @@
     <string name="internal_publish">内部</string>
     <string name="external_publish">公共</string>
     <string name="unpublish_button_text">アンパブ</string>
-    <string name="msg_note_down_your_password">一度設定したパスワードは復元できませんので、必ず控えておいてください。</string>
+    <string name="msg_note_down_your_password">このパスワードはメモしておいてください、設定後は取得できません。</string>
     <string name="hint_leave_it_blank">パスワードがない場合は空欄にします</string>
     <string name="hint_user_name">受信者</string>
     <string name="item_geotag">GPXでジオタグ</string>

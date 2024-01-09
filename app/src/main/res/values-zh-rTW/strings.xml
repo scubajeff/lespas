@@ -321,7 +321,7 @@
     </plurals>
     <string name="msg_player_skip">5秒</string>
     <string name="hint_leave_it_blank">留空表示沒有密碼</string>
-    <string name="msg_note_down_your_password">請記下你的密碼，一旦設定法找回。</string>
+    <string name="msg_note_down_your_password">請記下這個密碼，設定後將無法找回。</string>
     <string name="unpublish_button_text">刪除發佈</string>
     <string name="external_publish">外網</string>
     <string name="internal_publish">內網</string>

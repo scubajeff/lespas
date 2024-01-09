@@ -321,7 +321,7 @@
     </plurals>
     <string name="msg_player_skip">5秒</string>
     <string name="hint_leave_it_blank">留空表示没有密码</string>
-    <string name="msg_note_down_your_password">请记下你的密码，一旦设置法找回。</string>
+    <string name="msg_note_down_your_password">请记下这个密码，设置后将无法找回。</string>
     <string name="unpublish_button_text">删除发布</string>
     <string name="external_publish">外网</string>
     <string name="internal_publish">内网</string>
