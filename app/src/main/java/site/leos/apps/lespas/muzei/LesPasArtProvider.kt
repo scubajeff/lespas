@@ -193,7 +193,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                             sameDayHits[index]
 */
                                             // Try to get today's photo list from Preference
-                                            val photosOfDate = sp.getStringSet(PHOTOS_OF_TODAY, setOf())?.toMutableList() ?: mutableListOf()
+                                            val photosOfDate =  mutableListOf<String>().apply { addAll(sp.getString(PHOTOS_OF_TODAY, "")?.split(',') ?: listOf()) }
                                             if (photosOfDate.contains(sameDayHits[0].id)) {
                                                 // If list existed, loop thru. it
                                                 photosOfDate[0] = (photosOfDate[0].toInt() + 1).let { i -> if (i == sameDayHits.size) 0 else i }.toString()
@@ -206,7 +206,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
                                             // Save the list in Preference
                                             sp.edit().apply {
-                                                putStringSet(PHOTOS_OF_TODAY, photosOfDate.toSet())
+                                                putString(PHOTOS_OF_TODAY, photosOfDate.joinToString(","))
                                                 apply()
                                             }
 
