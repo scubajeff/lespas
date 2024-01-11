@@ -346,5 +346,5 @@
     <string name="title_picture_resolution">写真の解像度</string>
     <string name="button_text_use_original_size">原図</string>
     <string name="button_text_use_thumbnail">サムネイル</string>
-    <string name="checkbox_text_remove_afterwards">共有後、元のファイルを削除する</string>
+    <string name="checkbox_text_remove_afterwards">共有後に削除する</string>
 </resources>
