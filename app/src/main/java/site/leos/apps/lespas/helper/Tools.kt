@@ -587,9 +587,9 @@ object Tools {
         }
     }
 
-    fun getPreparingSharesSnackBar(anchorView: View, strip: Boolean, cancelAction: View.OnClickListener?): Snackbar {
+    fun getPreparingSharesSnackBar(anchorView: View, cancelAction: View.OnClickListener?): Snackbar {
         val ctx = anchorView.context
-        return Snackbar.make(anchorView, if (strip) R.string.striping_exif else R.string.preparing_shares, Snackbar.LENGTH_INDEFINITE).apply {
+        return Snackbar.make(anchorView, R.string.preparing_shares, Snackbar.LENGTH_INDEFINITE).apply {
             try {
                 (view.findViewById<MaterialTextView>(com.google.android.material.R.id.snackbar_text).parent as ViewGroup).addView(ProgressBar(ctx).apply {
                     // Android Snackbar text size is 14sp

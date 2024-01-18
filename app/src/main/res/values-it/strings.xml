@@ -76,11 +76,9 @@
     <string name="duration_months">Mesi: %1$d</string>
     <string name="duration_years">Anni: %1$d</string>
     <string name="published_to">Pubblicato su: %1$s</string>
-    <string name="strip_exif_msg">%1$s\?</string>
-    <string name="strip_exif_yes">Sì</string>
-    <string name="strip_exif_no">No</string>
+    <string name="yes">Sì</string>
+    <string name="no">No</string>
     <string name="preparing_shares">Preparazione dei file per la condivisione in corso…</string> <!-- length -->
-    <string name="striping_exif">Rimozione dei dati EXIF in corso…</string>
     <string name="msg_error_preparing_share_out_files">La preparazione dei file non è andata a buon fine.</string>
     <string name="msg_check_network">Verifica la connessione al server.</string>
     <string name="msg_server_operation">Le foto appariranno nell\'album di destinazione dopo la sincronizzazione con il server.</string>
@@ -121,11 +119,9 @@
     <string name="snapseed_replace_off_summary">No, aggiungi la versione di Snapseed all\'album. Gestisci i duplicati autonomamente.</string>
 
     <string name="privacy_header">Privacy</string>
-    <string name="strip_exif_title">Rimuovi i dati EXIF prima della condivisione</string>
-    <string name="strip_on_entry">Sì, rimuovi sempre.</string>
-    <string name="strip_off_entry">No, non rimuovere.</string>
-    <string name="strip_ask_entry">Chiedimelo sempre.</string>
+    <string name="remove_meta_data_before_sharing_title">Rimuovere i metadati sensibili prima di condividerli</string>
 
+    <string name="use_low_resolution_to_share_title">Abbassate la risoluzione delle immagini prima di condividerle</string>
     <string name="storage_header">Archivio</string>
     <string name="transfer_to_internal">Trasferire album su archivio interno</string>
     <string name="transfer_to_external">Trasferire album su scheda SD</string>
@@ -412,4 +408,10 @@
     <string name="confirm_empty_trash">Sei sicuro di voler svuotare il cestino?</string>
     <string name="sync_deletion_title">Sincronizzazione dell\'eliminazione della galleria con l\'archivio del server</string>
     <string name="sync_deletion_rational">Per ottenere una maggiore flessibilità nella decisione di sincronizzazione di ogni cancellazione, è necessario concedere a Les Pas il permesso Manage Media.</string>
+    <string name="title_sensitive_data">Meta-dati sensibili</string>
+    <string name="button_text_keep_meta_data">Mantenere</string>
+    <string name="title_picture_resolution">Risoluzione dell\'immagine</string>
+    <string name="button_text_use_original_size">"Utilizzare l'originale "</string>
+    <string name="button_text_use_thumbnail">Restringimento</string>
+    <string name="checkbox_text_remove_afterwards">Eliminare dopo la condivisione</string>
 </resources>

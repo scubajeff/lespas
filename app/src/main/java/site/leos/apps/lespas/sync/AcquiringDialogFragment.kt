@@ -93,7 +93,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         background = view.findViewById(R.id.background)
         progressLinearLayout = view.findViewById(R.id.progress_linearlayout)
         dialogTitleTextView = view.findViewById(R.id.dialog_title_textview)
-        messageTextView = view.findViewById(R.id.message_textview)
+        messageTextView = view.findViewById(R.id.dialog_title)
         fileNameTextView = view.findViewById(R.id.filename_textview)
         contentLoadingProgressBar = view.findViewById(R.id.current_progress)
 

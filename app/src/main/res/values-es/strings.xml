@@ -139,6 +139,7 @@
     <string name="need_albums">Por favor, cree primero un álbum.</string>
     <string name="to_album">Al álbum:</string>
     <string name="move_files">Mover</string>
+    <string name="use_low_resolution_to_share_title">Baja la resolución de la imagen antes de compartirla</string>
     <string name="storage_header">" Almacenamiento"</string>
     <string name="transfer_to_internal">" Transferencia de álbumes al almacenamiento interno"</string>
     <string name="transfer_to_external">Transferencia de álbumes a una tarjeta SD externa</string>
@@ -182,19 +183,14 @@
     <string name="button_text_download">Descargar</string>
     <string name="button_text_add_to_lespas">Añadir al álbum</string>
     <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
-    <string name="strip_exif_title">Eliminar EXIF antes de compartir</string>
+    <string name="remove_meta_data_before_sharing_title">Elimine los metadatos sensibles antes de compartirlos</string>
     <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
     <string name="edit_header">Retacear</string>
     <string name="privacy_header">Privacidad</string>
-    <string name="strip_exif_no">No</string>
-    <string name="strip_ask_entry">Pregunte siempre.</string>
-    <string name="strip_exif_msg">%1$s?</string>
-    <string name="strip_off_entry">No, déjalo.</string>
-    <string name="strip_on_entry">Sí, siempre se quita.</string>
-    <string name="strip_exif_yes">Sí</string>
+    <string name="no">No</string>
+    <string name="yes">Sí</string>
     <string name="action_reuse">Al álbum…</string>
     <string name="preparing_shares">Preparación de archivos compartidos…</string>
-    <string name="striping_exif">Eliminación de datos EXIF…</string>
     <string name="button_text_map">App de mapas</string>
     <string name="object_location">Ubicación</string>
     <string name="item_location_search">Ubicación</string>
@@ -347,4 +343,10 @@
     <string name="confirm_empty_trash">¿Seguro que quieres vaciar la papelera?</string>
     <string name="sync_deletion_title">Sincronizar la eliminación de galerías con el archivo del servidor</string>
     <string name="sync_deletion_rational">Para tener más flexibilidad a la hora de tomar decisiones de sincronización en cada borrado, deberías conceder a Les Pas el permiso Gestionar Medios.</string>
+    <string name="title_sensitive_data">Metadatos sensibles</string>
+    <string name="button_text_keep_meta_data">Visite</string>
+    <string name="title_picture_resolution">Resolución de imagen</string>
+    <string name="button_text_use_original_size">"Utilizar el original "</string>
+    <string name="button_text_use_thumbnail">Retráctil</string>
+    <string name="checkbox_text_remove_afterwards">Eliminar después de compartir</string>
 </resources>

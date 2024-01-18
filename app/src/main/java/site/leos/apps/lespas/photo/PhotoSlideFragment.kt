@@ -84,6 +84,7 @@ import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
+import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
@@ -122,8 +123,6 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var playerViewModel: VideoPlayerViewModel
 
     private var autoRotate = false
-    private var stripExif = "2"
-    private var stripOrNot = false
     private var shareOutType = GENERAL_SHARE
     private var shareOutMimeType = ""
     private var waitingMsg: Snackbar? = null
@@ -186,7 +185,6 @@ class PhotoSlideFragment : Fragment() {
         previousOrientationSetting = requireActivity().requestedOrientation
         with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
             autoRotate = getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value)) ?: "0"
         }
 
         // Broadcast receiver listening on share destination
@@ -244,14 +242,14 @@ class PhotoSlideFragment : Fragment() {
 
         shareOutBackPressedCallback = object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                // Cancel EXIF stripping job if it's running
+                // Cancel share out job if it's running
                 waitingMsg?.let {
                     if (it.isShownOrQueued) {
                         imageLoaderModel.cancelShareOut()
                         it.dismiss()
-                        isEnabled = false
-                    } else isEnabled = false
-                } ?: run { isEnabled = false }
+                    }
+                }
+                isEnabled = false
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
@@ -365,21 +363,14 @@ class PhotoSlideFragment : Fragment() {
             setOnClickListener {
                 val mimeType = pAdapter.getPhotoAt(slider.currentItem).mimeType
                 if (mimeType.startsWith("video")) playerViewModel.pause(Uri.EMPTY)
-
-                if (stripExif == getString(R.string.strip_ask_value)) {
-                    handlerBottomControl.post(hideBottomControls)
-
-                    if (Tools.hasExif(mimeType)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, requestKey = PHOTO_SLIDE_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else shareOut(false, GENERAL_SHARE)
-                }
-                else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
+                handlerBottomControl.post(hideBottomControls)
+                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = listOf(mimeType))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
             }
         }
         useAsButton.run {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER)
+                shareOut(strip = true, lowResolution = false, shareType = SHARE_TO_WALLPAPER)
             }
         }
         view.findViewById<Button>(R.id.info_button).run {
@@ -408,7 +399,7 @@ class PhotoSlideFragment : Fragment() {
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideBottomControls)
-                shareOut(false, SHARE_TO_SNAPSEED)
+                shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_SNAPSEED)
             }
         }
         removeButton.run {
@@ -452,7 +443,7 @@ class PhotoSlideFragment : Fragment() {
                 }
 
                 // Call system share chooser
-                when (shareOutType) {
+                if (uris.isNotEmpty()) when (shareOutType) {
                     GENERAL_SHARE -> {
                         startActivity(Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
@@ -505,7 +496,6 @@ class PhotoSlideFragment : Fragment() {
         parentFragmentManager.setFragmentResultListener(PHOTO_SLIDE_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) removePhoto()
-                STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false), GENERAL_SHARE)
             }
         }
 
@@ -517,12 +507,16 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
+        // Share out dialog result handler
+        parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) shareOut(bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), GENERAL_SHARE)
+        }
+
         savedInstanceState?.let {
             if (it.getBoolean(KEY_SHAREOUT_RUNNING)) {
                 shareOutMimeType = it.getString(KEY_SHAREOUT_MIMETYPE, "image/*")!!
                 shareOutType = it.getInt(KEY_SHAREOUT_TYPE)
-                stripOrNot = it.getBoolean(KEY_SHAREOUT_STRIP)
-                waitingMsg = Tools.getPreparingSharesSnackBar(slider, stripOrNot) {
+                waitingMsg = Tools.getPreparingSharesSnackBar(slider) {
                     imageLoaderModel.cancelShareOut()
                     shareOutBackPressedCallback.isEnabled = false
                 }
@@ -550,7 +544,6 @@ class PhotoSlideFragment : Fragment() {
         super.onSaveInstanceState(outState)
         //outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
         outState.putBoolean(KEY_SHAREOUT_RUNNING, waitingMsg?.isShownOrQueued == true)
-        outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
         outState.putInt(KEY_SHAREOUT_TYPE, shareOutType)
         outState.putString(KEY_SHAREOUT_MIMETYPE, shareOutMimeType)
 
@@ -635,10 +628,9 @@ class PhotoSlideFragment : Fragment() {
 
     private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album) }
 
-    private fun shareOut(strip: Boolean, shareType: Int) {
-        stripOrNot = strip
+    private fun shareOut(strip: Boolean, lowResolution: Boolean, shareType: Int) {
         shareOutType = shareType
-        waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip) {
+        waitingMsg = Tools.getPreparingSharesSnackBar(slider) {
             imageLoaderModel.cancelShareOut()
             shareOutBackPressedCallback.isEnabled = false
         }
@@ -650,7 +642,7 @@ class PhotoSlideFragment : Fragment() {
         }, 500)
 
         // Prepare media files for sharing
-        imageLoaderModel.prepareFileForShareOut(listOf(pAdapter.getPhotoAt(slider.currentItem).apply { shareOutMimeType = mimeType }), strip, Tools.isRemoteAlbum(album), serverPath)
+        imageLoaderModel.prepareFileForShareOut(listOf(pAdapter.getPhotoAt(slider.currentItem).apply { shareOutMimeType = mimeType }), strip, lowResolution, Tools.isRemoteAlbum(album), serverPath)
     }
 
     class PhotoSlideAdapter(
@@ -700,10 +692,9 @@ class PhotoSlideFragment : Fragment() {
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val REMOVE_DIALOG = "REMOVE_DIALOG"
         private const val CAPTION_DIALOG = "CAPTION_DIALOG"
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
         private const val PHOTO_SLIDE_REQUEST_KEY = "PHOTO_SLIDE_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
-        private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
 
         private const val GENERAL_SHARE = 0
         private const val SHARE_TO_SNAPSEED = 1
@@ -711,7 +702,6 @@ class PhotoSlideFragment : Fragment() {
 
         //private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
         private const val KEY_SHAREOUT_RUNNING = "KEY_SHAREOUT_RUNNING"
-        private const val KEY_SHAREOUT_STRIP = "KEY_SHAREOUT_STRIP"
         private const val KEY_SHAREOUT_MIMETYPE = "KEY_SHAREOUT_MIMETYPE"
         private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 

@@ -272,6 +272,7 @@ class NCSelectHomeFragment: Fragment() {
                         setting.substringBefore('=', "").let { key ->
                             value = setting.substringAfter('=', "")
                             if (value.isNotEmpty()) when(key) {
+                                // Boolean preferences
                                 LesPasArtProviderSettingActivity.KEY_SKIP_LATE_NIGHT_UPDATE,
                                 getString(R.string.true_black_pref_key),
                                 getString(R.string.auto_replay_perf_key),
@@ -283,15 +284,18 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.wifionly_pref_key),
                                 getString(R.string.chinese_map_pref_key),
                                 getString(R.string.nearby_convergence_pref_key),
+                                getString(R.string.remove_meta_data_before_sharing_pref_key),
+                                getString(R.string.use_low_resolution_to_share_pref_key),
                                 SettingsFragment.KEY_STORAGE_LOCATION, -> editor.putBoolean(key, value.toBoolean())
 
+                                // String preferences
                                 getString(R.string.auto_theme_perf_key),
                                 getString(R.string.default_sort_order_pref_key),
-                                getString(R.string.strip_exif_pref_key),
                                 getString(R.string.blog_name_pref_key),
                                 SettingsFragment.PICO_BLOG_ID,
                                 SettingsFragment.PICO_BLOG_FOLDER, -> editor.putString(key, value)
 
+                                // Int preferences
                                 LesPasArtProviderSettingActivity.KEY_PREFER,
                                 SettingsFragment.CACHE_SIZE -> try { editor.putInt(key, value.toInt()) } catch(_: java.lang.NumberFormatException) {}
 
@@ -314,8 +318,11 @@ class NCSelectHomeFragment: Fragment() {
                                 //SettingsFragment.LAST_BACKUP -> try { editor.putLong(key, value.toLong()) } catch(_: java.lang.NumberFormatException) {}
 
                                 //getString(R.string.pictures_sub_folder_exclusion_pref_key),
+
+                                // String list preferences
                                 LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(", ").toSet())
 
+                                // Snapseed integration preference depends on existence of Snapseed app
                                 getString(R.string.snapseed_pref_key) -> editor.putBoolean(key, value.toBoolean() && requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null)
                             }
                         }

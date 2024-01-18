@@ -105,6 +105,7 @@ import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasGetMediaContract
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.RenameDialogFragment
+import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -153,10 +154,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private var sharedPhoto = Photo(dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
     private var shareOutType = GENERAL_SHARE
-    private var stripOrNot = false
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
-    private var stripSetting = "2"
 
     private val publishModel: NCShareViewModel by activityViewModels()
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
@@ -691,8 +690,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     shareOutBackPressedCallback.isEnabled = false
                 }
 
-                // Collect share out files preparation result
-                when (shareOutType) {
+                // Collect share out files preparation result'
+                if (uris.isNotEmpty()) when (shareOutType) {
                     GENERAL_SHARE -> {
                         // Call system share chooser
                         val cr = requireActivity().contentResolver
@@ -796,7 +795,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                     selectionTracker.clearSelection()
                 }
-                STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, true))
+            }
+        }
+
+        // Share out dialog result handler
+        parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) shareOut(bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), GENERAL_SHARE)
+            else {
+                sharedSelection.clear()
+                selectionTracker.clearSelection()
             }
         }
 
@@ -960,8 +967,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         savedInstanceState?.let {
             if (it.getBoolean(KEY_SHAREOUT_RUNNING)) {
                 shareOutType = it.getInt(KEY_SHAREOUT_TYPE)
-                stripOrNot = it.getBoolean(KEY_SHAREOUT_STRIP)
-                waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, stripOrNot) {
+                waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView) {
                     publishModel.cancelShareOut()
                     shareOutBackPressedCallback.isEnabled = false
                 }
@@ -977,7 +983,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        stripSetting = sp.getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
         isSnapseedEnabled = sp.getBoolean(getString(R.string.snapseed_pref_key), false)
     }
 
@@ -986,7 +991,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
         outState.putStringArray(KEY_SHARED_SELECTION, sharedSelection.toTypedArray())
         outState.putBoolean(KEY_SHAREOUT_RUNNING, waitingMsg?.isShownOrQueued == true)
-        outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
         outState.putParcelable(KEY_SHAREOUT_PHOTO, sharedPhoto)
         outState.putInt(KEY_SHAREOUT_TYPE, shareOutType)
     }
@@ -1089,13 +1093,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.share -> {
-                if (stripSetting == getString(R.string.strip_ask_value)) {
-                    if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), individualKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true, requestKey = ALBUM_DETAIL_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else shareOut(false)
-                }
-                else shareOut(stripSetting == getString(R.string.strip_on_value))
-
+                val mimeTypes = mutableListOf<String>().apply { for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId)?.let { add(it.mimeType) }}
+                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = mimeTypes)?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
                 true
             }
             R.id.select_all -> {
@@ -1103,7 +1102,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.snapseed_edit-> {
-                shareOut(false, SHARE_TO_SNAPSEED)
+                shareOut(false, false, SHARE_TO_SNAPSEED)
                 true
             }
             R.id.lespas_reuse-> {
@@ -1145,18 +1144,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         saveSortOrderChanged = true
     }
 
-    private fun hasExifInSelection(): Boolean {
-        for (photoId in selectionTracker.selection) {
-            mAdapter.getPhotoBy(photoId)?.let { if (Tools.hasExif(it.mimeType)) return true }
-        }
-
-        return false
-    }
-
-    private fun shareOut(strip: Boolean, shareType: Int = GENERAL_SHARE) {
-        stripOrNot = strip
+    private fun shareOut(strip: Boolean, lowResolution: Boolean, shareType: Int = GENERAL_SHARE) {
         shareOutType = shareType
-        waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) {
+        waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView) {
             publishModel.cancelShareOut()
             shareOutBackPressedCallback.isEnabled = false
         }
@@ -1180,7 +1170,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         selectionTracker.clearSelection()
 
         // Prepare media files for sharing
-        publishModel.prepareFileForShareOut(photos, strip, Tools.isRemoteAlbum(album), "${lespasPath}/${album.name}")
+        publishModel.prepareFileForShareOut(photos, strip, lowResolution, Tools.isRemoteAlbum(album), "${lespasPath}/${album.name}")
     }
 
     private fun newLayoutManger(): GridLayoutManager {
@@ -1431,17 +1421,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val BGM_DIALOG = "BGM_DIALOG"
         private const val BLOG_DIALOG = "BLOG_DIALOG"
         private const val EXPORT_GPX_DIALOG = "EXPORT_GPX_DIALOG"
+        private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
 
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SHARED_SELECTION = "KEY_SHARED_SELECTION"
         private const val KEY_SHAREOUT_RUNNING = "KEY_SHAREOUT_RUNNING"
-        private const val KEY_SHAREOUT_STRIP = "KEY_SHAREOUT_STRIP"
         private const val KEY_SHAREOUT_PHOTO = "KEY_SHAREOUT_PHOTO"
         private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 
         private const val ALBUM_DETAIL_REQUEST_KEY = "ALBUM_DETAIL_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
-        private const val STRIP_REQUEST_KEY = "ALBUMDETAIL_STRIP_REQUEST_KEY"
 
         private const val TAG_DESTINATION_DIALOG = "ALBUM_DETAIL_DESTINATION_DIALOG"
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"

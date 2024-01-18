@@ -62,13 +62,11 @@
     <string name="duration_months">Monate: %1$d</string>
     <string name="duration_years">Jahre: %1$d</string>
     <string name="published_to">Veröffentlicht in: %1$s</string>
-    <string name="strip_exif_msg">%1$s?</string>
-    <string name="strip_exif_yes">Ja</string>
-    <string name="strip_exif_no">Nein</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
     <string name="preparing_shares">Vorbereitung der Dateifreigabe…</string>
-    <string name="striping_exif">Entfernen von EXIF-Bildinformationen…</string>
 
-     <!-- PhotoSlide fragment -->
+    <!-- PhotoSlide fragment -->
     <string name="option_menu_slideshow">Diashow</string>
     <string name="button_text_set_cover">Als Albumcover</string>
     <string name="button_text_share">Teilen</string>
@@ -100,11 +98,9 @@
     <string name="snapseed_replace_off_summary">Nein, fügen Sie die Version von Snapseed zum Album hinzu. Verwalten Sie Duplikate selbst.</string>
 
     <string name="privacy_header">Datenschutz</string>
-    <string name="strip_exif_title">EXIF-Bildinformationen vor dem Teilen entfernen</string>
-    <string name="strip_on_entry">Ja, immer entfernen.</string>
-    <string name="strip_off_entry">Nein.</string>
-    <string name="strip_ask_entry">Immer fragen.</string>
-    
+    <string name="remove_meta_data_before_sharing_title">Entfernen Sie sensible Metadaten vor der Weitergabe</string>
+
+    <string name="use_low_resolution_to_share_title">Bildauflösung vor dem Teilen verringern</string>
     <string name="storage_header">Speicher</string>
     <string name="transfer_to_internal">"Alben auf den internen Speicher übertragen"</string>
     <string name="transfer_to_external">Alben auf externe SD-Karte übertragen</string>
@@ -397,4 +393,10 @@
     <string name="confirm_empty_trash">Sind Sie sicher, dass Sie den Papierkorb leeren wollen?</string>
     <string name="sync_deletion_title">Synchronisierung der Galerie-Löschung mit dem Server-Archiv</string>
     <string name="sync_deletion_rational">Um die Flexibilität zu erhöhen, bei jeder Löschung eine Synchronisationsentscheidung zu treffen, sollten Sie Les Pas die Berechtigung Medien verwalten erteilen.</string>
+    <string name="title_sensitive_data">Sensible Metadaten</string>
+    <string name="button_text_keep_meta_data">Behalten</string>
+    <string name="title_picture_resolution">Bildauflösung</string>
+    <string name="button_text_use_original_size">"Original verwenden "</string>
+    <string name="button_text_use_thumbnail">Schrumpfen</string>
+    <string name="checkbox_text_remove_afterwards">Löschen nach dem Teilen</string>
 </resources>

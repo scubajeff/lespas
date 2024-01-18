@@ -138,6 +138,7 @@
     <string name="need_albums">请先创建相册。</string>
     <string name="to_album">至相册：</string>
     <string name="move_files">移动</string>
+    <string name="use_low_resolution_to_share_title">分享缩略图片</string>
     <string name="storage_header">存储</string>
     <string name="transfer_to_internal">将照片迁移至内部存储</string>
     <string name="transfer_to_external">将照片迁移至外置存储卡</string>
@@ -181,19 +182,14 @@
     <string name="button_text_download">下载</string>
     <string name="button_text_add_to_lespas">加入相册</string>
     <string name="downloading_message">媒体文件%1$s将被保存到Download目录下。</string>
-    <string name="strip_exif_title">分享图片前删除图片EXIF隐私数据</string>
+    <string name="remove_meta_data_before_sharing_title">分享前删除图片隐私元数据</string>
     <string name="install_snapseed_dialog_msg">马上安装Snapseed修图应用吗？</string>
     <string name="edit_header">图片编辑</string>
     <string name="privacy_header">隐私保护</string>
-    <string name="strip_exif_no">不用</string>
-    <string name="strip_ask_entry">每次都询问确定。</string>
-    <string name="strip_exif_msg">%1$s？</string>
-    <string name="strip_off_entry">不删除，无法保护你的隐私。</string>
-    <string name="strip_on_entry">一律删除，最大限度保护隐私。</string>
-    <string name="strip_exif_yes">好的</string>
+    <string name="no">不用</string>
+    <string name="yes">好的</string>
     <string name="action_reuse">至相册…</string>
     <string name="preparing_shares">正在准备分享文件……</string>
-    <string name="striping_exif">正在删除图片EXIF隐私数据……</string>
     <string name="button_text_map">地图应用</string>
     <string name="object_location">拍摄地点</string>
     <string name="item_location_search">拍摄地点</string>
@@ -344,4 +340,10 @@
     <string name="confirm_empty_trash">确定要清空回收站吗？</string>
     <string name="sync_deletion_title">同步图库删除到服务器</string>
     <string name="sync_deletion_rational">授予了Les Pas管理媒体的权限后，可以在每次删除时决定是否同步。</string>
+    <string name="title_sensitive_data">隐私元数据</string>
+    <string name="button_text_keep_meta_data">保留</string>
+    <string name="title_picture_resolution">照片分辨率</string>
+    <string name="button_text_use_original_size">原图</string>
+    <string name="button_text_use_thumbnail">缩略图</string>
+    <string name="checkbox_text_remove_afterwards">分享后删除原文件</string>
 </resources>

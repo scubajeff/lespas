@@ -46,7 +46,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<TextView>(R.id.message_textview).text = requireArguments().getString(MESSAGE)
+        view.findViewById<TextView>(R.id.dialog_title).text = requireArguments().getString(MESSAGE)
 
         checkBox = view.findViewById<CheckBox>(R.id.checkbox).apply {
             (requireArguments().getString(CHECK_BOX_TEXT) ?: "").let {
