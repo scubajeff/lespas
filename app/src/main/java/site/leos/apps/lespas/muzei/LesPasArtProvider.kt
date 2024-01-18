@@ -21,7 +21,11 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
+import android.graphics.Matrix
+import android.graphics.Rect
 import android.os.Build
 import android.view.WindowManager
 import androidx.preference.PreferenceManager
@@ -46,7 +50,8 @@ import java.time.Period
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import kotlin.random.Random
 
 class LesPasArtProvider: MuzeiArtProvider() {
@@ -150,7 +155,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
     private fun updateArtwork() {
         Thread {
-            var moreCaption = false
+            var additionalCaption = false
 
             (context?.applicationContext as Application).let { application ->
                 val sp = PreferenceManager.getDefaultSharedPreferences(application)
@@ -173,18 +178,40 @@ class LesPasArtProvider: MuzeiArtProvider() {
                             }
                             LesPasArtProviderSettingActivity.PREFER_TODAY_IN_HISTORY -> {
                                 photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { sameDayHits ->
-                                    moreCaption = sameDayHits.isNotEmpty()
+                                    additionalCaption = sameDayHits.isNotEmpty()
 
                                     when(sameDayHits.size) {
                                         0 -> photoList[random.nextInt(photoList.size)]
                                         1 -> sameDayHits[0]
                                         else -> {
+/*
                                             var index = random.nextInt(sameDayHits.size)
                                             lastAddedArtwork?.let {
                                                 // Prevent from choosing the last one again
                                                 while(sameDayHits[index].id == it.token) index = random.nextInt(sameDayHits.size)
                                             }
                                             sameDayHits[index]
+*/
+                                            // Try to get today's photo list from Preference
+                                            val photosOfDate =  mutableListOf<String>().apply { addAll(sp.getString(PHOTOS_OF_TODAY, "")?.split(',') ?: listOf()) }
+                                            if (photosOfDate.contains(sameDayHits[0].id)) {
+                                                // If list existed, loop thru. it
+                                                photosOfDate[0] = (photosOfDate[0].toInt() + 1).let { i -> if (i == sameDayHits.size) 0 else i }.toString()
+                                            } else {
+                                                // Create today's photo shuffled list, add current index to the top of the list
+                                                photosOfDate.clear()
+                                                sameDayHits.shuffled().forEach { photosOfDate.add(it.id) }
+                                                photosOfDate.add(0, "0")
+                                            }
+
+                                            // Save the list in Preference
+                                            sp.edit().apply {
+                                                putString(PHOTOS_OF_TODAY, photosOfDate.joinToString(","))
+                                                apply()
+                                            }
+
+                                            // Supply the next in list to Muzei
+                                            sameDayHits.find { it.id == photosOfDate[photosOfDate[0].toInt() + 1] }
                                         }
                                     }
                                 }
@@ -231,7 +258,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                     if (dest.exists()) setArtwork(Artwork(
                         title = album.name,
                         byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" +
-                                if (moreCaption) with(LocalDate.now().year - photo.dateTaken.year) { if (this > 0) context!!.resources.getQuantityString(R.plurals.years_ago_today, this, this) else ""} else "" +
+                                if (additionalCaption) with(LocalDate.now().year - photo.dateTaken.year) { if (this > 0) context!!.resources.getQuantityString(R.plurals.years_ago_today, this, this) else ""} else "" +
                                 if (photo.locality != Photo.NO_ADDRESS) ", @${photo.locality}" else "",
                         token = photo.id,
                         metadata = "${photo.albumId},"+ if (photo.orientation == 90 || photo.orientation == 270) "${photo.height},${photo.width}" else "${photo.width},${photo.height}",
@@ -244,6 +271,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
     companion object {
         const val FROM_MUZEI_ALBUM = "FROM_MUZEI_ALBUM"
         const val FROM_MUZEI_PHOTO = "FROM_MUZEI_PHOTO"
-        const val UPDATE_CALL = "UPDATE_CALL"
+
+        private const val PHOTOS_OF_TODAY = "PHOTOS_OF_TODAY"
     }
 }
