@@ -918,8 +918,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val dm = context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager
         targets.forEach { remotePhoto ->
             dm.enqueue(
-                DownloadManager.Request(Uri.parse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}"))
-                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, remotePhoto.photo.name.substringAfterLast("/"))
+                DownloadManager.Request(
+                    if (remotePhoto.remotePath.isEmpty()) FileProvider.getUriForFile(getApplication(), lespasAuthority, File(localFileFolder, remotePhoto.photo.id))
+                    else Uri.parse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}")
+                ).setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, remotePhoto.photo.name.substringAfterLast("/"))
                     .setTitle(remotePhoto.photo.name.substringAfterLast("/"))
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .addRequestHeader("Authorization", "Basic $token")

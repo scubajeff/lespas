@@ -221,6 +221,7 @@
     <string name="action_set_remote">Définir comme Distant</string>
     <string name="action_set_local">Définir comme Local</string>
     <string name="action_reuse">Vers l\'album …</string>
+    <string name="action_export">Exporter</string>
     <string name="action_rename_media">Renommer</string>
     <string name="action_select_all">Tout sélectionner</string>
     <plurals name="selected_count" tools:ignore="MissingQuantity">

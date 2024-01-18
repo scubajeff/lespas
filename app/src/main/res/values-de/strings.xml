@@ -287,6 +287,7 @@
     <string name="map_header">Karte</string>
     <string name="msg_server_operation">Die Fotos werden nach der Synchronisierung mit dem Server im Zielalbum angezeigt.</string>
     <string name="item_wide_list">Name anzeigen</string>
+    <string name="action_export">Exportieren</string>
     <string name="action_rename_media">Umbenennen</string>
     <string name="rename_media">Neuer Name</string>
     <string name="nearby_convergence_title">Fotos in der Nähe automatisch konvergieren</string>

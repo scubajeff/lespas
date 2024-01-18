@@ -235,6 +235,7 @@
     <string name="map_header">地図</string>
     <string name="msg_server_operation">サーバーと同期した後、ターゲットアルバムに写真が表示されます。</string>
     <string name="item_wide_list">名前を表示</string>
+    <string name="action_export">導く</string>
     <string name="action_rename_media">リネーム</string>
     <string name="rename_media">新名称</string>
     <string name="nearby_convergence_title">近くの写真を自動収束</string>

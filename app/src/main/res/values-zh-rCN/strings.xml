@@ -235,6 +235,7 @@
     <string name="map_header">地图</string>
     <string name="msg_server_operation">与服务器实现同步后，照片才会在目标相册中出现。</string>
     <string name="item_wide_list">显示名称</string>
+    <string name="action_export">导出</string>
     <string name="action_rename_media">改名</string>
     <string name="rename_media">新名字</string>
     <string name="nearby_convergence_title">自动归集附近照片</string>
