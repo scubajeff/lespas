@@ -384,8 +384,8 @@ class RemoteMediaFragment: Fragment() {
 
     private fun saveMedia() {
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
-            shareModel.savePhoto(requireContext(), this)
-            handler.postDelayed({ Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG).show() }, 400L)
+            shareModel.savePhoto(requireContext(), listOf(this))
+            Snackbar.make(requireView(), getString(R.string.msg_saved_location), Snackbar.LENGTH_LONG).show()
         }
     }
 

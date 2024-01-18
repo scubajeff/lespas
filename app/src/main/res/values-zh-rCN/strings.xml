@@ -181,7 +181,6 @@
     <string name="auto_replay_title">自动重复播放视频</string>
     <string name="button_text_download">下载</string>
     <string name="button_text_add_to_lespas">加入相册</string>
-    <string name="downloading_message">媒体文件%1$s将被保存到Download目录下。</string>
     <string name="remove_meta_data_before_sharing_title">分享前删除图片隐私元数据</string>
     <string name="install_snapseed_dialog_msg">马上安装Snapseed修图应用吗？</string>
     <string name="edit_header">图片编辑</string>
@@ -347,4 +346,5 @@
     <string name="button_text_use_original_size">原图</string>
     <string name="button_text_use_thumbnail">缩略图</string>
     <string name="checkbox_text_remove_afterwards">分享后删除原文件</string>
+    <string name="msg_saved_location">照片将保存在 \"下载 \"文件夹中。</string>
 </resources>

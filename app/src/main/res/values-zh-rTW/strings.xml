@@ -181,7 +181,6 @@
     <string name="auto_replay_title">自動重複播放影片</string>
     <string name="button_text_download">下載</string>
     <string name="button_text_add_to_lespas">加入相冊</string>
-    <string name="downloading_message">媒體檔案%1$s將被保存到Download目錄下。</string>
     <string name="remove_meta_data_before_sharing_title">分享前刪除圖片隱私後設資料</string>
     <string name="install_snapseed_dialog_msg">現在就安裝Snapseed修圖App嗎？</string>
     <string name="edit_header">圖片編輯</string>
@@ -347,4 +346,5 @@
     <string name="button_text_use_original_size">原圖</string>
     <string name="button_text_use_thumbnail">縮圖</string>
     <string name="checkbox_text_remove_afterwards">分享後刪除原檔案</string>
+    <string name="msg_saved_location">照片將儲存在 \"下載 \"資料夾中。</string>
 </resources>

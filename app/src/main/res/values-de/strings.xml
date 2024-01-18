@@ -224,7 +224,6 @@
     <!-- Remote Media Fragment -->
     <string name="button_text_download">Download</string>
     <string name="button_text_add_to_lespas">Zu Album hinzufügen</string>
-    <string name="downloading_message">Die Datei %1$s wird im Verzeichnis Download gespeichert.</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->
@@ -400,4 +399,5 @@
     <string name="button_text_use_original_size">"Original verwenden "</string>
     <string name="button_text_use_thumbnail">Schrumpfen</string>
     <string name="checkbox_text_remove_afterwards">Löschen nach dem Teilen</string>
+    <string name="msg_saved_location">Die Fotos werden im Ordner \"Download\" gespeichert.</string>
 </resources>

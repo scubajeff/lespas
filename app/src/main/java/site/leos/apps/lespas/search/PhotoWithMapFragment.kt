@@ -276,8 +276,12 @@ class PhotoWithMapFragment: Fragment() {
                 true
             }
             R.id.option_menu_share -> {
+/*
                 if (target == R.id.search_archive) imageLoaderModel.batchDownload(requireContext(), listOf(remotePhoto))
                 else if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
+*/
+                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
+                    ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
                 true
             }
             R.id.option_menu_open_in_map_app -> {

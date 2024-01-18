@@ -279,7 +279,6 @@
     <!-- Remote Media Fragment -->
     <string name="button_text_download">Scarica</string>
     <string name="button_text_add_to_lespas">Aggiungi all\'album</string>
-    <string name="downloading_message">Il file %1$s sarà salvato nella cartella Download.</string>
 
     <!-- Location Search Fragment -->
     <string name="option_menu_in_map">Mostra sulla mappa</string>
@@ -415,4 +414,5 @@
     <string name="button_text_use_original_size">"Utilizzare l'originale "</string>
     <string name="button_text_use_thumbnail">Restringimento</string>
     <string name="checkbox_text_remove_afterwards">Eliminare dopo la condivisione</string>
+    <string name="msg_saved_location">Le foto verranno salvate nella cartella \"Download\".</string>
 </resources>

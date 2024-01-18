@@ -182,7 +182,6 @@
     <string name="auto_replay_title">Reproducir el vídeo automáticamente</string>
     <string name="button_text_download">Descargar</string>
     <string name="button_text_add_to_lespas">Añadir al álbum</string>
-    <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
     <string name="remove_meta_data_before_sharing_title">Elimine los metadatos sensibles antes de compartirlos</string>
     <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
     <string name="edit_header">Retacear</string>
@@ -350,4 +349,5 @@
     <string name="button_text_use_original_size">"Utilizar el original "</string>
     <string name="button_text_use_thumbnail">Retráctil</string>
     <string name="checkbox_text_remove_afterwards">Eliminar después de compartir</string>
+    <string name="msg_saved_location">Las fotos se guardarán en la carpeta \"Descargas\".</string>
 </resources>

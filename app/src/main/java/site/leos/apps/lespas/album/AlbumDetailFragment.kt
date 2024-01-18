@@ -1134,7 +1134,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     mAdapter.getPhotoBy(photoId)?.let { photo -> rp.add(NCShareViewModel.RemotePhoto(photo, remotePath)) }
                 }
                 selectionTracker.clearSelection()
-                publishModel.batchDownload(requireContext(), rp)
+                publishModel.savePhoto(requireContext(), rp)
+                Snackbar.make(requireView(), getString(R.string.msg_saved_location), Snackbar.LENGTH_LONG).show()
 
                 true
             }
