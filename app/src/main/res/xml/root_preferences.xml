@@ -74,28 +74,6 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/edit_header"
-        app:icon="@drawable/ic_baseline_edit_24">
-
-        <SwitchPreferenceCompat
-            app:key="@string/snapseed_pref_key"
-            app:title="@string/snapseed_integration_title"
-            app:summaryOn="@string/snapseed_integration_summary"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
-        <SwitchPreferenceCompat
-            app:dependency="@string/snapseed_pref_key"
-            app:key="@string/snapseed_replace_pref_key"
-            app:title="@string/snapseed_replace_title"
-            app:summaryOn="@string/snapseed_replace_on_summary"
-            app:summaryOff="@string/snapseed_replace_off_summary"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
         app:title="@string/privacy_header"
         app:icon="@drawable/ic_baseline_privacy_24">
         <SwitchPreferenceCompat
@@ -109,63 +87,6 @@
             app:singleLineTitle="false"
             app:defaultValue="true" />
 
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        app:title="@string/sync_header"
-        app:icon="@drawable/ic_baseline_sync_24">
-<!--
-        <SwitchPreferenceCompat
-            app:key="@string/cameraroll_backup_pref_key"
-            app:title="@string/cameraroll_backup_title"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
-        <SwitchPreferenceCompat
-            app:key="@string/pictures_backup_pref_key"
-            app:title="@string/pictures_backup_title"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
-        <MultiSelectListPreference
-            app:key="@string/pictures_sub_folder_exclusion_pref_key"
-            app:dependency="@string/pictures_backup_pref_key"
-            app:title="@string/pictures_sub_folder_exclusion_title"
-            app:singleLineTitle="false" />
-
-        <SwitchPreferenceCompat
-            app:key="@string/sync_pref_key"
-            app:title="@string/background_sync_title"
-            app:summary="@string/background_sync_summary"
-            app:singleLineTitle="false"
-            app:defaultValue="false"/>
-
--->
-        <SwitchPreferenceCompat
-            app:key="@string/wifionly_pref_key"
-            app:summaryOff="@string/wifionly_summary_off"
-            app:summaryOn="@string/wifionly_summary_on"
-            app:title="@string/wifionly_title"
-            app:singleLineTitle="false"
-            app:defaultValue="true" />
-        <Preference
-            app:key="@string/sync_status_pref_key"
-            app:title="@string/sync_status_title"
-            app:singleLineTitle="false" />
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        app:key="@string/blog_category_pref_key"
-        app:title="@string/blog_header"
-        app:icon="@drawable/ic_baseline_blog_24">
-        <Preference
-            app:selectable="false"
-            app:summary="@string/blog_exemption_clause" />
-        <EditTextPreference
-            app:key="@string/blog_name_pref_key"
-            app:title="@string/blog_name_title"
-            app:useSimpleSummaryProvider="true"
-            app:defaultValue="@string/blog_name_default" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -191,6 +112,42 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:title="@string/edit_header"
+        app:icon="@drawable/ic_baseline_edit_24">
+
+        <SwitchPreferenceCompat
+            app:key="@string/snapseed_pref_key"
+            app:title="@string/snapseed_integration_title"
+            app:summaryOn="@string/snapseed_integration_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            app:dependency="@string/snapseed_pref_key"
+            app:key="@string/snapseed_replace_pref_key"
+            app:title="@string/snapseed_replace_title"
+            app:summaryOn="@string/snapseed_replace_on_summary"
+            app:summaryOff="@string/snapseed_replace_off_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="@string/blog_category_pref_key"
+        app:title="@string/blog_header"
+        app:icon="@drawable/ic_baseline_blog_24">
+        <Preference
+            app:selectable="false"
+            app:summary="@string/blog_exemption_clause" />
+        <EditTextPreference
+            app:key="@string/blog_name_pref_key"
+            app:title="@string/blog_name_title"
+            app:useSimpleSummaryProvider="true"
+            app:defaultValue="@string/blog_name_default" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:title="@string/map_header"
         app:icon="@drawable/ic_baseline_map_preference_24">
         <SwitchPreferenceCompat
@@ -205,6 +162,22 @@
             app:summary="@string/nearby_convergence_summary"
             app:singleLineTitle="false"
             app:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/sync_header"
+        app:icon="@drawable/ic_baseline_sync_24">
+        <SwitchPreferenceCompat
+            app:key="@string/wifionly_pref_key"
+            app:summaryOff="@string/wifionly_summary_off"
+            app:summaryOn="@string/wifionly_summary_on"
+            app:title="@string/wifionly_title"
+            app:singleLineTitle="false"
+            app:defaultValue="true" />
+        <Preference
+            app:key="@string/sync_status_pref_key"
+            app:title="@string/sync_status_title"
+            app:singleLineTitle="false" />
     </PreferenceCategory>
 
     <PreferenceCategory
