@@ -21,6 +21,7 @@ Features:
     * Support GPX importing, so that you can easily add GPS location data to pictures shoot on your digital camera
     * Support Nextcloud's external storage
     * Beautiful theme inspired by works of Wes Anderson
+    * Support standard media format plus RAW and HDR photos
 - ***Sharing***
     * Share albums and album slideshow with other Nextcloud users, groups and circles
     * Unique 'Joint Album' feature, which you and other Nextcloud users can edit together
