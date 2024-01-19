@@ -24,21 +24,36 @@ import android.net.Uri
 import android.os.Parcelable
 import androidx.preference.PreferenceManager
 import kotlinx.parcelize.Parcelize
-import okhttp3.*
+import okhttp3.Cache
+import okhttp3.CacheControl
+import okhttp3.Call
+import okhttp3.Headers
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import okio.*
+import okhttp3.Response
+import okio.BufferedSink
 import okio.ByteString.Companion.decodeBase64
 import okio.IOException
+import okio.buffer
+import okio.sink
+import okio.source
+import okio.use
 import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.InputStream
+import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.security.KeyStore
@@ -46,7 +61,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import javax.net.ssl.SSLContext
@@ -468,19 +483,27 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 when {
                     response.isSuccessful-> {}
                     response.code == 405-> {
+                        // Response 405 means the folder is already there
                         // Try to resume from the last position, assume that all uploaded chunks except the last 1 are intact
-                        list(chunkFolder, FOLDER_CONTENT_DEPTH).drop(1).maxByOrNull { it.name }?.run {
-                            @Suppress("KotlinConstantConditions")
-                            try { (this.name.substringBefore('.')).toLong() } catch (e: Exception) { null }?.let {
-                                // If last chunk uploaded is intact, start from the next chunk
-                                index = it + if (this.size == CHUNK_SIZE) CHUNK_SIZE else 0
+                        try {
+                            val existing = list(chunkFolder, FOLDER_CONTENT_DEPTH).drop(1)
+                            if (existing.isNotEmpty()) {
+                                existing.maxByOrNull { it.name }?.run {
+                                    this.name.substringBefore('.').toLong().let { lastChunk ->
+                                        // If last chunk uploaded is intact, start from the next chunk
+                                        index = lastChunk + if (this.size == CHUNK_SIZE) CHUNK_SIZE else 0L
 
-                                // Skip to resume position, if skip failed, start from the very beginning
-                                inputStream.skip(index).let { skipped->
-                                    //Log.e(">>>>>", "should skip $index, actually skip $skipped")
-                                    if (skipped != index) index = 0
+                                        // Skip to resume position, if skip failed, start from the very beginning
+                                        inputStream.skip(index).let { skipped ->
+                                            //Log.e(">>>>>", "should skip $index, actually skip $skipped")
+                                            if (skipped != index) index = 0L
+                                        }
+                                    }
                                 }
                             }
+                        } catch (_: Exception) {
+                            // Whatever bad happened, start from the very beginning
+                            index = 0L
                         }
                     }
                     else-> throw OkHttpWebDavException(response)
