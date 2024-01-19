@@ -1,0 +1,5 @@
+* Neue Einstellungen für die Freigabe von Fotos für andere Anwendungen
+* Neue Funktion zum Exportieren von Fotos in den lokalen Speicher des Telefons
+* Absturz bei der Ortssuche behoben
+* Behoben: Überlauf der Dateigröße in der Galerie
+* Verschiedene Verbesserungen und Fehlerkorrekturen

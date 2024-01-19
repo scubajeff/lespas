@@ -1,0 +1,5 @@
+* Novas configurações para compartilhar fotos com outros aplicativos
+* Nova função para exportar fotos para o armazenamento local do telefone
+* Correção da falha na pesquisa de local
+* Correção do estouro do tamanho do arquivo da Galeria
+* Vários aprimoramentos e correções de bugs

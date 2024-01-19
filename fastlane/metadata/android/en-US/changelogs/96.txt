@@ -1,0 +1,5 @@
+* New settings when sharing photos to other apps
+* New function to export photos to phone's local storage
+* Fixed location search crash
+* Fixed Gallery file size overflow
+* Various improvements and bugs fixes

@@ -1,3 +1,9 @@
+## Version 2.9.7
+* New settings when sharing photos to other apps
+* New function to export photos to phone's local storage
+* Fixed location search crash
+* Fixed Gallery file size overflow
+
 ## Version 2.9.6
 * Target Android 14
 * Support HDR image on Android 14
