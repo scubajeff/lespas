@@ -129,18 +129,18 @@ class GalleryFragment: Fragment() {
 
                     arguments?.parcelable<Uri>(ARGUMENT_URI)?.let { uri ->
                         getFolderFromUri(uri)?.let {
-                            galleryModel.asGallery()
-                            // Launched as viewer from system file manager
+                            galleryModel.asGallery(delayStart = false, order = "ASC")
+                            // Launched as viewer from system file manager, set list sort order to date ascending
                             galleryModel.setCurrentPhotoId(it.second)
                             childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(it.first)).addToBackStack(null).commit()
                         } ?: run {
-                            // Launched as viewer from other apps, like Joplin, Conversation
-                            galleryModel.asViewer(uri, requireContext())
+                            // Can't extract folder name from Uri, launched as a single file viewer
+                            galleryModel.asSingleFileViewer(uri, requireContext())
                             childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(uri.toString())).addToBackStack(null).commit()
                         }
                     } ?: run {
-                        // Launcher as Gallery
-                        galleryModel.asGallery()
+                        // Launcher as Gallery within our own app, set list sort order to date descending
+                        galleryModel.asGallery(delayStart = false, order = "DESC")
                         childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
                     }
                 }
@@ -501,6 +501,7 @@ class GalleryFragment: Fragment() {
         private var loadJob: Job? = null
         private var autoRemoveDone = false
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
+        private var defaultSortOrder = "DESC"
         val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         val trash: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
@@ -513,10 +514,11 @@ class GalleryFragment: Fragment() {
         
         fun reload() {
             loadJob?.cancel()
-            asGallery(true)
+            asGallery(delayStart = true, order = defaultSortOrder)
         }
 
-        fun asGallery(delayStart: Boolean = false) {
+        fun asGallery(delayStart: Boolean, order: String) {
+            defaultSortOrder = order
             loadJob = viewModelScope.launch(Dispatchers.IO) {
                 // Delay for 500ms when reload, because content observer will receive multiple notifications of change for a single file operation, like for example, creating a new file will result in 3 change notifications, including 1 NOTIFY_INSERT and 2 NOTIFY_UPDATE
                 if (delayStart) delay(300)
@@ -541,7 +543,7 @@ class GalleryFragment: Fragment() {
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
-                val sortOrder = "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
+                val sortOrder = "${MediaStore.Files.FileColumns.DATE_ADDED} $order"
                 val queryBundle = Bundle()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     projection = projection.plus(arrayOf(MediaStore.Files.FileColumns.VOLUME_NAME, MediaStore.Files.FileColumns.IS_TRASHED))
@@ -646,7 +648,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        fun asViewer(uri: Uri, ctx: Context) {
+        fun asSingleFileViewer(uri: Uri, ctx: Context) {
             loadJob?.cancel()
 
             val mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run { MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase()) ?: Photo.DEFAULT_MIMETYPE }
