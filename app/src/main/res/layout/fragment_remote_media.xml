@@ -75,8 +75,8 @@
 
             <Button
                 android:id="@+id/download_button"
-                android:drawableTop="@drawable/ic_baseline_cloud_download_24"
-                android:text="@string/button_text_download"
+                android:drawableTop="@drawable/ic_baseline_file_export_24"
+                android:text="@string/action_export"
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
