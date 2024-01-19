@@ -13,6 +13,7 @@ Gestione, sincronizzazione e archiviazione
   * Supporta l'importazione di GPX, in modo da poter aggiungere facilmente i dati di localizzazione GPS alle immagini scattate con la fotocamera digitale.
   * Supporto dell'archiviazione esterna di Nextcloud
   * Tema bellissimo ispirato alle opere di Wes Anderson
+  * Supporta i formati multimediali standard e le foto RAW e HDR
 
 Condivisione
   * Condividere album e presentazioni di album con altri utenti, gruppi e cerchie di Nextcloud.
