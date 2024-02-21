@@ -27,6 +27,7 @@ import android.content.pm.ActivityInfo
 import android.database.ContentObserver
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -34,9 +35,14 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Parcelable
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
@@ -46,13 +52,16 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.core.view.MenuProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.snackbar.Snackbar
@@ -65,10 +74,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
@@ -102,6 +113,8 @@ class GalleryFragment: Fragment() {
     private var selectedUris = arrayListOf<Uri>()
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    private var archiveMenuItem: MenuItem? = null
 
     //private lateinit var childFragmentBackPressedCallback: OnBackPressedCallback
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
@@ -195,7 +208,7 @@ class GalleryFragment: Fragment() {
             if (childFragmentManager.backStackEntryCount == 0) {
                 // When all medias deleted
                 Toast.makeText(requireContext(), getString(R.string.msg_no_media_found), Toast.LENGTH_SHORT).show()
-                finish()
+                //finish()
             }
         }
     }
@@ -342,6 +355,39 @@ class GalleryFragment: Fragment() {
                 }
             }
         }
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.gallery_menu, menu)
+
+                // Archive toolbar icon management
+                archiveMenuItem = menu.findItem(R.id.option_menu_archive)
+                lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.RESUMED) { galleryModel.showArchive.collect { currentState ->
+                        archiveMenuItem?.let { menuItem ->
+                            when(currentState) {
+                                GalleryViewModel.ARCHIVE_REFRESHING -> {
+                                    menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
+                                    (menuItem.icon as? AnimatedVectorDrawable)?.start()
+                                }
+                                GalleryViewModel.ARCHIVE_ON -> menuItem.setIcon(R.drawable.ic_baseline_archive_24)
+                                else -> menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
+                            }
+                        }
+                    }}
+                }
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when(menuItem.itemId) {
+                    R.id.option_menu_archive -> {
+                        galleryModel.toggleArchive()
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
         savedInstanceState?.let {
             if (it.getBoolean(KEY_SHARING_OUT)) {
@@ -498,20 +544,73 @@ class GalleryFragment: Fragment() {
         }
     }
     class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable): ViewModel() {
+        private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
+        private val local = MutableStateFlow<List<LocalMedia>>(mutableListOf())
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
-        private var defaultSortOrder = "DESC"
         val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-        val trash: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        val trash: StateFlow<List<LocalMedia>?> = local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+
+        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
+        val showArchive: StateFlow<Int> = _showArchive
+        private val trigger = MutableStateFlow(false)
+        fun toggleArchive() {
+            // TODO can stop archive refreshing job
+            _showArchive.value = -_showArchive.value
+            if (_showArchive.value == ARCHIVE_ON) imageModel.refreshArchive()
+            trigger.value = !trigger.value
+        }
+
+        fun getCurrentArchiveSwitchState() = _showArchive.value
+
+        init {
+            viewModelScope.launch(Dispatchers.IO) {
+                combine(trigger, local, imageModel.archive) { _, localMedia, archiveMedia ->
+                    Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
+                    val combinedList = mutableListOf<LocalMedia>().apply { addAll(localMedia) }
+
+                    if (_showArchive.value != ARCHIVE_OFF) {
+                        val model = Tools.getDeviceModel()
+
+                        archiveMedia?.let {
+                            it.forEach { archiveItem ->
+                                if (archiveItem.volume == model) {
+                                    // From this device, mark as IS_BOTH if there is a copy in device gallery
+                                    combinedList.find { item ->
+                                        item.media.photo.name == archiveItem.media.photo.name && item.fullPath == archiveItem.fullPath
+                                    }?.let { existed ->
+                                        Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
+                                        existed.location = LocalMedia.IS_BOTH
+                                        existed.media.photo.eTag = archiveItem.media.photo.eTag
+                                    } ?: run {
+                                        Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name} ${archiveItem.media.photo.id}",)
+                                        combinedList.add(archiveItem)
+                                    }
+                                } else {
+                                    Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name}  ${archiveItem.media.photo.id} from ${archiveItem.volume}",)
+                                    // Not from this device, add it to the list
+                                    combinedList.add(archiveItem)
+                                }
+                            }
+                            _showArchive.value = ARCHIVE_ON
+                        } ?: run {
+                            // Archive refreshing job in NCShareViewModel emit NULL list when the job is running
+                            _showArchive.value = ARCHIVE_REFRESHING
+                        }
+                    }
+
+                    combinedList
+                }.collect { result -> _medias.value = result }
+            }
+        }
 
         override fun onCleared() {
             loadJob?.cancel()
-
             super.onCleared()
         }
-        
+
         fun reload() {
             loadJob?.cancel()
             asGallery(delayStart = true, order = defaultSortOrder)
@@ -611,6 +710,7 @@ class GalleryFragment: Fragment() {
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 LocalMedia(
+                                    LocalMedia.IS_LOCAL,
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
@@ -642,7 +742,7 @@ class GalleryFragment: Fragment() {
                 //ensureActive()
                 //localMedias.sortWith(compareBy<LocalMedia, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.folder }.thenByDescending { it.media.photo.dateTaken })
                 ensureActive()
-                _medias.value = localMedias
+                local.value = localMedias
             }.apply {
                 invokeOnCompletion { loadJob = null }
             }
@@ -683,7 +783,7 @@ class GalleryFragment: Fragment() {
 
             uri.toString().let { uriString ->
                 setCurrentPhotoId(uriString)
-                _medias.value = listOf(LocalMedia(uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
+                _medias.value = listOf(LocalMedia(LocalMedia.IS_LOCAL, uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
             }
         }
 
@@ -825,20 +925,35 @@ class GalleryFragment: Fragment() {
         fun getCurrentSubFolder(): String = currentSubFolder
         fun saveCurrentSubFolder(name: String) { currentSubFolder = name }
         fun resetCurrentSubFolder() { currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG }
+
+        companion object {
+            const val ARCHIVE_OFF = -1
+            const val ARCHIVE_ON = 1
+            const val ARCHIVE_REFRESHING = 0
+        }
     }
 
+    @Parcelize
     data class LocalMedia(
+        var location: Int,
         var folder: String,
         var media: NCShareViewModel.RemotePhoto,
         var volume: String = "",
         var fullPath: String = "",
         var appName: String = "",
-    )
+    ) : Parcelable {
+        companion object {
+            const val IS_LOCAL = 1
+            const val IS_REMOTE = 2
+            const val IS_BOTH = 4
+            const val IS_NOT_MEDIA = 8
+        }
+    }
 
     companion object {
         private const val AUTO_REMOVE_OLD_MEDIA_FILES = 6667
         const val STORAGE_EMULATED = "/storage/emulated/"
-        const val FROM_DEVICE_GALLERY = "0"
+        const val FROM_DEVICE_GALLERY = "0"     // Nextcloud server's folder id can't be 0
         const val EMPTY_GALLERY_COVER_ID = "0"
 
         const val TRASH_FOLDER = "\uE83A"   // This private character make sure the Trash is at the bottom of folder list

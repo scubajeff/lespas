@@ -100,6 +100,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     private val _blogs = MutableStateFlow<List<Blog>?>(null)
     private val _blogPostThemeId = MutableStateFlow("")
+    private val _archive = MutableStateFlow<List<GalleryFragment.LocalMedia>?>(null)
 
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
@@ -108,6 +109,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
     val blogs: StateFlow<List<Blog>?> = _blogs
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
+    val archive: StateFlow<List<GalleryFragment.LocalMedia>?> = _archive
+    private var archiveJob: Job? = null
 
     private val _publicShare = MutableSharedFlow<Recipient>()
     val publicShare: SharedFlow<Recipient> = _publicShare
@@ -116,7 +119,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val _shareOutUris = MutableSharedFlow<ArrayList<Uri>>()
     val shareOutUris: SharedFlow<ArrayList<Uri>> = _shareOutUris
-    var shareOutPreparationJob: Job? = null
+    private var shareOutPreparationJob: Job? = null
 
     private val user = User()
 
@@ -126,7 +129,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private var token: String
     private val resourceRoot: String
     private val lespasBase = Tools.getRemoteHome(application)
-    private val archiveBase = Tools.getCameraArchiveHome(application)
+    private val archiveBase = Tools.getArchiveBase(application)
     private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
     private val cacheFolder = application.cacheDir
@@ -569,6 +572,56 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
+
+    fun refreshArchive() {
+        if (archiveJob == null) archiveJob = viewModelScope.launch(Dispatchers.IO) {
+            val result = mutableListOf<GalleryFragment.LocalMedia>()
+
+            try {
+                var path = ""
+                // TODO load cache first
+                webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+                    if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
+                        path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/')
+                        result.add(
+                            GalleryFragment.LocalMedia(
+                                GalleryFragment.LocalMedia.IS_REMOTE,
+                                folder = path.substringBefore('/'),                                         // first segment of file path
+                                media = RemotePhoto(
+                                    Photo(
+                                        id = dav.fileId, albumId = dav.albumId, name = dav.name.substringAfterLast('/'), eTag = dav.eTag, mimeType = dav.contentType,
+                                        dateTaken = dav.dateTaken, lastModified = dav.modified,
+                                        width = dav.width, height = dav.height, orientation = dav.orientation,
+                                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
+                                        // Store file size in property caption, TODO setup dedicated property for size
+                                        caption = dav.size.toString()
+                                    ),
+                                    remotePath = archiveBase + dav.name.substringBeforeLast('/')
+                                ),
+                                volume = dav.name.substringAfter('/').substringBefore('/'),         // volume name of archive item is device model name
+                                fullPath = "$path/",
+                                appName = path.substringAfterLast('/'),                                      // last segment of file path
+                            )
+                        )
+                    }
+                }
+                result.sortByDescending { it.media.photo.dateTaken }
+
+                // Save a snapshot
+                /*
+            File(localFileFolder, SNAPSHOT_FILENAME).writer().use {
+                it.write(Tools.cacheArchive())
+            }
+*/
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            _archive.value = result
+        }.apply {
+            invokeOnCompletion { archiveJob = null }
+        }
+    }
 
     fun getCameraRollArchive(): List<Photo> {
         val result = mutableListOf<Photo>()

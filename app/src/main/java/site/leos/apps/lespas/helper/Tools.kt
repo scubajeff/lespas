@@ -521,6 +521,7 @@ object Tools {
 
     fun getRemoteHome(context: Context): String = getPathOnServer(context, 1)
     fun getCameraArchiveHome(context: Context): String = getPathOnServer(context, 2)
+    fun getArchiveBase(context: Context): String = getPathOnServer(context, 3)
     private fun getPathOnServer(context: Context, id: Int): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {

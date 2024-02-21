@@ -163,7 +163,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         .commit()
                 }
             },
-            { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
+            { remotePhoto, imageView ->
+                //Log.e(">>>>>>>>", "loading image: ${remotePhoto.photo.id} ${remotePhoto.photo.name} ${remotePhoto.photo.albumId} ${remotePhoto.photo.eTag} ${remotePhoto.remotePath}", )
+                imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -198,6 +200,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         overviewAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
         overviewList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = overviewAdapter
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
@@ -243,10 +247,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 })
 
                 overviewAdapter.setSelectionTracker(this)
-                savedInstanceState?.let { onRestoreInstanceState(it) }
             }
-
-            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             // Avoid window inset overlapping
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
@@ -290,7 +291,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         localMedias?.let {
                             var attachFootNote = false
 
-                            if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
+                            //if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
                             val overview = mutableListOf<GalleryFragment.LocalMedia>()
                             var isEnabled = false
@@ -314,6 +315,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                                         overview.add(
                                             GalleryFragment.LocalMedia(
+                                                GalleryFragment.LocalMedia.IS_NOT_MEDIA,
                                                 group.key,
                                                 NCShareViewModel.RemotePhoto(
                                                     // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size stored in property caption
@@ -335,13 +337,15 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             if (attachFootNote) {
                                 // TODO auto remove on Android 11
                                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) galleryModel.autoRemove(requireActivity(), backupSettings)
-                                overview.plus(GalleryFragment.LocalMedia(FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
+                                overview.plus(GalleryFragment.LocalMedia(GalleryFragment.LocalMedia.IS_NOT_MEDIA, FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
                             } else overview
                         }
                     }.collect {
+                        //overviewAdapter.toggleLocationDisplay(galleryModel.getCurrentArchiveSwitchState() != GalleryFragment.GalleryViewModel.ARCHIVE_OFF)
                         overviewAdapter.submitList(it)
                         val selectionSize = selectionTracker.selection.size()
                         actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
+                        if (it?.isEmpty() == true) startPostponedEnterTransition()
                     }
                 }
                 launch {
@@ -487,10 +491,13 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
         private var footNoteMessage = ""
+        private var showLocation = false
 
         inner class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentId = ""
             val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
+            private val ivLocal: ImageView = itemView.findViewById<ImageView>(R.id.local_media).apply { foregroundGravity = Gravity.CENTER }
+            private val ivArchive: ImageView = itemView.findViewById<ImageView>(R.id.archive_media).apply { foregroundGravity = Gravity.CENTER }
 
             fun bind(item: GalleryFragment.LocalMedia) {
                 val photo = item.media.photo
@@ -516,6 +523,16 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         else clearColorFilter()
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) photoClickListener(this, photo.id, photo.mimeType, item.folder) }
+                    }
+
+                    with(ivLocal) {
+                        isVisible = showLocation
+                        isEnabled = item.location != GalleryFragment.LocalMedia.IS_REMOTE
+                    }
+
+                    with(ivArchive) {
+                        isVisible = showLocation
+                        isEnabled = item.location != GalleryFragment.LocalMedia.IS_LOCAL
                     }
                 }
             }
@@ -649,7 +666,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
             when(viewType) {
-                TYPE_MEDIA -> MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+                TYPE_MEDIA -> MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery, parent, false))
                 TYPE_OVERFLOW -> OverflowHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_overflow, parent, false))
                 TYPE_HEADER -> HeaderViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_header, parent, false))
                 else -> FootNoteViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_overview_foot_note, parent, false))
@@ -680,6 +697,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             else -> if (position == currentList.size - 1 || currentList[position + 1].media.photo.mimeType.isEmpty()) TYPE_OVERFLOW else TYPE_MEDIA
         }
 
+        internal fun toggleLocationDisplay(display: Boolean) { showLocation = display }
         internal fun getSelectionFileSize(): String {
             var size = 0L
             selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() }}
