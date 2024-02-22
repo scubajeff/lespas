@@ -216,8 +216,8 @@ class GallerySlideFragment : Fragment() {
         }
 
         view.findViewById<ImageButton>(R.id.info_button).setOnClickListener {
-            if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
-                (if (photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) MetaDataDialogFragment.newInstance(photo) else MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))).show(parentFragmentManager, INFO_DIALOG)
+            if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) mediaAdapter.getPhotoAt(mediaList.currentItem).let { remotePhoto ->
+                (if (mediaAdapter.isPhotoAtLocal(mediaList.currentItem)) MetaDataDialogFragment.newInstance(remotePhoto.photo) else MetaDataDialogFragment.newInstance(remotePhoto)).show(parentFragmentManager, INFO_DIALOG)
             }
         }
         removeButton = view.findViewById<ImageButton>(R.id.remove_button).apply {
@@ -399,6 +399,7 @@ class GallerySlideFragment : Fragment() {
             else VideoItem(Uri.parse("${basePath}/${name}"), mimeType, width, height, id)
         }
 
+        fun isPhotoAtLocal(position: Int): Boolean = currentList[position].location != GalleryFragment.LocalMedia.IS_REMOTE
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media
         fun getPhotoPosition(photoId: String): Int = photoId.substringAfterLast('/').let { id -> currentList.indexOfFirst { it.media.photo.id.substringAfterLast('/') == id }}
     }
