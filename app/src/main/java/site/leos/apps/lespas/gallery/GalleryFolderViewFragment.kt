@@ -48,6 +48,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.text.isDigitsOnly
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -245,7 +246,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     return when {
                         galleryModel.isPreparingShareOut() -> false                                     // Can't select when sharing out
                         key.isEmpty() -> false                                                          // Empty space in list
-                        key.startsWith("content") -> true                                        // Normal media items
+                        key.startsWith("content") -> true                                        // Normal media items in device gallery
+                        key.isDigitsOnly() -> true                                                      // fileId for archived items
                         else -> {                                                                       // Date items
                             val startPos = mediaAdapter.getPhotoPosition(key)
                             var index = startPos
