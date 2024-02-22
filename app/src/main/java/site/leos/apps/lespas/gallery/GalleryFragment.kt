@@ -871,7 +871,7 @@ class GalleryFragment: Fragment() {
 
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
-        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean, isRemote: Boolean = false, remotePath: String = "") {
+        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean) {
             viewModelScope.launch(Dispatchers.IO) {
                 _strippingEXIF.emit(strip)
                 setIsPreparingShareOut(true)
