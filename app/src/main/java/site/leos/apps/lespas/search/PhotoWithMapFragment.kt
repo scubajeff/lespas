@@ -312,7 +312,7 @@ class PhotoWithMapFragment: Fragment() {
         }, 500)
 
         // Prepare media files for sharing
-        imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.photo.apply { shareOutMimeType = mimeType }), strip, lowResolution, remotePhoto.remotePath.isNotEmpty(), remotePhoto.remotePath)
+        imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.apply { shareOutMimeType = photo.mimeType }), strip, lowResolution)
     }
 
     companion object {

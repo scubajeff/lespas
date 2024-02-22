@@ -1172,17 +1172,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Collect photos for sharing
         sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())!!
         sharedSelection.clear()
-        val photos = mutableListOf<Photo>()
+        val photos = mutableListOf<NCShareViewModel.RemotePhoto>()
+        val remotePath = if (Tools.isRemoteAlbum(album)) "${lespasPath}/${album.name}" else ""
         for (id in selectionTracker.selection) {
             mAdapter.getPhotoBy(id)?.let {
-                photos.add(it)
+                photos.add(NCShareViewModel.RemotePhoto(it, remotePath))
                 sharedSelection.add(id)
             }
         }
         selectionTracker.clearSelection()
 
         // Prepare media files for sharing
-        publishModel.prepareFileForShareOut(photos, strip, lowResolution, Tools.isRemoteAlbum(album), "${lespasPath}/${album.name}")
+        publishModel.prepareFileForShareOut(photos, strip, lowResolution)
     }
 
     private fun newLayoutManger(): GridLayoutManager {

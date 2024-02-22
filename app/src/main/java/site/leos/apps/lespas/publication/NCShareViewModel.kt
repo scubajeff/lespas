@@ -17,12 +17,16 @@
 package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
-import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
 import android.content.ContentValues
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
+import android.graphics.ImageDecoder
+import android.graphics.Matrix
+import android.graphics.Rect
 import android.graphics.drawable.Animatable2
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -54,16 +58,32 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
-import okhttp3.*
+import okhttp3.CacheControl
+import okhttp3.Call
+import okhttp3.FormBody
+import okhttp3.Request
+import okhttp3.Response
 import okhttp3.internal.closeQuietly
 import okhttp3.internal.headersContentLength
-import okio.*
+import okio.BufferedSource
+import okio.IOException
+import okio.buffer
+import okio.sink
+import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -84,9 +104,8 @@ import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.time.OffsetDateTime
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.Executors
-import kotlin.io.use
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -760,22 +779,20 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun cancelShareOut() { shareOutPreparationJob?.cancel(null) }
-    @SuppressLint("Recycle")
-    fun prepareFileForShareOut(photos: List<Photo>, stripExif: Boolean, lowResolution: Boolean = true, isRemote: Boolean, remotePath: String) {
+    fun prepareFileForShareOut(remotePhotos: List<RemotePhoto>, stripExif: Boolean, lowResolution: Boolean = true) {
         shareOutPreparationJob = viewModelScope.launch(Dispatchers.IO) {
             val uris = arrayListOf<Uri>()
-            val albumRoot = "$resourceRoot/${remotePath}"
-
             val tempFile = File(cacheFolder, "_temp.temp")
             val buffer = ByteArray(8192)
             var readCount: Int
             var call: Call? = null
 
             try {
-                for (photo in photos) {
-                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                        // For already uploaded remote photo, download source file to cache/_temp.temp
-                        webDav.getStreamCall(if (lowResolution && !Tools.isMediaPlayable(photo.mimeType)) "${baseUrl}${PREVIEW_ENDPOINT}${photo.id}" else "${albumRoot}/${photo.name}", true, null).let {
+                for (rp in remotePhotos) {
+                    val isRemote = rp.remotePath.isNotEmpty() && rp.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED
+                    if (isRemote) {
+                        // For already uploaded remote rp, download source file to cache/_temp.temp
+                        webDav.getStreamCall(if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) "${baseUrl}${PREVIEW_ENDPOINT}${rp.photo.id}" else "${resourceRoot}/${rp.remotePath}/${rp.photo.name}", true, null).let {
                             call = it.second
                             it.first.source().buffer().use { remote ->
                                 tempFile.outputStream().sink().buffer().use { local ->
@@ -793,41 +810,41 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                     // Prepare destination file in cache folder, strip EXIF if required
                     when {
-                        isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> tempFile.inputStream()
-                        photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> if (lowResolution && !Tools.isMediaPlayable(photo.mimeType)) {
+                        isRemote -> tempFile.inputStream()
+                        rp.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
                             var inSampleSize = 1
-                            var p = max(photo.width, photo.height) / 2
+                            var p = max(rp.photo.width, rp.photo.height) / 2
 
                             while (p > 1440) {
                                 inSampleSize *= 2
                                 p /= 2
                             }
                             ensureActive()
-                            BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)), null, BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { bmp ->
+                            BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(rp.photo.id)), null, BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { bmp ->
                                 ensureActive()
-                                if ((if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, false) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream()
+                                if ((if (rp.photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(rp.photo.orientation.toFloat()) }, false) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream()
                                 else null
                             }
-                        } else cr.openInputStream(Uri.parse(photo.id))
-                        else -> if (lowResolution && !Tools.isMediaPlayable(photo.mimeType)) {
+                        } else cr.openInputStream(Uri.parse(rp.photo.id))
+                        else -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
                             var inSampleSize = 1
-                            var p = max(photo.width, photo.height) / 2
+                            var p = max(rp.photo.width, rp.photo.height) / 2
 
                             while(p > 1440) {
                                 inSampleSize *= 2
                                 p /= 2
                             }
                             ensureActive()
-                            BitmapFactory.decodeFile("$localFileFolder/${photo.id}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null}
-                        } else File(localFileFolder, photo.id).inputStream()
+                            BitmapFactory.decodeFile("$localFileFolder/${rp.photo.id}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null}
+                        } else File(localFileFolder, rp.photo.id).inputStream()
                     }?.use { source ->
-                        File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name).let { destFile ->
+                        File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${rp.photo.name.substringAfterLast('.')}" else rp.photo.name).let { destFile ->
                             destFile.outputStream().use { dest ->
-                                if (!lowResolution && stripExif && Tools.hasExif(photo.mimeType)) {
+                                if (!lowResolution && stripExif && Tools.hasExif(rp.photo.mimeType)) {
                                     // Strip EXIF
                                     ensureActive()
                                     BitmapFactory.decodeStream(source)?.let { bmp ->
-                                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, false) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, dest)
+                                        (if (rp.photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, rp.photo.width, rp.photo.height, Matrix().apply { preRotate(rp.photo.orientation.toFloat()) }, false) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, dest)
                                     }
                                 } else {
                                     // No need to strip EXIF, just rename the temp file to destination

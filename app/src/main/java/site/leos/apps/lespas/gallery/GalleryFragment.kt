@@ -226,7 +226,7 @@ class GalleryFragment: Fragment() {
             launch {
                 galleryModel.additions.collect { ids ->
                     selectedUris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
-                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.lastModified != LocalDateTime.MAX)
+                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
                         .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                 }
             }
@@ -828,7 +828,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        fun getPhotoById(id: String): Photo? = medias.value?.find { it.media.photo.id == id }?.media?.photo
+        fun getPhotoById(id: String): NCShareViewModel.RemotePhoto? = medias.value?.find { it.media.photo.id == id }?.media
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
@@ -877,7 +877,7 @@ class GalleryFragment: Fragment() {
                 setIsPreparingShareOut(true)
 
                 // Collect photos for sharing
-                val photos = mutableListOf<Photo>()
+                val photos = mutableListOf<NCShareViewModel.RemotePhoto>()
                 for (id in photoIds) getPhotoById(id)?.let { photos.add(it) }
 
                 // Save photo id for deletion after shared
@@ -885,7 +885,7 @@ class GalleryFragment: Fragment() {
                 else idsDeleteAfterwards.clear()
 
                 // Prepare media files for sharing
-                imageModel.prepareFileForShareOut(photos, strip, lowResolution, isRemote, remotePath)
+                imageModel.prepareFileForShareOut(photos, strip, lowResolution)
             }
         }
 
