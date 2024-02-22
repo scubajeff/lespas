@@ -18,7 +18,6 @@ package site.leos.apps.lespas.gallery
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.Uri
@@ -244,17 +243,7 @@ class GallerySlideFragment : Fragment() {
             }
         }
         useAsButton = view.findViewById<ImageButton>(R.id.use_as_button).apply {
-            // TODO Needs modification if working on server archive
-            setOnClickListener {
-                mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_ATTACH_DATA
-                        setDataAndType(Uri.parse(photo.id), photo.mimeType)
-                        putExtra("mimeType", photo.mimeType)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    }, null))
-                }
-            }
+            setOnClickListener { galleryModel.shareOut(listOf(mediaAdapter.getPhotoAt(mediaList.currentItem).photo.id), strip = true, lowResolution = false, removeAfterwards = false, shareType = GalleryFragment.GalleryViewModel.SHARE_USE_AS) }
         }
         view.findViewById<ImageButton>(R.id.share_button).setOnClickListener {
             mediaAdapter.getPhotoAt(mediaList.currentItem).photo.let { photo ->

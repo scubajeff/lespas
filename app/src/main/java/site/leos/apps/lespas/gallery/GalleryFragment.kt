@@ -274,31 +274,43 @@ class GalleryFragment: Fragment() {
 
                     if (uris.isNotEmpty()) {
                         val cr = requireActivity().contentResolver
-                        val clipData = ClipData.newUri(cr, "", uris[0])
-                        for (i in 1 until uris.size) {
-                            if (isActive) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                                else clipData.addItem(ClipData.Item(uris[i]))
-                            }
-                        }
-                        startActivity(Intent.createChooser(Intent().apply {
-                            if (uris.size > 1) {
-                                action = Intent.ACTION_SEND_MULTIPLE
-                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                            } else {
-                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_STREAM, uris[0])
-                            }
-                            type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
-                            if (type!!.startsWith("image")) type = "image/*"
-                            this.clipData = clipData
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
-                        }, null))
 
-                        // IDs of photos meant to be deleted are saved in GalleryViewModel
-                        galleryModel.deleteAfterShared()
+                        if (galleryModel.isUseAs()) {
+                            startActivity(Intent.createChooser(Intent().apply {
+                                action = Intent.ACTION_ATTACH_DATA
+                                requireContext().contentResolver.getType(uris[0])?.apply {
+                                    setDataAndType(uris[0], this)
+                                    putExtra("mimeType", this)
+                               }
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            }, null))
+                        } else {
+                            val clipData = ClipData.newUri(cr, "", uris[0])
+                            for (i in 1 until uris.size) {
+                                if (isActive) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                    else clipData.addItem(ClipData.Item(uris[i]))
+                                }
+                            }
+                            startActivity(Intent.createChooser(Intent().apply {
+                                if (uris.size > 1) {
+                                    action = Intent.ACTION_SEND_MULTIPLE
+                                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                } else {
+                                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                }
+                                type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                                if (type!!.startsWith("image")) type = "image/*"
+                                this.clipData = clipData
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
+                            }, null))
+
+                            // IDs of photos meant to be deleted are saved in GalleryViewModel
+                            galleryModel.deleteAfterShared()
+                        }
                     }
 
                     galleryModel.setIsPreparingShareOut(false)
@@ -869,9 +881,11 @@ class GalleryFragment: Fragment() {
         val emptyTrash: SharedFlow<List<String>> = _emptyTrash
         fun emptyTrash(photoIds: List<String>) { viewModelScope.launch { _emptyTrash.emit(photoIds) }}
 
+        private var currentShareType = SHARE_NORMAL
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
-        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean) {
+        fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean, shareType: Int = SHARE_NORMAL) {
+            currentShareType = shareType
             viewModelScope.launch(Dispatchers.IO) {
                 _strippingEXIF.emit(strip)
                 setIsPreparingShareOut(true)
@@ -888,6 +902,7 @@ class GalleryFragment: Fragment() {
                 imageModel.prepareFileForShareOut(photos, strip, lowResolution)
             }
         }
+        fun isUseAs(): Boolean = currentShareType == SHARE_USE_AS
 
         private val idsDeleteAfterwards = mutableListOf<String>()
         fun deleteAfterShared() {
@@ -930,6 +945,9 @@ class GalleryFragment: Fragment() {
             const val ARCHIVE_OFF = -1
             const val ARCHIVE_ON = 1
             const val ARCHIVE_REFRESHING = 0
+
+            const val SHARE_NORMAL = 1
+            const val SHARE_USE_AS = 2
         }
     }
 
