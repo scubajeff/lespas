@@ -364,14 +364,14 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     LESPAS_BEARING -> res.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     NC_IMAGE_RESOLUTION -> if (res.width == 0 && res.height == 0) {
                                         // Fall back to Nextcloud exposed metadata of image resolution
-                                        ("{\"width\":(.*),\"height\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (width, height) ->
+                                        Pattern.quote("{\"width\":(.*),\"height\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (width, height) ->
                                             res.width = try { width.toInt() } catch (e: NumberFormatException) { 0 }
                                             res.height = try { height.toInt() } catch (e: NumberFormatException) { 0 }
                                         }
                                     }
                                     NC_IMAGE_GPS -> if (res.latitude == Photo.NO_GPS_DATA && res.longitude == Photo.NO_GPS_DATA) {
                                         // Fall back to Nextcloud exposed metadata of image GPS location
-                                        ("{\"latitude\":(.*),\"longitude\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (latitude, longitude) ->
+                                        Pattern.quote("{\"latitude\":(.*),\"longitude\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (latitude, longitude) ->
                                             res.latitude = try { latitude.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                             res.longitude = try { longitude.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                         }
