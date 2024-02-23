@@ -112,7 +112,7 @@ class GallerySlideFragment : Fragment() {
 
         mediaAdapter = MediaSlideAdapter(
             requireContext(),
-            "${imageLoaderModel.getResourceRoot()}${remoteArchiveBaseFolder}",
+            imageLoaderModel.getResourceRoot(),
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { state -> toggleBottomControls(state) },
@@ -384,9 +384,9 @@ class GallerySlideFragment : Fragment() {
     ): SeamlessMediaSliderAdapter<GalleryFragment.LocalMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
-        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.LocalMedia).media.photo) {
-            if (albumId == GalleryFragment.FROM_DEVICE_GALLERY) VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
-            else VideoItem(Uri.parse("${basePath}/${name}"), mimeType, width, height, id)
+        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.LocalMedia).media) {
+            if (photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) VideoItem(Uri.parse(photo.id), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
+            else VideoItem(Uri.parse("${basePath}/${remotePath}/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id)
         }
 
         fun isPhotoAtLocal(position: Int): Boolean = currentList[position].location != GalleryFragment.LocalMedia.IS_REMOTE
