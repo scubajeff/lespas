@@ -591,7 +591,7 @@ class GalleryFragment: Fragment() {
                                 if (archiveItem.volume == model) {
                                     // From this device, mark as IS_BOTH if there is a copy in device gallery
                                     combinedList.find { item ->
-                                        item.media.photo.name == archiveItem.media.photo.name && item.fullPath == archiveItem.fullPath
+                                        item.media.photo.name == archiveItem.media.photo.name && item.fullPath == archiveItem.fullPath && item.folder != TRASH_FOLDER
                                     }?.let { existed ->
                                         Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
                                         existed.location = LocalMedia.IS_BOTH
@@ -613,7 +613,7 @@ class GalleryFragment: Fragment() {
                         }
                     }
 
-                    combinedList
+                    combinedList.sortedByDescending { it.media.photo.dateTaken }
                 }.collect { result -> _medias.value = result }
             }
         }
