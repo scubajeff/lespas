@@ -286,6 +286,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
+                    val max = spanCount * 2
+
                     combine(galleryModel.medias, backupSettingModel.getSettings()) { localMedias, backupSettings ->
                         localMedias?.let {
                             var attachFootNote = false
@@ -298,39 +300,37 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             var totalSize: Long
                             localMedias.groupBy { it.folder }.run {
                                 forEach { group ->
-                                    //if (group.key != GalleryFragment.TRASH_FOLDER) {
-                                        backupSettings.find { it.folder == group.key }?.let {
-                                            isEnabled = it.enabled
-                                            if (isEnabled) attachFootNote = true
+                                    backupSettings.find { it.folder == group.key }?.let {
+                                        isEnabled = it.enabled
+                                        if (isEnabled) attachFootNote = true
 
-                                            lastBackupDate = it.lastBackup
-                                        } ?: run {
-                                            isEnabled = false
-                                            lastBackupDate = BackupSetting.NOT_YET
-                                        }
+                                        lastBackupDate = it.lastBackup
+                                    } ?: run {
+                                        isEnabled = false
+                                        lastBackupDate = BackupSetting.NOT_YET
+                                    }
 
-                                        totalSize = 0L
-                                        group.value.forEach { totalSize += it.media.photo.caption.toLong() }
+                                    totalSize = 0L
+                                    group.value.forEach { totalSize += it.media.photo.caption.toLong() }
 
-                                        overview.add(
-                                            GalleryFragment.LocalMedia(
-                                                GalleryFragment.LocalMedia.IS_NOT_MEDIA,
-                                                group.key,
-                                                NCShareViewModel.RemotePhoto(
-                                                    // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size stored in property caption
-                                                    // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
-                                                    Photo(id = group.key, mimeType = "", caption = totalSize.toString(), height = group.value.size, width = lastBackupDate.toInt(), dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
-                                                    coverBaseLine = when {
-                                                        //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
-                                                        isEnabled -> BACKUP_ENABLED
-                                                        else -> BACKUP_DISABLED
-                                                    }
-                                                )
+                                    overview.add(
+                                        GalleryFragment.LocalMedia(
+                                            GalleryFragment.LocalMedia.IS_NOT_MEDIA,
+                                            group.key,
+                                            NCShareViewModel.RemotePhoto(
+                                                // Property mimeType is empty means it's folder header, and this folder's media count is stored in property height, total size stored in property caption
+                                                // last backup time saved in property width (just need to check if it's 0), backup enable or not is saved in property coverBaseLine
+                                                Photo(id = group.key, mimeType = "", caption = totalSize.toString(), height = group.value.size, width = lastBackupDate.toInt(), dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN),
+                                                coverBaseLine = when {
+                                                    //group.key == GalleryFragment.TRASH_FOLDER -> BACKUP_NOT_AVAILABLE
+                                                    isEnabled -> BACKUP_ENABLED
+                                                    else -> BACKUP_DISABLED
+                                                }
                                             )
                                         )
-                                        // Maximum 2 lines of media items in overview list
-                                        overview.addAll(group.value.take(spanCount * 2))
-                                    //}
+                                    )
+                                    // Maximum 2 lines of media items in overview list
+                                    overview.addAll(group.value.take(max))
                                 }
                             }
                             if (attachFootNote) {
@@ -339,12 +339,17 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                                 overview.plus(GalleryFragment.LocalMedia(GalleryFragment.LocalMedia.IS_NOT_MEDIA, FOOTNOTE, NCShareViewModel.RemotePhoto(Photo(id = FOOTNOTE, mimeType = "", dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), coverBaseLine = BACKUP_NOT_AVAILABLE)))
                             } else overview
                         }
-                    }.collect {
+                    }.collect { list ->
                         //overviewAdapter.toggleLocationDisplay(galleryModel.getCurrentArchiveSwitchState() != GalleryFragment.GalleryViewModel.ARCHIVE_OFF)
-                        overviewAdapter.submitList(it)
+                        overviewAdapter.submitList(list) {
+                            // Refresh overflow item counts
+                            list?.forEachIndexed { index, item ->
+                                if (item.location == GalleryFragment.LocalMedia.IS_NOT_MEDIA && item.media.photo.height > max) overviewAdapter.notifyItemChanged(index + max)
+                            }
+                        }
                         val selectionSize = selectionTracker.selection.size()
                         actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
-                        if (it?.isEmpty() == true) startPostponedEnterTransition()
+                        if (list?.isEmpty() == true) startPostponedEnterTransition()
                     }
                 }
                 launch {
@@ -624,24 +629,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     setOnClickListener { folderClickListener(item.folder) }
                 }
 
-/*
-                if (item.media.coverBaseLine == BACKUP_NOT_AVAILABLE) {
-                    cbEnableBackup.isVisible = false
-                    ivBackupSetting.isVisible = false
-                } else {
-                    cbEnableBackup.isVisible = true
-                    cbEnableBackup.run {
-                        setOnCheckedChangeListener(null)
-                        isChecked = item.media.coverBaseLine == BACKUP_ENABLED
-                        setOnCheckedChangeListener { _, isChecked -> enableBackupClickListener(item.folder, isChecked, item.media.photo.width) }
-                    }
-
-                    ivBackupSetting.run {
-                        isVisible = item.media.coverBaseLine == BACKUP_ENABLED
-                        setOnClickListener { backupOptionClickListener(item.folder) }
-                    }
-                }
-*/
                 cbEnableBackup.isVisible = true
                 cbEnableBackup.run {
                     setOnCheckedChangeListener(null)
@@ -747,7 +734,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     class OverviewDiffCallback : DiffUtil.ItemCallback<GalleryFragment.LocalMedia>() {
         override fun areItemsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.id == newItem.media.photo.id
-        override fun areContentsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.mimeType.isNotEmpty() || oldItem.media.coverBaseLine == newItem.media.coverBaseLine
+        override fun areContentsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.mimeType.isNotEmpty() || oldItem.media.coverBaseLine == newItem.media.coverBaseLine && oldItem.media.photo.height == newItem.media.photo.height
     }
 
     companion object {
