@@ -347,6 +347,9 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             pm.photo.longitude = it[1]
                         }
                         pm.date = Tools.getImageTakenDate(this)
+
+                        pm.photo.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
+                        pm.photo.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
                     }
 
                     photoMeta.postValue(pm)
