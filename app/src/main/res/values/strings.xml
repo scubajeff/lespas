@@ -362,6 +362,8 @@
     <string name="tooltips_date_picker">Pick a date</string>
     <string name="tooltips_enable_backup">Enable backup</string>
     <string name="tooltips_backup_setting">Backup setting</string>
+    <string name="tooltips_local_copy">Local copy</string>
+    <string name="tooltips_archive_copy">Archive copy</string>
     <string name="msg_no_media_found">No image or video found in device.</string>
     <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
     <string name="today">Today</string>

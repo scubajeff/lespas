@@ -400,4 +400,6 @@
     <string name="button_text_use_thumbnail">Schrumpfen</string>
     <string name="checkbox_text_remove_afterwards">Löschen nach dem Teilen</string>
     <string name="msg_saved_location">Die Fotos werden im Ordner \"Download\" gespeichert.</string>
+    <string name="tooltips_local_copy">Lokale Kopie</string>
+    <string name="tooltips_archive_copy">Archivierte Kopie</string>
 </resources>

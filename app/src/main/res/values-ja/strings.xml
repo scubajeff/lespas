@@ -348,4 +348,6 @@
     <string name="button_text_use_thumbnail">サムネイル</string>
     <string name="checkbox_text_remove_afterwards">共有後に削除する</string>
     <string name="msg_saved_location">写真は「ダウンロード」フォルダに保存されます。</string>
+    <string name="tooltips_local_copy">現地コピー</string>
+    <string name="tooltips_archive_copy">アーカイブコピー</string>
 </resources>

@@ -347,4 +347,6 @@
     <string name="button_text_use_thumbnail">縮圖</string>
     <string name="checkbox_text_remove_afterwards">分享後刪除原檔案</string>
     <string name="msg_saved_location">照片將儲存在 \"下載 \"資料夾中。</string>
+    <string name="tooltips_local_copy">手機裡有該文件</string>
+    <string name="tooltips_archive_copy">伺服器上有存檔</string>
 </resources>

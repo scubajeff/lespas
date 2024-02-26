@@ -415,4 +415,6 @@
     <string name="button_text_use_thumbnail">Restringimento</string>
     <string name="checkbox_text_remove_afterwards">Eliminare dopo la condivisione</string>
     <string name="msg_saved_location">Le foto verranno salvate nella cartella \"Download\".</string>
+    <string name="tooltips_local_copy">Copia locale</string>
+    <string name="tooltips_archive_copy">Copia d\'archivio</string>
 </resources>

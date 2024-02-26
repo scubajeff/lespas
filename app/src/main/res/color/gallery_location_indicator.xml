@@ -16,6 +16,6 @@
   -->
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/dark_gray_overlay_background" android:state_enabled="false" />
-    <item android:color="@color/color_secondary" />
+    <item android:color="@color/dark_gray_overlay_background" android:state_activated="false" />
+    <item android:color="@color/color_secondary_variant" />
 </selector>

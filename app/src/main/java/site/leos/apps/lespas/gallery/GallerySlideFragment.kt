@@ -83,6 +83,8 @@ class GallerySlideFragment : Fragment() {
     private lateinit var tvPath: TextView
     private lateinit var tvDate: TextView
     private lateinit var tvSize: TextView
+    private lateinit var localIndicator: ImageView
+    private lateinit var archiveIndicator: ImageView
     private lateinit var removeButton: ImageButton
     private lateinit var useAsButton: ImageButton
     private lateinit var folderArgument: String
@@ -153,6 +155,8 @@ class GallerySlideFragment : Fragment() {
         tvPath = view.findViewById(R.id.path)
         tvDate = view.findViewById(R.id.date)
         tvSize = view.findViewById(R.id.size)
+        localIndicator = view.findViewById(R.id.local)
+        archiveIndicator = view.findViewById(R.id.archive)
         mediaList = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = mediaAdapter
 
@@ -177,14 +181,18 @@ class GallerySlideFragment : Fragment() {
                     super.onPageSelected(position)
 
                     try {
-                        mediaAdapter.getPhotoAt(position).run {
-                            if (autoRotate) requireActivity().requestedOrientation = if (this.photo.width > this.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                            galleryModel.setCurrentPhotoId(photo.id)
-                            tvPath.text = "${galleryModel.getFullPath(photo.id)}${photo.name}"
-                            tvDate.text = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-                            tvSize.text = Tools.humanReadableByteCountSI(photo.caption.toLong()) + if (photo.width > 0) ",  ${photo.width} × ${photo.height}" else ""
-                            removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX
-                            useAsButton.isEnabled = photo.mimeType.startsWith("image")
+                        mediaAdapter.getLocalMediaAt(position).run {
+                            media.run {
+                                if (autoRotate) requireActivity().requestedOrientation = if (this.photo.width > this.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                                galleryModel.setCurrentPhotoId(photo.id)
+                                tvPath.text = "${galleryModel.getFullPath(photo.id)}${photo.name}"
+                                tvDate.text = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
+                                tvSize.text = Tools.humanReadableByteCountSI(photo.caption.toLong()) + if (photo.width > 0) ",  ${photo.width} × ${photo.height}" else ""
+                                removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX
+                                useAsButton.isEnabled = photo.mimeType.startsWith("image")
+                            }
+                            localIndicator.isActivated = location != GalleryFragment.LocalMedia.IS_REMOTE
+                            archiveIndicator.isActivated = location != GalleryFragment.LocalMedia.IS_LOCAL
                         }
                     } catch (_: IndexOutOfBoundsException) {}
 
@@ -391,6 +399,7 @@ class GallerySlideFragment : Fragment() {
 
         fun isPhotoAtLocal(position: Int): Boolean = currentList[position].location != GalleryFragment.LocalMedia.IS_REMOTE
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media
+        fun getLocalMediaAt(position: Int): GalleryFragment.LocalMedia = currentList[position]
         fun getPhotoPosition(photoId: String): Int = photoId.substringAfterLast('/').let { id -> currentList.indexOfFirst { it.media.photo.id.substringAfterLast('/') == id }}
     }
 

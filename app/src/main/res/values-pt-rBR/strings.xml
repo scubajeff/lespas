@@ -412,4 +412,6 @@
     <string name="button_text_use_thumbnail">Encolher</string>
     <string name="checkbox_text_remove_afterwards">Excluir após o compartilhamento</string>
     <string name="msg_saved_location">As fotos serão salvas na pasta \"Download\".</string>
+    <string name="tooltips_local_copy">Cópia local</string>
+    <string name="tooltips_archive_copy">Cópia de arquivo</string>
 </resources>

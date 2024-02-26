@@ -350,4 +350,6 @@
     <string name="button_text_use_thumbnail">Retráctil</string>
     <string name="checkbox_text_remove_afterwards">Eliminar después de compartir</string>
     <string name="msg_saved_location">Las fotos se guardarán en la carpeta \"Descargas\".</string>
+    <string name="tooltips_local_copy">Copia local</string>
+    <string name="tooltips_archive_copy">Copia de archivo</string>
 </resources>

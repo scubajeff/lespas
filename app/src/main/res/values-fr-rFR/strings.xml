@@ -385,4 +385,6 @@
     <string name="button_text_use_thumbnail">Réduire</string>
     <string name="checkbox_text_remove_afterwards">Supprimer après le partage</string>
     <string name="msg_saved_location">Les photos seront enregistrées dans le dossier \"Téléchargement\".</string>
+    <string name="tooltips_local_copy">Copie locale</string>
+    <string name="tooltips_archive_copy">Copie d\'archive</string>
 </resources>
