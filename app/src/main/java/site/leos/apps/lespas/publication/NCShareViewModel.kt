@@ -1256,7 +1256,23 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                 }
                                 else -> {
-                                    // File is available locally, already rotated to it's upright position. Fall back to remote
+/*
+                                    try {
+                                        // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
+                                        // Hence, picture with original orientation must be allowed in local album
+                                        BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })?.let { bmp ->
+                                            if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
+                                            else bmp
+                                        } ?: run {
+                                            // Fall back to remote
+                                            getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
+                                        }
+                                    } catch (_: Exception) {
+                                        // Fall back to remote
+                                        getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
+                                    }
+*/
+                                    // For local album, file available in device and already rotated to up-right position. Fall back to remote thumbnail if anything bad happened while decoding.
                                     BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize }) ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
                                 }
                             }
@@ -1335,10 +1351,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                             imagePhoto.photo.orientation = exif.rotationDegrees
                                                         }
                                                     }
-                                                    if (
-                                                        imagePhoto.photo.orientation != 0 &&
-                                                        ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY)
-                                                    ) Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, false)
+                                                    // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
+                                                    // Hence, picture with original orientation must be allowed in local album
+                                                    if (imagePhoto.photo.orientation != 0 && ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY))
+                                                    //if (imagePhoto.photo.orientation != 0)
+                                                        Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, false)
                                                     else this
                                                 }
                                             }

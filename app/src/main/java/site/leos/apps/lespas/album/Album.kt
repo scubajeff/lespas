@@ -17,7 +17,13 @@
 package site.leos.apps.lespas.album
 
 import android.os.Parcelable
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import androidx.room.Relation
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.parcelize.Parcelize
@@ -47,6 +53,11 @@ data class Album(
     var bgmId: String = NO_BGM,
     var bgmETag: String = Photo.ETAG_NOT_YET_UPLOADED,
 ): Parcelable {
+    fun isJoint() = id == JOINT_ALBUM_ID
+    fun isRemote() = shareId and REMOTE_ALBUM == REMOTE_ALBUM || isJoint()
+    fun isExlcuded() = shareId and EXCLUDED_ALBUM == EXCLUDED_ALBUM
+    fun isWideList() = sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..200
+
     companion object {
         const val TABLE_NAME = "albums"
 

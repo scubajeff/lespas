@@ -36,7 +36,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -45,11 +44,13 @@ import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -60,7 +61,7 @@ import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 
 class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_dialog) {
@@ -68,7 +69,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
     private lateinit var album: Album
 
     //private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
-    private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, requireArguments().parcelableArrayList(KEY_URIS)!!, requireArguments().parcelable(KEY_ALBUM)!!) }
+    private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, requireArguments().parcelableArrayList(KEY_URIS)!!, requireArguments().parcelable(KEY_ALBUM)!!, requireArguments().getBoolean(KEY_REMOVE_ORIGINAL, false)) }
 
     private lateinit var progressLinearLayout: LinearLayoutCompat
     private lateinit var dialogTitleTextView: TextView
@@ -83,8 +84,10 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         super.onCreate(savedInstanceState)
         //total = arguments?.getParcelableArrayList<Uri>(KEY_URIS)!!.size
         //album = arguments?.getParcelable(KEY_ALBUM)!!
-        total = requireArguments().parcelableArrayList<Uri>(KEY_URIS)!!.size
-        album = requireArguments().parcelable(KEY_ALBUM)!!
+        requireArguments().run {
+            total = parcelableArrayList<Uri>(KEY_URIS)!!.size
+            album = parcelable(KEY_ALBUM)!!
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -93,11 +96,11 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         background = view.findViewById(R.id.background)
         progressLinearLayout = view.findViewById(R.id.progress_linearlayout)
         dialogTitleTextView = view.findViewById(R.id.dialog_title_textview)
-        messageTextView = view.findViewById(R.id.dialog_title)
+        messageTextView = view.findViewById(R.id.message)
         fileNameTextView = view.findViewById(R.id.filename_textview)
         contentLoadingProgressBar = view.findViewById(R.id.current_progress)
 
-        acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
+        acquiringModel.getProgress().observe(viewLifecycleOwner) { progress ->
             when {
                 progress >= total -> {
                     finished = true
@@ -105,7 +108,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                     TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
                     progressLinearLayout.visibility = View.GONE
                     dialogTitleTextView.text = getString(R.string.finished_preparing_files)
-                    var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
+                    var note = getString(R.string.it_takes_time)
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.wifionly_pref_key), true)) {
                         if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
                             note += requireContext().getString(R.string.mind_network_setting)
@@ -115,26 +118,30 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                     messageTextView.visibility = View.VISIBLE
                     dialog?.setCanceledOnTouchOutside(true)
                 }
+
                 progress >= 0 -> {
                     dialogTitleTextView.text = getString(R.string.preparing_files_progress, progress + 1, total)
                     fileNameTextView.text = acquiringModel.getCurrentName()
                     contentLoadingProgressBar.progress = progress
                 }
+
                 progress < 0 -> {
                     TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
                     progressLinearLayout.visibility = View.GONE
                     dialogTitleTextView.text = getString(R.string.error_preparing_files)
-                    messageTextView.text = getString(when(progress) {
-                        AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
-                        AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
-                        AcquiringViewModel.SAME_FILE_EXISTED-> R.string.same_file_found
-                        else-> 0
-                    })
+                    messageTextView.text = getString(
+                        when (progress) {
+                            AcquiringViewModel.ACCESS_RIGHT_EXCEPTION -> R.string.access_right_violation
+                            AcquiringViewModel.NO_MEDIA_FILE_FOUND -> R.string.no_media_file_found
+                            AcquiringViewModel.SAME_FILE_EXISTED -> R.string.same_file_found
+                            else -> 0
+                        }
+                    )
                     messageTextView.visibility = View.VISIBLE
                     dialog?.setCanceledOnTouchOutside(true)
                 }
             }
-        })
+        }
 
         contentLoadingProgressBar.max = total
     }
@@ -160,14 +167,13 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
-    class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(AcquiringViewModel(application, uris, album))!!
+    class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album, private val removeOriginal: Boolean): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(AcquiringViewModel(application, uris, album, removeOriginal))!!
     }
 
-    class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album): AndroidViewModel(application) {
+    class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album, private val removeOriginal: Boolean): AndroidViewModel(application) {
         private var currentProgress = MutableLiveData<Int>()
         private var currentName: String = ""
-        private var totalBytes = 0L
         private val newPhotos = mutableListOf<Photo>()
         private val actions = mutableListOf<Action>()
         private val photoRepository = PhotoRepository(application)
@@ -175,6 +181,9 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 var fileId = ""
+                var mimeType = ""
+                var meta: Photo
+
                 val appRootFolder = Tools.getLocalRoot(application)
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
@@ -183,32 +192,33 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 val metadataRetriever = MediaMetadataRetriever()
                 var exifInterface: ExifInterface?
 
+                var sourceIsRemote: Boolean
+                val remoteAction = if (removeOriginal) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
+                val remoteTargetFolder = if (album.isJoint()) album.coverFileName.substringBeforeLast('/') else "${Tools.getRemoteHome(application)}/${album.name}"
+
+
+                if (album.id.isEmpty()) {
+                    // New album, set a fake ID, sync adapter will correct it when real id is available
+                    album.id = fakeAlbumId
+                }
                 uris.forEachIndexed { index, uri ->
-                    if (album.id.isEmpty()) {
-                        // New album, set a fake ID, sync adapter will correct it when real id is available
-                        album.id = fakeAlbumId
-                    }
+                    sourceIsRemote = uri.scheme == GalleryFragment.ARCHIVE_SCHEME
 
                     // find out the real name
-                    contentResolver.query(uri, null, null, null, null)?.apply {
-                        fileId = ""
-                        val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                        moveToFirst()
-                        if (columnIndex != -1) {
-                            try {
-                                fileId = getString(columnIndex)
-                            } catch (e: NullPointerException) {
-                                if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!.substringAfterLast('/')
-                            }
-                        }
-                        else {
-                            if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!.substringAfterLast('/')
-                        }
-                        close()
-                    } ?: run {
-                        if ("file".equals(uri.scheme, true)) fileId = uri.path!!.substringAfterLast("/")
+                    if (sourceIsRemote) {
+                        fileId = uri.lastPathSegment ?: run { return@forEachIndexed }
+                    } else {
+                        contentResolver.query(uri, null, null, null, null)?.apply {
+                            fileId = ""
+                            val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            moveToFirst()
+                            if (columnIndex != -1) {
+                                try { fileId = getString(columnIndex) } catch (e: NullPointerException) { if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!.substringAfterLast('/') }
+                            } else { if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!.substringAfterLast('/') }
+                            close()
+                        } ?: run { if ("file".equals(uri.scheme, true)) fileId = uri.path!!.substringAfterLast("/") }
+                        if (fileId.isEmpty()) return@forEachIndexed
                     }
-                    if (fileId.isEmpty()) return@forEachIndexed
 
                     // If no photo with same name exists in album (always true in case of joint album), create new photo
                     if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileId)))) {
@@ -217,58 +227,95 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         // Update progress in UI
                         setProgress(index, fileId)
 
-                        // TODO: Default type set to jpeg
-                        val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase()) ?: "image/jpeg"
-                        }
+                        if (sourceIsRemote) {
+                            mimeType = uri.getQueryParameter("mimetype") ?: run { return@forEachIndexed }
 
-                        // If it's not image, skip it
-                        if (!(mimeType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || mimeType.startsWith("video/", true))) return@forEachIndexed
-                        // Copy the file to our private storage
-                        try {
+                            // Get photo meta from special uri
                             try {
-                                application.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && uri.host == "media") MediaStore.setRequireOriginal(uri) else uri)
-                            } catch (e: SecurityException) {
-                                application.contentResolver.openInputStream(uri)
-                            } catch (e: UnsupportedOperationException) {
-                                application.contentResolver.openInputStream(uri)
-                            }?.use { input ->
-                                //File(if (album.id == Album.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
-                                File(appRootFolder, fileId).outputStream().use { output ->
-                                    totalBytes += input.copyTo(output, 8192)
-                                }
-                            }
-                        } catch (e:FileNotFoundException) {
-                            // without access right to uri, will throw FileNotFoundException
-                            setProgress(ACCESS_RIGHT_EXCEPTION, "")
-                            return@launch   // TODO shall we loop to next file?
-                        } catch (e:Exception) {
-                            e.printStackTrace()
-                            return@launch
-                        }
+                                meta = Photo(
+                                    name = fileId,
+                                    lastModified = LocalDateTime.now(),
+                                    dateTaken = Tools.epochToLocalDateTime(uri.getQueryParameter("datetaken")?.toLong() ?: System.currentTimeMillis(), true),
+                                    mimeType = uri.getQueryParameter("mimetype") ?: run { return@forEachIndexed },
+                                    //caption = uri.getQueryParameter("caption") ?: run { return@forEachIndexed },      // caption property value is file size in the case of remote archive item
+                                    width = uri.getQueryParameter("width")?.toInt() ?: run { return@forEachIndexed },
+                                    height = uri.getQueryParameter("height")?.toInt() ?: run { return@forEachIndexed },
+                                    orientation = uri.getQueryParameter("orientation")?.toInt() ?: run { return@forEachIndexed },
+                                    latitude = uri.getQueryParameter("lat")?.toDouble() ?: run { return@forEachIndexed },
+                                    longitude = uri.getQueryParameter("long")?.toDouble() ?: run { return@forEachIndexed },
+                                    altitude = uri.getQueryParameter("alt")?.toDouble() ?: run { return@forEachIndexed },
+                                    bearing = uri.getQueryParameter("bearing")?.toDouble() ?: run { return@forEachIndexed },
+                                )
+                            } catch (e: Exception) { return@forEachIndexed }
 
-                        if (album.id == Album.JOINT_ALBUM_ID) {
+                            // Pause to properly display progress
+                            delay(150L)
+                        } else {
+                            // TODO: Default type set to jpeg
+                            mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                                MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase()) ?: "image/jpeg"
+                            }
+
+                            // If it's not image, skip it
+                            if (!(mimeType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || mimeType.startsWith("video/", true))) return@forEachIndexed
+
+                            // Copy source file to our private storage if it's local
+                            try {
+                                try {
+                                    application.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && uri.host == "media") MediaStore.setRequireOriginal(uri) else uri)
+                                } catch (e: SecurityException) {
+                                    application.contentResolver.openInputStream(uri)
+                                } catch (e: UnsupportedOperationException) {
+                                    application.contentResolver.openInputStream(uri)
+                                }?.use { input ->
+                                    //File(if (album.id == Album.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
+                                    File(appRootFolder, fileId).outputStream().use { output ->
+                                        input.copyTo(output, 8192)
+                                    }
+                                }
+                            } catch (e: FileNotFoundException) {
+                                // without access right to uri, will throw FileNotFoundException
+                                setProgress(ACCESS_RIGHT_EXCEPTION, "")
+                                return@launch   // TODO shall we loop to next file?
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                return@launch
+                            }
+
                             // Get media's metadata
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (_: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
-                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$appRootFolder/$fileId", mimeType, fileId)
+                            meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
+                        }
 
-                            // DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
-                            actions.add(Action(
-                                null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM,
-                                meta.mimeType,
-                                album.coverFileName.substringBeforeLast('/'),
-                                "${album.eTag}|${meta.dateTaken.toInstant(OffsetDateTime.now().offset).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
-                                fileId, System.currentTimeMillis(), 1
-                            ))
+
+                        if (album.isJoint()) {
+                            if (sourceIsRemote) {
+                                actions.add(
+                                    Action(
+                                    null, remoteAction,
+                                        uri.path?.substringBeforeLast('/') ?: "", remoteTargetFolder,
+                                        "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                        "${fileId}|${album.isJoint()}|${album.isRemote()}",
+                                        System.currentTimeMillis(), 1
+                                    )
+                                )
+                            } else {
+                                // DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
+                                actions.add(
+                                    Action(
+                                        null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM,
+                                        meta.mimeType,
+                                        remoteTargetFolder,
+                                        "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                        fileId,
+                                        System.currentTimeMillis(), 1
+                                    )
+                                )
+                            }
                         } else {
-                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (_: Exception) {}
-                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
-                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId)
-                            // Skip those image file we can't handle, like SVG
-                            if (meta.width == -1 || meta.height == -1) return@forEachIndexed
                             //newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
                             newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId))
 
@@ -277,24 +324,31 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             if (date < album.startDate) album.startDate = date
                             if (date > album.endDate) album.endDate = date
 
-                            // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table, also pass flags shareId in retry property
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), album.shareId))
+                            if (sourceIsRemote) {
+                                //Log.e(">>>>>>>>", "${uri.path?.substringBeforeLast('/')}    ${uri.lastPathSegment}",)
+                                //Log.e(">>>>>>>>", "$meta", )
+                                actions.add(Action(null, remoteAction, uri.path?.substringBeforeLast('/') ?: "", remoteTargetFolder, "${album.id}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}", "${fileId}|${album.isJoint()}|${album.isRemote()}", System.currentTimeMillis(), 1))
+                            }
+                            else {
+                                // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table, also pass flags shareId in retry property
+                                actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), album.shareId))
+                            }
                         }
                     } else {
                         // TODO show special error message when there are just some duplicate in uris
                         if (uris.size == 1) {
                             setProgress(SAME_FILE_EXISTED, "")
                             return@launch
-                        }
-                        else setProgress(index, fileId)
+                        } else setProgress(index, fileId)
                     }
+
                 }
 
                 metadataRetriever.release()
 
                 if (actions.isEmpty()) setProgress(NO_MEDIA_FILE_FOUND, "")
                 else {
-                    if (album.id == Album.JOINT_ALBUM_ID) {
+                    if (album.isJoint()) {
                         // Update joint album content meta, DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
                         actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.coverFileName.substringBeforeLast('/'), "", "", System.currentTimeMillis(), 1))
                     } else {
@@ -350,7 +404,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
         fun getProgress(): LiveData<Int> = currentProgress
         fun getCurrentName() = currentName
-        fun getTotalBytes(): Long = totalBytes
 
         companion object {
             const val ACCESS_RIGHT_EXCEPTION = -100

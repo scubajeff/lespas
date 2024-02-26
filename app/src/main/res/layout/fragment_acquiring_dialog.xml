@@ -64,10 +64,10 @@
         </androidx.appcompat.widget.LinearLayoutCompat>
 
         <TextView
-            android:id="@+id/dialog_title"
+            android:id="@+id/message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/small_padding"
+            android:layout_marginBottom="@dimen/big_padding"
             android:singleLine="false"
             android:maxLines="7"
             style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"

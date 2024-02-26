@@ -199,7 +199,8 @@ class PublicationDetailFragment: Fragment() {
         if (showName) requireActivity().onBackPressedDispatcher.addCallback(this, nameFilterBackPressedCallback)
 
         // Get publication photo list and possibly BGM here instead of onViewCreated to avoid redundant fetching when getting back from RemoteMediaFragment or StoryFragment
-        lifecycleScope.launch(Dispatchers.IO) { shareModel.getRemotePhotoList(share, false) }
+        // TODO forceNetwork is alway true here, should try saving some traffic later
+        lifecycleScope.launch(Dispatchers.IO) { shareModel.getRemotePhotoList(share, true) }
 
     }
 

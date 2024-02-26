@@ -65,7 +65,7 @@
     <string name="preparing_files">正在处理照片</string>
     <string name="preparing_files_progress">正在处理%2$d张照片中的第%1$d张</string>
     <string name="finished_preparing_files">已完成上传预处理</string>
-    <string name="it_takes_time">需要上传共%1$s的照片，可能需要过一段时间才能在服务器上呈现。也需要获得合作相册所有者的确认。</string>
+    <string name="it_takes_time">根据文件大小和当前网络可用性，新相册和照片可能需要一段时间才能显示在列表中。</string>
     <string name="file_name">文件名：</string>
     <string name="shot_at">创建时间：</string>
     <string name="size">大小：</string>

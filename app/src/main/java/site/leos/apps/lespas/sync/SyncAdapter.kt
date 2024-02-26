@@ -21,8 +21,17 @@ import android.accounts.AccountManager
 import android.accounts.AuthenticatorException
 import android.accounts.NetworkErrorException
 import android.app.Application
-import android.content.*
-import android.graphics.*
+import android.content.AbstractThreadedSyncAdapter
+import android.content.ContentProviderClient
+import android.content.ContentUris
+import android.content.Context
+import android.content.SyncResult
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
+import android.graphics.ImageDecoder
+import android.graphics.Matrix
+import android.graphics.Rect
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.net.ConnectivityManager
@@ -41,7 +50,12 @@ import okio.IOException
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.*
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.album.BGMDialogFragment
+import site.leos.apps.lespas.album.Cover
+import site.leos.apps.lespas.album.Meta
+import site.leos.apps.lespas.album.MetaRescanDialogFragment
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
@@ -50,17 +64,28 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
-import java.io.*
+import java.io.EOFException
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.FileWriter
+import java.io.InputStream
+import java.io.InterruptedIOException
+import java.io.ObjectInputStream
 import java.lang.Integer.max
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
-import java.time.*
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.Period
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
@@ -417,42 +442,46 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         targetIsRemoteAlbum = it[2].toBoolean()
                     }
                     try {
-                        //webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}").run {
                         webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName}").run {
                             if (action.fileId.isNotEmpty()) {
+                                // If meta sent
                                 val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
 
-                                // If meta sent
                                 if (targetIsJointAlbum) {
                                     // If target is in joint album, try best effort group patching
                                     logChangeToFile(action.fileId, newId, fileName)
                                 }
                                 else {
                                     // Prepare media file
+                                    var mediaFileDownloaded = true
+
                                     try {
+                                        val metas = action.fileId.split('|')
                                         // If local image file exist, rename it
                                         File(localBaseFolder, action.fileName).let {
                                             if (it.exists()) {
                                                 if (targetIsRemoteAlbum) {
                                                     // Delete local media file in target album is remote album
                                                     it.delete()
-                                                    if (action.fileId.split('|')[2].startsWith("video")) File(localBaseFolder, "${fileName}.thumbnail").let { thumbnail -> if (thumbnail.exists()) thumbnail.delete() }
+                                                    if (metas[2].startsWith("video")) File(localBaseFolder, "${fileName}.thumbnail").let { thumbnail -> if (thumbnail.exists()) thumbnail.delete() }
                                                 }
                                                 else {
                                                     // For local album, rename media file from filename to fileId
                                                     it.renameTo(File(localBaseFolder, newId))
-                                                    if (action.fileId.split('|')[2].startsWith("video")) File(localBaseFolder, "${fileName}.thumbnail").let { thumbnail -> if (thumbnail.exists()) thumbnail.renameTo(File(localBaseFolder, "${newId}.thumbnail")) }
+                                                    if (metas[2].startsWith("video")) File(localBaseFolder, "${fileName}.thumbnail").let { thumbnail -> if (thumbnail.exists()) thumbnail.renameTo(File(localBaseFolder, "${newId}.thumbnail")) }
                                                 }
                                             } else {
-                                                // When source is remote album or other's publication, media file is not available locally, if target album is local, we should download it from server now
-                                                if (!targetIsRemoteAlbum) webDav.download("${userBase}/${action.folderName}/${fileName}", "$localBaseFolder/${newId}", null)
+                                                // When source is remote album or other's publication, media file is not available locally
+                                                // If target album is local, we should download it from server now. Except for images with orientation not in it's up-right position, they will be downloaded in syncRemoteChanges() so that it can be properly rotated
+                                                if (!targetIsRemoteAlbum && (metas[2].startsWith("video") || try { metas[5].toInt() } catch (_: NumberFormatException) { 0 } == 0)) webDav.download("${userBase}/${action.folderName}/${fileName}", "$localBaseFolder/${newId}", null)
+                                                else mediaFileDownloaded = false
                                             }
                                         }
                                     } catch (e: Exception) { e.printStackTrace() }
 
                                     // Update photo's id to the real fileId and latest eTag now
                                     // Some version of Nextcloud won't return 'oc-etag' header after webdav COPY or MOVE call, denote with ETAG_MISSING so that syncRemoteChange() will fill in the correct eTag later
-                                    photoRepository.fixPhotoIdEtag(fileName, newId, this.second.ifEmpty { ETAG_MISSING }, targetIsRemoteAlbum)
+                                    photoRepository.fixPhotoIdEtag(fileName, newId, if (mediaFileDownloaded) this.second.ifEmpty { ETAG_MISSING } else Photo.ETAG_FAKE, targetIsRemoteAlbum)
                                 }
                             }
                         }
@@ -1444,6 +1473,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedPhoto.longitude = this.longitude
                         changedPhoto.altitude = this.altitude
                         changedPhoto.bearing = this.bearing
+
+                        if (!isRemoteAlbum && changedPhoto.id == changedAlbum.cover) {
+                            // Update local album's cover info if cover image original orientation is not 0 degree and it was rotated to up-right position in above Tools.getPhotoParams.
+                            // This will happen when user created a new album with portrait format archived item being automatically selected as cover
+                            changedAlbum.coverWidth = changedPhoto.width
+                            changedAlbum.coverHeight = changedPhoto.height
+                            changedAlbum.coverOrientation = 0
+                        }
                     }
 
                     if (isRemoteAlbum) {
@@ -1634,193 +1671,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             metadataRetriever.release()
         }
     }
-
-/*
-    @SuppressLint("ApplySharedPref")
-    private fun backup(folder: String) {
-        var backupFolder = folder
-
-        reportStage(if (folder == dcimBase) Action.SYNC_STAGE_BACKUP_CAMERA_ROLL else Action.SYNC_STAGE_BACKUP_PICTURES)
-
-        // Make sure DCIM base directory is there
-        if (!webDav.isExisted(backupFolder)) webDav.createFolder(backupFolder)
-
-        // Make sure device subfolder is under DCIM/
-        backupFolder += "/${Tools.getDeviceModel()}"
-        if (!webDav.isExisted(backupFolder)) webDav.createFolder(backupFolder)
-
-        val contentUri = MediaStore.Files.getContentUri("external")
-        val mediaMetadataRetriever = MediaMetadataRetriever()
-        val cr = application.contentResolver
-
-        val dateTakenColumnName = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
-        val orientationColumnName = "orientation"     // MediaStore.MediaColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
-        @Suppress("DEPRECATION")
-        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val projection = arrayOf(
-            MediaStore.Files.FileColumns._ID,
-            pathSelection,
-            dateTakenColumnName,
-            orientationColumnName,
-            MediaStore.Files.FileColumns.DATE_ADDED,
-            MediaStore.Files.FileColumns.MEDIA_TYPE,
-            MediaStore.Files.FileColumns.MIME_TYPE,
-            MediaStore.Files.FileColumns.DISPLAY_NAME,
-            MediaStore.Files.FileColumns.SIZE,
-            MediaStore.Files.FileColumns.WIDTH,
-            MediaStore.Files.FileColumns.HEIGHT,
-        )
-        val selection =
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-            "($pathSelection LIKE '%${folder.substringAfterLast('/')}%')" + " AND " +
-            "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(if (folder == dcimBase) SettingsFragment.LAST_BACKUP_CAMERA else SettingsFragment.LAST_BACKUP_PICTURE, System.currentTimeMillis() / 1000)})"
-
-        cr.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
-        )?.use { cursor->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
-            val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
-            val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-            val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
-            val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
-            val dateTakenColumn = cursor.getColumnIndexOrThrow(dateTakenColumnName)
-            val orientationColumn = cursor.getColumnIndexOrThrow(orientationColumnName)
-
-            var relativePath: String
-            var fileName: String
-            var size: Long
-            var mimeType: String
-            var id: Long
-            var photoUri: Uri
-            var latitude: Double
-            var longitude: Double
-            var altitude: Double
-            var bearing: Double
-            var mDate: Long
-            val exclusionSet = if (folder == picturesBase) sp.getStringSet(application.getString(R.string.pictures_sub_folder_exclusion_pref_key), setOf()) ?: setOf() else setOf()
-
-            val basePath = "${folder.substringAfterLast('/')}/"
-            while(cursor.moveToNext()) {
-                //Log.e(TAG, "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
-                // Check network type on every loop, so that user is able to stop sync right in the middle
-                checkConnection()
-
-                relativePath = cursor.getString(pathColumn).substringAfter(basePath).substringBeforeLast('/', "")
-                // Exclude sub folder in user defined exclusion set
-                if (folder == picturesBase) {
-                    if (exclusionSet.contains(relativePath.substringBefore('/'))) continue
-                }
-
-                // Get uri, in Android Q or above, try getting original uri for meta data extracting
-                id = cursor.getLong(idColumn)
-                photoUri = ContentUris.withAppendedId(contentUri, id)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (_: Exception) {}
-
-                fileName = cursor.getString(nameColumn)
-                size = try { cursor.getLong(sizeColumn) } catch(_: Exception) { -1L }
-
-                reportBackupStatus(fileName, size, cursor.position, cursor.count)
-
-                mimeType = cursor.getString(typeColumn)
-                //Log.e(TAG, "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
-
-                // Indefinite while loop is for handling 404 and 409 (Caddy seems to prefer) error when folders needed to be created on server before hand
-                while(true) {
-                    try {
-                        webDav.upload(photoUri, "${backupFolder}/${relativePath}/${fileName}", mimeType, cr, size, application)
-                        break
-                    } catch (e: OkHttpWebDavException) {
-                        when (e.statusCode) {
-                            // Caddy seems preferring 409 response code when PUT file to a non-existing folder
-                            404, 409 -> {
-                                // create file in non-existed folder, should create subfolder first
-                                createSubFoldersRecursively(backupFolder, relativePath)
-                            }
-                            else -> throw e
-                        }
-                    } catch (e: StreamResetException) {
-                        createSubFoldersRecursively(backupFolder, relativePath)
-                    } catch (e: EOFException) {
-                        // Under some unknown situation StreamResetException might be suppressed by EOFException
-                        e.suppressed.let {
-                            if (it.isNotEmpty()) {
-                                if (it[0] is StreamResetException) createSubFoldersRecursively(backupFolder, relativePath)
-                            }
-                        }
-                    }
-                }
-
-                // Try to get GPS data
-                latitude = Photo.GPS_DATA_UNKNOWN
-                longitude = Photo.GPS_DATA_UNKNOWN
-                altitude = Photo.GPS_DATA_UNKNOWN
-                bearing = Photo.GPS_DATA_UNKNOWN
-                if (Tools.hasExif(mimeType)) {
-                    try {
-                        cr.openInputStream(photoUri)?.use { stream ->
-                            ExifInterface(stream).let { exif ->
-                                exif.latLong?.let { latLong ->
-                                    latitude = latLong[0]
-                                    longitude = latLong[1]
-                                    altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                                    bearing = Tools.getBearing(exif)
-                                } ?: run {
-                                    // No GPS data
-                                    latitude = Photo.NO_GPS_DATA
-                                    longitude = Photo.NO_GPS_DATA
-                                    altitude = Photo.NO_GPS_DATA
-                                    bearing = Photo.NO_GPS_DATA
-                                }
-                            }
-                        }
-                    } catch (_: Exception) {} catch (_: OutOfMemoryError) {}
-                } else if (mimeType.startsWith("video/")) {
-                    try {
-                        mediaMetadataRetriever.setDataSource(application, photoUri)
-                        Tools.getVideoLocation(mediaMetadataRetriever).let {
-                            latitude = it[0]
-                            longitude = it[1]
-                            altitude = Photo.NO_GPS_DATA
-                            bearing = Photo.NO_GPS_DATA
-                        }
-                    } catch (_: SecurityException) {}
-                }
-
-                // Patch photo's DAV properties to accelerate future operations on camera roll archive
-                mDate = cursor.getLong(dateTakenColumn)
-                if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
-                try {
-                    webDav.patch(
-                        "${backupFolder}/${relativePath}/${fileName}",
-                        "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +      // timestamp from Android MediaStore is in UTC timezone
-                                "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + cursor.getInt(orientationColumn) + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
-                                "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + cursor.getInt(widthColumn) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
-                                "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + cursor.getInt(heightColumn) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
-                                if (latitude == Photo.GPS_DATA_UNKNOWN) ""
-                                else
-                                "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
-                                "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
-                                "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
-                                "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>"
-                    )
-                } catch (_: Exception) {}
-
-                // Save latest timestamp after successful upload
-                sp.edit().apply {
-                    putLong(if (folder == dcimBase) SettingsFragment.LAST_BACKUP_CAMERA else SettingsFragment.LAST_BACKUP_PICTURE, cursor.getLong(dateColumn) + 1)
-                    commit()
-                }
-            }
-
-            mediaMetadataRetriever.release()
-
-            // Report finished status
-            reportBackupStatus(" ", 0L, 0, 0)
-        }
-    }
-*/
 
     private fun backupGallery() {
         reportStage(Action.SYNC_STAGE_BACKUP_PICTURES)

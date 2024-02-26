@@ -38,7 +38,6 @@ import android.os.Looper
 import android.os.Parcelable
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -97,6 +96,7 @@ import java.lang.Long.min
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
@@ -225,7 +225,17 @@ class GalleryFragment: Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             launch {
                 galleryModel.additions.collect { ids ->
-                    selectedUris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
+                    selectedUris = arrayListOf<Uri>().apply {
+                        ids.forEach { id ->
+                            add(Uri.parse(
+                                if (id.startsWith("content")) id
+                                else galleryModel.getPhotoById(id)?.let {
+                                    // TODO caption property value is file size in this case
+                                    "${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}"
+                                }
+                            ))
+                        }
+                    }
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
                         .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                 }
@@ -341,7 +351,6 @@ class GalleryFragment: Fragment() {
                     val actions = mutableListOf<Action>()
                     val actionId = if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
                     val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
-                    val removeList = mutableListOf<String>()
 
                     when (targetAlbum.id) {
                         "" -> {
@@ -354,11 +363,8 @@ class GalleryFragment: Fragment() {
                     destinationModel.getRemotePhotos().forEach { remotePhoto ->
                         remotePhoto.photo.let { photo ->
                             actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}|${Tools.isRemoteAlbum(targetAlbum)}", System.currentTimeMillis(), 1))
-                            removeList.add(photo.id)
                         }
                     }
-
-                    //if (destinationModel.shouldRemoveOriginal() && removeList.isNotEmpty()) camerarollModel.removeBackup(removeList)
 
                     if (actions.isNotEmpty()) actionModel.addActions(actions)
                 } else {
@@ -580,7 +586,7 @@ class GalleryFragment: Fragment() {
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 combine(trigger, local, imageModel.archive) { _, localMedia, archiveMedia ->
-                    Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
+                    //Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
                     val combinedList = mutableListOf<LocalMedia>().apply { addAll(localMedia) }
 
                     if (_showArchive.value != ARCHIVE_OFF) {
@@ -593,15 +599,15 @@ class GalleryFragment: Fragment() {
                                     combinedList.find { item ->
                                         item.media.photo.name == archiveItem.media.photo.name && item.fullPath == archiveItem.fullPath && item.folder != TRASH_FOLDER
                                     }?.let { existed ->
-                                        Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
+                                        //Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
                                         existed.location = LocalMedia.IS_BOTH
                                         existed.media.photo.eTag = archiveItem.media.photo.eTag
                                     } ?: run {
-                                        Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name} ${archiveItem.media.photo.id}",)
+                                        //Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name} ${archiveItem.media.photo.id}",)
                                         combinedList.add(archiveItem)
                                     }
                                 } else {
-                                    Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name}  ${archiveItem.media.photo.id} from ${archiveItem.volume}",)
+                                    //Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name}  ${archiveItem.media.photo.id} from ${archiveItem.volume}",)
                                     // Not from this device, add it to the list
                                     combinedList.add(archiveItem)
                                 }
@@ -976,6 +982,8 @@ class GalleryFragment: Fragment() {
 
         const val TRASH_FOLDER = "\uE83A"   // This private character make sure the Trash is at the bottom of folder list
         const val ALL_FOLDER = ".."
+
+        const val ARCHIVE_SCHEME = "remote"
 
         const val TAG_ACQUIRING_DIALOG = "GALLERY_ACQUIRING_DIALOG"
         private const val TAG_DESTINATION_DIALOG = "GALLERY_DESTINATION_DIALOG"

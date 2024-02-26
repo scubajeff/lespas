@@ -148,7 +148,7 @@
     <string name="preparing_files">Fotos werden vorbereitet</string>
     <string name="preparing_files_progress">Foto %1$d von %2$d wird vorbereitet</string>
     <string name="finished_preparing_files">Vorbereitung der Fotos abgeschlossen</string>
-    <string name="it_takes_time">%1$s an Daten werden an den Server gesendet. Es kann eine Weile dauern, bis die neuen Fotos auf dem Server erscheinen. Die Bestätigung des joint Albumbesitzers ist ebenfalls erforderlich.</string>
+    <string name="it_takes_time">Je nach Größe der Dateien und der aktuellen Netzwerkverfügbarkeit kann es eine Weile dauern, bis neue Alben und Fotos in der Liste erscheinen.</string>
     <string name="mind_network_setting">Bitte beachten Sie, dass die aktuelle Sync-Einstellung verhindert, dass Les Pas mobile Daten nutzt.</string>
     <string name="error_preparing_files">Fehler beim Vorbereiten der Dateien</string>
     <string name="access_right_violation">Die teilende App folgt nicht der Android Storage Access Guideline, daher kann Les Pas diese Dateien nicht empfangen. Bitte aktualisieren Sie die App oder verwenden Sie eine andere.</string>

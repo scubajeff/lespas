@@ -291,8 +291,8 @@
     <string name="preparing_files">Preparing photo</string>
     <string name="preparing_files_progress">Preparing photo %1$d of %2$d</string>
     <string name="finished_preparing_files">Preparing photos finished</string>
-    <string name="it_takes_time">Need to send %1$s of data to server. It might take a while before new photos show up on the server. Joint album owner\'s confirmation is also required.</string>
-    <string name="mind_network_setting">Please note that the current sync setting prevents Les Pas from using a mobile network.</string>
+    <string name="it_takes_time">Depending on the size of files and current network availability, it might take a while before new albums and photos show up in the list.</string>
+    <string name="mind_network_setting">" Please note that the current sync setting prevents Les Pas from using a mobile network."</string>
     <string name="error_preparing_files">Error preparing files</string>
     <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use a different one.</string>
     <string name="no_media_file_found">No image or video files found among shared data.</string>

@@ -174,7 +174,7 @@
     <string name="preparing_files">Préparation des photos</string>
     <string name="preparing_files_progress">Préparation de la photo %1$d sur %2$d</string>
     <string name="finished_preparing_files">Préparation des photos terminée</string>
-    <string name="it_takes_time">Besoin d\'envoyer %1$s de données au serveur. Cela peut prendre un certain temps avant que de nouvelles photos n\'apparaissent sur le serveur. La confirmation des utilisateurs d\'un album partagé est également requise.</string>
+    <string name="it_takes_time">En fonction de la taille des fichiers et de la disponibilité du réseau, il peut s\'écouler un certain temps avant que les nouveaux albums et photos ne s\'affichent dans la liste.</string>
     <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
     <string name="error_preparing_files">Erreur lors de la préparation des fichiers</string>
     <string name="access_right_violation">L\'application de partage ne suit pas les directives d\'accès au stockage Android, par conséquent, Les Pas ne peut pas recevoir ces fichiers. Veuillez mettre à jour l\'application de partage ou en utiliser une autre.</string>

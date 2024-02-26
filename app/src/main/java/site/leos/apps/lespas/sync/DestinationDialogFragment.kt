@@ -47,7 +47,8 @@ import androidx.core.view.doOnPreDraw
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -153,11 +154,32 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 val cr = requireContext().contentResolver
                 val bitmap: Bitmap? =
                     when {
-                        uri.scheme == "lespas"-> {
+                        uri.scheme == "lespas" -> {
+                            // Remote photos from albums
                             publicationModel.setImagePhoto(destinationModel.getRemotePhotos()[position], view, NCShareViewModel.TYPE_GRID)
                             null
                         }
+                        uri.scheme == GalleryFragment.ARCHIVE_SCHEME -> {
+                            // Remote photos from archive
+                            publicationModel.setImagePhoto(
+                                NCShareViewModel.RemotePhoto(
+                                    Photo(
+                                        id = uri.getQueryParameter("fileid") ?: "",
+                                        name = uri.lastPathSegment ?: "",
+                                        mimeType = uri.getQueryParameter("mimetype") ?: "image/*",
+                                        dateTaken = LocalDateTime.now(),
+                                        lastModified = LocalDateTime.now(),
+                                        width = uri.getQueryParameter("width")?.toInt() ?: 0,
+                                        height = uri.getQueryParameter("height")?.toInt() ?: 0,
+                                        orientation = uri.getQueryParameter("orientation")?.toInt() ?: 0,
+                                    ), uri.path!!.substringBeforeLast('/')
+                                ),
+                                view, NCShareViewModel.TYPE_GRID
+                            )
+                            null
+                        }
                         (cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: "image/*").startsWith("image") -> {
+                            // Local photos from gallery or local albums
                             try {
                                 BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 8 })
                             } catch (e: Exception) {
@@ -166,6 +188,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                             }
                         }
                         android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1 -> {
+                            // Local video items
                             try {
                                 val retriever = MediaMetadataRetriever()
                                 retriever.setDataSource(requireContext(), uri)
@@ -178,7 +201,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         else -> null
                     }
 
-                if (uri.scheme != "lespas") withContext(Dispatchers.Main) { view.setImageBitmap(bitmap ?: ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_imagefile_24)!!.toBitmap()) }
+                if (uri.scheme != "lespas" && uri.scheme != GalleryFragment.ARCHIVE_SCHEME) withContext(Dispatchers.Main) { view.setImageBitmap(bitmap ?: ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_imagefile_24)!!.toBitmap()) }
             }
         }.apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 

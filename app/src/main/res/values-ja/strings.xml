@@ -106,7 +106,7 @@
     <string name="preparing_files">写真を加工中</string>
     <string name="preparing_files_progress">%2$dの写真のうち、%1$dに取り組んでいます。</string>
     <string name="finished_preparing_files">アップロードの前処理完了</string>
-    <string name="it_takes_time">合計 %1$s の写真をアップロードする必要があり、サーバー上でレンダリングされるまでに時間がかかることがあります。 ジョイントアルバムの所有者の確認も必要です。</string>
+    <string name="it_takes_time">ファイルサイズや現在のネットワーク状況によっては、新しいアルバムや写真がリストに表示されるまでに時間がかかる場合があります。</string>
     <string name="mind_network_setting">なお、現在の同期設定では、Les Pasがモバイルトラフィックを使用することはできません。</string>
     <string name="error_preparing_files">エラーが発生しました。</string>
     <string name="access_right_violation">使用している共有アプリがAndroidのストレージアクセスのセキュリティ仕様に準拠していないため、Les Pasがシェアを受け取ることができません。 共有アプリをアップデートするか、他のアプリを利用してください。</string>

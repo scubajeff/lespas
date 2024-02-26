@@ -175,7 +175,7 @@
     <string name="preparing_files">Preparando foto</string>
     <string name="preparing_files_progress">Preparando foto %1$d de %2$d</string>
     <string name="finished_preparing_files">Preparação de fotos finalizada</string>
-    <string name="it_takes_time">Sera necessário enviar %1$s de dados ao servidor. Pode demorar antes que as fotos apareçam no servidor. A confimação do dono de álbuns conjuntos também é necessária.</string>
+    <string name="it_takes_time">Dependendo do tamanho dos arquivos e da disponibilidade atual da rede, pode demorar um pouco até que novos álbuns e fotos apareçam na lista.</string>
     <string name="mind_network_setting">Note que as configurações de sincronização atuais impedem o Les Pas de usar dados móveis.</string>
     <string name="error_preparing_files">Erro preparando arquivos</string>
     <string name="access_right_violation">A aplicação de compartilhamento não segue o padrão de armazenamento Android, por isso o Les Pas não consegue receber os arquivos. Por favor atualize a aplicação utilizada ou use outra.</string>
