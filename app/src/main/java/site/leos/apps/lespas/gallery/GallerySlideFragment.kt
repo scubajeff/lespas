@@ -349,8 +349,7 @@ class GallerySlideFragment : Fragment() {
 
     private fun setList(localMedias: List<GalleryFragment.LocalMedia>?) {
         if (localMedias == null) return
-        if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
-        else {
+        if (localMedias.isNotEmpty()) {
             requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
                 when {
                     subFolder.isEmpty() -> localMedias
