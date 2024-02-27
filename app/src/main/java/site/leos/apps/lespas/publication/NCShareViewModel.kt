@@ -1241,7 +1241,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
                                         try {
-                                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / thumbnailSize, imagePhoto.photo.height / thumbnailSize), null)
+                                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / thumbnailSize, imagePhoto.photo.height / thumbnailSize), null).let { bmp ->
+                                                if (imagePhoto.photo.mimeType.substringAfter('/') in Tools.RAW_FORMAT && imagePhoto.photo.orientation != 0) {
+                                                    // Seems like system generated thumbnail of RAW format is not rotated
+                                                    Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
+                                                } else bmp
+                                            }
                                         } catch (_: Exception) {
                                             // loadThumbnail will failed on some format like webp, hence decode it here
                                             updateCache = true
