@@ -354,7 +354,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     DAV_GETLASTMODIFIED -> res.modified = try { Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime() } catch (e: Exception) { LocalDateTime.now() }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
-                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { Tools.epochToLocalDateTime(text.toLong(), useUTC = true) } catch (e: Exception) { LocalDateTime.MIN }
+                                    // Should use local time zone setting here for sorting
+                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { Tools.epochToLocalDateTime(text.toLong(), useUTC = false) } catch (e: Exception) { LocalDateTime.MIN }
                                     LESPAS_WIDTH -> res.width = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_HEIGHT -> res.height = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_ORIENTATION -> res.orientation = try { text.toInt() } catch (e: NumberFormatException) { 0 }
