@@ -80,6 +80,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
@@ -93,11 +94,13 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
+import java.io.File
 import java.lang.Long.min
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Locale
 
 class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
@@ -557,11 +560,12 @@ class GalleryFragment: Fragment() {
             return modelClass.cast(GalleryViewModel(
                 context.contentResolver, imageModel, actionModel,
                 Tools.getPlayMarkDrawable(context, 0.32f / spanCount),
-                Tools.getSelectedMarkDrawable(context, 0.25f / spanCount)
+                Tools.getSelectedMarkDrawable(context, 0.25f / spanCount),
+                Tools.getLocalRoot(context),
             ))!!
         }
     }
-    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable): ViewModel() {
+    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable, private val localBaseFolder: String): ViewModel() {
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
@@ -578,7 +582,10 @@ class GalleryFragment: Fragment() {
         fun toggleArchive() {
             // TODO can stop archive refreshing job
             _showArchive.value = -_showArchive.value
-            if (_showArchive.value == ARCHIVE_ON) imageModel.refreshArchive()
+            if (_showArchive.value == ARCHIVE_ON) {
+                loadArchiveSnapshot()
+                imageModel.refreshArchive()
+            }
             trigger.value = !trigger.value
         }
 
@@ -589,6 +596,7 @@ class GalleryFragment: Fragment() {
                 launch {
                     imageModel.archive.collect {
                         _archive.emit(it)
+                        saveArchiveSnapshot(it)
                     }
                 }
                 launch {
@@ -812,6 +820,76 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        private fun saveArchiveSnapshot(archiveList: List<LocalMedia>?) {
+            archiveList?.let {
+                viewModelScope.launch(Dispatchers.IO) {
+                    var content = String.format(Locale.ROOT, "{\"archive\":{\"version\":1,\"timestamp\":%d,\"photos\":[", System.currentTimeMillis())
+                    _archive.value?.toMutableList()?.forEach { localMedia ->
+                        with(localMedia.media.photo) {
+                            content += String.format(
+                                Locale.ROOT,
+                                "{\"id\":\"%s\",\"albumId\":\"%s\",\"name\":\"%s\",\"eTag\":%s,\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
+                                id, albumId, name, eTag, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), lastModified.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
+                                localMedia.media.remotePath, localMedia.folder, localMedia.volume, localMedia.fullPath, localMedia.appName, localMedia.remoteFileId,
+                            )
+                        }
+                    }
+
+                    File(localBaseFolder, ARCHIVE_SNAPSHOT_FILE).writer().use { it.write(content.dropLast(1) + "]}}") }
+                }
+            }
+        }
+
+        private fun loadArchiveSnapshot() {
+            viewModelScope.launch(Dispatchers.IO) {
+                val archiveList = mutableListOf<LocalMedia>()
+                var content = ""
+                File(localBaseFolder, ARCHIVE_SNAPSHOT_FILE).reader().use { content = it.readText() }
+
+                try {
+                    if (content.isNotEmpty()) {
+                        val photos = JSONObject(content).getJSONObject("archive").getJSONArray("photos")
+                        for (i in 0 until photos.length()) {
+                            photos.getJSONObject(i).run {
+                                archiveList.add(
+                                    LocalMedia(
+                                        LocalMedia.IS_REMOTE,
+                                        getString("folder"),
+                                        NCShareViewModel.RemotePhoto(
+                                            photo = Photo(
+                                                id = getString("id"),
+                                                albumId = getString("albumId"),
+                                                name = getString("name"),
+                                                eTag = getString("eTag"),
+                                                mimeType = getString("mime"),
+                                                dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), ZoneId.of("Z")),
+                                                lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), ZoneId.of("Z")),
+                                                width = getInt("width"),
+                                                height = getInt("height"),
+                                                orientation = getInt("orientation"),
+                                                caption = getLong("size").toString(),
+                                                latitude = getDouble("latitude"),
+                                                longitude = getDouble("longitude"),
+                                                altitude = getDouble("altitude"),
+                                                bearing = getDouble("bearing"),
+                                            ),
+                                            remotePath = getString("remotePath")
+                                        ),
+                                        getString("volume"),
+                                        getString("fullPath"),
+                                        getString("appName"),
+                                        getString("remoteFileId")
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+
+                if (archiveList.isNotEmpty()) _archive.emit(archiveList)
+            }
+        }
+
         // TODO auto remove on Android 11
         @RequiresApi(Build.VERSION_CODES.S)
         fun autoRemove(activity: Activity, backSettings: List<BackupSetting>) {
@@ -854,7 +932,7 @@ class GalleryFragment: Fragment() {
         }
 
         fun getPhotoById(id: String): NCShareViewModel.RemotePhoto? = _medias.value?.find { it.media.photo.id == id }?.media
-        fun getLocalMediaById(id: String): LocalMedia? = _medias.value?.find { it.media.photo.id == id }
+        private fun getLocalMediaById(id: String): LocalMedia? = _medias.value?.find { it.media.photo.id == id }
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
@@ -1014,6 +1092,7 @@ class GalleryFragment: Fragment() {
             const val ARCHIVE_OFF = -1
             const val ARCHIVE_ON = 1
             const val ARCHIVE_REFRESHING = 0
+            const val ARCHIVE_SNAPSHOT_FILE = "archive_snapshot.json"
 
             const val SHARE_NORMAL = 1
             const val SHARE_USE_AS = 2
