@@ -296,7 +296,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                 actions.add(
                                     Action(
                                     null, remoteAction,
-                                        uri.path?.substringBeforeLast('/') ?: "", remoteTargetFolder,
+                                        uri.path?.substringBeforeLast('/') ?: "",
+                                        remoteTargetFolder,
                                         "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
                                         "${fileId}|${album.isJoint()}|${album.isRemote()}",
                                         System.currentTimeMillis(), 1

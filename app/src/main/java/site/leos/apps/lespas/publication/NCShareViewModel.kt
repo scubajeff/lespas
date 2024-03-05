@@ -642,6 +642,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+    fun removeItemsFromArchiveList(photoIds: List<String>) {
+        viewModelScope.launch {
+            _archive.value?.toMutableList()?.let { archiveList ->
+                archiveList.removeAll { it.media.photo.id in photoIds }
+                _archive.emit(archiveList)
+            }
+        }
+    }
+
     fun getCameraRollArchive(): List<Photo> {
         val result = mutableListOf<Photo>()
         try {

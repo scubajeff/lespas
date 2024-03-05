@@ -344,7 +344,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         overviewAdapter.submitList(list) {
                             // Refresh overflow item counts
                             list?.forEachIndexed { index, item ->
-                                if (item.location == GalleryFragment.LocalMedia.IS_NOT_MEDIA && item.media.photo.height > max) overviewAdapter.notifyItemChanged(index + max)
+                                if (item.isNotMedia() && item.media.photo.height > max) overviewAdapter.notifyItemChanged(index + max)
                             }
                         }
                         val selectionSize = selectionTracker.selection.size()
@@ -481,9 +481,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         actionMode = null
     }
 
-    private fun getSelectedPhotos(clearSelection: Boolean = true): List<String> = mutableListOf<String>().apply {
+    private fun getSelectedPhotos(clearSelectionAfterward: Boolean = true): List<String> = mutableListOf<String>().apply {
         selectionTracker.selection.forEach { add(it) }
-        if (clearSelection) selectionTracker.clearSelection()
+        if (clearSelectionAfterward) selectionTracker.clearSelection()
     }
 
     class OverviewAdapter(
@@ -531,12 +531,12 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                     with(ivLocal) {
                         isVisible = showLocation
-                        isEnabled = item.location != GalleryFragment.LocalMedia.IS_REMOTE
+                        isEnabled = !item.isRemote()
                     }
 
                     with(ivArchive) {
                         isVisible = showLocation
-                        isEnabled = item.location != GalleryFragment.LocalMedia.IS_LOCAL
+                        isEnabled = !item.isLocal()
                     }
                 }
             }
@@ -698,7 +698,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id
-        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.media.photo.id == photoId }
+        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfFirst { it.media.photo.id == photoId }
         private fun getCount(folder: String): Int = currentList.find { it.folder == folder && it.media.photo.mimeType.isEmpty() }?.media?.photo?.height ?: 0
 
         class PhotoKeyProvider(private val adapter: OverviewAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {

@@ -24,7 +24,7 @@
         android:title="@string/tooltips_date_picker"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/empty_trash"
+        android:id="@+id/option_menu_empty_trash"
         android:icon="@drawable/ic_baseline_empty_trash_24"
         android:title="@string/option_menu_empty_trash"
         android:visible="false"

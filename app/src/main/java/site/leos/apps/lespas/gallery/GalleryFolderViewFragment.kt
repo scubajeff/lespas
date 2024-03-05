@@ -427,6 +427,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_folder_menu, menu)
                 if (folderArgument == GalleryFragment.TRASH_FOLDER) menu.findItem(R.id.empty_trash)?.isVisible = true
+                if (folderArgument == GalleryFragment.TRASH_FOLDER) {
+                    menu.findItem(R.id.option_menu_empty_trash)?.isVisible = true
+                }
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when(menuItem.itemId) {
@@ -459,7 +462,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                     true
                 }
-                R.id.empty_trash -> {
+                R.id.option_menu_empty_trash -> {
                     if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_empty_trash), positiveButtonText = getString(R.string.yes_delete), individualKey = EMPTY_TRASH_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                     true
                 }
@@ -758,7 +761,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].photo.id
-        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.photo.id == photoId }
+        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfFirst { it.photo.id == photoId }
 
         fun hasDate(date: Long): Boolean {
             val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
