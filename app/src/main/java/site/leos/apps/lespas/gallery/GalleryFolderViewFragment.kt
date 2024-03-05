@@ -591,7 +591,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         else currentMediaList.groupBy { item -> item.fullPath }.forEach { subFolder ->
             subFolderChipGroup.addView(
                 (LayoutInflater.from(requireContext()).inflate(R.layout.chip_sub_folder, null) as Chip).apply {
-                    text = subFolder.key.dropLast(1).substringAfterLast('/')
+                    text = subFolder.key.dropLast(1).substringAfterLast('/').run { this.ifEmpty { "/" } }
                     tag = subFolder.key
                     setOnCheckedChangeListener { buttonView, isChecked -> (buttonView as Chip).typeface = if (isChecked) Typeface.DEFAULT_BOLD else Typeface.DEFAULT }
                 }

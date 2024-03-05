@@ -601,11 +601,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // TODO load cache first
                 webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                     if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
-                        path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/')
+                        path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/', "")
                         result.add(
                             GalleryFragment.LocalMedia(
                                 GalleryFragment.LocalMedia.IS_REMOTE,
-                                folder = path.substringBefore('/'),                                         // first segment of file path
+                                folder = if (path.isEmpty()) "/" else path.substringBefore('/'),                                         // first segment of file path
                                 media = RemotePhoto(
                                     Photo(
                                         id = dav.fileId, albumId = dav.albumId, name = dav.name.substringAfterLast('/'), eTag = dav.eTag, mimeType = dav.contentType,
@@ -619,7 +619,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 ),
                                 volume = dav.name.substringAfter('/').substringBefore('/'),         // volume name of archive item is device model name
                                 fullPath = "$path/",
-                                appName = path.substringAfterLast('/'),                                      // last segment of file path
+                                appName = if (path.isEmpty()) "/" else path.substringAfterLast('/'),                                      // last segment of file path
                             )
                         )
                     }
