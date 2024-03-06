@@ -80,7 +80,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
-import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
@@ -94,13 +93,11 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.BackupSetting
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
-import java.io.File
 import java.lang.Long.min
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.Locale
 
 class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
@@ -570,37 +567,25 @@ class GalleryFragment: Fragment() {
         private var loadJob: Job? = null
         private var autoRemoveDone = false
         private val _local = MutableStateFlow<List<LocalMedia>>(mutableListOf())
-        private val _archive = MutableStateFlow<List<LocalMedia>?>(null)
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
         val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         val trash: StateFlow<List<LocalMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
-        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
+        private val _showArchive = MutableStateFlow(ARCHIVE_REFRESHING)
         val showArchive: StateFlow<Int> = _showArchive
         private val trigger = MutableStateFlow(false)
+
         fun toggleArchive() {
             // TODO can stop archive refreshing job
             _showArchive.value = -_showArchive.value
-            if (_showArchive.value == ARCHIVE_ON) {
-                loadArchiveSnapshot()
-                imageModel.refreshArchive()
-            }
             trigger.value = !trigger.value
         }
-
-        fun getCurrentArchiveSwitchState() = _showArchive.value
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 launch {
-                    imageModel.archive.collect {
-                        _archive.emit(it)
-                        saveArchiveSnapshot(it)
-                    }
-                }
-                launch {
-                    combine(trigger, _local, _archive) { _, localMedia, archiveMedia ->
+                    combine(trigger, _local, imageModel.archive) { _, localMedia, archiveMedia ->
                         //Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
                         val combinedList = mutableListOf<LocalMedia>().apply { addAll(localMedia) }
 
@@ -639,6 +624,8 @@ class GalleryFragment: Fragment() {
                     }.collect { result -> _medias.value = result }
                 }
             }
+
+            imageModel.refreshArchive()
         }
 
         override fun onCleared() {
@@ -778,9 +765,7 @@ class GalleryFragment: Fragment() {
                 //localMedias.sortWith(compareBy<LocalMedia, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.folder }.thenByDescending { it.media.photo.dateTaken })
                 ensureActive()
                 _local.value = localMedias
-            }.apply {
-                invokeOnCompletion { loadJob = null }
-            }
+            }.apply { invokeOnCompletion { loadJob = null }}
         }
 
         fun asSingleFileViewer(uri: Uri, ctx: Context) {
@@ -817,76 +802,6 @@ class GalleryFragment: Fragment() {
             uri.toString().let { uriString ->
                 setCurrentPhotoId(uriString)
                 _medias.value = listOf(LocalMedia(LocalMedia.IS_LOCAL, uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
-            }
-        }
-
-        private fun saveArchiveSnapshot(archiveList: List<LocalMedia>?) {
-            archiveList?.let {
-                viewModelScope.launch(Dispatchers.IO) {
-                    var content = String.format(Locale.ROOT, "{\"archive\":{\"version\":1,\"timestamp\":%d,\"photos\":[", System.currentTimeMillis())
-                    _archive.value?.toMutableList()?.forEach { localMedia ->
-                        with(localMedia.media.photo) {
-                            content += String.format(
-                                Locale.ROOT,
-                                "{\"id\":\"%s\",\"albumId\":\"%s\",\"name\":\"%s\",\"eTag\":%s,\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
-                                id, albumId, name, eTag, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), lastModified.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
-                                localMedia.media.remotePath, localMedia.folder, localMedia.volume, localMedia.fullPath, localMedia.appName, localMedia.remoteFileId,
-                            )
-                        }
-                    }
-
-                    File(localBaseFolder, ARCHIVE_SNAPSHOT_FILE).writer().use { it.write(content.dropLast(1) + "]}}") }
-                }
-            }
-        }
-
-        private fun loadArchiveSnapshot() {
-            viewModelScope.launch(Dispatchers.IO) {
-                val archiveList = mutableListOf<LocalMedia>()
-                var content = ""
-                File(localBaseFolder, ARCHIVE_SNAPSHOT_FILE).reader().use { content = it.readText() }
-
-                try {
-                    if (content.isNotEmpty()) {
-                        val photos = JSONObject(content).getJSONObject("archive").getJSONArray("photos")
-                        for (i in 0 until photos.length()) {
-                            photos.getJSONObject(i).run {
-                                archiveList.add(
-                                    LocalMedia(
-                                        LocalMedia.IS_REMOTE,
-                                        getString("folder"),
-                                        NCShareViewModel.RemotePhoto(
-                                            photo = Photo(
-                                                id = getString("id"),
-                                                albumId = getString("albumId"),
-                                                name = getString("name"),
-                                                eTag = getString("eTag"),
-                                                mimeType = getString("mime"),
-                                                dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), ZoneId.of("Z")),
-                                                lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), ZoneId.of("Z")),
-                                                width = getInt("width"),
-                                                height = getInt("height"),
-                                                orientation = getInt("orientation"),
-                                                caption = getLong("size").toString(),
-                                                latitude = getDouble("latitude"),
-                                                longitude = getDouble("longitude"),
-                                                altitude = getDouble("altitude"),
-                                                bearing = getDouble("bearing"),
-                                            ),
-                                            remotePath = getString("remotePath")
-                                        ),
-                                        getString("volume"),
-                                        getString("fullPath"),
-                                        getString("appName"),
-                                        getString("remoteFileId")
-                                    )
-                                )
-                            }
-                        }
-                    }
-                } catch (_: Exception) {}
-
-                if (archiveList.isNotEmpty()) _archive.emit(archiveList)
             }
         }
 
@@ -987,10 +902,10 @@ class GalleryFragment: Fragment() {
         }
         fun removeFromArchive() {
             if (syncDeletionIdList.isNotEmpty()) {
-                _archive.value?.toMutableList()?.let { localArchiveList ->
+                imageModel.archive.value?.toMutableList()?.let { archiveList ->
                     // Remove files from server archive
                     mutableListOf<String>().let { deletions ->
-                        localArchiveList.filter { it.media.photo.id in syncDeletionIdList }.let { hits -> hits.forEach { deletions.add("${it.media.remotePath}/${it.media.photo.name}") }}
+                        archiveList.filter { it.media.photo.id in syncDeletionIdList }.let { hits -> hits.forEach { deletions.add("${it.media.remotePath}/${it.media.photo.name}") }}
                         // Remove archive items on server
                         actionModel.deleteFileInArchive(deletions)
                     }
@@ -1092,7 +1007,6 @@ class GalleryFragment: Fragment() {
             const val ARCHIVE_OFF = -1
             const val ARCHIVE_ON = 1
             const val ARCHIVE_REFRESHING = 0
-            const val ARCHIVE_SNAPSHOT_FILE = "archive_snapshot.json"
 
             const val SHARE_NORMAL = 1
             const val SHARE_USE_AS = 2
