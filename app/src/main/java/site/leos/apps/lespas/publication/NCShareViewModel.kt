@@ -607,24 +607,29 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 } catch (e: Exception) { e.printStackTrace() }
 
-                result.addAll(Tools.jsonToArchiveList(content))
+                if (content.isNotEmpty()) {
+                    // If snapshot file exists and has valid content, try using it
+                    result.addAll(Tools.jsonToArchiveList(content))
 
-                // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
-                webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
-                    if (davs.isEmpty()) {
-                        _archive.emit(result)
-                        return@launch
-                    }
-                    else {
-                        newETag = davs[0].eTag
-                        if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
-                            //Log.e(">>>>>>>>", "refreshArchive: archive eTag matched, apply snapshot", )
-                            _archive.emit(result)
-                            return@launch
+                    // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
+                    try {
+                        webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
+                            if (davs.isEmpty()) {
+                                _archive.emit(result)
+                                return@launch
+                            } else {
+                                newETag = davs[0].eTag
+                                if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
+                                    //Log.e(">>>>>>>>", "refreshArchive: archive eTag matched, apply snapshot", )
+                                    _archive.emit(result)
+                                    return@launch
+                                }
+                            }
                         }
-                    }
+                    } catch (e: Exception) { e.printStackTrace() }
                 }
 
+                // Snapshot is not available or it's out of date
                 var path = ""
                 result.clear()
                 webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
@@ -650,12 +655,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 appName = if (path.isEmpty()) "/" else path.substringAfterLast('/'),                                      // last segment of file path
                             )
                         )
+                    } else {
+                        // Get archive folder latest eTag
+                        if (dav.isFolder && dav.name.isEmpty()) newETag = dav.eTag
                     }
                 }
-                result.sortByDescending { it.media.photo.dateTaken }
+                result.sortByDescending { it.media.photo.lastModified }
                 _archive.emit(result)
                 saveArchiveSnapshot(result, newETag)
-            } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _archive.emit(result)
+            }
         }.apply { invokeOnCompletion { archiveFetchingJob = null }}
     }
 
