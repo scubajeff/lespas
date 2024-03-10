@@ -801,6 +801,7 @@ object Tools {
     }
 
     fun archiveToJSONString(archiveList: List<GalleryFragment.LocalMedia>): String {
+        val defaultOffset = OffsetDateTime.now().offset
         var content = "{\"archive\":{\"version\":1,\"photos\":["
         archiveList.forEach { localMedia ->
             with(localMedia.media.photo) {
@@ -808,8 +809,8 @@ object Tools {
                     Locale.ROOT,
                     "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
                     id, name,
-                    // Save timestamp in UTC timezone to avoid time zone offset difference when a group of photos are taking in different places around the world
-                    dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), lastModified.toInstant(ZoneOffset.UTC).toEpochMilli(),
+                    // When retrieving date from device Gallery in GalleryFragment's asGallery(), local default timezone was used, have to use it here too so that the result timestamp is the same as retrieved from photo's EXIF
+                    dateTaken.toInstant(defaultOffset).toEpochMilli(), lastModified.toInstant(defaultOffset).toEpochMilli(),
                     mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
                     localMedia.media.remotePath, localMedia.folder, localMedia.volume, localMedia.fullPath, localMedia.appName, localMedia.remoteFileId,
                 )
@@ -821,6 +822,7 @@ object Tools {
 
     fun jsonToArchiveList(jsonString: String): List<GalleryFragment.LocalMedia> {
         val result = mutableListOf<GalleryFragment.LocalMedia>()
+        val defaultZone = ZoneId.systemDefault()
 
         try {
             if (jsonString.isNotEmpty()) {
@@ -839,9 +841,9 @@ object Tools {
                                             name = getString("name"),
                                             eTag = Photo.ETAG_ARCHIVE,  //"\"${getString("eTag")}\"",
                                             mimeType = getString("mime"),
-                                            // Timestamps are saved in UTC timezone in archiveToJSONString()
-                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), ZoneId.of("Z")),
-                                            lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), ZoneId.of("Z")),
+                                            // Timestamps are saved in UTC timezone in archiveToJSONString(), use default timezone here to show meaningful date time to user
+                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), defaultZone),
+                                            lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), defaultZone),
                                             width = getInt("width"),
                                             height = getInt("height"),
                                             orientation = getInt("orientation"),
