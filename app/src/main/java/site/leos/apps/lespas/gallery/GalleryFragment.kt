@@ -739,6 +739,7 @@ class GalleryFragment: Fragment() {
                                             id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
                                             albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
+                                            // Use system default zone for time display, sorting and grouping by date in Gallery list
                                             //dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
                                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),      // DATE_ADDED does not have nano adjustment
                                             lastModified = LocalDateTime.MIN,

@@ -103,12 +103,7 @@ import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import java.time.Instant
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.math.max
@@ -134,7 +129,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val blogs: StateFlow<List<Blog>?> = _blogs
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
     val archive: StateFlow<List<GalleryFragment.LocalMedia>?> = _archive
-    private var archiveJob: Job? = null
+    private var archiveFetchingJob: Job? = null
 
     private val _publicShare = MutableSharedFlow<Recipient>()
     val publicShare: SharedFlow<Recipient> = _publicShare
@@ -598,8 +593,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
     fun refreshArchive() {
-        if (archiveJob == null) archiveJob = viewModelScope.launch(Dispatchers.IO) {
-            var lastETag = "Z"
+        if (archiveFetchingJob == null) archiveFetchingJob = viewModelScope.launch(Dispatchers.IO) {
             var newETag = ""
             val result = mutableListOf<GalleryFragment.LocalMedia>()
 
@@ -613,48 +607,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 } catch (e: Exception) { e.printStackTrace() }
 
-                try {
-                    if (content.isNotEmpty()) {
-                        JSONObject(content).getJSONObject("archive").let { archiveJSON ->
-                            lastETag = archiveJSON.getString("lastETag")
-                            val photos = archiveJSON.getJSONArray("photos")
-                            for (i in 0 until photos.length()) {
-                                photos.getJSONObject(i).run {
-                                    result.add(
-                                        GalleryFragment.LocalMedia(
-                                            GalleryFragment.LocalMedia.IS_REMOTE,
-                                            getString("folder"),
-                                            RemotePhoto(
-                                                photo = Photo(
-                                                    id = getString("id"),
-                                                    albumId = getString("albumId"),
-                                                    name = getString("name"),
-                                                    eTag = getString("eTag"),
-                                                    mimeType = getString("mime"),
-                                                    dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), ZoneId.of("Z")),
-                                                    lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), ZoneId.of("Z")),
-                                                    width = getInt("width"),
-                                                    height = getInt("height"),
-                                                    orientation = getInt("orientation"),
-                                                    caption = getLong("size").toString(),
-                                                    latitude = getDouble("latitude"),
-                                                    longitude = getDouble("longitude"),
-                                                    altitude = getDouble("altitude"),
-                                                    bearing = getDouble("bearing"),
-                                                ),
-                                                remotePath = getString("remotePath")
-                                            ),
-                                            getString("volume"),
-                                            getString("fullPath"),
-                                            getString("appName"),
-                                            getString("remoteFileId")
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
+                result.addAll(Tools.jsonToArchiveList(content))
 
                 // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
                 webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
@@ -664,7 +617,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                     else {
                         newETag = davs[0].eTag
-                        if (newETag == "\"$lastETag\"") {
+                        if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
+                            //Log.e(">>>>>>>>", "refreshArchive: archive eTag matched, apply snapshot", )
                             _archive.emit(result)
                             return@launch
                         }
@@ -691,7 +645,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     ),
                                     remotePath = archiveBase + dav.name.substringBeforeLast('/')
                                 ),
-                                volume = dav.name.substringAfter('/').substringBefore('/'),         // volume name of archive item is device model name
+                                volume = dav.name.substringAfter('/').substringBefore('/'),                                      // volume name of archive item is device model name
                                 fullPath = "$path/",
                                 appName = if (path.isEmpty()) "/" else path.substringAfterLast('/'),                                      // last segment of file path
                             )
@@ -702,24 +656,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 _archive.emit(result)
                 saveArchiveSnapshot(result, newETag)
             } catch (e: Exception) { e.printStackTrace() }
-        }.apply { invokeOnCompletion { archiveJob = null }}
+        }.apply { invokeOnCompletion { archiveFetchingJob = null }}
     }
 
     private fun saveArchiveSnapshot(archiveList: List<GalleryFragment.LocalMedia>, newETag: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            var content = String.format(Locale.ROOT, "{\"archive\":{\"version\":1,\"lastETag\":%s,\"photos\":[", newETag)
-            archiveList.forEach { localMedia ->
-                with(localMedia.media.photo) {
-                    content += String.format(
-                        Locale.ROOT,
-                        "{\"id\":\"%s\",\"albumId\":\"%s\",\"name\":\"%s\",\"eTag\":%s,\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
-                        id, albumId, name, eTag, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), lastModified.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
-                        localMedia.media.remotePath, localMedia.folder, localMedia.volume, localMedia.fullPath, localMedia.appName, localMedia.remoteFileId,
-                    )
-                }
-            }
+        File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).writer().use { it.write(Tools.archiveToJSONString(archiveList)) }
 
-            File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).writer().use { it.write(content.dropLast(1) + "]}}") }
+        sp.edit().run {
+            putString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, newETag)
+            apply()
         }
     }
 
@@ -2003,6 +1948,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val BLOG_TYPE_PRIVATE = 2
 
         private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
-        private const val ARCHIVE_SNAPSHOT_FILE = "archive_snapshot.json"
+        const val ARCHIVE_SNAPSHOT_FILE = "archive_snapshot.json"
     }
 }

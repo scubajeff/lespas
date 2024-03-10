@@ -63,6 +63,7 @@ data class Action (
        const val ACTION_PATCH_PROPERTIES = 22
        const val ACTION_BACKUP_FILE = 23
        const val ACTION_META_RESCAN = 24
+       const val ACTION_FETCH_ARCHIVE_FOLDER_ETAG = 25
 
        const val ACTION_CREATE_BLOG_POST = 30
        const val ACTION_DELETE_BLOG_POST = 31

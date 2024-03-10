@@ -25,18 +25,30 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ImageDecoder
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Parcelable
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
-import android.view.*
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
@@ -68,11 +80,21 @@ import java.text.CharacterIterator
 import java.text.Collator
 import java.text.DecimalFormat
 import java.text.StringCharacterIterator
-import java.time.*
+import java.time.DateTimeException
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
 import java.util.regex.Pattern
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 object Tools {
     private val COMMON_FORMAT = arrayOf("jpeg", "png", "webp", "heif", "heic",)
@@ -776,6 +798,74 @@ object Tools {
         }
 
         return content.dropLast(1) + "]}}"
+    }
+
+    fun archiveToJSONString(archiveList: List<GalleryFragment.LocalMedia>): String {
+        var content = "{\"archive\":{\"version\":1,\"photos\":["
+        archiveList.forEach { localMedia ->
+            with(localMedia.media.photo) {
+                content += String.format(
+                    Locale.ROOT,
+                    "{\"id\":\"%s\",\"albumId\":\"%s\",\"name\":\"%s\",\"eTag\":%s,\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
+                    id, albumId, name, eTag,
+                    // Save timestamp in UTC timezone to avoid time zone offset difference when a group of photos are taking in different places around the world
+                    dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), lastModified.toInstant(ZoneOffset.UTC).toEpochMilli(),
+                    mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
+                    localMedia.media.remotePath, localMedia.folder, localMedia.volume, localMedia.fullPath, localMedia.appName, localMedia.remoteFileId,
+                )
+            }
+        }
+
+        return content.dropLast(1) + "]}}"
+    }
+
+    fun jsonToArchiveList(jsonString: String): List<GalleryFragment.LocalMedia> {
+        val result = mutableListOf<GalleryFragment.LocalMedia>()
+
+        try {
+            if (jsonString.isNotEmpty()) {
+                JSONObject(jsonString).getJSONObject("archive").let { archiveJSON ->
+                    val photos = archiveJSON.getJSONArray("photos")
+                    for (i in 0 until photos.length()) {
+                        photos.getJSONObject(i).run {
+                            result.add(
+                                GalleryFragment.LocalMedia(
+                                    GalleryFragment.LocalMedia.IS_REMOTE,
+                                    getString("folder"),
+                                    NCShareViewModel.RemotePhoto(
+                                        photo = Photo(
+                                            id = getString("id"),
+                                            albumId = getString("albumId"),
+                                            name = getString("name"),
+                                            eTag = "\"${getString("eTag")}\"",
+                                            mimeType = getString("mime"),
+                                            // Timestamps are saved in UTC timezone in archiveToJSONString()
+                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), ZoneId.of("Z")),
+                                            lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), ZoneId.of("Z")),
+                                            width = getInt("width"),
+                                            height = getInt("height"),
+                                            orientation = getInt("orientation"),
+                                            caption = getLong("size").toString(),
+                                            latitude = getDouble("latitude"),
+                                            longitude = getDouble("longitude"),
+                                            altitude = getDouble("altitude"),
+                                            bearing = getDouble("bearing"),
+                                        ),
+                                        remotePath = getString("remotePath")
+                                    ),
+                                    getString("volume"),
+                                    getString("fullPath"),
+                                    getString("appName"),
+                                    getString("remoteFileId")
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+
+        return result
     }
 
     fun getPhotosWithCoordinate(list: List<Photo>, autoConvergent: Boolean, albumSortOrder: Int): List<Photo> {

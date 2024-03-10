@@ -233,7 +233,8 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.sync_deletion_perf_key),
             getString(R.string.backup_status_pref_key),
             getString(R.string.sync_status_local_action_pref_key),
-            getString(R.string.sync_status_pref_key) -> {}
+            getString(R.string.sync_status_pref_key),
+            SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG -> {}
 
             else -> prefBackupNeeded = true
         }
