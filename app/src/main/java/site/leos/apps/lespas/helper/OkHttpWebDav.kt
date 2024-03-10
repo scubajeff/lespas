@@ -379,6 +379,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     }
                                     RESPONSE_TAG -> {
                                         text = ""
+                                        // Making sure dateTaken property has meaningful value, since the self-patched WebDAV property is not always available. lastModified is better than nothing choice
                                         if (res.dateTaken == LocalDateTime.MIN) res.dateTaken = res.modified
                                         result.add(res)
                                     }

@@ -330,7 +330,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             if ((findLastCompletelyVisibleItemPosition() < mediaAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
                                 yearIndicator.let {
-                                    it.text = mediaAdapter.currentList[findLastVisibleItemPosition()].photo.dateTaken.format(DateTimeFormatter.ofPattern("MMM uuuu"))
+                                    it.text = mediaAdapter.currentList[findLastVisibleItemPosition()].photo.lastModified.format(DateTimeFormatter.ofPattern("MMM uuuu"))
                                     it.isVisible = true
                                 }
                                 hideHandler.postDelayed(hideDateIndicator, 1500)
@@ -401,11 +401,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
                             var currentDate = LocalDate.now().plusDays(1)
                             it?.forEach { media ->
-                                theDate = media.media.photo.dateTaken.toLocalDate()
+                                theDate = media.media.photo.lastModified.toLocalDate()
                                 if (theDate != currentDate) {
                                     currentDate = theDate
                                     // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                                    listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                                    listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.lastModified, mimeType = "")))
                                 }
                                 listGroupedByDate.add(media.media)
                             }
@@ -626,11 +626,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             folderArgument == GalleryFragment.ALL_FOLDER -> currentMediaList.filter { it.appName == currentCheckedTag }
             else -> currentMediaList.filter { it.fullPath == currentCheckedTag }
         }.forEach { media ->
-            theDate = media.media.photo.dateTaken.toLocalDate()
+            theDate = media.media.photo.lastModified.toLocalDate()
             if (theDate != currentDate) {
                 currentDate = theDate
                 // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.dateTaken, mimeType = "")))
+                listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.lastModified, mimeType = "")))
             }
             listGroupedByDate.add(media.media)
         }
@@ -708,7 +708,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
             @SuppressLint("SetTextI18n")
             fun bind(item: NCShareViewModel.RemotePhoto) {
-                with(item.photo.dateTaken) {
+                with(item.photo.lastModified) {
                     val now = LocalDate.now()
                     val date = this.toLocalDate()
                     tvDate.text = when {
@@ -765,13 +765,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         fun hasDate(date: Long): Boolean {
             val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
-            return (currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.dateTaken.toLocalDate().isEqual(theDate) }) != RecyclerView.NO_POSITION
+            return (currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.lastModified.toLocalDate().isEqual(theDate) }) != RecyclerView.NO_POSITION
         }
         fun dateRange(): Pair<Long, Long>? {
-            return if (currentList.isNotEmpty()) Pair(currentList.last().photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()) else null
+            return if (currentList.isNotEmpty()) Pair(currentList.last().photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()) else null
         }
-        fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
-        fun getDateByPosition(position: Int): Long = currentList[position].photo.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
+        fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
+        fun getDateByPosition(position: Int): Long = currentList[position].photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()
         fun getAllItems(): List<NCShareViewModel.RemotePhoto> = currentList.filter { it.photo.mimeType.isNotEmpty() }
 
         class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {

@@ -1764,6 +1764,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Indefinite while loop is for handling 404 and 409 (Caddy seems to prefer) error when folders needed to be created on server before hand
                     while(true) {
                         try {
+                            // TODO use latest Nextcloud special request header 'X-OC-MTime' 'X-OC-CTime' to save lastModified and dateTaken timestamp on server for later retrieval
                             webDav.upload(photoUri, "${subFolder}/${relativePath}/${photo.name}", photo.mimeType, cr, size, application).apply {
                                 photo.id = first.substring(0, 8).toInt().toString()
                                 photo.eTag = second
@@ -1831,9 +1832,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         } catch (_: SecurityException) {}
                     }
 
-                    // Patch photo's DAV properties to accelerate future operations on archive
                     mDate = cursor.getLong(dateTakenColumn)
                     if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
+
+                    // Patch photo's DAV properties to accelerate future operations on archive
                     try {
                         webDav.patch(
                             "${subFolder}/${relativePath}/${photo.name}",

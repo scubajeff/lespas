@@ -187,7 +187,7 @@ class GallerySlideFragment : Fragment() {
                                 if (autoRotate) requireActivity().requestedOrientation = if (this.photo.width > this.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                                 galleryModel.setCurrentPhotoId(photo.id)
                                 tvPath.text = "${galleryModel.getFullPath(photo.id)}${photo.name}"
-                                tvDate.text = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
+                                tvDate.text = "${photo.lastModified.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.lastModified.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
                                 tvSize.text = Tools.humanReadableByteCountSI(photo.caption.toLong()) + if (photo.width > 0) ",  ${photo.width} × ${photo.height}" else ""
                                 removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX
                                 useAsButton.isEnabled = photo.mimeType.startsWith("image")

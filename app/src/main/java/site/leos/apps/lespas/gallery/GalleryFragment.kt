@@ -620,7 +620,7 @@ class GalleryFragment: Fragment() {
                             }
                         }
 
-                        combinedList.sortedByDescending { it.media.photo.dateTaken }
+                        combinedList.sortedByDescending { it.media.photo.lastModified }
                     }.collect { result -> _medias.value = result }
                 }
             }
@@ -649,11 +649,11 @@ class GalleryFragment: Fragment() {
 
                 val contentUri = MediaStore.Files.getContentUri("external")
                 val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-                //val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+                val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
                 var projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
                     pathSelection,
-                    //dateSelection,
+                    dateSelection,
                     MediaStore.Files.FileColumns.DATE_ADDED,
                     MediaStore.Files.FileColumns.MEDIA_TYPE,
                     MediaStore.Files.FileColumns.MIME_TYPE,
@@ -664,6 +664,8 @@ class GalleryFragment: Fragment() {
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
+
+                // Sort gallery items by DATE_ADDED instead of DATE_TAKEN to address situation like a photo shot a long time ago being added to gallery recently and be placed in the bottom of the gallery list
                 val sortOrder = "${MediaStore.Files.FileColumns.DATE_ADDED} $order"
                 val queryBundle = Bundle()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -672,12 +674,13 @@ class GalleryFragment: Fragment() {
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, sortOrder)
                     queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
                 }
+
                 try {
                     (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) cr.query(contentUri, projection, queryBundle, null) else cr.query(contentUri, projection, selection, null, sortOrder))?.use { cursor ->
                         val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                         val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                         val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-                        //val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
+                        val dateTakenColumn = cursor.getColumnIndexOrThrow(dateSelection)
                         val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
                         val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
                         val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
@@ -686,7 +689,8 @@ class GalleryFragment: Fragment() {
                         val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                         val defaultZone = ZoneId.systemDefault()
                         var mimeType: String
-                        var date: Long
+                        var dateAdded: Long
+                        var dateTaken: Long
                         var relativePath: String
 
                         var volumeColumn = 0
@@ -710,7 +714,10 @@ class GalleryFragment: Fragment() {
                             // Sometimes dateTaken is not available from system, use DATE_ADDED instead, DATE_ADDED does not has nano adjustment
                             if (date == 0L) date = cursor.getLong(dateAddedColumn) * 1000
 */
-                            date = cursor.getLong(dateAddedColumn)
+                            dateAdded = cursor.getLong(dateAddedColumn)
+                            dateTaken = cursor.getLong(dateTakenColumn)
+                            // Sometimes dateTaken is not available from system, use DATE_ADDED instead, DATE_ADDED does not has nano adjustment
+                            if (dateTaken == 0L) dateTaken = dateAdded * 1000
 
                             // TODO might need to put this type checking routine to background
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -740,13 +747,12 @@ class GalleryFragment: Fragment() {
                                             albumId = FROM_DEVICE_GALLERY,
                                             name = cursor.getString(nameColumn) ?: "",
                                             // Use system default zone for time display, sorting and grouping by date in Gallery list
-                                            //dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
-                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),      // DATE_ADDED does not have nano adjustment
-                                            lastModified = LocalDateTime.MIN,
+                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(dateTaken), defaultZone),          // DATE_TAKEN has nano adjustment
+                                            lastModified = LocalDateTime.ofInstant(Instant.ofEpochSecond(dateAdded), defaultZone),      // DATE_ADDED does not have nano adjustment
                                             width = cursor.getInt(widthColumn),
                                             height = cursor.getInt(heightColumn),
                                             mimeType = mimeType,
-                                            caption = cursor.getString(sizeColumn),               // Saving photo size value in caption property as String
+                                            caption = cursor.getString(sizeColumn),               // Saving photo size value in caption property as String to avoid integer overflow
                                             orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in orientation property, keep original orientation, other fragments will handle the rotation, TODO video length?
                                         ),
                                         remotePath = "",    // Local media
@@ -761,11 +767,11 @@ class GalleryFragment: Fragment() {
                     }
                 } catch (_: Exception) { }
 
-                // Emitting
+                // List is now sorted when querying the content store
                 //ensureActive()
                 //localMedias.sortWith(compareBy<LocalMedia, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.folder }.thenByDescending { it.media.photo.dateTaken })
-                ensureActive()
-                _local.value = localMedias
+
+                _local.emit(localMedias)
             }.apply { invokeOnCompletion { loadJob = null }}
         }
 
