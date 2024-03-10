@@ -602,7 +602,7 @@ class GalleryFragment: Fragment() {
                                             //Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
                                             existed.location = LocalMedia.IS_BOTH
                                             existed.remoteFileId = archiveItem.media.photo.id
-                                            existed.media.photo.eTag = archiveItem.media.photo.eTag
+                                            //existed.media.photo.eTag = archiveItem.media.photo.eTag
                                         } ?: run {
                                             //Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name} ${archiveItem.media.photo.id}",)
                                             combinedList.add(archiveItem)

@@ -60,6 +60,7 @@ data class Photo(
 
         const val ETAG_NOT_YET_UPLOADED = ""
         const val ETAG_FAKE = "1"
+        const val ETAG_ARCHIVE = "Z"
 
         // shareId property bits
         const val DEFAULT_PHOTO_FLAG = 0

@@ -636,7 +636,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 folder = if (path.isEmpty()) "/" else path.substringBefore('/'),                                         // first segment of file path
                                 media = RemotePhoto(
                                     Photo(
-                                        id = dav.fileId, albumId = dav.albumId, name = dav.name.substringAfterLast('/'), eTag = dav.eTag, mimeType = dav.contentType,
+                                        id = dav.fileId, albumId = "", name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
                                         dateTaken = dav.dateTaken, lastModified = dav.modified,
                                         width = dav.width, height = dav.height, orientation = dav.orientation,
                                         latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,

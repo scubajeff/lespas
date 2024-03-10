@@ -806,8 +806,8 @@ object Tools {
             with(localMedia.media.photo) {
                 content += String.format(
                     Locale.ROOT,
-                    "{\"id\":\"%s\",\"albumId\":\"%s\",\"name\":\"%s\",\"eTag\":%s,\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
-                    id, albumId, name, eTag,
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
+                    id, name,
                     // Save timestamp in UTC timezone to avoid time zone offset difference when a group of photos are taking in different places around the world
                     dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), lastModified.toInstant(ZoneOffset.UTC).toEpochMilli(),
                     mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
@@ -835,9 +835,9 @@ object Tools {
                                     NCShareViewModel.RemotePhoto(
                                         photo = Photo(
                                             id = getString("id"),
-                                            albumId = getString("albumId"),
+                                            albumId = "",    //getString("albumId"),
                                             name = getString("name"),
-                                            eTag = "\"${getString("eTag")}\"",
+                                            eTag = Photo.ETAG_ARCHIVE,  //"\"${getString("eTag")}\"",
                                             mimeType = getString("mime"),
                                             // Timestamps are saved in UTC timezone in archiveToJSONString()
                                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), ZoneId.of("Z")),
