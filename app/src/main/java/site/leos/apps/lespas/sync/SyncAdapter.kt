@@ -113,8 +113,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val contentMetaUpdatedNeeded = mutableSetOf<String>()
     private val blogUpdateNeeded = mutableSetOf<String>()
     private var prefBackupNeeded = false
-    private var archiveETagNeeded = false
     private var workingAction: Action? = null
+
+    private val snapshotDeletion = mutableListOf<String>()
+    private val snapshotAddition = mutableListOf<GalleryFragment.LocalMedia>()
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
 
@@ -133,7 +135,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             if (sp.getBoolean(application.getString(R.string.pictures_backup_pref_key), false)) backup(picturesBase)
 */
             backupGallery()
-            if (archiveETagNeeded) fetchArchiveETag()
+            updateArchiveSnapshot()
             if (prefBackupNeeded) backupPreference()
 
             // Clear status counters
@@ -213,9 +215,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             Log.e(TAG, e.stackTraceToString())
         } finally {
             // Make sure meta get updated by adding them to action database
-            metaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", it, "", "", 0, 0)) }
-            contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", it, "", "", 0, 0)) }
-            if (prefBackupNeeded) actionRepository.addAction(Action(null, Action.ACTION_BACKUP_PREFERENCE, "", "", "", "", 0, 0))
+            metaUpdatedNeeded.forEach { actionRepository.addAction(Action(id = null, action = Action.ACTION_UPDATE_THIS_ALBUM_META, folderName = it, date = 0)) }
+            contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(id = null, action = Action.ACTION_UPDATE_THIS_CONTENT_META, folderName =  it, date = 0)) }
+            if (prefBackupNeeded) actionRepository.addAction(Action(id =null, action = Action.ACTION_BACKUP_PREFERENCE, date = 0))
 
             if (syncResult.stats.numIoExceptions > 0 || syncResult.stats.numAuthExceptions > 0) reportStage(Action.SYNC_RESULT_ERROR_GENERAL)
         }
@@ -352,8 +354,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
                     // Property fileName holds the camera archive file's path, relative to archiveBase
                     webDav.delete("${userBase}/${action.fileName}")
+                    snapshotDeletion.add(action.fileName)
                 }
-                Action.ACTION_FETCH_ARCHIVE_FOLDER_ETAG -> { archiveETagNeeded = true }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                     // Property folderId holds the fake album id
@@ -1702,7 +1704,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var size: Long
         var mDate: Long
         val photo = Photo(albumId = "", dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
-        val addition = mutableListOf<GalleryFragment.LocalMedia>()
 
         backupSettingRepository.getEnabled().forEach {
             if (it.lastBackup == BackupSetting.NOT_YET) return@forEach
@@ -1861,7 +1862,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Use system default zone for time display, sorting and grouping by date in Gallery list
                     photo.dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(mDate), ZoneId.systemDefault())
                     photo.lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn) * 1000), ZoneId.systemDefault())
-                    addition.add(0,
+                    snapshotAddition.add(0,
                         GalleryFragment.LocalMedia(
                             location = GalleryFragment.LocalMedia.IS_REMOTE,
                             folder = it.folder,
@@ -1905,34 +1906,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // Report finished status
         reportBackupStatus(" ", 0L, 0, 0)
-
-        // Save new backups to local archive snapshot file, avoid fetching server archive
-        if (addition.isNotEmpty()) {
-            archiveETagNeeded = true
-            File(localBaseFolder, NCShareViewModel.ARCHIVE_SNAPSHOT_FILE).let { file ->
-                if (file.exists()) {
-                    var jsonString: String
-                    file.reader().use { jsonString = it.readText() }
-
-                    Tools.jsonToArchiveList(jsonString, archiveBase).let { oldList -> file.writer().use { it.write(Tools.archiveToJSONString(addition.plus(oldList))) }}
-                }
-            }
-        }
-    }
-
-    private fun fetchArchiveETag() {
-        try {
-            webDav.list("${lespasBase}${ARCHIVE_BASE}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
-                if (davs.isNotEmpty()) {
-                    sp.edit().run {
-                        putString(LATEST_ARCHIVE_FOLDER_ETAG, davs[0].eTag)
-                        apply()
-                    }
-                }
-            }
-
-            archiveETagNeeded = false
-        } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun backupPreference() {
@@ -2022,6 +1995,50 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         webDav.upload(Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(albumId)), "$lespasBase/${albumName}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
 
         blogUpdateNeeded.add(albumId)
+    }
+
+    private fun updateArchiveSnapshot() {
+        var archiveETagNeeded = false
+        if (snapshotAddition.isNotEmpty() || snapshotDeletion.isNotEmpty()) {
+            try {
+                File(localBaseFolder, NCShareViewModel.ARCHIVE_SNAPSHOT_FILE).let { file ->
+                    if (file.exists()) {
+                        var jsonString: String
+                        file.reader().use { jsonString = it.readText() }
+
+                        Tools.jsonToArchiveList(jsonString, archiveBase).let { oldList ->
+                            file.writer().use {
+                                it.write(Tools.archiveToJSONString(
+                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> "${item.media.remotePath}/${item.media.photo.name}" !in snapshotDeletion }).let { subList ->
+                                        if (snapshotAddition.isEmpty()) subList else snapshotAddition.plus(subList)
+                                    }
+                                ))
+                            }
+                        }
+
+                        archiveETagNeeded = true
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                archiveETagNeeded = false
+            }
+
+            if (archiveETagNeeded) fetchArchiveETag()
+        }
+    }
+
+    private fun fetchArchiveETag() {
+        try {
+            webDav.list("${lespasBase}${ARCHIVE_BASE}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
+                if (davs.isNotEmpty()) {
+                    sp.edit().run {
+                        putString(LATEST_ARCHIVE_FOLDER_ETAG, davs[0].eTag)
+                        apply()
+                    }
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun downloadAlbumMeta(album: Album): Meta? {
