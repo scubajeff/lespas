@@ -329,6 +329,8 @@ object Tools {
     private const val wechatPattern = "^mmexport([0-9]{13}).*"
     // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss
     private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
+    private const val whatsappPattern = ".*-([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])-.*"
+    private const val aperturePattern = "^([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-([01][0-9]|2[0-3])-([0-5][0-9])-([0-5][0-9])-([0-9]{3}).*"
     fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
@@ -337,7 +339,15 @@ object Tools {
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
                 if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
-                else null
+                else {
+                    matcher = Pattern.compile(whatsappPattern).matcher(fileName)
+                    if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} 00:00:00" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                    else {
+                        matcher = Pattern.compile(aperturePattern).matcher(fileName)
+                        if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${group(7)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss SSS"))
+                        else null
+                    }
+                }
             }
         } catch (e: Exception) { null }
     }
