@@ -25,18 +25,30 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ImageDecoder
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Parcelable
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
-import android.view.*
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
@@ -68,11 +80,21 @@ import java.text.CharacterIterator
 import java.text.Collator
 import java.text.DecimalFormat
 import java.text.StringCharacterIterator
-import java.time.*
+import java.time.DateTimeException
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
 import java.util.regex.Pattern
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 object Tools {
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic", "x-dcraw", "x-sony-arw", "x-sony-sr2", "x-sony-srf", "x-adobe-dng", "x-fuji-raf", "x-canon-cr2", "x-canon-crw", "x-nikon-nef", "x-olympus-orf", "x-panasonic-raw", "x-pentax-pef", "x-sigma-x3f", "x-kodak-dcr", "x-kodak-k25", "x-kodak-kdc", "x-minolta-mrw")
@@ -304,6 +326,8 @@ object Tools {
     private const val wechatPattern = "^mmexport([0-9]{13}).*"
     // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss
     private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
+    private const val whatsappPattern = ".*-([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])-.*"
+    private const val aperturePattern = "^([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-([01][0-9]|2[0-3])-([0-5][0-9])-([0-5][0-9])-([0-9]{3}).*"
     fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
@@ -312,7 +336,15 @@ object Tools {
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
                 if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
-                else null
+                else {
+                    matcher = Pattern.compile(whatsappPattern).matcher(fileName)
+                    if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} 00:00:00" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                    else {
+                        matcher = Pattern.compile(aperturePattern).matcher(fileName)
+                        if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${group(7)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss SSS"))
+                        else null
+                    }
+                }
             }
         } catch (e: Exception) { null }
     }
