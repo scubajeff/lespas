@@ -552,7 +552,7 @@ object Tools {
         return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
             1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "" else context.getString(R.string.local_base)
             2 -> "/DCIM"
-            3 -> "/Backup"
+            3 -> SyncAdapter.ARCHIVE_BASE
             else -> ""
         }
     }
@@ -807,12 +807,12 @@ object Tools {
             with(localMedia.media.photo) {
                 content += String.format(
                     Locale.ROOT,
-                    "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"remotePath\":\"%s\",\"folder\":\"%s\",\"volume\":\"%s\",\"fullPath\":\"%s\",\"appName\":\"%s\",\"remoteFileId\":\"%s\"},",
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"volume\":\"%s\",\"fullPath\":\"%s\"},",
                     id, name,
                     // When retrieving date from device Gallery in GalleryFragment's asGallery(), local default timezone was used, have to use it here too so that the result timestamp is the same as retrieved from photo's EXIF
                     dateTaken.toInstant(defaultOffset).toEpochMilli(), lastModified.toInstant(defaultOffset).toEpochMilli(),
                     mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
-                    localMedia.media.remotePath, localMedia.folder, localMedia.volume, localMedia.fullPath, localMedia.appName, localMedia.remoteFileId,
+                    localMedia.volume, localMedia.fullPath,
                 )
             }
         }
@@ -820,9 +820,11 @@ object Tools {
         return content.dropLast(1) + "]}}"
     }
 
-    fun jsonToArchiveList(jsonString: String): List<GalleryFragment.LocalMedia> {
+    fun jsonToArchiveList(jsonString: String, archiveBase: String): List<GalleryFragment.LocalMedia> {
         val result = mutableListOf<GalleryFragment.LocalMedia>()
         val defaultZone = ZoneId.systemDefault()
+        var volume: String
+        var fullPath: String
 
         try {
             if (jsonString.isNotEmpty()) {
@@ -830,10 +832,13 @@ object Tools {
                     val photos = archiveJSON.getJSONArray("photos")
                     for (i in 0 until photos.length()) {
                         photos.getJSONObject(i).run {
+                            volume = getString("volume")
+                            fullPath = getString("fullPath").dropLast(1)
+
                             result.add(
                                 GalleryFragment.LocalMedia(
                                     GalleryFragment.LocalMedia.IS_REMOTE,
-                                    getString("folder"),
+                                    if (fullPath.isEmpty()) volume else fullPath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         photo = Photo(
                                             id = getString("id"),
@@ -853,12 +858,11 @@ object Tools {
                                             altitude = getDouble("altitude"),
                                             bearing = getDouble("bearing"),
                                         ),
-                                        remotePath = getString("remotePath")
+                                        remotePath = "${archiveBase}/${volume}/${fullPath}"
                                     ),
-                                    getString("volume"),
-                                    getString("fullPath"),
-                                    getString("appName"),
-                                    getString("remoteFileId")
+                                    volume = volume,
+                                    fullPath = "${fullPath}/",
+                                    appName = if (fullPath.isEmpty()) volume else fullPath.substringAfterLast('/'),
                                 )
                             )
                         }

@@ -98,6 +98,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private lateinit var baseUrl: String
     private lateinit var userBase: String
     private lateinit var lespasBase: String
+    private lateinit var archiveBase: String
     private lateinit var localBaseFolder: String
     private lateinit var token: String
     private var blogSiteName = ""
@@ -241,6 +242,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             userBase = "${baseUrl}${application.getString(R.string.dav_files_endpoint)}${userName}"
             lespasBase = "${userBase}${Tools.getRemoteHome(application)}"
+            archiveBase = Tools.getArchiveBase(application)
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
@@ -1863,7 +1865,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         GalleryFragment.LocalMedia(
                             location = GalleryFragment.LocalMedia.IS_REMOTE,
                             folder = it.folder,
-                            NCShareViewModel.RemotePhoto(photo = photo.copy(), remotePath = "${Tools.getRemoteHome(application)}/${ARCHIVE_BASE}/${deviceModel}/${it.folder}/${relativePath}"),
+                            NCShareViewModel.RemotePhoto(photo = photo.copy(), remotePath = "${archiveBase}/${deviceModel}/${it.folder}/${relativePath}"),
                             volume = deviceModel,
                             fullPath = "${it.folder}/${relativePath}/",
                             appName = relativePath.substringAfterLast('/'),
@@ -1912,7 +1914,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     var jsonString: String
                     file.reader().use { jsonString = it.readText() }
 
-                    Tools.jsonToArchiveList(jsonString).let { oldList -> file.writer().use { it.write(Tools.archiveToJSONString(addition.plus(oldList))) }}
+                    Tools.jsonToArchiveList(jsonString, archiveBase).let { oldList -> file.writer().use { it.write(Tools.archiveToJSONString(addition.plus(oldList))) }}
                 }
             }
         }

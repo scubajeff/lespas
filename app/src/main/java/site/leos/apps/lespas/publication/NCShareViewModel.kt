@@ -609,7 +609,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 if (content.isNotEmpty()) {
                     // If snapshot file exists and has valid content, try using it
-                    result.addAll(Tools.jsonToArchiveList(content))
+                    result.addAll(Tools.jsonToArchiveList(content, archiveBase))
 
                     // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
                     try {
@@ -631,14 +631,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Snapshot is not available or it's out of date
                 var path = ""
+                var volume: String
                 result.clear()
                 webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                     if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
+                        volume = dav.name.substringAfter('/').substringBefore('/')
                         path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/', "")
                         result.add(
                             GalleryFragment.LocalMedia(
                                 GalleryFragment.LocalMedia.IS_REMOTE,
-                                folder = if (path.isEmpty()) "/" else path.substringBefore('/'),                                         // first segment of file path
+                                folder = if (path.isEmpty()) volume else path.substringBefore('/'),                                         // first segment of file path
                                 media = RemotePhoto(
                                     Photo(
                                         id = dav.fileId, albumId = "", name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
@@ -650,9 +652,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     ),
                                     remotePath = archiveBase + dav.name.substringBeforeLast('/')
                                 ),
-                                volume = dav.name.substringAfter('/').substringBefore('/'),                                      // volume name of archive item is device model name
+                                volume = volume,                                      // volume name of archive item is device model name
                                 fullPath = "$path/",
-                                appName = if (path.isEmpty()) "/" else path.substringAfterLast('/'),                                      // last segment of file path
+                                appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),                                      // last segment of file path
                             )
                         )
                     } else {
