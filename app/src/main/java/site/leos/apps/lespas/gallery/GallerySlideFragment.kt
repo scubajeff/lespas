@@ -105,13 +105,10 @@ class GallerySlideFragment : Fragment() {
     private var nextInLine = ""
     private val handler = Handler(Looper.getMainLooper())
 
-    private lateinit var remoteArchiveBaseFolder: String
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: ""
-        remoteArchiveBaseFolder = Tools.getCameraArchiveHome(requireContext())
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()))[VideoPlayerViewModel::class.java]
 
         mediaAdapter = MediaSlideAdapter(
