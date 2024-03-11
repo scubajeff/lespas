@@ -363,14 +363,14 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     LESPAS_LONGITUDE -> res.longitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     LESPAS_ALTITUDE -> res.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     LESPAS_BEARING -> res.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
-                                    NC_IMAGE_RESOLUTION -> if (res.width == 0 && res.height == 0) {
+                                    NC_IMAGE_RESOLUTION, NC_IMAGE_RESOLUTION_28 -> if (res.width == 0 && res.height == 0) {
                                         // Fall back to Nextcloud exposed metadata of image resolution
                                         Pattern.quote("{\"width\":(.*),\"height\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (width, height) ->
                                             res.width = try { width.toInt() } catch (e: NumberFormatException) { 0 }
                                             res.height = try { height.toInt() } catch (e: NumberFormatException) { 0 }
                                         }
                                     }
-                                    NC_IMAGE_GPS -> if (res.latitude == Photo.NO_GPS_DATA && res.longitude == Photo.NO_GPS_DATA) {
+                                    NC_IMAGE_GPS, NC_IMAGE_GPS_28 -> if (res.latitude == Photo.NO_GPS_DATA && res.longitude == Photo.NO_GPS_DATA) {
                                         // Fall back to Nextcloud exposed metadata of image GPS location
                                         Pattern.quote("{\"latitude\":(.*),\"longitude\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (latitude, longitude) ->
                                             res.latitude = try { latitude.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
@@ -627,6 +627,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         //private const val OC_DATA_FINGERPRINT = "data-fingerprint"
         private const val NC_IMAGE_RESOLUTION = "file-metadata-size"
         private const val NC_IMAGE_GPS = "file-metadata-gps"
+        private const val NC_IMAGE_RESOLUTION_28 = "metadata-photos-size"
+        private const val NC_IMAGE_GPS_28 = "metadata-photos-gps"
 
         // LesPas properties
         const val LESPAS_DATE_TAKEN = "pictureDateTaken"
@@ -664,6 +666,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                   <oc:$LESPAS_CAPTION/>
                   <nc:$NC_IMAGE_RESOLUTION/>
                   <nc:$NC_IMAGE_GPS/>
+                  <nc:$NC_IMAGE_RESOLUTION_28/>
+                  <nc:$NC_IMAGE_GPS_28/>
                 </d:prop>
                 </d:propfind>
             """
