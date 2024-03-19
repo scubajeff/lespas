@@ -22,14 +22,25 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.MenuProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.*
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -49,7 +60,7 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionRepository
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.*
+import java.util.Locale
 
 class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
@@ -206,14 +217,19 @@ class LocationSearchHostFragment: Fragment() {
                             if (photo.country.isEmpty()) {
                                 try {
                                     nominatim.getFromLocation(latLong[0], latLong[1], 1)
-                                } catch (e: Exception) { null }?.get(0)?.let {
-                                    if (it.countryName != null) {
-                                        val locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
-                                        if (searchScope == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: Photo.NO_ADDRESS)
-                                        //Pair(it.countryName, locality)
-                                        LocationAddress(it.countryName, locality, it.countryCode)
-                                    } else null
-                                } ?: run { null }
+                                } catch (e: Exception) { null }?.let { result ->
+                                    if (result.isEmpty()) null
+                                    else {
+                                        result[0]?.let { address ->
+                                            if (address.countryName != null) {
+                                                val locality = address.locality ?: address.adminArea ?: Photo.NO_ADDRESS
+                                                if (searchScope == R.id.search_album) photoRepository.updateAddress(photo.id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
+                                                //Pair(it.countryName, locality)
+                                                LocationAddress(address.countryName, locality, address.countryCode)
+                                            } else null
+                                        }
+                                    }
+                                }
                             } else {
                                 LocationAddress(photo.country, photo.locality, photo.countryCode)
                             }?.apply {
