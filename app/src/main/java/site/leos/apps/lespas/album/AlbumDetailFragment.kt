@@ -1098,7 +1098,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.select_all -> {
-                for (i in 1 until mAdapter.itemCount) selectionTracker.select(mAdapter.getPhotoId(i))
+                selectionTracker.setItemsSelected(mAdapter.currentList.map { it.id }, true)
                 true
             }
             R.id.snapseed_edit-> {

@@ -31,7 +31,13 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.TypedValue
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.CheckedTextView
 import android.widget.EditText
@@ -47,7 +53,12 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.*
+import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnPreDraw
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
@@ -74,14 +85,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.gallery.GalleryFragment
-import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.LesPasDialogFragment
+import site.leos.apps.lespas.helper.LesPasEmptyView
+import site.leos.apps.lespas.helper.LesPasFastScroller
+import site.leos.apps.lespas.helper.LesPasGetMediaContract
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationListFragment
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.sync.*
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.lang.Integer.max
 import java.text.Collator
 import java.time.LocalDateTime
@@ -657,9 +676,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.select_all -> {
-                mAdapter.currentList.forEach {
-                    if (it.id != GalleryFragment.FROM_DEVICE_GALLERY) selectionTracker.select(it.id)
-                }
+                selectionTracker.setItemsSelected(mAdapter.currentList.map { it.id }.filter { it != GalleryFragment.FROM_DEVICE_GALLERY }, true)
                 true
             }
             R.id.rescan -> {

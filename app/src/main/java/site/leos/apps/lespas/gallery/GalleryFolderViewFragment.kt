@@ -553,7 +553,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.select_all -> {
-                mediaAdapter.currentList.forEach { if (it.photo.mimeType.isNotEmpty()) selectionTracker.select(it.photo.id) }
+                selectionTracker.setItemsSelected(mediaAdapter.currentList.filter { it.photo.mimeType.isNotEmpty() }.map { it.photo.id }, true)
                 true
             }
             else -> false
