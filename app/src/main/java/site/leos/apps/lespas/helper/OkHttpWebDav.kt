@@ -108,7 +108,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun createFolder(folderName: String): String {
         httpClient.newCall(Request.Builder().url(Uri.encode(folderName, "&=?/:")).method("MKCOL", null).build()).execute().use { response ->
             return when {
-                response.isSuccessful -> response.header("oc-fileid", "") ?: ""
+                response.isSuccessful -> response.header(HEADER_OC_FILEID, "") ?: ""
                 // Ignore folder already existed error
                 response.code == 405 -> ""
                 else-> throw OkHttpWebDavException(response)
@@ -444,7 +444,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun upload(source: String, dest: String, mimeType: String): Pair<String, String> {
         httpClient.newCall(Request.Builder().url(Uri.encode(dest, "&=?/:")).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-            if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+            if (response.isSuccessful) return Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
             else throw OkHttpWebDavException(response)
         }
     }
@@ -453,23 +453,23 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         source.length().run {
             if (this > CHUNK_SIZE) return chunksUpload(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this, ctx)
             else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "&=?/:")).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-                if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                if (response.isSuccessful) return Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
                 else throw OkHttpWebDavException(response)
             }
         }
     }
 
-    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long, ctx: Context): Pair<String, String> {
+    fun uploadWithSpecialHeader(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long, ctx: Context, specialHeaders: Headers): Pair<String, String> {
         contentResolver.openInputStream(source)?.use { input->
-            if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx)
-            else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "&=?/:")).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), size)).build()).execute().use { response->
-                if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+            if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx, specialHeaders)
+            else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "&=?/:")).headers(specialHeaders).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), size)).build()).execute().use { response->
+                if (response.isSuccessful) return Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
                 else throw OkHttpWebDavException(response)
             }
         } ?: throw IllegalStateException("InputStream provider crashed")
     }
 
-    private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long, ctx: Context): Pair<String, String> {
+    private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long, ctx: Context, specialHeaders: Headers? = null): Pair<String, String> {
         val chunkFolder = "${chunkUploadBase}/${source}"
         var result = Pair("", "")
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
@@ -537,8 +537,9 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
-                uploadHttpClient.newCall(Request.Builder().url(Uri.encode("${chunkFolder}/.file", "&=?/:")).method("MOVE", null).headers(Headers.Builder().add("DESTINATION", Uri.encode(dest, "&=?/:")).add("OVERWRITE", "T").build()).build()).execute().use { response ->
-                    if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                val header = Headers.Builder().add("DESTINATION", Uri.encode(dest, "&=?/:")).add("OVERWRITE", "T").apply { specialHeaders?.let { addAll(it) }}.build()
+                uploadHttpClient.newCall(Request.Builder().url(Uri.encode("${chunkFolder}/.file", "&=?/:")).method("MOVE", null).headers(header).build()).execute().use { response ->
+                    if (response.isSuccessful) result = Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
                     else {
                         // Upload interrupted, delete uploaded chunks
                         //try { httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "&=?/:")).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
@@ -559,7 +560,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         val copyHttpClient = httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).build()
         val hb = Headers.Builder().add("DESTINATION", Uri.encode(dest, "&=?/:")).add("OVERWRITE", "T")
         copyHttpClient.newCall(Request.Builder().url(Uri.encode(source, "&=?/:")).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
-            if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+            if (response.isSuccessful) return Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
             else throw OkHttpWebDavException(response)
         }
     }
@@ -629,6 +630,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         private const val NC_IMAGE_GPS = "file-metadata-gps"
         private const val NC_IMAGE_RESOLUTION_28 = "metadata-photos-size"
         private const val NC_IMAGE_GPS_28 = "metadata-photos-gps"
+        private const val HEADER_OC_FILEID = "oc-fileid"
+        private const val HEADER_OC_ETAG = "oc-etag"
 
         // LesPas properties
         const val LESPAS_DATE_TAKEN = "pictureDateTaken"

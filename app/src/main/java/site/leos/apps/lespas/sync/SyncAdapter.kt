@@ -44,6 +44,7 @@ import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import okhttp3.FormBody
+import okhttp3.Headers
 import okhttp3.Request
 import okhttp3.internal.http2.StreamResetException
 import okio.IOException
@@ -1702,7 +1703,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var photoUri: Uri
         var relativePath: String
         var size: Long
-        var mDate: Long
+        var cTimeStamp: Long
+        var mTimeStamp: Long
         val photo = Photo(albumId = "", dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
 
         backupSettingRepository.getEnabled().forEach {
@@ -1733,11 +1735,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                 val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
                 val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+                val dateTakenColumn = cursor.getColumnIndexOrThrow(dateTakenColumnName)
                 val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
                 val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
                 val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
                 val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
-                val dateTakenColumn = cursor.getColumnIndexOrThrow(dateTakenColumnName)
                 val orientationColumn = cursor.getColumnIndexOrThrow(orientationColumnName)
 
                 while(cursor.moveToNext()) {
@@ -1764,11 +1766,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     reportBackupStatus(photo.name, size, cursor.position, cursor.count)
 
+                    mTimeStamp = cursor.getLong(dateColumn)
+                    cTimeStamp = cursor.getLong(dateTakenColumn)
+                    if (cTimeStamp == 0L) cTimeStamp = mTimeStamp * 1000
+
                     // Indefinite while loop is for handling 404 and 409 (Caddy seems to prefer) error when folders needed to be created on server before hand
                     while(true) {
                         try {
-                            // TODO use latest Nextcloud special request header 'X-OC-MTime' 'X-OC-CTime' to save lastModified and dateTaken timestamp on server for later retrieval
-                            webDav.upload(photoUri, "${subFolder}/${relativePath}/${photo.name}", photo.mimeType, cr, size, application).apply {
+                            webDav.uploadWithSpecialHeader(photoUri, "${subFolder}/${relativePath}/${photo.name}", photo.mimeType, cr, size, application, Headers.headersOf("X-OC-MTime", mTimeStamp.toString(), "X-OC-CTime", cTimeStamp.toString())).apply {
                                 photo.id = first.substring(0, 8).toInt().toString()
                                 photo.eTag = second
                             }
@@ -1835,14 +1840,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         } catch (_: SecurityException) {}
                     }
 
-                    mDate = cursor.getLong(dateTakenColumn)
-                    if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
-
                     // Patch photo's DAV properties to accelerate future operations on archive
                     try {
                         webDav.patch(
                             "${subFolder}/${relativePath}/${photo.name}",
-                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +      // timestamp from Android MediaStore is in UTC timezone
+                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + cTimeStamp + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +      // timestamp from Android MediaStore is in UTC timezone
                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + photo.orientation + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + photo.width + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + photo.height + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
@@ -1856,12 +1858,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     } catch (_: Exception) {}
 
                     // Save latest timestamp after successful upload
-                    backupSettingRepository.updateLastBackupTimestamp(it.folder, cursor.getLong(dateColumn))
+                    backupSettingRepository.updateLastBackupTimestamp(it.folder, mTimeStamp)
 
                     // Update archive snapshot file addition list
                     // Use system default zone for time display, sorting and grouping by date in Gallery list
-                    photo.dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(mDate), ZoneId.systemDefault())
-                    photo.lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn) * 1000), ZoneId.systemDefault())
+                    photo.dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(cTimeStamp), ZoneId.systemDefault())
+                    photo.lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(mTimeStamp * 1000), ZoneId.systemDefault())
                     snapshotAddition.add(0,
                         GalleryFragment.LocalMedia(
                             location = GalleryFragment.LocalMedia.IS_REMOTE,
