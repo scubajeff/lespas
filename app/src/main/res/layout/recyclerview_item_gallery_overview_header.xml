@@ -63,10 +63,11 @@
         android:layout_height="wrap_content"
         app:layout_constraintBaseline_toBaselineOf="@id/name"
         app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginStart="@dimen/small_padding"
+        android:layout_marginLeft="@dimen/small_padding"
+        android:layout_marginRight="@dimen/big_padding"
         android:button="@drawable/gallery_backup_switch"
         android:tooltipText="@string/tooltips_enable_backup"
         android:contentDescription="@string/tooltips_enable_backup"
-        tools:ignore="UnusedAttribute" />
+        tools:ignore="RtlHardcoded,UnusedAttribute" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
