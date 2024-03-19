@@ -376,7 +376,7 @@
     <string name="gallery_backup_option_dialog_title">Settings of \'%1$s\'</string>
     <string name="label_remove_after_backup">Days to keep after backed up</string>
     <string name="label_exclude">Sub-folders excluded from backup</string>
-    <string name="msg_backup_status">Last backup finished at %1$s</string>
+    <string name="msg_backup_status">The last backup file dated at %1$s</string>
     <string name="msg_backup_existing">New photos in \'%1$s\' will be backup from now on. There are %2$,d photos in device right now, with total size of %3$s. Do you want to back them up too?</string>
     <string name="msg_archive_location">You can find archive on server in folder %1$s</string>
     <string name="manage_media_access_permission_rationale">To allow Les Pas remove backed up files, you must grant it the Manage Media permission.</string>

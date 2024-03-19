@@ -399,7 +399,7 @@
     <string name="gallery_backup_option_dialog_title">Configurações de \'%1$s\'</string>
     <string name="label_remove_after_backup">Dias para manter após o backup</string>
     <string name="label_exclude">Subpastas excluídas do backup</string>
-    <string name="msg_backup_status">O último backup foi concluído em %1$s</string>
+    <string name="msg_backup_status">O último arquivo de backup data de %1$s</string>
     <string name="msg_archive_location">Você pode encontrar o arquivo no servidor na pasta %1$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que o Les Pas remova os arquivos de backup, você deve conceder a ele a permissão Manage Media (Gerenciar mídia).</string>
     <string name="confirm_empty_trash">Tem certeza de que deseja esvaziar a lixeira?</string>

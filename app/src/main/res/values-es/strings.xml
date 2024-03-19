@@ -337,7 +337,7 @@
     <string name="gallery_backup_option_dialog_title">Configuración de \'%1$s</string>
     <string name="label_remove_after_backup">Días de conservación tras la copia de seguridad</string>
     <string name="label_exclude">Subcarpetas excluidas de la copia de seguridad</string>
-    <string name="msg_backup_status">La última copia de seguridad finalizó en %1$s</string>
+    <string name="msg_backup_status">El último archivo de copia de seguridad data de %1$s</string>
     <string name="msg_archive_location">Puede encontrar el archivo en el servidor en la carpeta %1$s</string>
     <string name="manage_media_access_permission_rationale">Para permitir que Les Pas elimine los archivos de las copias de seguridad, debes concederle el permiso Gestionar medios.</string>
     <string name="confirm_empty_trash">¿Seguro que quieres vaciar la papelera?</string>
