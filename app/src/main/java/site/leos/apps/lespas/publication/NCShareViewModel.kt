@@ -618,18 +618,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     try {
                         webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
                             if (davs.isEmpty()) {
+                                // If we can't get latest archive folder eTag from server, use local snapshot
                                 _archive.emit(result)
                                 return@launch
                             } else {
                                 newETag = davs[0].eTag
                                 if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
-                                    //Log.e(">>>>>>>>", "refreshArchive: archive eTag matched, apply snapshot", )
+                                    // Server archive folder eTag matched, use local snapshot
                                     _archive.emit(result)
                                     return@launch
                                 }
                             }
                         }
-                    } catch (e: Exception) { e.printStackTrace() }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        if (result.isNotEmpty()) {
+                            // If we can't get latest archive folder eTag from server, use local snapshot
+                            _archive.emit(result)
+                            return@launch
+                        }
+                    }
                 }
 
                 // Snapshot is not available or it's out of date
@@ -673,8 +681,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 _archive.emit(result)
                 saveArchiveSnapshot(result, newETag)
             } catch (e: Exception) {
+                // Anything bad happen, like snapshot file damaged, server not available, signal upstream with endless archive refreshing
                 e.printStackTrace()
-                _archive.emit(result)
+                if (result.isNotEmpty()) _archive.emit(null)
             }
         }.apply { invokeOnCompletion { archiveFetchingJob = null }}
     }
