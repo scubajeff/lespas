@@ -101,7 +101,7 @@
     <string name="auto_replay_title">Reproduzir vídeo automaticamente</string>
     <string name="default_sort_order_title">Ordem padrão de classificação de fotos para o novo álbum</string>
 
-    <string name="gallery_as_album_title">Mostrar a galeria de dispositivos como um álbum</string>
+    <string name="gallery_as_album_title">Galeria exibida como um álbum</string>
 
     <string name="edit_header">Edit</string>
     <string name="snapseed_integration_title">Integração com Snapseed</string>
@@ -414,4 +414,5 @@
     <string name="msg_saved_location">As fotos serão salvas na pasta \"Download\".</string>
     <string name="tooltips_local_copy">Cópia local</string>
     <string name="tooltips_archive_copy">Cópia de arquivo</string>
+    <string name="show_archive_title">Mostrar o arquivo do servidor na Galeria</string>
 </resources>

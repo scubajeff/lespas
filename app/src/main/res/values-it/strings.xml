@@ -109,7 +109,7 @@
     <string name="auto_replay_title">Riproduci di nuovo il video automaticamente</string>
     <string name="default_sort_order_title">Ordine delle foto predefinito per nuovo album</string>
 
-    <string name="gallery_as_album_title">Mostra la galleria del dispositivo come album</string>
+    <string name="gallery_as_album_title">Galleria visualizzata come album</string>
 
     <string name="edit_header">Modifica</string>
     <string name="snapseed_integration_title">Integrazione con Snapseed</string>
@@ -417,4 +417,5 @@
     <string name="msg_saved_location">Le foto verranno salvate nella cartella \"Download\".</string>
     <string name="tooltips_local_copy">Copia locale</string>
     <string name="tooltips_archive_copy">Copia d\'archivio</string>
+    <string name="show_archive_title">Mostra l\'archivio del server nella Galleria</string>
 </resources>

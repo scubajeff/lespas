@@ -102,7 +102,7 @@
     <string name="auto_rotate_title">Rotation de l\'écran selon le format de la photo</string>
     <string name="auto_replay_title">Reprise automatique de la vidéo</string>
     <string name="default_sort_order_title">Ordre de tri des photos par défaut pour un nouvel album</string>
-    <string name="gallery_as_album_title">Afficher la galerie de périphériques sous forme d\'album</string>
+    <string name="gallery_as_album_title">Galerie présentée sous forme d\'album</string>
     <string name="edit_header">Retouche</string>
     <string name="snapseed_integration_title">Intégration de Snapseed</string>
     <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
@@ -387,4 +387,5 @@
     <string name="msg_saved_location">Les photos seront enregistrées dans le dossier \"Téléchargement\".</string>
     <string name="tooltips_local_copy">Copie locale</string>
     <string name="tooltips_archive_copy">Copie d\'archive</string>
+    <string name="show_archive_title">Afficher les archives du serveur dans la Galerie</string>
 </resources>

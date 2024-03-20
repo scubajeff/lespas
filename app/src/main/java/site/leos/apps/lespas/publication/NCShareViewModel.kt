@@ -601,6 +601,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Restore archive snapshot
                 var content = ""
 
+                ensureActive()
                 try {
                     File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).let { snapshotFile ->
                         if (snapshotFile.exists()) snapshotFile.reader().use { content = it.readText() }
@@ -609,9 +610,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 if (content.isNotEmpty()) {
                     // If snapshot file exists and has valid content, try using it
+                    ensureActive()
                     result.addAll(Tools.jsonToArchiveList(content, archiveBase))
 
                     // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
+                    ensureActive()
                     try {
                         webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
                             if (davs.isEmpty()) {
@@ -633,7 +636,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 var path = ""
                 var volume: String
                 result.clear()
+                ensureActive()
                 webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+                    ensureActive()
                     if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
                         volume = dav.name.substringAfter('/').substringBefore('/')
                         path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/', "")
@@ -662,7 +667,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (dav.isFolder && dav.name.isEmpty()) newETag = dav.eTag
                     }
                 }
+                ensureActive()
                 result.sortByDescending { it.media.photo.lastModified }
+                ensureActive()
                 _archive.emit(result)
                 saveArchiveSnapshot(result, newETag)
             } catch (e: Exception) {
@@ -670,6 +677,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 _archive.emit(result)
             }
         }.apply { invokeOnCompletion { archiveFetchingJob = null }}
+    }
+
+    fun stopRefreshingArchive() {
+        archiveFetchingJob?.cancel()
+        viewModelScope.launch { _archive.emit(null) }
     }
 
     private fun saveArchiveSnapshot(archiveList: List<GalleryFragment.LocalMedia>, newETag: String) {

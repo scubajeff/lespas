@@ -278,6 +278,7 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.auto_replay_perf_key),
                                 getString(R.string.auto_rotate_perf_key),
                                 getString(R.string.gallery_as_album_perf_key),
+                                getString(R.string.show_archive_perf_key),
                                 //getString(R.string.roll_list_first_perf_key),
                                 getString(R.string.snapseed_replace_pref_key),
                                 //getString(R.string.sync_pref_key),

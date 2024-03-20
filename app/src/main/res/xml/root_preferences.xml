@@ -66,6 +66,12 @@
             app:defaultValue="true" />
 
         <SwitchPreferenceCompat
+            app:key="@string/show_archive_perf_key"
+            app:title="@string/show_archive_title"
+            app:singleLineTitle="false"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
             app:key="@string/sync_deletion_perf_key"
             app:title="@string/sync_deletion_title"
             app:singleLineTitle="false"

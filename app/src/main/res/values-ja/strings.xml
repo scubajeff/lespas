@@ -175,7 +175,7 @@
     <string name="prefer_latest">最近の</string>
     <string name="prefer_random">ランダム (フォールバック)</string>
     <string name="http_toggle_helper_text">\u2B11プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
-    <string name="gallery_as_album_title">デバイスギャラリーをアルバムとして表示する</string>
+    <string name="gallery_as_album_title">アルバムとして表示されるギャラリー</string>
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
     <string name="auto_replay_title">ビデオを自動的に再生する</string>
@@ -350,4 +350,5 @@
     <string name="msg_saved_location">写真は「ダウンロード」フォルダに保存されます。</string>
     <string name="tooltips_local_copy">現地コピー</string>
     <string name="tooltips_archive_copy">アーカイブコピー</string>
+    <string name="show_archive_title">ギャラリーにサーバーアーカイブを表示する</string>
 </resources>

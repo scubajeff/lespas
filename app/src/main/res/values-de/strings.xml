@@ -88,7 +88,7 @@
     <string name="theme_auto_entries">Nach Systemeinstellung richten</string>
     <string name="auto_rotate_title">Bildschirm passend zum Bildseitenverhältnis drehen</string>
     <string name="auto_replay_title">Automatische Videowiedergabe</string>
-    <string name="gallery_as_album_title">Gerätegalerie als Album anzeigen</string>
+    <string name="gallery_as_album_title">Galerie als Album angezeigt</string>
 
     <string name="edit_header">Bearbeiten</string>
     <string name="snapseed_integration_title">Snapseed-Integration</string>
@@ -402,4 +402,5 @@
     <string name="msg_saved_location">Die Fotos werden im Ordner \"Download\" gespeichert.</string>
     <string name="tooltips_local_copy">Lokale Kopie</string>
     <string name="tooltips_archive_copy">Archivierte Kopie</string>
+    <string name="show_archive_title">Server-Archiv in der Galerie anzeigen</string>
 </resources>

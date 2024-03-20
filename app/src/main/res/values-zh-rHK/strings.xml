@@ -349,4 +349,5 @@
     <string name="msg_saved_location">照片將保存在 \"下載 \"文件夾中。</string>
     <string name="tooltips_local_copy">手機裏有該文檔</string>
     <string name="tooltips_archive_copy">服務器上有存檔</string>
+    <string name="show_archive_title">在圖庫中顯示服務器存檔</string>
 </resources>

@@ -144,7 +144,9 @@
     <string name="default_sort_order_title">Default photo sort order for new album</string>
 
     <string name="gallery_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
-    <string name="gallery_as_album_title">Show device gallery as an album</string>
+    <string name="gallery_as_album_title">Gallery shown as an album</string>
+    <string name="show_archive_perf_key" translatable="false">SHOW_ARCHIVE</string>
+    <string name="show_archive_title">Show server archive in Gallery</string>
     <string name="sync_deletion_perf_key" translatable="false">SYNC_GALLERY_DELETION</string>
     <string name="sync_deletion_title">Sync gallery deletion to server archive</string>
     <string name="sync_deletion_rational">To gain more flexibility of making sync decision on every deletion, you should grant Les Pas the Manage Media permission.</string>

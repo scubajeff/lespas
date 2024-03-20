@@ -126,7 +126,7 @@ class GalleryFragment: Fragment() {
         mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
-                galleryModel.reload()
+                galleryModel.reloadDeviceMediaStore()
             }
         }
 
@@ -396,7 +396,7 @@ class GalleryFragment: Fragment() {
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                 return when(menuItem.itemId) {
                     R.id.option_menu_archive -> {
-                        galleryModel.toggleArchive()
+                        galleryModel.toggleArchiveShownState()
                         true
                     }
                     else -> false
@@ -417,6 +417,8 @@ class GalleryFragment: Fragment() {
                 }
             }
         }
+
+        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.show_archive_perf_key), true)) galleryModel.toggleArchiveShownState()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -572,20 +574,10 @@ class GalleryFragment: Fragment() {
         val trash: StateFlow<List<LocalMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
-        private val _showArchive = MutableStateFlow(ARCHIVE_REFRESHING)
-        val showArchive: StateFlow<Int> = _showArchive
-        private val trigger = MutableStateFlow(false)
-
-        fun toggleArchive() {
-            // TODO can stop archive refreshing job
-            _showArchive.value = -_showArchive.value
-            trigger.value = !trigger.value
-        }
-
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 launch {
-                    combine(trigger, _local, imageModel.archive) { _, localMedia, archiveMedia ->
+                    combine(_local, imageModel.archive) { localMedia, archiveMedia ->
                         //Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
                         val combinedList = mutableListOf<LocalMedia>().apply { addAll(localMedia) }
 
@@ -624,8 +616,6 @@ class GalleryFragment: Fragment() {
                     }.collect { result -> _medias.value = result }
                 }
             }
-
-            imageModel.refreshArchive()
         }
 
         override fun onCleared() {
@@ -633,7 +623,7 @@ class GalleryFragment: Fragment() {
             super.onCleared()
         }
 
-        fun reload() {
+        fun reloadDeviceMediaStore() {
             loadJob?.cancel()
             asGallery(delayStart = true, order = defaultSortOrder)
         }
@@ -809,6 +799,18 @@ class GalleryFragment: Fragment() {
             uri.toString().let { uriString ->
                 setCurrentPhotoId(uriString)
                 _medias.value = listOf(LocalMedia(LocalMedia.IS_LOCAL, uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
+            }
+        }
+
+        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
+        val showArchive: StateFlow<Int> = _showArchive
+        fun toggleArchiveShownState() {
+            if (_showArchive.value == ARCHIVE_OFF) {
+                _showArchive.value = ARCHIVE_REFRESHING
+                imageModel.refreshArchive()
+            } else {
+                _showArchive.value = ARCHIVE_OFF
+                imageModel.stopRefreshingArchive()
             }
         }
 
