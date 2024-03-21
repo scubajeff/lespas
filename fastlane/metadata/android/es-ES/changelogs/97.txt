@@ -1,0 +1,2 @@
+* Vuelve la gestión de archivos, ahora puedes gestionar todas tus copias de seguridad desde todos tus dispositivos
+* Varias mejoras y correcciones de errores

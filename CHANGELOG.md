@@ -1,3 +1,10 @@
+## Version 2.9.8
+* Archive management is back, you can now manage all your backup from all your devices
+* Process more timestamp patterns in file name
+* Try fixing location search crash again
+* Show icons in toolbar overflow menu
+* Various improvements and bugs fixes
+
 ## Version 2.9.7
 * New settings when sharing photos to other apps
 * New function to export photos to phone's local storage

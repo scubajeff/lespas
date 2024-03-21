@@ -1,0 +1,2 @@
+* Die Archivverwaltung ist wieder da, Sie können jetzt alle Ihre Backups von allen Geräten aus verwalten.
+* Verschiedene Verbesserungen und Fehlerkorrekturen

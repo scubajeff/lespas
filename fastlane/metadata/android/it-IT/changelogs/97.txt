@@ -1,0 +1,2 @@
+* La gestione degli archivi è tornata, ora è possibile gestire tutti i backup da tutti i dispositivi.
+* Vari miglioramenti e correzioni di bug

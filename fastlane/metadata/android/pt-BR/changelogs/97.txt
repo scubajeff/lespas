@@ -1,0 +1,2 @@
+* O gerenciamento de arquivos está de volta, agora você pode gerenciar todos os seus backups de todos os seus dispositivos.
+* Vários aprimoramentos e correções de bugs

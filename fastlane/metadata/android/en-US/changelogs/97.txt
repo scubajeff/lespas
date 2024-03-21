@@ -1,0 +1,2 @@
+* Archive management is back, you can now manage all your backup from all your devices
+* Various improvements and bugs fixes
