@@ -22,11 +22,11 @@
         android:id="@+id/option_menu_calendar_view"
         android:icon="@drawable/ic_baseline_calendar_today_24"
         android:title="@string/tooltips_date_picker"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
     <item
         android:id="@+id/option_menu_empty_trash"
         android:icon="@drawable/ic_baseline_empty_trash_24"
         android:title="@string/option_menu_empty_trash"
         android:visible="false"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
 </menu>

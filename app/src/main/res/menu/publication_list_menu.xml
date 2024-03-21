@@ -21,13 +21,13 @@
         android:id="@+id/option_menu_refresh_publication"
         android:title="@string/item_refresh_publication"
         android:orderInCategory="97"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:icon="@drawable/ic_baseline_reload_24" />
 
     <item android:id="@+id/option_menu_refresh_progress"
         android:orderInCategory="98"
         android:title=""
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         app:actionLayout="@layout/menuitem_search_progress"
         android:visible="false" />
 </menu>

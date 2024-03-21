@@ -36,79 +36,122 @@
         android:id="@+id/option_menu_slideshow"
         android:title="@string/option_menu_slideshow"
         android:orderInCategory="7"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_play_arrow_24" />
+        app:showAsAction="never"
+        android:icon="@drawable/ic_baseline_play_arrow_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop" />
     <item android:id="@+id/option_menu_in_map"
         android:title="@string/option_menu_in_map"
         android:orderInCategory="8"
-        app:showAsAction="ifRoom"
+        app:showAsAction="never"
         android:icon="@drawable/ic_baseline_map_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:visible="false" />
     <item
         android:id="@+id/option_menu_bgm"
         android:title="@string/item_bgm"
+        android:icon="@drawable/ic_baseline_bgm_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="13"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_publish"
         android:title="@string/item_publish"
+        android:icon="@drawable/ic_baseline_publish_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="20"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_blog"
         android:title="@string/item_blog"
+        android:icon="@drawable/ic_baseline_blog_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="21"
         app:showAsAction="never"
         android:enabled="false" />
     <item
         android:id="@+id/option_menu_import_gpx"
         android:title="@string/item_geotag"
+        android:icon="@drawable/ic_baseline_gpx_import_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="25"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_export_gpx"
         android:title="@string/item_export_gpx"
+        android:icon="@drawable/ic_baseline_gpx_export_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="26"
         app:showAsAction="never"
         android:visible="false"/>
     <item
         android:id="@+id/option_menu_rename"
         android:title="@string/item_rename"
+        android:icon="@drawable/ic_baseline_rename_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="50"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
+        android:icon="@drawable/ic_baseline_sort_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="52"
         app:showAsAction="never">
         <menu>
             <item
                 android:id="@+id/option_menu_sortbydateasc"
                 android:checkable="true"
-                android:title="@string/item_dateasc"/>
+                android:title="@string/item_dateasc"
+                android:icon="@drawable/ic_baseline_sort_by_date_asc_24"
+                app:iconTint="@color/color_on_primary"
+                app:iconTintMode="src_atop" />
             <item
                 android:id="@+id/option_menu_sortbydatedesc"
                 android:checkable="true"
-                android:title="@string/item_datedesc"/>
+                android:title="@string/item_datedesc"
+                android:icon="@drawable/ic_baseline_sort_by_date_desc_24"
+                app:iconTint="@color/color_on_primary"
+                app:iconTintMode="src_atop" />
             <item
                 android:id="@+id/option_menu_sortbynameasc"
                 android:checkable="true"
-                android:title="@string/item_nameasc"/>
+                android:title="@string/item_nameasc"
+                android:icon="@drawable/ic_baseline_sort_by_name_asc_24"
+                app:iconTint="@color/color_on_primary"
+                app:iconTintMode="src_atop" />
             <item
                 android:id="@+id/option_menu_sortbynamedesc"
                 android:checkable="true"
-                android:title="@string/item_namedesc"/>
+                android:title="@string/item_namedesc"
+                android:icon="@drawable/ic_baseline_sort_by_name_desc_24"
+                app:iconTint="@color/color_on_primary"
+                app:iconTintMode="src_atop" />
         </menu>
     </item>
     <item
         android:id="@+id/option_menu_wide_list"
         android:title="@string/item_wide_list"
+        android:icon="@drawable/ic_baseline_meta_on_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="51"
         android:checkable="true"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_settings"
         android:title="@string/item_settings"
+        android:icon="@drawable/ic_baseline_setting_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:orderInCategory="100"
         app:showAsAction="never" />
 </menu>

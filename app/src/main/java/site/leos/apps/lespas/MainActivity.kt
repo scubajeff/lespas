@@ -18,6 +18,7 @@ package site.leos.apps.lespas
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -27,12 +28,16 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.StatFs
 import android.os.storage.StorageManager
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.menu.MenuBuilder
 import androidx.core.content.edit
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -173,6 +178,15 @@ class MainActivity : AppCompatActivity() {
 
         // Listener to any preference changes
         if (accounts.isNotEmpty()) sp.registerOnSharedPreferenceChangeListener(backupPreferenceListener)
+        addMenuProvider(object : MenuProvider {
+            @SuppressLint("RestrictedApi")
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                if (menu is MenuBuilder) (menu as MenuBuilder).setOptionalIconsVisible(true)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
+
+        })
     }
 
     override fun onResume() {

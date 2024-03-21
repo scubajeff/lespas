@@ -37,8 +37,10 @@
     <item android:id="@+id/option_menu_in_map"
         android:title="@string/option_menu_in_map"
         android:orderInCategory="96"
-        app:showAsAction="ifRoom"
+        app:showAsAction="never"
         android:icon="@drawable/ic_baseline_map_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop"
         android:visible="false"
         android:enabled="false" />
     <item
@@ -47,22 +49,28 @@
         android:orderInCategory="97"
         android:visible="false"
         android:enabled="false"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_play_arrow_24" />
+        app:showAsAction="never"
+        android:icon="@drawable/ic_baseline_play_arrow_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop" />
     <item
         android:id="@+id/option_menu_add_photo"
         android:title="@string/fab_add_photos"
         android:orderInCategory="98"
         android:visible="false"
         android:enabled="false"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_add_photo_24" />
+        app:showAsAction="never"
+        android:icon="@drawable/ic_baseline_add_photo_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop" />
     <item
         android:id="@+id/option_menu_show_meta"
         android:title="@string/item_show_meta"
         android:orderInCategory="100"
         android:visible="false"
         android:enabled="false"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_meta_off_24" />
+        app:showAsAction="never"
+        android:icon="@drawable/ic_baseline_meta_off_24"
+        app:iconTint="@color/color_on_primary"
+        app:iconTintMode="src_atop" />
 </menu>

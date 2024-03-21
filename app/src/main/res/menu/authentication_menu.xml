@@ -21,7 +21,7 @@
         android:id="@+id/option_menu_qr_scanner"
         android:title="@string/menu_item_qr_scanner_title"
         android:icon="@drawable/ic_baseline_qr_code_scanner_24"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:enabled="false"
         android:visible="false" />
 </menu>

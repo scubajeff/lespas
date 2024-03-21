@@ -21,11 +21,11 @@
 
     <item android:id="@+id/option_menu_share"
         android:title="@string/action_share"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:icon="@drawable/ic_baseline_share_24" />
     <item android:id="@+id/option_menu_lespas"
         android:title="@string/button_text_add_to_lespas"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:icon="@drawable/ic_baseline_footprint_24"
         android:visible="false" />
     <item android:id="@+id/option_menu_open_in_map_app"
