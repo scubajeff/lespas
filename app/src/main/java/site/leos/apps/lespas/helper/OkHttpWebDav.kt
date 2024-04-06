@@ -54,6 +54,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
 import java.io.InterruptedIOException
+import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.security.KeyStore
@@ -478,7 +479,6 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         try {
             var chunkName: String
             var index = 0L
-            var chunkSize = CHUNK_SIZE
 
             // Create upload folder on server
             httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "&=?/:")).method("MKCOL", null).build()).execute().use { response->
@@ -515,6 +515,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             // Upload chunks
             // Longer timeout adapting to slow connection
             val uploadHttpClient = httpClient.newBuilder().readTimeout(10, TimeUnit.MINUTES).writeTimeout(10, TimeUnit.MINUTES).build()
+            var chunkSize = CHUNK_SIZE
             while(index < size) {
                 if (sp.getBoolean(wifionlyKey, true)) {
                     if ((ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
@@ -525,6 +526,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 with(size - index) { if (this < CHUNK_SIZE) chunkSize = this }
                 //Log.e(">>>>>>", chunkName)
 
+                sleep(1000)
                 uploadHttpClient.newCall(Request.Builder().url(Uri.encode(chunkName, "&=?/:")).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
                     if (!response.isSuccessful) {
                         // Upload interrupted, delete uploaded chunks
