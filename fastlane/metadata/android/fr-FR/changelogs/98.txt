@@ -1,0 +1,3 @@
+* Correction de la non-concordance entre l'instantané local et l'archive du serveur après la suppression d'une image, ce qui provoquait l'affichage de fichiers fantômes dans la liste de la galerie.
+* Ajout d'une fonction de rafraîchissement forcé de la liste des archives
+* Diverses améliorations et corrections de bugs

@@ -1,0 +1,3 @@
+* Fehlende Übereinstimmung des lokalen Schnappschusses mit dem Server-Archiv nach dem Entfernen eines Bildes, wodurch Geisterdateien in der Galerieliste angezeigt wurden
+* Funktion zur erzwungenen Aktualisierung der Archivliste hinzugefügt
+* Verschiedene Verbesserungen und Fehlerkorrekturen

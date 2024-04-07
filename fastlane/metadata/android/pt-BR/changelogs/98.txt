@@ -1,0 +1,3 @@
+* Correção da incompatibilidade do instantâneo local com o arquivo do servidor após a remoção da imagem, causando a exibição de arquivos fantasmas na lista da Galeria.
+* Função adicionada para atualização forçada da lista de arquivos
+* Vários aprimoramentos e correções de bugs

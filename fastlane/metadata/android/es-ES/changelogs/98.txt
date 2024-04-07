@@ -1,0 +1,3 @@
+* Corregido el desajuste entre la instantánea local y el archivo del servidor tras eliminar la imagen, lo que provocaba que aparecieran archivos fantasma en la lista de la Galería.
+* Añadida la función de actualización forzada de la lista de archivos
+* Varias mejoras y correcciones de errores

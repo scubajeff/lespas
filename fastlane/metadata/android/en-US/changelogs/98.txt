@@ -1,0 +1,3 @@
+* Fixed local snapshot mismatch with server archive after picture removed, causing ghost files showing in Gallery list
+* Added function to forced refresh archive list
+* Various improvements and bugs fixes
