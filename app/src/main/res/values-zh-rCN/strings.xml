@@ -109,6 +109,8 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed修图 - 替换</string>
     <string name="msg_no_media_found">没找到任何图片或视频。</string>
     <string name="option_menu_empty_trash">清空回收站</string>
+    <string name="option_menu_show_archive">存档</string>
+    <string name="option_menu_refresh_archive">刷新存档</string>
     <string name="gallery_name">图库</string>
     <string name="same_file_found">同名文件已存在。</string>
     <string name="verify_ssl_certificate_title">SSL证书验证失败</string>

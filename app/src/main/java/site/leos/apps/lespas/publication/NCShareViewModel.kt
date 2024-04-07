@@ -592,7 +592,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
-    fun refreshArchive() {
+    fun refreshArchive(forcedRefresh: Boolean = false) {
         if (archiveFetchingJob == null) archiveFetchingJob = viewModelScope.launch(Dispatchers.IO) {
             var newETag = ""
             val result = mutableListOf<GalleryFragment.LocalMedia>()
@@ -601,41 +601,45 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Restore archive snapshot
                 var content = ""
 
-                ensureActive()
-                try {
-                    File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).let { snapshotFile ->
-                        if (snapshotFile.exists()) snapshotFile.reader().use { content = it.readText() }
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-
-                if (content.isNotEmpty()) {
-                    // If snapshot file exists and has valid content, try using it
-                    ensureActive()
-                    result.addAll(Tools.jsonToArchiveList(content, archiveBase))
-
-                    // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
+                if (!forcedRefresh) {
                     ensureActive()
                     try {
-                        webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
-                            if (davs.isEmpty()) {
-                                // If we can't get latest archive folder eTag from server, use local snapshot
-                                _archive.emit(result)
-                                return@launch
-                            } else {
-                                newETag = davs[0].eTag
-                                if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
-                                    // Server archive folder eTag matched, use local snapshot
-                                    _archive.emit(result)
-                                    return@launch
-                                }
-                            }
+                        File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).let { snapshotFile ->
+                            if (snapshotFile.exists()) snapshotFile.reader().use { content = it.readText() }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        if (result.isNotEmpty()) {
-                            // If we can't get latest archive folder eTag from server, use local snapshot
-                            _archive.emit(result)
-                            return@launch
+                    }
+
+                    if (content.isNotEmpty()) {
+                        // If snapshot file exists and has valid content, try using it
+                        ensureActive()
+                        result.addAll(Tools.jsonToArchiveList(content, archiveBase))
+
+                        // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
+                        ensureActive()
+                        try {
+                            webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
+                                if (davs.isEmpty()) {
+                                    // If we can't get latest archive folder eTag from server, use local snapshot
+                                    _archive.emit(result)
+                                    return@launch
+                                } else {
+                                    newETag = davs[0].eTag
+                                    if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
+                                        // Server archive folder eTag matched, use local snapshot
+                                        _archive.emit(result)
+                                        return@launch
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            if (result.isNotEmpty()) {
+                                // If we can't get latest archive folder eTag from server, use local snapshot
+                                _archive.emit(result)
+                                return@launch
+                            }
                         }
                     }
                 }

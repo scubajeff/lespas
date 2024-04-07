@@ -17,6 +17,8 @@
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="option_menu_empty_trash">Esvaziar a lixeira</string>
+    <string name="option_menu_show_archive">Arquivo</string>
+    <string name="option_menu_refresh_archive">Atualizar arquivo</string>
     <string name="gallery_name">Galeria</string>
 
     <!-- MainActivity -->

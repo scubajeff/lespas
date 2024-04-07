@@ -399,6 +399,10 @@ class GalleryFragment: Fragment() {
                         galleryModel.toggleArchiveShownState()
                         true
                     }
+                    R.id.option_menu_archive_forced_refresh -> {
+                        galleryModel.toggleArchiveShownState(forcedRefresh = true)
+                        true
+                    }
                     else -> false
                 }
             }
@@ -620,6 +624,7 @@ class GalleryFragment: Fragment() {
 
         override fun onCleared() {
             loadJob?.cancel()
+            imageModel.stopRefreshingArchive()
             super.onCleared()
         }
 
@@ -804,10 +809,11 @@ class GalleryFragment: Fragment() {
 
         private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         val showArchive: StateFlow<Int> = _showArchive
-        fun toggleArchiveShownState() {
+        fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
+            if (forcedRefresh) _showArchive.value = ARCHIVE_OFF
             if (_showArchive.value == ARCHIVE_OFF) {
                 _showArchive.value = ARCHIVE_REFRESHING
-                imageModel.refreshArchive()
+                imageModel.refreshArchive(forcedRefresh)
             } else {
                 _showArchive.value = ARCHIVE_OFF
                 imageModel.stopRefreshingArchive()

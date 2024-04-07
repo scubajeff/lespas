@@ -372,6 +372,8 @@
     <string name="yesterday">Yesterday</string>
     <string name="option_menu_show_all">Show all</string>
     <string name="option_menu_empty_trash">Empty trash</string>
+    <string name="option_menu_show_archive">Archive</string>
+    <string name="option_menu_refresh_archive">Refresh archive</string>
     <string name="gallery_name">Gallery</string>
     <string name="camera_roll_name">Camera</string>
     <string name="trash_name">Trash</string>

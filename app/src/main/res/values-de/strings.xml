@@ -18,6 +18,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
     <string name="option_menu_empty_trash">Leeren Sie den Papierkorb</string>
+    <string name="option_menu_show_archive">Archiv</string>
+    <string name="option_menu_refresh_archive">Archiv aktualisieren</string>
     <string name="gallery_name">Galerie</string>
 
     <!-- MainActivity -->

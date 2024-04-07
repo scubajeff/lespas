@@ -110,6 +110,8 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="msg_no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
     <string name="option_menu_empty_trash">Vaciar la papelera</string>
+    <string name="option_menu_show_archive">Archivo</string>
+    <string name="option_menu_refresh_archive">Actualizar archivo</string>
     <string name="gallery_name">Galería</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
     <string name="verify_ssl_certificate_title">Certificado SSL defectuoso</string>

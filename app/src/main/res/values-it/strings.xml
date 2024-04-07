@@ -17,6 +17,8 @@
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="option_menu_empty_trash">Svuotare il cestino</string>
+    <string name="option_menu_show_archive">Archivio</string>
+    <string name="option_menu_refresh_archive">Aggiornare l\'archivio</string>
     <string name="gallery_name">Galleria</string>
 
     <!-- MainActivity -->

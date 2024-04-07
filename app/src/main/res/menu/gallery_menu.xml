@@ -21,6 +21,12 @@
     <item
         android:id="@+id/option_menu_archive"
         android:icon="@drawable/ic_baseline_archive_off_24"
-        android:title="archive"
+        android:title="@string/option_menu_show_archive"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/option_menu_archive_forced_refresh"
+        android:icon="@drawable/ic_baseline_archive_refreshing_animated_24"
+        app:iconTint="@color/color_on_primary"
+        android:title="@string/option_menu_refresh_archive"
+        app:showAsAction="never" />
 </menu>
