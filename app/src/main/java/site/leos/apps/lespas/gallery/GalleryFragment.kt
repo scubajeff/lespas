@@ -257,7 +257,7 @@ class GalleryFragment: Fragment() {
                 }
             }
             launch {
-                galleryModel.strippingEXIF.collect { strip ->
+                galleryModel.strippingEXIF.collect {
                     waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
                         imageLoaderModel.cancelShareOut()
                         shareOutBackPressedCallback.isEnabled = false
@@ -564,11 +564,10 @@ class GalleryFragment: Fragment() {
                 context.contentResolver, imageModel, actionModel,
                 Tools.getPlayMarkDrawable(context, 0.32f / spanCount),
                 Tools.getSelectedMarkDrawable(context, 0.25f / spanCount),
-                Tools.getLocalRoot(context),
             ))!!
         }
     }
-    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable, private val localBaseFolder: String): ViewModel() {
+    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable): ViewModel() {
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
