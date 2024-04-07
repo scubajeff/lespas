@@ -355,7 +355,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
                     // Property fileName holds the camera archive file's path, relative to archiveBase
                     webDav.delete("${userBase}/${action.fileName}")
-                    snapshotDeletion.add(action.fileName)
+                    snapshotDeletion.add(action.fileName.substringAfterLast('/'))
                 }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
@@ -2000,7 +2000,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateArchiveSnapshot() {
-        var archiveETagNeeded = false
         if (snapshotAddition.isNotEmpty() || snapshotDeletion.isNotEmpty()) {
             try {
                 File(localBaseFolder, NCShareViewModel.ARCHIVE_SNAPSHOT_FILE).let { file ->
@@ -2011,22 +2010,21 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Tools.jsonToArchiveList(jsonString, archiveBase).let { oldList ->
                             file.writer().use {
                                 it.write(Tools.archiveToJSONString(
-                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> "${item.media.remotePath}/${item.media.photo.name}" !in snapshotDeletion }).let { subList ->
+                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> item.media.photo.name !in snapshotDeletion }).let { subList ->
                                         if (snapshotAddition.isEmpty()) subList else snapshotAddition.plus(subList)
                                     }
                                 ))
                             }
                         }
-
-                        archiveETagNeeded = true
                     }
                 }
+
+                snapshotDeletion.clear()
+                snapshotAddition.clear()
+                fetchArchiveETag()
             } catch (e: Exception) {
                 e.printStackTrace()
-                archiveETagNeeded = false
             }
-
-            if (archiveETagNeeded) fetchArchiveETag()
         }
     }
 
