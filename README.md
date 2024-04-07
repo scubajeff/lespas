@@ -7,6 +7,8 @@
 
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
+Although it use Nextcloud as storage backend, you don't have to install any Nextcloud app on server for Les Pas to function. It's a perfect solution if you have limited knowledge or authorization to alter your Nextcloud configuration.
+
 Features:
 - ***Managing, Syncing and Archiving***
     * Organize your media files in albums
