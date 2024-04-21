@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity() {
         addMenuProvider(object : MenuProvider {
             @SuppressLint("RestrictedApi")
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                if (menu is MenuBuilder) (menu as MenuBuilder).setOptionalIconsVisible(true)
+                if (menu is MenuBuilder) menu.setOptionalIconsVisible(true)
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false

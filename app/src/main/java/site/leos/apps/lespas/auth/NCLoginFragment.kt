@@ -24,6 +24,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -75,14 +76,22 @@ import java.io.ByteArrayOutputStream
 import java.net.SocketException
 import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
-import java.security.*
+import java.security.KeyManagementException
+import java.security.KeyStore
+import java.security.KeyStoreException
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 import java.security.cert.CertPathValidatorException
 import java.security.cert.X509Certificate
 import java.text.DateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import javax.net.ssl.*
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLPeerUnverifiedException
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
 class NCLoginFragment: Fragment() {
     private lateinit var inputArea: TextInputLayout
@@ -111,10 +120,12 @@ class NCLoginFragment: Fragment() {
                 // Restart activity
                 requireActivity().apply {
                     val myIntent = intent.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION) }
-                    overridePendingTransition(0, 0)
+                    @Suppress("DEPRECATION")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(AppCompatActivity.OVERRIDE_TRANSITION_CLOSE, 0, 0) else overridePendingTransition(0, 0)
                     finish()
 
-                    overridePendingTransition(0, 0)
+                    @Suppress("DEPRECATION")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(AppCompatActivity.OVERRIDE_TRANSITION_OPEN, 0, 0) else overridePendingTransition(0, 0)
                     startActivity(myIntent)
                 }
             }

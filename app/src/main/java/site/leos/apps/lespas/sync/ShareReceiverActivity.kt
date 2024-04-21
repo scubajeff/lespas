@@ -82,11 +82,13 @@ class ShareReceiverActivity: AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        overridePendingTransition(0, 0)
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0) else overridePendingTransition(0, 0)
     }
 
     override fun onPause() {
-        overridePendingTransition(0, 0)
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0) else overridePendingTransition(0, 0)
         super.onPause()
     }
 
