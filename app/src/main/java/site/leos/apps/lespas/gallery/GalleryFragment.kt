@@ -571,6 +571,7 @@ class GalleryFragment: Fragment() {
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
+        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         private val _local = MutableStateFlow<List<LocalMedia>>(mutableListOf())
         private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
         val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
@@ -806,7 +807,6 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         val showArchive: StateFlow<Int> = _showArchive
         fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
             if (forcedRefresh) _showArchive.value = ARCHIVE_OFF

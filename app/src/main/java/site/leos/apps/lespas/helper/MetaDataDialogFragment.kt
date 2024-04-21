@@ -38,14 +38,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -66,7 +70,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -253,19 +257,24 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     // TODO robust way to detect if media is from publications
                     if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
                         GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latitude, longitude, 1)
-                    } catch (e: IOException) { null }?.get(0)?.let { address ->
-                        if (address.countryName != null) {
-                            val locality = address.locality ?: address.adminArea ?: Photo.NO_ADDRESS
-                            lifecycleScope.launch(Dispatchers.IO) {
-                                PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
-
-                                withContext(Dispatchers.Main) {
+                    } catch (e: IOException) { null }?.let { result ->
+                        if (result.isNotEmpty()) {
+                            result[0]?.let { address ->
+                                if (address.countryName != null) {
+                                    val locality = address.locality ?: address.adminArea ?: Photo.NO_ADDRESS
                                     localityTextView.run {
                                         text = String.format("%s, %s", locality, address.countryName)
                                         isVisible = true
                                     }
+
+                                    try {
+                                        lifecycleScope.launch(Dispatchers.IO) {
+                                            PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
+                                        }
+                                    } catch (_: Exception) {}
                                 }
                             }
+
                         }
                     }
                 }
