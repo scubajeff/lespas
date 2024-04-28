@@ -81,6 +81,9 @@ import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.transition.MaterialElevationScale
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -122,6 +125,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     private val currentMediaList = mutableListOf<GalleryFragment.LocalMedia>()
 
     private var currentCheckedTag = CHIP_FOR_ALL_TAG
+
+    private var actionModeTitleUpdateJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -285,20 +290,15 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
 
                     private fun updateUI() {
-                        val selectionSize = selectionTracker.selection.size()
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
-                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})" }
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
-                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})"
-
-                        // Disable sub folder chips when in selection mode
-                        val enableChips = selectionSize <= 0
-                        subFolderChipGroup.forEach { it.isEnabled = enableChips }
+                        }
+                        updateSelectionInfo()
                     }
                 })
 
@@ -412,8 +412,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
                             if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else {
                                 mediaAdapter.submitList(listGroupedByDate)
-                                val selectionSize = selectionTracker.selection.size()
-                                actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})" }
+                                updateSelectionInfo()
                             }
                         }
                     }
@@ -565,6 +564,29 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         actionMode = null
     }
 
+    private fun updateSelectionInfo()  {
+        actionModeTitleUpdateJob?.cancel()
+        actionModeTitleUpdateJob = lifecycleScope.launch {
+            actionMode?.let {
+                delay(100)
+                var totalSize = 0L
+                selectionTracker.selection.forEach { selected ->
+                    ensureActive()
+                    totalSize += mediaAdapter.getFileSize(selected)
+                }
+                selectionTracker.selection.size().let { selectionSize ->
+                    actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${Tools.humanReadableByteCountSI(totalSize)})"
+
+                    // Disable sub folder chips when in selection mode
+                    when {
+                        selectionSize == 1 -> subFolderChipGroup.forEach { it.isEnabled = false }
+                        selectionSize <= 0 -> subFolderChipGroup.forEach { it.isEnabled = true }
+                    }
+                }
+            } ?: run { subFolderChipGroup.forEach { it.isEnabled = true } }
+        }
+    }
+
     @SuppressLint("InflateParams")
     private fun prepareList(localMedias: List<GalleryFragment.LocalMedia>?) {
         if (localMedias == null) return
@@ -612,8 +634,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         setList()
 
-        val selectionSize = selectionTracker.selection.size()
-        actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${mediaAdapter.getSelectionFileSize()})" }
+        updateSelectionInfo()
     }
 
     private fun setList() {
@@ -745,12 +766,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         override fun getItemViewType(position: Int): Int = if (currentList[position].photo.mimeType.isEmpty()) TYPE_DATE else TYPE_MEDIA
 
-        internal fun getSelectionFileSize(): String {
-            var size = 0L
-            selectionTracker.selection.forEach { selected -> currentList.find { it.photo.id == selected }?.let { size += it.photo.caption.toLong() }}
-
-            return Tools.humanReadableByteCountSI(size)
-        }
+        internal fun getFileSize(selected: String): Long = currentList.find { it.photo.id == selected }?.photo?.caption?.toLong() ?: 0L
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
