@@ -286,8 +286,12 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.chinese_map_pref_key),
                                 getString(R.string.nearby_convergence_pref_key),
                                 getString(R.string.remove_meta_data_before_sharing_pref_key),
-                                getString(R.string.use_low_resolution_to_share_pref_key),
-                                SettingsFragment.KEY_STORAGE_LOCATION, -> editor.putBoolean(key, value.toBoolean())
+                                getString(R.string.use_low_resolution_to_share_pref_key) -> editor.putBoolean(key, value.toBoolean())
+                                // only put false here when SD card is actually present
+                                SettingsFragment.KEY_STORAGE_LOCATION -> {
+                                    editor.putBoolean(key, value.toBoolean() || (requireContext().getExternalFilesDirs(null).size < 2))
+                                }
+
 
                                 // String preferences
                                 getString(R.string.auto_theme_perf_key),
