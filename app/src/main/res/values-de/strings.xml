@@ -17,7 +17,7 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
-    <string name="option_menu_empty_trash">Leeren Sie den Papierkorb</string>
+    <string name="option_menu_empty_trash">Papierkorb leeren</string>
     <string name="option_menu_show_archive">Archiv</string>
     <string name="option_menu_refresh_archive">Archiv aktualisieren</string>
     <string name="gallery_name">Galerie</string>
@@ -55,7 +55,7 @@
     <string name="button_text_caption">Untertitel</string>
     <string name="button_text_location">Ort</string>
     <string name="button_text_taken_date">Datum</string>
-    <string name="confirm_delete">Sind Sie sicher, dass Sie löschen wollen?</string>
+    <string name="confirm_delete">Sind Sie sicher, dass Sie die Datei(en) löschen wollen?</string>
     <string name="yes_delete">Ja, löschen!</string>
     <string name="rename_album">Album umbenennen in</string>
     <string name="total_photo">Fotos: %1$d</string>
@@ -70,15 +70,15 @@
 
     <!-- PhotoSlide fragment -->
     <string name="option_menu_slideshow">Diashow</string>
-    <string name="button_text_set_cover">Als Albumcover</string>
+    <string name="button_text_set_cover">Als Albumcover festlegen</string>
     <string name="button_text_share">Teilen</string>
-    <string name="button_text_use_as">Verwendung als</string>
+    <string name="button_text_use_as">Verwenden als</string>
     <string name="button_text_info">Informationen</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Ersetzen</string>
 
     <!-- CropCover fragment -->
-    <string name="toast_cover_applied">Neues Albumcover wurde gesetzt.</string>
-    <string name="toast_cover_set_canceled">Kein neues Albumcover gesetzt.</string>
+    <string name="toast_cover_applied">Neues Albumcover wurde eingestellt.</string>
+    <string name="toast_cover_set_canceled">Kein neues Albumcover eingestellt.</string>
 
     <!-- Setting fragment -->
     <string name="settings_title">Einstellungen</string>
@@ -90,7 +90,7 @@
     <string name="theme_auto_entries">Nach Systemeinstellung richten</string>
     <string name="auto_rotate_title">Bildschirm passend zum Bildseitenverhältnis drehen</string>
     <string name="auto_replay_title">Automatische Videowiedergabe</string>
-    <string name="gallery_as_album_title">Galerie als Album angezeigt</string>
+    <string name="gallery_as_album_title">Galerie als Album anzeigen</string>
 
     <string name="edit_header">Bearbeiten</string>
     <string name="snapseed_integration_title">Snapseed-Integration</string>
@@ -100,11 +100,11 @@
     <string name="snapseed_replace_off_summary">Nein, fügen Sie die Version von Snapseed zum Album hinzu. Verwalten Sie Duplikate selbst.</string>
 
     <string name="privacy_header">Datenschutz</string>
-    <string name="remove_meta_data_before_sharing_title">Entfernen Sie sensible Metadaten vor der Weitergabe</string>
+    <string name="remove_meta_data_before_sharing_title">Sensible Metadaten vor der Weitergabe entfernen</string>
 
     <string name="use_low_resolution_to_share_title">Bildauflösung vor dem Teilen verringern</string>
     <string name="storage_header">Speicher</string>
-    <string name="transfer_to_internal">"Alben auf den internen Speicher übertragen"</string>
+    <string name="transfer_to_internal">Alben in den internen Speicher übertragen</string>
     <string name="transfer_to_external">Alben auf externe SD-Karte übertragen</string>
     <string name="external_storage_not_writable">Auf die externe SD-Karte kann nicht geschrieben werden.</string>
     <string name="confirm_transferring_message">%1$s? Wenn Sie fortfahren, nehmen Sie bitte KEINE Änderungen an den Alben vor, bevor der Übertragungsvorgang abgeschlossen ist.</string>
@@ -135,7 +135,7 @@
     <string name="install_snapseed_dialog_msg">Snapseed jetzt installieren?</string>
 
     <!-- Destination DialogFragment -->
-    <string name="sync_status_stage_backup_pictures">Sichern von Mediendateien...</string>
+    <string name="sync_status_stage_backup_pictures">Sichern von Mediendateien…</string>
     <string name="copy_files">Kopieren</string>
     <string name="move_files">Verschieben</string>
     <string name="create_new_album">Neues Album erstellen</string>
@@ -163,7 +163,7 @@
     <string name="size">Größe:</string>
     <string name="camera_manufacturer">Hersteller:</string>
     <string name="camera_model">Modell:</string>
-    <string name="parameter">Param:</string>
+    <string name="parameter">Param.:</string>
     <string name="artist">Künstler:</string>
 
      <!-- Album Publish DialogFragment -->
@@ -203,7 +203,7 @@
     <string name="camera_roll_name">Kamera</string>
     <string name="msg_remove_old_files_warning">WARNUNG: Wenn Sie bei der ersten Aktivierung der Datensicherung für diesen Ordner keine vorhandenen Dateien gesichert haben, werden diese vorhandenen Dateien durch die Aktivierung dieser Einstellung ebenfalls gelöscht!</string>
     <string name="button_text_i_understand">Ich verstehe</string>
-    <string name="checkbox_text_remove_archive_copy">Löschen Sie auch die Sicherungskopie im Server-Archiv</string>
+    <string name="checkbox_text_remove_archive_copy">Auch die auch die Sicherungskopie im Server-Archiv löschen</string>
     <string name="tooltips_search_album">In den Alben suchen</string>
     <string name="tooltips_search_gallery">Suche in der Galerie</string>
     <string name="condition_to_perform_search">Es muss mindestens ein Album vorhanden sein ODER Les Pas muss auf lokale zugreifen dürfen, um die Suchfunktion zu nutzen.</string>
@@ -217,7 +217,7 @@
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">Veröffentlichung der Freunde</string>
     <string name="confirm_download_publication">Sie befinden sich jetzt im Mobilfunknetz, sind Sie sicher, dass Sie diese Publikation jetzt ansehen möchten?</string>
-    <string name="yes_i_do">Ja sicher</string>
+    <string name="yes_i_do">Ja, sicher</string>
     
     <!-- Publication Detail Fragment -->
     <string name="item_show_meta">Metadaten anzeigen</string>
@@ -240,9 +240,9 @@
     <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="prefer">Bevorzugt:</string>
     <string name="prefer_day_in_history">Damals und heute</string>
-    <string name="prefer_random">Zufällig (Rückgriff auf alle oben genannten Möglichkeiten)</string>
+    <string name="prefer_random">Zufällig (Rückgriff für alle oben genannten Möglichkeiten)</string>
     <string name="exclude_albums">Fotos ausschließen:</string>
-    <string name="prefer_latest">Letzte</string>
+    <string name="prefer_latest">Kürzlich</string>
     <string name="button_text_map">Karten-App</string>
     <string name="object_location">Standort</string>
     <string name="item_location_search">Standort</string>
@@ -260,17 +260,17 @@
     <string name="read_exif_location_permission_rationale">So zeigen Sie Standortinformationen von Fotos an</string>
     <string name="need_access_media_location_permission">Les Pas benötigt eine Genehmigung für den Zugriff auf den Medienstandort.</string>
     <string name="unlock_please">Versteckte Alben freischalten</string>
-    <string name="item_bgm">BGM verwalten</string>
+    <string name="item_bgm">Hintergrundmusik verwalten</string>
     <string name="option_menu_mute">Stummschaltung umschalten</string>
-    <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
+    <string name="skip_late_night_update">Nächtliche Aktualisierung überspringen</string>
     <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
     <string name="default_sort_order_title">Standardsortierung von Fotos für neue Alben</string>
     <string name="msg_set_as_remote">Wenn Sie das Album als \"Remote\" einstellen, werden alle Mediendateien von diesem Gerät entfernt. Fortfahren?</string>
-    <string name="msg_set_as_local">Wenn Sie das Album als \"Lokal\" einstellen, werden alle Mediendateien vom Server heruntergeladen, was eine Weile dauern würde. Wie vorgehen?</string>
+    <string name="msg_set_as_local">Wenn Sie das Album als \"Lokal\" einstellen, werden alle Mediendateien vom Server heruntergeladen, was eine Weile dauern kann. Wie vorgehen?</string>
     <string name="action_set_remote">Remote einstellen</string>
     <string name="action_set_local">Lokal einstellen</string>
     <string name="msg_check_network">Überprüfen Sie Ihre Serververbindung.</string>
-    <string name="msg_error_preparing_share_out_files">Versäumnis, Mediendateien vorzubereiten.</string>
+    <string name="msg_error_preparing_share_out_files">Fehler Mediendateien vorzubereiten.</string>
     <string name="to_new_album">Zum neuen Album:</string>
     <string name="clear_cache_title">Remote-Alben-Cache löschen</string>
     <string name="msg_clear_cache">Alle entfernten Bilddateien werden aus dem Cache entfernt. Fortfahren?</string>
@@ -284,16 +284,16 @@
     <string name="login_to_new_account">Sie melden sich mit einem neuen Konto an. Sie sollten sich zuerst von Ihrem aktuellen Konto abmelden und dann Les Pas neu starten. Mit dem Abmelden fortfahren?</string>
     <string name="menu_item_qr_scanner_title">QR-Code scannen</string>
     <string name="chinese_map_title">Chinesische Karten-App verwenden</string>
-    <string name="chinese_map_summary">Alle Kartenanwendungen in China verwenden ein einheitliches Koordinatensystem.</string>
+    <string name="chinese_map_summary">Alle Kartenanwendungen in China verwenden ein besonderes Koordinatensystem.</string>
     <string name="map_header">Karte</string>
     <string name="msg_server_operation">Die Fotos werden nach der Synchronisierung mit dem Server im Zielalbum angezeigt.</string>
     <string name="item_wide_list">Name anzeigen</string>
     <string name="action_export">Exportieren</string>
     <string name="action_rename_media">Umbenennen</string>
     <string name="rename_media">Neuer Name</string>
-    <string name="nearby_convergence_title">Fotos in der Nähe automatisch konvergieren</string>
-    <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos auf das nächstgelegene Foto mit GPS-Koordinaten konvergiert.</string>
-    <string name="true_black_title">Echtes schwarzes dunkles Thema</string>
+    <string name="nearby_convergence_title">Fotos in der Nähe automatisch zusammenführen</string>
+    <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos mit dem nächstgelegenen Foto mit GPS-Koordinaten zusammengeführt.</string>
+    <string name="true_black_title">Echt schwarzes Thema</string>
     <string name="tooltips_fetch_backup">Backups auf dem Server anzeigen</string>
     <string name="tooltips_enable_backup">Sicherung einschalten</string>
     <string name="tooltips_backup_setting">Backup-Einstellung</string>
@@ -301,11 +301,11 @@
     <string name="option_menu_search">Suche nach Name</string>
     <string name="tooltips_date_picker">Wählen Sie ein Datum</string>
     <string name="title_in_archive">%1$s in Kamera-Backups</string>
-    <string name="tooltips_search_archive">In Kamerarollensicherungen</string>
+    <string name="tooltips_search_archive">In Kameraalbum suchen</string>
     <string name="hint_timestamp_pattern">Das Erstellungsdatum des Fotos kann durch Einfügen des Musters yyyyMMdd_hhmmss in den Namen geändert werden.</string>
     <string name="should_allow_launching_other_app">Bitte erlauben Sie Les Pas das Starten anderer Anwendungen in Ihren Sicherheitseinstellungen.</string>
-    <string name="msg_low_storage_space">Ihr interner Speicherplatz ist weniger als 10 % frei, dann kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
-    <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
+    <string name="msg_low_storage_space">In ihrem internen Speicherplatz ist weniger als 10 % frei, dadurch kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
+    <string name="msg_login_first">Bitte zuerst auf einem Server einloggen.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server…</string>
     <string name="backup_remaining">%d übrig</string>
     <string name="sync_status_action_delete_media">Entfernen von %1$s in Album \'%2$s\'</string>
@@ -314,34 +314,34 @@
     <string name="sync_status_action_add_album">Hinzufügen des Albums \'%s\'</string>
     <string name="sync_status_action_rename_album">Umbenennung des Albums \'%1$s\' in \'%2$s\'</string>
     <string name="sync_status_action_hide_album">Album \'%s\' wird versteckt</string>
-    <string name="sync_status_action_unhide_album">Ausblenden des Albums \'%s\'</string>
+    <string name="sync_status_action_unhide_album">Einblenden des Albums \'%s\'</string>
     <string name="sync_status_action_update_file">Aktualisierung von %1$s im Album \'%2$s\'</string>
     <string name="sync_status_action_update_album_cover">Aktualisierung des Covers von Album \'%s\'</string>
     <string name="sync_status_action_add_media_to_joint_album">Hinzufügen von %1$s zum gemeinsamen Album \'%2$s\'</string>
     <string name="sync_status_action_update_joint_album_meta">Aktualisierung der Metadaten des gemeinsamen Albums \'%s\'</string>
     <string name="sync_status_action_update_album_meta">Aktualisierung der Metadaten des Albums \'%s\'</string>
     <string name="sync_status_action_update_album_content_meta">Aktualisierung der Inhalts-Metadaten des Albums \'%s\'</string>
-    <string name="sync_status_action_update_album_bgm">Aktualisierung der BGM des Albums \'%s\'</string>
-    <string name="sync_status_action_delete_album_bgm">BGM des Albums \'%s\' wird entfernt</string>
+    <string name="sync_status_action_update_album_bgm">Aktualisierung der Hintergrundmusik des Albums \'%s\'</string>
+    <string name="sync_status_action_delete_album_bgm">Hintergrundmusik des Albums \'%s\' wird entfernt</string>
     <string name="sync_status_action_copy">Kopieren von %1$s aus Album \'%2$s\' nach \'%3$s\'</string>
     <string name="sync_status_action_move">Verschieben von %1$s von Album \'%2$s\' nach \'%3$s\'</string>
     <string name="sync_status_action_delete_media_from_backup">Entfernen von %s im Kameraarchiv</string>
     <string name="sync_status_action_patch_property">Aktualisieren der WebDAV-Eigenschaften von %s im Kameraarchiv</string>
     <string name="sync_status_stage_sync_remote">Synchronisierung von Änderungen vom Server…</string>
-    <string name="sync_status_result_finished">Die letzte Synchronisierung wurde %s.</string>
+    <string name="sync_status_result_finished">Die letzte Synchronisierung wurde %s beendet.</string>
     <string name="sync_status_result_no_wifi">Die letzte Synchronisierung wurde %s abgebrochen, da kein WiFi vorhanden ist.</string>
     <string name="sync_status_stage_started">Start der Synchronisation…</string>
     <string name="button_text_help">Hilfe!</string>
     <string name="button_text_resync">Re-Sync</string>
     <string name="sync_status_title">Status der Synchronisierung</string>
-    <string name="sync_status_result_general_error">Letzte Synchronisierung fehlgeschlagen %s!</string>
+    <string name="sync_status_result_general_error">Letzte Synchronisierung fehlgeschlagen vor %s!</string>
     <string name="sync_status_stage_sync_local">Synchronisierung lokaler Änderungen…</string>
     <string name="sync_status_action_collect_remote_changes">Sammeln von Änderungen vom Server</string>
     <string name="sync_status_action_create_album_from_server">Album \'%s\' erstellen</string>
     <string name="sync_status_action_update_album_from_server">Aktualisierung des Albums \'%s\'</string>
     <string name="sync_status_action_backup_file">Sichern des Fotos %s</string>
     <string name="msg_backup_existing">Neue Fotos in \'%1$s\' werden von nun an gesichert. Es befinden sich derzeit %2$,d Fotos mit einer Gesamtgröße von %3$s auf dem Gerät. Möchten Sie, dass diese auch gesichert werden?</string>
-    <string name="button_text_set_as_home">Satz</string>
+    <string name="button_text_set_as_home">Festlegen</string>
     <string name="pick_home">Festlegen des Home-Ordners</string>
     <string name="pick_home_note">Les Pas speichert Ihre Alben und Backups in diesem Ordner auf Ihrem Server</string>
     <string name="button_text_save">"Speichern "</string>
@@ -373,7 +373,7 @@
     <string name="msg_player_skip">5 Sekunden</string>
     <string name="internal_publish">Intern</string>
     <string name="external_publish">Öffentlich</string>
-    <string name="unpublish_button_text">UnPublish</string>
+    <string name="unpublish_button_text">Teilen zurücknehmen</string>
     <string name="msg_note_down_your_password">Bitte notieren Sie sich Ihr Passwort, denn es gibt KEINE Möglichkeit, das einmal festgelegte Passwort wiederherzustellen.</string>
     <string name="hint_leave_it_blank">Lassen Sie das Feld leer für kein Passwort</string>
     <string name="hint_user_name">Empfänger</string>
@@ -381,7 +381,7 @@
     <string name="checkbox_text_overwrite">Vorhandene Standortdaten überschreiben</string>
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s ist ungültig, oder es wurde kein Zeitstempel gefunden!</string>
-    <string name="suffix_gpx_offset">Erlaubte Minuten Differenz</string>
+    <string name="suffix_gpx_offset">Minuten Differenz erlaubt</string>
     <string name="item_export_gpx">GPX exportieren</string>
     <string name="checkbox_text_dst">Sommerzeit-Korrektur</string>
     <string name="hint_gpx_export_file_location">Die Datei wird im Ordner \"Download\" gespeichert.</string>
@@ -393,7 +393,7 @@
     <string name="msg_archive_location">Sie können das Archiv auf dem Server im Ordner %1$s finden</string>
     <string name="manage_media_access_permission_rationale">Damit Les Pas gesicherte Dateien entfernen kann, müssen Sie ihm die Berechtigung \"Medien verwalten\" erteilen.</string>
     <string name="confirm_empty_trash">Sind Sie sicher, dass Sie den Papierkorb leeren wollen?</string>
-    <string name="sync_deletion_title">Synchronisierung der Galerie-Löschung mit dem Server-Archiv</string>
+    <string name="sync_deletion_title">Synchronisierung der lokalen Löschung mit dem Server-Archiv</string>
     <string name="sync_deletion_rational">Um die Flexibilität zu erhöhen, bei jeder Löschung eine Synchronisationsentscheidung zu treffen, sollten Sie Les Pas die Berechtigung Medien verwalten erteilen.</string>
     <string name="title_sensitive_data">Sensible Metadaten</string>
     <string name="button_text_keep_meta_data">Behalten</string>
