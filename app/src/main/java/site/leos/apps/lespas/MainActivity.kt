@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (savedInstanceState == null) {
-                if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && ((getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes.size < 2 || (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED)) {
+                if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && ((getSystemService(Context.STORAGE_SERVICE) as StorageManager).let { ss -> ss.storageVolumes.size < 2 || ss.storageVolumes[1].state != Environment.MEDIA_MOUNTED })) {
                     // We need external SD mounted writable
                     if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), cancelable = false, individualKey = CONFIRM_REQUIRE_SD_DIALOG, requestKey = MAIN_ACTIVITY_REQUEST_KEY)
                         .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)

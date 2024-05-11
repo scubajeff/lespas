@@ -18,11 +18,14 @@ package site.leos.apps.lespas.auth
 
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.storage.StorageManager
 import android.transition.Fade
 import android.transition.TransitionManager
 import android.view.LayoutInflater
@@ -287,11 +290,8 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.nearby_convergence_pref_key),
                                 getString(R.string.remove_meta_data_before_sharing_pref_key),
                                 getString(R.string.use_low_resolution_to_share_pref_key) -> editor.putBoolean(key, value.toBoolean())
-                                // only put false here when SD card is actually present
-                                SettingsFragment.KEY_STORAGE_LOCATION -> {
-                                    editor.putBoolean(key, value.toBoolean() || (requireContext().getExternalFilesDirs(null).size < 2))
-                                }
-
+                                // only put false here when SD card is actually mounted
+                                SettingsFragment.KEY_STORAGE_LOCATION -> editor.putBoolean(key, value.toBoolean() || (requireActivity().getSystemService(Context.STORAGE_SERVICE) as StorageManager).let { ss -> ss.storageVolumes.size < 2 || ss.storageVolumes[1].state != Environment.MEDIA_MOUNTED })
 
                                 // String preferences
                                 getString(R.string.auto_theme_perf_key),
