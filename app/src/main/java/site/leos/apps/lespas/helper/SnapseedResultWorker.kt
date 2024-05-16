@@ -59,6 +59,8 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     cursor.moveToFirst()
                     imagePath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
                     imageName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                    // Latest Snapseed will keep file's original name when there's no name conflict in it's output folder
+                    if (imageName == originalPhoto.name) imageName = imageName.substringBeforeLast('.') + "_01." + imageName.substringAfterLast('.')
                     imageSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
                 }
 
