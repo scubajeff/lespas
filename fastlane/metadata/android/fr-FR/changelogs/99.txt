@@ -1,0 +1,5 @@
+* Mise à jour de l'intégration avec Snapseed pour tenir compte des changements de comportement dans la dernière version de Snapseed
+* Mise à jour de la traduction allemande par l'utilisateur Github @dave7895
+* PR par l'utilisateur Github @dave7895 pour corriger le plantage de l'application lors de la restauration d'un appareil sans carte SD externe à partir d'un appareil précédent doté d'une carte SD.
+* Correction de l'effet ANR dans la Galerie lors de l'utilisation de l'option "Sélectionner tout" dans un dossier contenant de nombreuses images.
+* Diverses améliorations et corrections de bugs

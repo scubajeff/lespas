@@ -1,0 +1,5 @@
+* Aktualisierte Snapseed-Integration, um die Verhaltensänderungen im neuesten Snapseed zu berücksichtigen
+* Aktualisierte deutsche Übersetzung von Github-Benutzer @dave7895
+* PR von Github-Benutzer @dave7895 zur Behebung eines Absturzes der App bei der Wiederherstellung auf einem Gerät ohne externe SD-Karte von einem früheren Gerät mit SD-Karte
+* Behobenes ANR in der Galerie bei Verwendung von "Alles auswählen" in einem Ordner mit vielen Bildern
+* Verschiedene Verbesserungen und Fehlerkorrekturen

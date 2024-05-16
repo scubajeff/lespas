@@ -1,0 +1,5 @@
+* Aggiornamento dell'integrazione con Snapseed per far fronte alle modifiche di comportamento dell'ultimo Snapseed.
+* Aggiornamento della traduzione in tedesco da parte dell'utente Github @dave7895
+* PR dell'utente Github @dave7895 per risolvere il crash dell'app quando si ripristina in un dispositivo senza scheda SD esterna da un dispositivo precedente dotato di SD
+* ANR fisso in Galleria quando si usa "Seleziona tutto" su una cartella con molte immagini
+* Vari miglioramenti e correzioni di bug

@@ -1,3 +1,9 @@
+## Version 2.9.10
+* Updated Snapseed integration to cope with behaviour changes in latest Snapseed
+* Updated German translation from Github user @dave7895
+* PR by Github user @dave7895 to fix app crash when restoring in a device without external SD card from a previous device which has SD
+* Fixed ANR in Gallery when use "Select All" on a folder with many pictures
+
 ## Version 2.9.9
 * Fixed local snapshot mismatch with server archive after picture removed, causing ghost files showing in Gallery list
 * Added function to forced refresh archive list

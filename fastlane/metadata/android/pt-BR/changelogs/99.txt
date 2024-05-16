@@ -1,0 +1,5 @@
+* Atualização da integração com o Snapseed para lidar com as mudanças de comportamento no Snapseed mais recente.
+* Tradução atualizada para o alemão do usuário do Github @dave7895
+* PR do usuário do Github @dave7895 para corrigir o travamento do aplicativo ao restaurar em um dispositivo sem cartão SD externo a partir de um dispositivo anterior com SD
+* Correção do ANR na Galeria ao usar "Selecionar tudo" em uma pasta com muitas fotos
+* Vários aprimoramentos e correções de bugs
