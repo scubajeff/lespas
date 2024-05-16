@@ -389,7 +389,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 Action.ACTION_RENAME_FILE -> {
                     // Action's fileId property is the old name, fileName property is the new name
-                    webDav.move("${lespasBase}/${action.folderName}/${action.fileId}", "${lespasBase}/${action.folderName}/${action.fileName}")
+
+                    // Ignore 403 error when renaming file. 403 shouldn't happen under normal circumstance, when it does happen, don't stall the sync process
+                    try { webDav.move("${lespasBase}/${action.folderName}/${action.fileId}", "${lespasBase}/${action.folderName}/${action.fileName}") } catch (e: OkHttpWebDavException) { if (e.statusCode != 403) throw e }
 
                     // Sync from server syncRemoteChanges() will detect the change and update content meta later
                 }
