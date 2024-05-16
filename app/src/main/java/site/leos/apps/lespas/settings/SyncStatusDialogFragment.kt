@@ -163,7 +163,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                         Action.ACTION_RENAME_FILE -> String.format(getString(R.string.sync_status_action_update_file), action[3], action[2])
                         Action.ACTION_UPDATE_ALBUM_META -> String.format(getString(R.string.sync_status_action_update_album_meta), action[2])
                         Action.ACTION_ADD_FILES_TO_JOINT_ALBUM -> String.format(getString(R.string.sync_status_action_add_media_to_joint_album), action[4], action[2].substringAfterLast('/'))
-                        Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META -> String.format(getString(R.string.sync_status_action_add_media_to_joint_album), action[2].substringAfterLast('/'))
+                        Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META -> String.format(getString(R.string.sync_status_action_update_joint_album_meta), action[2].substringAfterLast('/'))
                         Action.ACTION_UPDATE_THIS_ALBUM_META -> String.format(getString(R.string.sync_status_action_update_album_meta), action[2])
                         Action.ACTION_UPDATE_THIS_CONTENT_META -> String.format(getString(R.string.sync_status_action_update_album_content_meta), action[2])
                         Action.ACTION_UPDATE_ALBUM_BGM -> String.format(getString(R.string.sync_status_action_update_album_bgm), action[2])
