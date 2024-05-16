@@ -267,11 +267,9 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                         isVisible = true
                                     }
 
-                                    try {
-                                        lifecycleScope.launch(Dispatchers.IO) {
-                                            PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
-                                        }
-                                    } catch (_: Exception) {}
+                                    lifecycleScope.launch(Dispatchers.IO) {
+                                        try { PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS) } catch (_: IllegalStateException) {}
+                                    }
                                 }
                             }
 
