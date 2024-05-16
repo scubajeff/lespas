@@ -1384,9 +1384,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Photo is from local album or not being uploaded yet, e.g., in local storage
                                     try {
                                         File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
-                                    } catch (e: FileNotFoundException) {
-                                        // Fall back to network fetching if loading local file failed
-                                        getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
+                                    } catch (_: FileNotFoundException) {
+                                        try {
+                                            File("${localFileFolder}/${imagePhoto.photo.name}").inputStream()
+                                        } catch (_: FileNotFoundException) {
+                                            // Fall back to network fetching if loading local file failed
+                                            getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
+                                        }
                                     }
                                 }
                             }?.use { sourceStream ->
