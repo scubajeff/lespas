@@ -473,11 +473,12 @@ class PhotoSlideFragment : Fragment() {
                     SHARE_TO_WALLPAPER -> {
                         startActivity(Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_ATTACH_DATA
+                            addCategory(Intent.CATEGORY_DEFAULT)
                             setDataAndType(uris[0], shareOutMimeType)
                             putExtra("mimeType", shareOutMimeType)
                             //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        }, null))
+                        }, getString(R.string.button_text_use_as)))
                     }
                 }
             }
