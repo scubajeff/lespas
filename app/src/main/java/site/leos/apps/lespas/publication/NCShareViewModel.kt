@@ -78,7 +78,6 @@ import okhttp3.FormBody
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.closeQuietly
-import okhttp3.internal.headersContentLength
 import okio.BufferedSource
 import okio.IOException
 import okio.buffer
@@ -660,7 +659,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 folder = if (path.isEmpty()) volume else path.substringBefore('/'),                                         // first segment of file path
                                 media = RemotePhoto(
                                     Photo(
-                                        id = dav.fileId, albumId = "", name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
+                                        id = dav.fileId, albumId = GalleryFragment.FROM_ARCHIVE, name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
                                         dateTaken = dav.dateTaken, lastModified = dav.modified,
                                         width = dav.width, height = dav.height, orientation = dav.orientation,
                                         latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
@@ -761,13 +760,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface?, Long>? {
+    fun getMediaExif(remotePhoto: RemotePhoto): ExifInterface? {
         var response: Response? = null
-        var result: Pair<ExifInterface?, Long>? = null
+        var result: ExifInterface? = null
 
-        try {
-            response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", true)
-            result = Pair(if (Tools.hasExif(remotePhoto.photo.mimeType)) try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null } else null, response.headersContentLength())
+        if (Tools.hasExif(remotePhoto.photo.mimeType)) try {
+            response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", false)
+            result = try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null }
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
@@ -775,6 +774,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         return result
+    }
+
+    fun getMediaSize(remotePhoto: RemotePhoto): Long {
+        var size = -1L
+
+        webDav.list("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", OkHttpWebDav.JUST_FOLDER_DEPTH, false)[0].let { dav ->
+            size = dav.size
+        }
+
+        return size
     }
 
     fun getAvatar(user: Sharee, view: View, callBack: LoadCompleteListener?) {
@@ -884,7 +893,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     // Prepare destination file in cache folder, strip EXIF if required
                     when {
                         isRemote -> tempFile.inputStream()
-                        rp.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
+                        Tools.isPhotoFromGallery(rp) -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
                             var inSampleSize = 1
                             var p = max(rp.photo.width, rp.photo.height) / 2
 
@@ -1257,7 +1266,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 callBack?.onLoadComplete(false)
             } ?: run {
                 // For camera roll items, load thumbnail if cache missed
-                if (imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) {
+                if (Tools.isPhotoFromGallery(imagePhoto)) {
                     try {
                         (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
@@ -1309,7 +1318,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
-                                imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> {
+                                Tools.isPhotoFromGallery(imagePhoto) -> {
                                     updateCache = false
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
@@ -1376,7 +1385,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                     }
                                 }
-                                imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY -> {
+                                Tools.isPhotoFromGallery(imagePhoto) -> {
                                     // Photo is from local Camera roll
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
@@ -1400,7 +1409,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         updateCache = false
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
-                                            (imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
+                                            (Tools.isPhotoFromGallery(imagePhoto) && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                                     // Some framework implementation will crash when using ByteBuffer as ImageDrawable source
                                                     val tempFile = File(localCacheFolder, imagePhoto.photo.name)
@@ -1429,13 +1438,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     ensureActive()
                                                     if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.width == 0) {
                                                         // This is a early backup of camera roll which do not has meta info yet
-                                                        getMediaExif(imagePhoto)?.first?.let { exif ->
-                                                            imagePhoto.photo.orientation = exif.rotationDegrees
-                                                        }
+                                                        getMediaExif(imagePhoto)?.let { exif -> imagePhoto.photo.orientation = exif.rotationDegrees }
                                                     }
                                                     // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
                                                     // Hence, picture with original orientation must be allowed in local album
-                                                    if (imagePhoto.photo.orientation != 0 && ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY))
+                                                    if (imagePhoto.photo.orientation != 0 && ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || Tools.isPhotoFromGallery(imagePhoto)))
                                                     //if (imagePhoto.photo.orientation != 0)
                                                         Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, false)
                                                     else this
@@ -1449,7 +1456,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         var height = imagePhoto.photo.height
                                         var orientation = imagePhoto.photo.orientation
 
-                                        if (imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) {
+                                        if (Tools.isPhotoFromGallery(imagePhoto)) {
                                             if (orientation == 90 || orientation == 270) {
                                                 width = imagePhoto.photo.height
                                                 height = imagePhoto.photo.width
@@ -1553,7 +1560,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
-        return if (imagePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) {
+        return if (Tools.isPhotoFromGallery(imagePhoto)) {
             val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
@@ -1610,7 +1617,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                 // Should allow "/" in photo's remote path string, obviously, and name string, that's for fetching camera backups on server
                 //setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
-                remoteDataSource = VideoMetaDataMediaSource(imagePhoto, resourceRoot, webDav, job, httpCallMap)
+                remoteDataSource = VideoMetaDataMediaSource(imagePhoto, resourceRoot, webDav, job, httpCallMap, getMediaSize(imagePhoto))
                 setDataSource(remoteDataSource)
             } else setDataSource("${localFileFolder}/${imagePhoto.photo.id}")
 
@@ -1696,9 +1703,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         super.onCleared()
     }
 
-    class VideoMetaDataMediaSource(imagePhoto: RemotePhoto, resourceRoot: String, private val webDav: OkHttpWebDav, private val job: Job, private val callMap: HashMap<Job, Call>): MediaDataSource() {
-        private val mediaUrl: String
-        private var mediaSize: Long = 0
+    class VideoMetaDataMediaSource(imagePhoto: RemotePhoto, resourceRoot: String, private val webDav: OkHttpWebDav, private val job: Job, private val callMap: HashMap<Job, Call>, private val mediaSize: Long): MediaDataSource() {
+        private val mediaUrl: String = "$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}"
         private val header = ByteArray(HEADER_SIZE)
         private var headerSize: Int = 0
         private var tail: ByteArray? = null
@@ -1710,7 +1716,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private var mBufferRangeStart: Long = Long.MAX_VALUE
 
         init {
-            mediaUrl = "$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}"
             //Log.e(">>>>>>>>>>>", "loading $mediaUrl")
             // Get header and media size
             var retry = 0
@@ -1720,7 +1725,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     webDav.getCall(mediaUrl, true, null).run {
                         callMap[job] = this
                         execute().also { response ->
-                            mediaSize = response.headersContentLength()
                             tailStart = mediaSize - (mediaSize / 20)
                             //Log.e(">>>>>>>>", "VideoMetaDataMediaSource: $mediaSize $tailStart")
                             response.body!!.byteStream().source().buffer().use {

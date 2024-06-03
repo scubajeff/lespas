@@ -1026,6 +1026,10 @@ object Tools {
             else -> photos
         }
 
+    fun isPhotoFromGallery(rPhoto: NCShareViewModel.RemotePhoto) = rPhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY
+    fun isPhotoFromGallery(photo: Photo) = photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY
+    fun isPhotoFromArchive(rPhoto: NCShareViewModel.RemotePhoto) = rPhoto.photo.albumId == GalleryFragment.FROM_ARCHIVE
+
     inline fun <reified T : Parcelable> Bundle.parcelable(key: String): T? = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelable(key, T::class.java)
         else -> @Suppress("DEPRECATION") getParcelable(key) as? T

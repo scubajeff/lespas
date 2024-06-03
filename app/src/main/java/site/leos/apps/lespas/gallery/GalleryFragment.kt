@@ -1054,6 +1054,7 @@ class GalleryFragment: Fragment() {
         private const val AUTO_REMOVE_OLD_MEDIA_FILES = 6667
         const val STORAGE_EMULATED = "/storage/emulated/"
         const val FROM_DEVICE_GALLERY = "0"     // Nextcloud server's folder id can't be 0
+        const val FROM_ARCHIVE = ""             // Nextcloud server's folder id can't be empty
         const val EMPTY_GALLERY_COVER_ID = "0"
 
         const val TRASH_FOLDER = "\uE83A"   // This private character make sure the Trash is at the bottom of folder list

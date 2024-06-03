@@ -177,7 +177,7 @@ class LocationSearchHostFragment: Fragment() {
                             R.id.search_archive -> {
                                 when(photo.latitude) {
                                     Photo.NO_GPS_DATA -> return@forEachIndexed
-                                    Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteCameraArchiveFolder))?.first?.let { exif ->
+                                    Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteCameraArchiveFolder))?.let { exif ->
                                         exif.latLong?.run {
                                             latitude = this[0]
                                             longitude = this[1]

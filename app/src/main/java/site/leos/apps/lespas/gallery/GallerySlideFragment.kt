@@ -222,7 +222,7 @@ class GallerySlideFragment : Fragment() {
 
         view.findViewById<ImageButton>(R.id.info_button).setOnClickListener {
             if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) mediaAdapter.getPhotoAt(mediaViewPager.currentItem).let { remotePhoto ->
-                (if (mediaAdapter.isPhotoAtLocal(mediaViewPager.currentItem)) MetaDataDialogFragment.newInstance(remotePhoto.photo) else MetaDataDialogFragment.newInstance(remotePhoto)).show(parentFragmentManager, INFO_DIALOG)
+                (if (mediaAdapter.isPhotoAtLocal(mediaViewPager.currentItem)) MetaDataDialogFragment.newInstance(remotePhoto.photo) else MetaDataDialogFragment.newInstance(remotePhoto, true)).show(parentFragmentManager, INFO_DIALOG)
             }
         }
         removeButton = view.findViewById<ImageButton>(R.id.remove_button).apply {
@@ -414,7 +414,7 @@ class GallerySlideFragment : Fragment() {
         override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
         override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.LocalMedia).media) {
-            if (photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) VideoItem(Uri.parse(photo.id), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
+            if (Tools.isPhotoFromGallery(photo)) VideoItem(Uri.parse(photo.id), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
             else VideoItem(Uri.parse("${basePath}/${remotePath}/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id)
         }
 

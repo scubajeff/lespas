@@ -29,7 +29,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -44,7 +50,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -61,7 +72,6 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
-import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
@@ -73,7 +83,6 @@ import java.io.File
 import java.lang.Double.max
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.*
 import kotlin.math.roundToInt
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -220,7 +229,7 @@ class PhotosInMapFragment: Fragment() {
                                     }
                                 }
                                 findViewById<TextView>(R.id.label).text =
-                                    if (remotePhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                    if (Tools.isPhotoFromGallery(remotePhoto)) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
                                     else albumNames?.get(remotePhoto.photo.albumId)
                                 setOnClickListener(InfoWindowClickListener(mapView))
                             }
@@ -404,7 +413,7 @@ class PhotosInMapFragment: Fragment() {
                 while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize += 2 }
             }
             marker.image = BitmapDrawable(resources,
-                if (photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY) {
+                if (Tools.isPhotoFromGallery(photo)) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
                     if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                     bmp

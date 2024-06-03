@@ -295,14 +295,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
                 try {
                     if (rPhoto.remotePath.isEmpty()) {
-                        if (rPhoto.photo.albumId != GalleryFragment.FROM_DEVICE_GALLERY) {
-                            // Media in album
-                            val fPath = Tools.getLocalRoot(context)
-                            with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {
-                                pm.size = File(this).length()
-                                if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
-                            }
-                        } else {
+                        if (Tools.isPhotoFromGallery(rPhoto)) {
                             // Media from device gallery
                             pm.size = rPhoto.photo.caption.toLong()
                             val pUri = Uri.parse(rPhoto.photo.id)
@@ -329,11 +322,18 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                     }
                                 }
                             }
+                        } else {
+                            // Media in album
+                            val fPath = Tools.getLocalRoot(context)
+                            with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {
+                                pm.size = File(this).length()
+                                if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+                            }
                         }
                     } else {
-                        (ViewModelProvider(context))[NCShareViewModel::class.java].getMediaExif(rPhoto)?.let {
-                            exif = it.first
-                            pm.size = it.second
+                        (ViewModelProvider(context))[NCShareViewModel::class.java].run {
+                            exif = getMediaExif(rPhoto)
+                            pm.size = if (Tools.isPhotoFromArchive(rPhoto)) try { rPhoto.photo.caption.toLong() } catch (_: NumberFormatException) { 0L } else getMediaSize(rPhoto)
                         }
                     }
 
@@ -381,11 +381,17 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     companion object {
         const val KEY_MEDIA = "KEY_MEDIA"
         const val KEY_REMOTE_MEDIA = "KEY_REMOTE_MEDIA"
+        private const val KEY_HAS_SIZE_INFO = "KEY_HAS_SIZE_INFO"
 
         @JvmStatic
         fun newInstance(media: Photo) = MetaDataDialogFragment().apply { arguments = Bundle().apply { putParcelable(KEY_MEDIA, media) }}
 
         @JvmStatic
-        fun newInstance(media: NCShareViewModel.RemotePhoto) = MetaDataDialogFragment().apply { arguments = Bundle().apply { putParcelable(KEY_REMOTE_MEDIA, media) }}
+        fun newInstance(media: NCShareViewModel.RemotePhoto, hasSizeInfo: Boolean = false) = MetaDataDialogFragment().apply {
+            arguments = Bundle().apply {
+                putParcelable(KEY_REMOTE_MEDIA, media)
+                putBoolean(KEY_HAS_SIZE_INFO, hasSizeInfo)
+            }
+        }
     }
 }
