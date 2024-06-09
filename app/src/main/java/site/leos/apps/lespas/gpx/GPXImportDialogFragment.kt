@@ -307,95 +307,97 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 val minDate = trackPoints.first().timeStamp + dstOffset
                 val maxDate = trackPoints.last().timeStamp + dstOffset
 
-                photos.sortedBy { it.dateTaken }.forEach { photo ->
-                    // GPS location data won't work on playable media
-                    if (Tools.isMediaPlayable(photo.mimeType)) return@forEach
+                run outer@{
+                    photos.sortedBy { it.dateTaken }.forEach { photo ->
+                        // GPS location data won't work on playable media
+                        if (Tools.isMediaPlayable(photo.mimeType)) return@forEach
 
-                    // If picture's taken date doesn't fall into track points period, continue to next picture or quit
-                    takenTime = photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()
-                    if (takenTime < minDate) return@forEach
-                    if (takenTime > maxDate) return@launch
+                        // If picture's taken date doesn't fall into track points period, continue to next picture or quit
+                        takenTime = photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()
+                        if (takenTime < minDate) return@forEach
+                        if (takenTime > maxDate) return@outer
 
-                    // If photo does not have location data yet or user choose to overwrite existing ones
-                    if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
+                        // If photo does not have location data yet or user choose to overwrite existing ones
+                        if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
 
-                        // Try finding the nearest match in GPX
-                        match = NO_MATCH
-                        minDiff = Long.MAX_VALUE
+                            // Try finding the nearest match in GPX
+                            match = NO_MATCH
+                            minDiff = Long.MAX_VALUE
 
-                        for (i in startWith until trackPoints.size) {
-                            diff = abs(takenTime - trackPoints[i].timeStamp - dstOffset)
-                            if (diff < diffAllowed && diff < minDiff) {
-                                minDiff = diff
-                                match = i
+                            for (i in startWith until trackPoints.size) {
+                                diff = abs(takenTime - trackPoints[i].timeStamp - dstOffset)
+                                if (diff < diffAllowed && diff < minDiff) {
+                                    minDiff = diff
+                                    match = i
+                                }
                             }
-                        }
 
-                        if (match != NO_MATCH) {
-                            _progress.emit(match)
+                            if (match != NO_MATCH) {
+                                _progress.emit(match)
 
-                            val targetFile = File(localLesPasFolder, photo.name)
-                            ensureActive()
-                            try {
-                                // Update EXIF
-                                if (Tools.isRemoteAlbum(album)) {
-                                    // For remote album's uploaded photo, download original
-                                    if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) ncModel.downloadFile("${remoteLesPasFolder}/${photo.name}", targetFile)
+                                val targetFile = File(localLesPasFolder, photo.name)
+                                ensureActive()
+                                try {
+                                    // Update EXIF
+                                    if (Tools.isRemoteAlbum(album)) {
+                                        // For remote album's uploaded photo, download original
+                                        if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) ncModel.downloadFile("${remoteLesPasFolder}/${photo.name}", targetFile)
 
-                                    // TODO race condition if file is being uploaded to server
-                                    try { ExifInterface(targetFile) } catch (_: OutOfMemoryError) { null }?.run {
-                                        setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
-                                        if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
-                                        saveAttributes()
-                                    }
-                                } else {
-                                    // For local album, update local photo directly so that MetaDataDialogFragment will show updated information immediately
-                                    val sourceFile = File(localLesPasFolder, if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) photo.name else photo.id)
+                                        // TODO race condition if file is being uploaded to server
+                                        try { ExifInterface(targetFile) } catch (_: OutOfMemoryError) { null }?.run {
+                                            setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
+                                            if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
+                                            saveAttributes()
+                                        }
+                                    } else {
+                                        // For local album, update local photo directly so that MetaDataDialogFragment will show updated information immediately
+                                        val sourceFile = File(localLesPasFolder, if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) photo.name else photo.id)
 
-                                    // TODO race condition if file is being uploaded to server
-                                    try { ExifInterface(sourceFile) } catch (_: OutOfMemoryError) { null }?.run {
-                                        setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
-                                        if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
-                                        saveAttributes()
-                                    }
+                                        // TODO race condition if file is being uploaded to server
+                                        try { ExifInterface(sourceFile) } catch (_: OutOfMemoryError) { null }?.run {
+                                            setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
+                                            if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
+                                            saveAttributes()
+                                        }
 
-                                    if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                                        // File need to be located in lespas private storage for Action.ACTION_ADD_FILES_ON_SERVER to work
-                                        sourceFile.inputStream().use { source ->
-                                            targetFile.outputStream().use { target ->
-                                                source.copyTo(target, 8192)
+                                        if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                                            // File need to be located in lespas private storage for Action.ACTION_ADD_FILES_ON_SERVER to work
+                                            sourceFile.inputStream().use { source ->
+                                                targetFile.outputStream().use { target ->
+                                                    source.copyTo(target, 8192)
+                                                }
                                             }
                                         }
                                     }
-                                }
 
-                                // Update local database
-                                // Geocoding
-                                ensureActive()
-                                try { nominatim.getFromLocation(trackPoints[match].latitude, trackPoints[match].longitude, 1) } catch (_: Exception) { null }?.get(0)?.let {
-                                    if (it.countryName != null) {
-                                        photo.locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
-                                        photo.country = it.countryName
-                                        photo.countryCode = it.countryCode ?: Photo.NO_ADDRESS
-                                    } else {
-                                        photo.locality = Photo.NO_ADDRESS
-                                        photo.country = Photo.NO_ADDRESS
-                                        photo.countryCode = Photo.NO_ADDRESS
+                                    // Update local database
+                                    // Geocoding
+                                    ensureActive()
+                                    try { nominatim.getFromLocation(trackPoints[match].latitude, trackPoints[match].longitude, 1) } catch (_: Exception) { null }?.get(0)?.let {
+                                        if (it.countryName != null) {
+                                            photo.locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
+                                            photo.country = it.countryName
+                                            photo.countryCode = it.countryCode ?: Photo.NO_ADDRESS
+                                        } else {
+                                            photo.locality = Photo.NO_ADDRESS
+                                            photo.country = Photo.NO_ADDRESS
+                                            photo.countryCode = Photo.NO_ADDRESS
+                                        }
                                     }
+                                    photo.latitude = trackPoints[match].latitude
+                                    photo.longitude = trackPoints[match].longitude
+                                    photo.altitude = trackPoints[match].altitude
+                                    //photo.bearing = trackPoints[match].bearing
+
+                                    // Prepare batch update list
+                                    updatedPhotos.add(photo)
+                                    actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, photo.mimeType, album.name, photo.id, photo.name, System.currentTimeMillis(), album.shareId))
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                                photo.latitude = trackPoints[match].latitude
-                                photo.longitude = trackPoints[match].longitude
-                                photo.altitude = trackPoints[match].altitude
-                                //photo.bearing = trackPoints[match].bearing
 
-                                // Prepare batch update list
-                                updatedPhotos.add(photo)
-                                actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, photo.mimeType, album.name, photo.id, photo.name, System.currentTimeMillis(), album.shareId))
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                                startWith = match
                             }
-
-                            startWith = match
                         }
                     }
                 }
