@@ -917,8 +917,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 p /= 2
                             }
                             ensureActive()
-                            BitmapFactory.decodeFile("$localFileFolder/${rp.photo.id}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null}
-                        } else File(localFileFolder, rp.photo.id).inputStream()
+                            BitmapFactory.decodeFile("$localFileFolder/${rp.photo.id}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }
+                                ?: run { BitmapFactory.decodeFile("$localFileFolder/${rp.photo.name}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }}
+                        } else {
+                            try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { File(localFileFolder, rp.photo.name).inputStream() }
+                        }
                     }?.use { source ->
                         File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${rp.photo.name.substringAfterLast('.')}" else rp.photo.name).let { destFile ->
                             destFile.outputStream().use { dest ->
