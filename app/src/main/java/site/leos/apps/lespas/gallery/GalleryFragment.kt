@@ -703,6 +703,7 @@ class GalleryFragment: Fragment() {
                             mimeType = cursor.getString(typeColumn)
                             // Make sure image type is supported
                             if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
+                            if (cursor.getLong(sizeColumn) == 0L) continue@cursorLoop
 
 /*
                             date = cursor.getLong(dateColumn)
