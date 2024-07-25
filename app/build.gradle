@@ -81,8 +81,8 @@ dependencies {
     // Core
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     implementation 'androidx.core:core-ktx:1.13.1'
-    implementation 'androidx.activity:activity-ktx:1.9.0'
-    implementation 'androidx.fragment:fragment-ktx:1.8.1'
+    implementation 'androidx.activity:activity-ktx:1.9.1'
+    implementation 'androidx.fragment:fragment-ktx:1.8.2'
 
     // Room components
     def roomVersion = "2.6.1"
@@ -93,7 +93,7 @@ dependencies {
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     // Lifecycle components
-    def lifecycleVersion = "2.8.3"
+    def lifecycleVersion = "2.8.4"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
