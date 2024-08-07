@@ -405,4 +405,6 @@
     <string name="tooltips_local_copy">Lokale Kopie</string>
     <string name="tooltips_archive_copy">Archivierte Kopie</string>
     <string name="show_archive_title">Server-Archiv in der Galerie anzeigen</string>
+    <string name="prefer_history_over_latest">1. Damals und Heute 2. Kürzlich</string>
+    <string name="prefer_latest_over_history">1. Kürzlich 2. Damals und Heute</string>
 </resources>
