@@ -17,6 +17,8 @@
 package site.leos.apps.lespas.helper
 
 import android.os.Bundle
+import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.CheckBox
 import android.widget.TextView
@@ -46,7 +48,12 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<TextView>(R.id.dialog_title).text = requireArguments().getString(MESSAGE)
+        view.findViewById<TextView>(R.id.dialog_title).run {
+            if (requireArguments().getBoolean(LINK)) {
+                text = Html.fromHtml(requireArguments().getString(MESSAGE), Html.FROM_HTML_MODE_LEGACY)
+                movementMethod = LinkMovementMethod.getInstance()
+            } else text = requireArguments().getString(MESSAGE)
+        }
 
         checkBox = view.findViewById<CheckBox>(R.id.checkbox).apply {
             (requireArguments().getString(CHECK_BOX_TEXT) ?: "").let {
@@ -86,6 +93,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
         private const val REQUEST_KEY = "REQUEST_KEY"
         private const val MESSAGE = "MESSAGE"
+        private const val LINK = "LINK"
         private const val POSITIVE_BUTTON = "POSITIVE_BUTTON"
         private const val NEGATIVE_BUTTON = "NEGATIVE_BUTTON"
         private const val CANCELABLE = "CANCELABLE"
@@ -93,7 +101,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         private const val CHECK_BOX_CHECKED = "CHECK_BOX_CHECKED"
 
         @JvmStatic
-        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY, checkBoxText: String = "", checkBoxChecked: Boolean = false) = ConfirmDialogFragment().apply {
+        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY, checkBoxText: String = "", checkBoxChecked: Boolean = false, link: Boolean = false) = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
                 putString(POSITIVE_BUTTON, positiveButtonText)
@@ -103,6 +111,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
                 putString(REQUEST_KEY, requestKey)
                 putString(CHECK_BOX_TEXT, checkBoxText)
                 putBoolean(CHECK_BOX_CHECKED, checkBoxChecked)
+                putBoolean(LINK, link)
             }
         }
     }

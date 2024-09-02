@@ -22,6 +22,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.os.Build
@@ -45,6 +46,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.widget.doOnTextChanged
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
@@ -112,8 +114,6 @@ class NCLoginFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        scannerAvailable = scanIntent.resolveActivity(requireContext().packageManager) != null
-
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             Handler(Looper.getMainLooper()).post {
@@ -157,6 +157,8 @@ class NCLoginFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        scannerAvailable = scanIntent.resolveActivity(requireActivity().packageManager) != null
 
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
@@ -228,7 +230,7 @@ class NCLoginFragment: Fragment() {
                             authenticateModel.pingServer(null, true)
                             pingJobBackPressedCallback.isEnabled = true
                         }
-                        .setNegativeButton(android.R.string.cancel) { _, _ -> showError(1001) }
+                        .setNegativeButton(android.R.string.cancel) { _, _ -> showError(CERTIFICATE_ERROR) }
                         .create().show()
                 }
                 else -> showError(result)
@@ -240,7 +242,7 @@ class NCLoginFragment: Fragment() {
                 // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                 storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
-            } else showError(999)
+            } else showError(NETWORK_ERROR)
         }
 
         // Take care edittext UX
@@ -254,6 +256,12 @@ class NCLoginFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+
+        scannerAvailable = scanIntent.resolveActivity(requireActivity().packageManager) != null
+        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG_INSTALL_SCANNER)?.let {
+            (it as DialogFragment).requireDialog().dismiss()
+            setEndIconMode(ICON_MODE_INPUT)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -284,20 +292,27 @@ class NCLoginFragment: Fragment() {
                 inputArea.setEndIconOnClickListener {  }
             }
             ICON_MODE_INPUT -> {
+                inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
+                inputArea.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_qr_code_scanner_24)
+                inputArea.setEndIconTintList(ColorStateList.valueOf(Color.DKGRAY))
                 if (scannerAvailable) {
-                    inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
-                    inputArea.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_qr_code_scanner_24)
                     inputArea.setEndIconOnClickListener {
-                        try { scanRequestLauncher.launch(scanIntent) }
-                        catch (e: SecurityException) {
+                        try {
+                            scanRequestLauncher.launch(scanIntent)
+                        } catch (e: SecurityException) {
                             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app)).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                     }
+
                 } else {
-                    inputArea.endIconMode = TextInputLayout.END_ICON_NONE
-                    hostEditText.error = null
+                    inputArea.setEndIconTintList(ColorStateList.valueOf(Color.GRAY))
+                    inputArea.setEndIconOnClickListener {
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG_INSTALL_SCANNER) == null) ConfirmDialogFragment.newInstance(message = getString(R.string.msg_install_qrcode_scanner, "<a href=\"https://f-droid.org/packages/de.t_dankworth.secscanqr/\">")+"</a>", link = true).show(parentFragmentManager, CONFIRM_DIALOG_INSTALL_SCANNER)
+                    }
                 }
-                inputArea.requestFocus()
+
+                hostEditText.error = null
+                hostEditText.requestFocus()
             }
             ICON_MODE_PINGING -> {
                 inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
@@ -309,14 +324,14 @@ class NCLoginFragment: Fragment() {
 
     private fun showError(errorCode: Int) {
         setEndIconMode(ICON_MODE_ERROR)
-        inputArea.requestFocus()
-
         hostEditText.isEnabled = true
+        hostEditText.requestFocus()
         hostEditText.error = when(errorCode) {
             0 -> null
-            999-> getString(R.string.network_error)
-            404, 1000-> getString(R.string.unknown_host)
-            1001-> getString(R.string.certificate_error)
+            NETWORK_ERROR-> getString(R.string.network_error)
+            404, UNKNOWN_HOST_ERROR-> getString(R.string.unknown_host)
+            CERTIFICATE_ERROR-> getString(R.string.certificate_error)
+            HOST_ADDRESS_VALIDATION_ERROR-> getString(R.string.host_address_validation_error)
             else-> getString(R.string.host_not_valid, errorCode)
         }
     }
@@ -330,7 +345,7 @@ class NCLoginFragment: Fragment() {
             // Reset self-signed certificate
             authenticateModel.setSelfSignedCertificate(null)
             authenticateModel.setSelfSignedCertificateString("")
-        } else hostEditText.error = getString(R.string.host_address_validation_error)
+        } else showError(HOST_ADDRESS_VALIDATION_ERROR)
     }
 
     class AuthenticateViewModelFactory(private val context: FragmentActivity): ViewModelProvider.NewInstanceFactory() {
@@ -410,13 +425,13 @@ class NCLoginFragment: Fragment() {
                                     } ?: -1
                                 } catch (_: JSONException) { -1 }
                             } else response.code
-                        } ?: 999
+                        } ?: NETWORK_ERROR
                     } catch (e: SSLPeerUnverifiedException) {
                         // This certificate is issued by user installed CA, let user decide whether to trust it or not
                         998
                     } catch (e: SSLHandshakeException) {
                         // SSL related error generally means wrong SSL certificate
-                        var result = 1001
+                        var result = CERTIFICATE_ERROR
 
                         // If it's caused by CertPathValidatorException, then we should extract the untrusted certificate and let user decide
                         var previousCause: Throwable? = null
@@ -434,17 +449,17 @@ class NCLoginFragment: Fragment() {
 
                         result
                     } catch (e: KeyStoreException) {
-                        1001
+                        CERTIFICATE_ERROR
                     } catch (e: NoSuchAlgorithmException) {
-                        1001
+                        CERTIFICATE_ERROR
                     } catch (e: KeyManagementException) {
-                        1001
+                        CERTIFICATE_ERROR
                     } catch (e: UnknownHostException) {
-                        1000
+                        UNKNOWN_HOST_ERROR
                     } catch (e: SocketException) {
-                        httpCall?.let { if (it.isCanceled()) 0 else 999 } ?: 999
+                        httpCall?.let { if (it.isCanceled()) 0 else NETWORK_ERROR } ?: NETWORK_ERROR
                     } catch (e: Exception) {
-                        999
+                        NETWORK_ERROR
                     }
                 )
 
@@ -547,8 +562,14 @@ class NCLoginFragment: Fragment() {
         private const val ICON_MODE_PINGING = 2
         private const val ICON_MODE_ERROR = 3
 
+        private const val NETWORK_ERROR = 999
+        private const val UNKNOWN_HOST_ERROR = 1000
+        private const val CERTIFICATE_ERROR = 1001
+        private const val HOST_ADDRESS_VALIDATION_ERROR = 1002
+
         private const val KEY_ERROR_SHOWN = "KEY_ERROR_SHOWN"
 
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val CONFIRM_DIALOG_INSTALL_SCANNER = "CONFIRM_DIALOG_INSTALL_SCANNER"
     }
 }

@@ -47,10 +47,11 @@
     <string name="verify_ssl_certificate_message">Server %1$s\'s certificate CAN NOT be verified, do you want to trust this server?</string>
     <string name="untrusted_ssl_certificate_message">Subject:\n%1$s\n\nIssuer:\n%2$s\n\nSHA-256 Fingerprint:\n%3$s\n\nIssued on: %4$s\n\nExpired on: %5$s\n\n\nDo you want to trust this server?</string>
     <string name="accept_certificate">Trust it!</string>
+    <string name="msg_install_qrcode_scanner">Please install a compatible QR code scanner app first. Like %1$sSecScanQR from F-Droid</string>
 
-    <string name="host_address_validation_error">Host not valid.</string>
+    <string name="host_address_validation_error">Address not valid.</string>
     <string name="host_not_valid">Address not valid (%1$d).</string>
-    <string name="unknown_host">Server not found.</string>
+    <string name="unknown_host">Nextcloud server not found.</string>
     <string name="network_error">Network error, try again.</string>
     <string name="certificate_error">Site certificate error.</string>
 

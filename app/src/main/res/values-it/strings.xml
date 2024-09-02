@@ -40,9 +40,10 @@
     <string name="untrusted_ssl_certificate_message">Soggetto:\n%1$s\n\nEmittente:\n%2$s\n\nSHA-256 Impronta digitale:\n%3$s\n\nNon prima: %4$s\n\nNon dogo: %5$s\n\n\nVuoi fidarti di questo server?</string>
     <string name="accept_certificate">Mi fido!</string>
 
-    <string name="host_address_validation_error">Host non valido.</string>
+    <string name="msg_install_qrcode_scanner">Installare prima un\'applicazione compatibile per la scansione dei codici QR. Come %1$sSecScanQR di F-Droid</string>
+    <string name="host_address_validation_error">Indirizzo non valido.</string>
     <string name="host_not_valid">Indirizzo non valido (%1$d).</string>
-    <string name="unknown_host">Server non trovato.</string>
+    <string name="unknown_host">Server Nextcloud non trovato.</string>
     <string name="network_error">Errore di rete, riprova.</string>
     <string name="certificate_error">Errore del certificato del sito.</string>
 

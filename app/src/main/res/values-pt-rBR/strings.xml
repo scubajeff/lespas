@@ -40,9 +40,10 @@
     <string name="untrusted_ssl_certificate_message">Sujeito:\n%1$s\n\nEmissor:\n%2$s\n\nSHA-256 Impressão digital:\n%3$s\n\nEmitida em: %4$s\n\nExpirado em: %5$s\n\n\nVocê quer confiar neste servidor?</string>
     <string name="accept_certificate">Confiar nele!</string>
 
-    <string name="host_address_validation_error">Nome de rede inválido.</string>
+    <string name="msg_install_qrcode_scanner">Instale primeiro um aplicativo de leitura de código QR compatível. Como o %1$sSecScanQR do F-Droid</string>
+    <string name="host_address_validation_error">O endereço não é válido.</string>
     <string name="host_not_valid">Endereço inválido (%1$d).</string>
-    <string name="unknown_host">Servidor não encontrado.</string>
+    <string name="unknown_host">Servidor Nextcloud não encontrado.</string>
     <string name="network_error">Erro de rede, tente novamente.</string>
     <string name="certificate_error">Erro de certificado remoto.</string>
 
