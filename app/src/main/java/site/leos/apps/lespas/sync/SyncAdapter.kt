@@ -1576,6 +1576,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverFileName = this.coverFileName
                         changedAlbum.coverMimeType = this.coverMimeType
                         changedAlbum.coverOrientation = coverOrientation
+                        changedAlbum.bgmId = this.bgmId
+                        changedAlbum.bgmETag = this.bgmETag
                     }
                 }
 
@@ -1615,9 +1617,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 } catch (e: Exception) { e.printStackTrace() }
 
                 // Force update album start and end date when album content changed whether there are photo files got added/deleted or simply just name changed
+                // TODO deletion on server not processed yet, start/end date or even cover could be wrong, should we move the upsert after deletion processing?
                 with(photoRepository.getAlbumDuration(changedAlbum.id)) {
-                    if (first < changedAlbum.startDate) changedAlbum.startDate = first
-                    if (second > changedAlbum.endDate) changedAlbum.endDate = second
+                    changedAlbum.startDate = first
+                    changedAlbum.endDate = second
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
@@ -2061,9 +2064,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     result = meta.getJSONObject("cover").run {
                         when {
                             // TODO Make sure later version of album meta file downward compatible
-                            version >= 2 -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation"))
+                            version >= 2 -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation"), Album.NO_BGM, Album.ETAG_NOT_YET_UPLOADED)
                             // Version 1 of album meta json
-                            else -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "", 0)
+                            else -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "", 0, Album.NO_BGM, Album.ETAG_NOT_YET_UPLOADED)
                         }
                     }
                     //Log.e(TAG, "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")

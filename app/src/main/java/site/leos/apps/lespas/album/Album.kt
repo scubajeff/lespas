@@ -119,7 +119,7 @@ data class IDandCover(val id: String, val cover: String)
 data class IDandETag(val id: String, val eTag: String)
 data class IDandName(val id: String, val name: String)
 data class IDandAttribute(val id: String, val name: String, val shareId: Int)
-data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int, val coverFileName: String, val coverMimeType: String, val coverOrientation: Int)
+data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int, val coverFileName: String, val coverMimeType: String, val coverOrientation: Int, val bgmId: String, val bgmETag: String)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
 
 @Dao
@@ -151,7 +151,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :coverId, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height, coverFileName = :filename, coverMimeType = :mimetype, coverOrientation = :orientation WHERE id = :albumId")
     abstract fun setCover(albumId: String, coverId: String, coverBaseline: Int, width: Int, height: Int, filename: String, mimetype: String, orientation: Int)
 
-    @Query("SELECT sortOrder, cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    @Query("SELECT sortOrder, cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation, bgmId, bgmETag FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getMeta(albumId: String): Meta
 
     @Transaction
