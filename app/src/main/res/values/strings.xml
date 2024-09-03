@@ -460,7 +460,7 @@
     <string name="checkbox_text_dst">DST correction</string>
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s is invalid, or no timestamp found!</string>
-    <string name="suffix_gpx_offset">minutes difference allowed</string>
+    <string name="suffix_gpx_offset">mins difference allowed</string>
 
     <string name="gpx_suffix" translatable="false">.gpx</string>
     <string name="hint_gpx_export_file_location">File will be saved in \'Download\' folder.</string>
