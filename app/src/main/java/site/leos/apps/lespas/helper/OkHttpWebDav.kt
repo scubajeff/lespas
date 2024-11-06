@@ -468,6 +468,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 else throw OkHttpWebDavException(response)
             }
         } ?: throw IllegalStateException("InputStream provider crashed")
+        return Pair("", "")
     }
 
     private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long, ctx: Context, specialHeaders: Headers? = null): Pair<String, String> {
