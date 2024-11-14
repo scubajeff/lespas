@@ -247,6 +247,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 })
 
                 overviewAdapter.setSelectionTracker(this)
+                savedInstanceState?.let { onRestoreInstanceState(it) }
             }
 
             // Avoid window inset overlapping
