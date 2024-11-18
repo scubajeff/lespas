@@ -117,7 +117,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private var workingAction: Action? = null
 
     private val snapshotDeletion = mutableListOf<String>()
-    private val snapshotAddition = mutableListOf<GalleryFragment.LocalMedia>()
+    private val snapshotAddition = mutableListOf<GalleryFragment.GalleryMedia>()
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
 
@@ -1870,8 +1870,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     photo.dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(cTimeStamp), ZoneId.systemDefault())
                     photo.lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(mTimeStamp * 1000), ZoneId.systemDefault())
                     snapshotAddition.add(0,
-                        GalleryFragment.LocalMedia(
-                            location = GalleryFragment.LocalMedia.IS_REMOTE,
+                        GalleryFragment.GalleryMedia(
+                            location = GalleryFragment.GalleryMedia.IS_REMOTE,
                             folder = it.folder,
                             NCShareViewModel.RemotePhoto(photo = photo.copy(), remotePath = "${archiveBase}/${deviceModel}/${it.folder}/${relativePath}"),
                             volume = deviceModel,

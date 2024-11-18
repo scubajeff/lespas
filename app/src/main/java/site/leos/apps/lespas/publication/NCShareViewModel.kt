@@ -118,7 +118,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     private val _blogs = MutableStateFlow<List<Blog>?>(null)
     private val _blogPostThemeId = MutableStateFlow("")
-    private val _archive = MutableStateFlow<List<GalleryFragment.LocalMedia>?>(null)
+    private val _archive = MutableStateFlow<List<GalleryFragment.GalleryMedia>?>(null)
 
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
@@ -127,7 +127,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
     val blogs: StateFlow<List<Blog>?> = _blogs
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
-    val archive: StateFlow<List<GalleryFragment.LocalMedia>?> = _archive
+    val archive: StateFlow<List<GalleryFragment.GalleryMedia>?> = _archive
     private var archiveFetchingJob: Job? = null
 
     private val _publicShare = MutableSharedFlow<Recipient>()
@@ -594,7 +594,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun refreshArchive(forcedRefresh: Boolean = false) {
         if (archiveFetchingJob == null) archiveFetchingJob = viewModelScope.launch(Dispatchers.IO) {
             var newETag = ""
-            val result = mutableListOf<GalleryFragment.LocalMedia>()
+            val result = mutableListOf<GalleryFragment.GalleryMedia>()
 
             try {
                 // Restore archive snapshot
@@ -654,8 +654,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         volume = dav.name.substringAfter('/').substringBefore('/')
                         path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/', "")
                         result.add(
-                            GalleryFragment.LocalMedia(
-                                GalleryFragment.LocalMedia.IS_REMOTE,
+                            GalleryFragment.GalleryMedia(
+                                GalleryFragment.GalleryMedia.IS_REMOTE,
                                 folder = if (path.isEmpty()) volume else path.substringBefore('/'),                                         // first segment of file path
                                 media = RemotePhoto(
                                     Photo(
@@ -696,7 +696,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         viewModelScope.launch { _archive.emit(null) }
     }
 
-    private fun saveArchiveSnapshot(archiveList: List<GalleryFragment.LocalMedia>, newETag: String) {
+    private fun saveArchiveSnapshot(archiveList: List<GalleryFragment.GalleryMedia>, newETag: String) {
         File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).writer().use { it.write(Tools.archiveToJSONString(archiveList)) }
 
         sp.edit().run {

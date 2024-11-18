@@ -815,7 +815,7 @@ object Tools {
         return content.dropLast(1) + "]}}"
     }
 
-    fun archiveToJSONString(archiveList: List<GalleryFragment.LocalMedia>): String {
+    fun archiveToJSONString(archiveList: List<GalleryFragment.GalleryMedia>): String {
         val defaultOffset = OffsetDateTime.now().offset
         var content = "{\"archive\":{\"version\":1,\"photos\":["
         archiveList.forEach { localMedia ->
@@ -835,8 +835,8 @@ object Tools {
         return content.dropLast(1) + "]}}"
     }
 
-    fun jsonToArchiveList(jsonString: String, archiveBase: String): List<GalleryFragment.LocalMedia> {
-        val result = mutableListOf<GalleryFragment.LocalMedia>()
+    fun jsonToArchiveList(jsonString: String, archiveBase: String): List<GalleryFragment.GalleryMedia> {
+        val result = mutableListOf<GalleryFragment.GalleryMedia>()
         val defaultZone = ZoneId.systemDefault()
         var volume: String
         var fullPath: String
@@ -851,8 +851,8 @@ object Tools {
                             fullPath = getString("fullPath").dropLast(1)
 
                             result.add(
-                                GalleryFragment.LocalMedia(
-                                    GalleryFragment.LocalMedia.IS_REMOTE,
+                                GalleryFragment.GalleryMedia(
+                                    GalleryFragment.GalleryMedia.IS_REMOTE,
                                     if (fullPath.isEmpty()) volume else fullPath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         photo = Photo(

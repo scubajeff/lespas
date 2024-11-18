@@ -572,20 +572,24 @@ class GalleryFragment: Fragment() {
         private var loadJob: Job? = null
         private var autoRemoveDone = false
         private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
-        private val _local = MutableStateFlow<List<LocalMedia>>(mutableListOf())
-        private val _medias = MutableStateFlow<List<LocalMedia>?>(null)
-        val medias: StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-        val trash: StateFlow<List<LocalMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-        fun mediasInFolder(folderName: String): StateFlow<List<LocalMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        private val _local = MutableStateFlow<List<GalleryMedia>>(mutableListOf())
+        private val _medias = MutableStateFlow<List<GalleryMedia>?>(null)
+        val medias: StateFlow<List<GalleryMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        val trash: StateFlow<List<GalleryMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        fun mediasInFolder(folderName: String): StateFlow<List<GalleryMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 launch {
                     combine(_local, imageModel.archive) { localMedia, archiveMedia ->
                         //Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
-                        val combinedList = mutableListOf<LocalMedia>().apply { addAll(localMedia) }
+                        // Deep copy to create a brand new list for combining local and archive items
+                        val combinedList = localMedia.map { it.copy() }.toMutableList()
 
                         if (_showArchive.value != ARCHIVE_OFF) {
+                            // To facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment, need to alter item's 'location' property
+                            combinedList.forEach { it.location = GalleryMedia.IS_LOCAL }
+
                             val model = Tools.getDeviceModel()
 
                             archiveMedia?.let {
@@ -596,7 +600,7 @@ class GalleryFragment: Fragment() {
                                             item.media.photo.name == archiveItem.media.photo.name && item.fullPath == archiveItem.fullPath && item.folder != TRASH_FOLDER
                                         }?.let { existed ->
                                             //Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
-                                            existed.location = LocalMedia.IS_BOTH
+                                            existed.location = GalleryMedia.IS_BOTH
                                             existed.remoteFileId = archiveItem.media.photo.id
                                             //existed.media.photo.eTag = archiveItem.media.photo.eTag
                                         } ?: run {
@@ -617,7 +621,7 @@ class GalleryFragment: Fragment() {
                         }
 
                         combinedList.sortedByDescending { it.media.photo.lastModified }
-                    }.collect { result -> _medias.value = result }
+                    }.collect { result -> _medias.emit(result) }
                 }
             }
         }
@@ -640,7 +644,7 @@ class GalleryFragment: Fragment() {
                 if (delayStart) delay(300)
                 ensureActive()
 
-                val localMedias = mutableListOf<LocalMedia>()
+                val localMedias = mutableListOf<GalleryMedia>()
 
                 val contentUri = MediaStore.Files.getContentUri("external")
                 val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -734,8 +738,8 @@ class GalleryFragment: Fragment() {
 
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
-                                LocalMedia(
-                                    LocalMedia.IS_LOCAL,
+                                GalleryMedia(
+                                    GalleryMedia.IS_IN_GALLERY,
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
@@ -749,7 +753,7 @@ class GalleryFragment: Fragment() {
                                             height = cursor.getInt(heightColumn),
                                             mimeType = mimeType,
                                             caption = cursor.getString(sizeColumn),               // Saving photo size value in caption property as String to avoid integer overflow
-                                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in orientation property, keep original orientation, other fragments will handle the rotation, TODO video length?
+                                            orientation = cursor.getInt(orientationColumn),       // Saving photo orientation value in orientation property, keep original orientation, other fragments will handle the rotation, TODO video length?
                                         ),
                                         remotePath = "",    // Local media
                                         coverBaseLine = 0,  // Backup is disable by default
@@ -804,7 +808,7 @@ class GalleryFragment: Fragment() {
 
             uri.toString().let { uriString ->
                 setCurrentPhotoId(uriString)
-                _medias.value = listOf(LocalMedia(LocalMedia.IS_LOCAL, uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
+                _medias.value = listOf(GalleryMedia(GalleryMedia.IS_LOCAL, uriString, NCShareViewModel.RemotePhoto(photo), "", uriString))
             }
         }
 
@@ -862,7 +866,7 @@ class GalleryFragment: Fragment() {
         }
 
         fun getPhotoById(id: String): NCShareViewModel.RemotePhoto? = _medias.value?.find { it.media.photo.id == id }?.media
-        private fun getLocalMediaById(id: String): LocalMedia? = _medias.value?.find { it.media.photo.id == id }
+        private fun getLocalMediaById(id: String): GalleryMedia? = _medias.value?.find { it.media.photo.id == id }
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
@@ -1029,7 +1033,7 @@ class GalleryFragment: Fragment() {
     }
 
     @Parcelize
-    data class LocalMedia(
+    data class GalleryMedia(
         var location: Int,
         var folder: String,
         var media: NCShareViewModel.RemotePhoto,
@@ -1039,15 +1043,18 @@ class GalleryFragment: Fragment() {
         var remoteFileId: String = "",
     ) : Parcelable {
         fun isBoth() = location == IS_BOTH
-        fun isLocal() = location == IS_LOCAL
+        fun isLocal() = location == IS_LOCAL || location == IS_IN_GALLERY
         fun isRemote() = location == IS_REMOTE
         fun isNotMedia() = location == IS_NOT_MEDIA
+        fun atLocal() = location == IS_LOCAL || location == IS_BOTH
+        fun atRemote() = location == IS_REMOTE || location == IS_BOTH
 
         companion object {
-            const val IS_LOCAL = 1
-            const val IS_REMOTE = 2
-            const val IS_BOTH = 4
-            const val IS_NOT_MEDIA = 8
+            const val IS_IN_GALLERY = 0     // When media is in local gallery and archive is not showing
+            const val IS_LOCAL = 1          // When media is in local gallery only and archive is being shown
+            const val IS_REMOTE = 2         // When media is in archive only
+            const val IS_BOTH = 4           // When media is in local gallery and archive
+            const val IS_NOT_MEDIA = 8      // When this is not a media item. For use with special list item like header and footer view
         }
     }
 
@@ -1058,7 +1065,7 @@ class GalleryFragment: Fragment() {
         const val FROM_ARCHIVE = ""             // Nextcloud server's folder id can't be empty
         const val EMPTY_GALLERY_COVER_ID = "0"
 
-        const val TRASH_FOLDER = "\uE83A"   // This private character make sure the Trash is at the bottom of folder list
+        const val TRASH_FOLDER = "\uE83A"       // This private character make sure the Trash is at the bottom of folder list
         const val ALL_FOLDER = ".."
 
         const val ARCHIVE_SCHEME = "remote"

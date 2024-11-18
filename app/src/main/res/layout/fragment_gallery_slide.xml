@@ -163,7 +163,7 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toLeftOf="@id/archive"
                 android:src="@drawable/ic_baseline_device_24"
-                app:tint="@color/gallery_location_indicator"
+                app:tint="@color/gallery_location_indicator_local"
                 android:contentDescription="@string/tooltips_local_copy"
                 android:tooltipText="@string/tooltips_local_copy"
                 tools:ignore="UnusedAttribute" />
@@ -175,7 +175,7 @@
                 app:layout_constraintLeft_toRightOf="@id/local"
                 android:layout_marginStart="@dimen/big_padding"
                 android:src="@drawable/ic_baseline_archive_24"
-                app:tint="@color/gallery_location_indicator"
+                app:tint="@color/gallery_location_indicator_remote"
                 android:contentDescription="@string/tooltips_archive_copy"
                 android:tooltipText="@string/tooltips_archive_copy"
                 tools:ignore="UnusedAttribute" />

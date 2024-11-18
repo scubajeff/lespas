@@ -119,10 +119,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    //private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
 
-    private val currentMediaList = mutableListOf<GalleryFragment.LocalMedia>()
+    private val currentMediaList = mutableListOf<GalleryFragment.GalleryMedia>()
 
     private var currentCheckedTag = CHIP_FOR_ALL_TAG
 
@@ -232,6 +231,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
         mediaList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = mediaAdapter
+            itemAnimator = null     // Disable recyclerview item animation to avoid ANR in AdapterHelper.findPositionOffset() when DiffResult applying at the moment that the list is scrolling
 
             spanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
@@ -261,7 +261,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             while(true) {
                                 index++
                                 if (index == mediaAdapter.currentList.size) break                       // End of list
-                                if (mediaAdapter.currentList[index].photo.mimeType.isEmpty()) break     // Next date
+                                if (mediaAdapter.currentList[index].location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA) break     // Next date
                                 mediaAdapter.getPhotoId(index).let { id ->
                                     keys.add(id)
                                     if (!selectionTracker.isSelected(id)) selectWholeDate = true
@@ -330,7 +330,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             if ((findLastCompletelyVisibleItemPosition() < mediaAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
                                 yearIndicator.let {
-                                    it.text = mediaAdapter.currentList[findLastVisibleItemPosition()].photo.lastModified.format(DateTimeFormatter.ofPattern("MMM uuuu"))
+                                    it.text = mediaAdapter.currentList[findLastVisibleItemPosition()].media.photo.lastModified.format(DateTimeFormatter.ofPattern("MMM uuuu"))
                                     it.isVisible = true
                                 }
                                 hideHandler.postDelayed(hideDateIndicator, 1500)
@@ -376,7 +376,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         parentFragmentManager.setFragmentResultListener(GALLERY_FOLDERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
-                EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.photo.id) }})
+                EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.media.photo.id) }})
             }
         }
 
@@ -398,16 +398,20 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     GalleryFragment.TRASH_FOLDER -> {
                         galleryModel.trash.collect {
                             var theDate: LocalDate
-                            val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+                            val listGroupedByDate = mutableListOf<GalleryFragment.GalleryMedia>()
                             var currentDate = LocalDate.now().plusDays(1)
                             it?.forEach { media ->
                                 theDate = media.media.photo.lastModified.toLocalDate()
                                 if (theDate != currentDate) {
                                     currentDate = theDate
                                     // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                                    listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.lastModified, mimeType = "")))
+                                    listGroupedByDate.add(GalleryFragment.GalleryMedia(
+                                        location = GalleryFragment.GalleryMedia.IS_NOT_MEDIA,
+                                        folder = GalleryFragment.TRASH_FOLDER,
+                                        media = NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.lastModified))
+                                    ))
                                 }
-                                listGroupedByDate.add(media.media)
+                                listGroupedByDate.add(media)
                             }
 
                             if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else {
@@ -552,7 +556,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.select_all -> {
-                selectionTracker.setItemsSelected(mediaAdapter.currentList.filter { it.photo.mimeType.isNotEmpty() }.map { it.photo.id }, true)
+                selectionTracker.setItemsSelected(mediaAdapter.currentList.filter { it.location != GalleryFragment.GalleryMedia.IS_NOT_MEDIA }.map { it.media.photo.id }, true)
                 true
             }
             else -> false
@@ -588,7 +592,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     @SuppressLint("InflateParams")
-    private fun prepareList(localMedias: List<GalleryFragment.LocalMedia>?) {
+    private fun prepareList(localMedias: List<GalleryFragment.GalleryMedia>?) {
         if (localMedias == null) return
         if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
@@ -622,7 +626,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         subFolderChipGroup.check(
             subFolderChipGroup.findViewWithTag<Chip>(currentCheckedTag)?.id
             ?: run {
-                // If currentCheckedTag is not found in the new sub foler list, fall back to 'All'
+                // If currentCheckedTag is not found in the new sub folder list, fall back to 'All'
                 currentCheckedTag = CHIP_FOR_ALL_TAG
                 chipForAll.id
             }
@@ -638,7 +642,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     private fun setList() {
-        val listGroupedByDate = mutableListOf<NCShareViewModel.RemotePhoto>()
+        val listGroupedByDate = mutableListOf<GalleryFragment.GalleryMedia>()
         var theDate: LocalDate
         var currentDate = LocalDate.now().plusDays(1)
 
@@ -651,9 +655,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             if (theDate != currentDate) {
                 currentDate = theDate
                 // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
-                listGroupedByDate.add(NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.lastModified, mimeType = "")))
+                listGroupedByDate.add(GalleryFragment.GalleryMedia(
+                    location = GalleryFragment.GalleryMedia.IS_NOT_MEDIA,
+                    folder = "",
+                    media = NCShareViewModel.RemotePhoto(Photo(id = currentDate.toString(), albumId = GalleryFragment.FROM_DEVICE_GALLERY, dateTaken = media.media.photo.dateTaken, lastModified = media.media.photo.lastModified))
+                ))
             }
-            listGroupedByDate.add(media.media)
+            listGroupedByDate.add(media)
         }
 
         //if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
@@ -678,7 +686,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     class MediaAdapter(private val clickListener: (View, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
-    ): ListAdapter<NCShareViewModel.RemotePhoto, RecyclerView.ViewHolder>(MediaDiffCallback()) {
+    ): ListAdapter<GalleryFragment.GalleryMedia, RecyclerView.ViewHolder>(MediaDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
@@ -689,18 +697,26 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentId = ""
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
+            val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply {
+                foregroundGravity = Gravity.CENTER
+                setOnClickListener { if (!selectionTracker.hasSelection()) currentList[bindingAdapterPosition].media.photo.let { photo ->  clickListener(this, photo.id, photo.mimeType) }}
+            }
+            private val ivLocal: View = itemView.findViewById(R.id.local_media)
+            private val ivArchive: View = itemView.findViewById(R.id.archive_media)
 
-            fun bind(item: NCShareViewModel.RemotePhoto) {
-                val photo = item.photo
+            fun bind(item: GalleryFragment.GalleryMedia) {
+                val photo = item.media.photo
                 itemView.let {
                     it.isSelected = selectionTracker.isSelected(photo.id)
 
                     with(ivPhoto) {
                         if (currentId != photo.id) {
-                            imageLoader(item, this)
+                            // When selection state changed, this prevent loading image again which result in a flickering
+                            imageLoader(item.media, this)
                             currentId = photo.id
                         }
+
+                        bindLocationIndicator(item)
 
                         ViewCompat.setTransitionName(this, photo.id)
 
@@ -712,10 +728,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
                         if (it.isSelected) colorFilter = selectedFilter
                         else clearColorFilter()
-
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, photo.id, photo.mimeType) }
                     }
                 }
+            }
+
+            fun bindLocationIndicator(item: GalleryFragment.GalleryMedia) {
+                ivLocal.isActivated = item.atLocal()
+                ivArchive.isActivated = item.atRemote()
             }
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<String>() {
@@ -728,8 +747,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             private val tvDate = itemView.findViewById<TextView>(R.id.date)
 
             @SuppressLint("SetTextI18n")
-            fun bind(item: NCShareViewModel.RemotePhoto) {
-                with(item.photo.lastModified) {
+            fun bind(item: GalleryFragment.GalleryMedia) {
+                with(item.media.photo.lastModified) {
                     val now = LocalDate.now()
                     val date = this.toLocalDate()
                     tvDate.text = when {
@@ -738,7 +757,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         date.year == now.year -> "${format(DateTimeFormatter.ofPattern("MMM d"))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                         else -> "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                     }
-                    tvDate.tag = item.photo.id
+                    tvDate.tag = item.media.photo.id
                 }
             }
 
@@ -749,7 +768,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-            if (viewType == TYPE_MEDIA) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+            if (viewType == TYPE_MEDIA) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery, parent, false))
             else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_gallery_date_horizontal, parent, false))
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -757,16 +776,31 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             else (holder as DateViewHolder).bind(currentList[position])
         }
 
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
+            if (holder is MediaViewHolder) {
+                if (payloads.isEmpty()) holder.bind(currentList[position])
+                else if (payloads[0] == PAYLOAD_LOCATION_CHANGED) holder.bindLocationIndicator(currentList[position]) else holder.bind(currentList[position])
+            }
+            else (holder as DateViewHolder).bind(currentList[position])
+        }
+
+        override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+            if (holder is MediaViewHolder) cancelLoader(holder.ivPhoto)
+            super.onViewRecycled(holder)
+        }
+
+/*
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) {
                 recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
             }
             super.onDetachedFromRecyclerView(recyclerView)
         }
+*/
 
-        override fun getItemViewType(position: Int): Int = if (currentList[position].photo.mimeType.isEmpty()) TYPE_DATE else TYPE_MEDIA
+        override fun getItemViewType(position: Int): Int = if (currentList[position].location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA) TYPE_DATE else TYPE_MEDIA
 
-        internal fun getFileSize(selected: String): Long = currentList.find { it.photo.id == selected }?.photo?.caption?.toLong() ?: 0L
+        internal fun getFileSize(selected: String): Long = currentList.find { it.media.photo.id == selected }?.media?.photo?.caption?.toLong() ?: 0L
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
@@ -776,19 +810,19 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             sYesterday = yesterday
         }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
-        internal fun getPhotoId(position: Int): String = currentList[position].photo.id
-        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfFirst { it.photo.id == photoId }
+        internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id
+        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfFirst { it.media.photo.id == photoId }
 
         fun hasDate(date: Long): Boolean {
             val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
-            return (currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.lastModified.toLocalDate().isEqual(theDate) }) != RecyclerView.NO_POSITION
+            return (currentList.indexOfFirst { it.location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA && it.media.photo.lastModified.toLocalDate().isEqual(theDate) }) != RecyclerView.NO_POSITION
         }
         fun dateRange(): Pair<Long, Long>? {
-            return if (currentList.isNotEmpty()) Pair(currentList.last().photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()) else null
+            return if (currentList.isNotEmpty()) Pair(currentList.last().media.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().media.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()) else null
         }
-        fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.photo.mimeType.isEmpty() && it.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
-        fun getDateByPosition(position: Int): Long = currentList[position].photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()
-        fun getAllItems(): List<NCShareViewModel.RemotePhoto> = currentList.filter { it.photo.mimeType.isNotEmpty() }
+        fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA && it.media.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
+        fun getDateByPosition(position: Int): Long = currentList[position].media.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()
+        fun getAllItems(): List<GalleryFragment.GalleryMedia> = currentList.filter { it.location != GalleryFragment.GalleryMedia.IS_NOT_MEDIA }
 
         class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
@@ -815,11 +849,20 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         companion object {
             private const val TYPE_MEDIA = 0
             const val TYPE_DATE = 1
+
+            const val PAYLOAD_LOCATION_CHANGED = 1
         }
     }
-    class MediaDiffCallback : DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
-        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
-        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = true
+
+    class MediaDiffCallback : DiffUtil.ItemCallback<GalleryFragment.GalleryMedia>() {
+        override fun areItemsTheSame(oldItem: GalleryFragment.GalleryMedia, newItem: GalleryFragment.GalleryMedia): Boolean = oldItem.media.photo.id == newItem.media.photo.id
+        override fun areContentsTheSame(oldItem: GalleryFragment.GalleryMedia, newItem: GalleryFragment.GalleryMedia): Boolean = oldItem.location == newItem.location
+        override fun getChangePayload(oldItem: GalleryFragment.GalleryMedia, newItem: GalleryFragment.GalleryMedia): Any? {
+            return when {
+                oldItem.location != newItem.location -> MediaAdapter.PAYLOAD_LOCATION_CHANGED
+                else -> null
+            }
+        }
     }
 
     companion object {

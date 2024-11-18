@@ -189,8 +189,8 @@ class GallerySlideFragment : Fragment() {
                                 removeButton.isEnabled = photo.lastModified != LocalDateTime.MAX
                                 useAsButton.isEnabled = photo.mimeType.startsWith("image")
                             }
-                            localIndicator.isActivated = !isRemote()
-                            archiveIndicator.isActivated = !isLocal()
+                            localIndicator.isActivated = atLocal()
+                            archiveIndicator.isActivated = atRemote()
                         }
                     } catch (_: IndexOutOfBoundsException) {}
 
@@ -366,7 +366,7 @@ class GallerySlideFragment : Fragment() {
         }
     }
 
-    private fun setList(localMedias: List<GalleryFragment.LocalMedia>?) {
+    private fun setList(localMedias: List<GalleryFragment.GalleryMedia>?) {
         if (localMedias == null) return
         if (localMedias.isNotEmpty()) {
             requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
@@ -409,27 +409,27 @@ class GallerySlideFragment : Fragment() {
 
     class MediaSlideAdapter(
         context: Context, private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel,
-        clickListener: (Boolean?) -> Unit, imageLoader: (GalleryFragment.LocalMedia, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<GalleryFragment.LocalMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+        clickListener: (Boolean?) -> Unit, imageLoader: (GalleryFragment.GalleryMedia, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<GalleryFragment.GalleryMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
-        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.LocalMedia).media) {
+        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.GalleryMedia).media) {
             if (Tools.isPhotoFromGallery(photo)) VideoItem(Uri.parse(photo.id), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
             else VideoItem(Uri.parse("${basePath}/${remotePath}/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id)
         }
 
         fun isPhotoAtLocal(position: Int): Boolean = !currentList[position].isRemote()
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media
-        fun getLocalMediaAt(position: Int): GalleryFragment.LocalMedia = currentList[position]
+        fun getLocalMediaAt(position: Int): GalleryFragment.GalleryMedia = currentList[position]
         fun getScrollingPosition(photoId: String): Int {
             val id = photoId.substringAfterLast('/')
             return currentList.indexOfFirst { it.media.photo.id.substringAfterLast('/') == id }     //.apply { Log.e(">>>>>>>>", "getScrollingPosition: $photoId $this", ) }
         }
     }
 
-    class SliderMediaDiffCallback : DiffUtil.ItemCallback<GalleryFragment.LocalMedia>() {
-        override fun areItemsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = oldItem.media.photo.id == newItem.media.photo.id
-        override fun areContentsTheSame(oldItem: GalleryFragment.LocalMedia, newItem: GalleryFragment.LocalMedia): Boolean = true
+    class SliderMediaDiffCallback : DiffUtil.ItemCallback<GalleryFragment.GalleryMedia>() {
+        override fun areItemsTheSame(oldItem: GalleryFragment.GalleryMedia, newItem: GalleryFragment.GalleryMedia): Boolean = oldItem.media.photo.id == newItem.media.photo.id
+        override fun areContentsTheSame(oldItem: GalleryFragment.GalleryMedia, newItem: GalleryFragment.GalleryMedia): Boolean = true
     }
 
     companion object {
