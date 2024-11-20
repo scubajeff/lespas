@@ -429,9 +429,14 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_folder_menu, menu)
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
                 if (folderArgument == GalleryFragment.TRASH_FOLDER) {
                     menu.findItem(R.id.option_menu_empty_trash)?.isVisible = true
                     menu.findItem(R.id.option_menu_archive).isVisible = false
+                    menu.findItem(R.id.option_menu_archive_forced_refresh).isVisible = false
+                    menu.findItem(R.id.option_menu_calendar_view).isVisible = false
                 }
             }
 
