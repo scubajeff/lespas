@@ -294,6 +294,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
+                            actionMode?.subtitle = ""
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
@@ -584,7 +585,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     totalSize += mediaAdapter.getFileSize(selected)
                 }
                 selectionTracker.selection.size().let { selectionSize ->
-                    actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${Tools.humanReadableByteCountSI(totalSize)})"
+                    actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                    actionMode?.subtitle = Tools.humanReadableByteCountSI(totalSize)
 
                     // Disable sub folder chips when in selection mode
                     when {

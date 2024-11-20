@@ -161,9 +161,14 @@
         <item name="android:layout_marginLeft">-24dp</item>
         <item name="background">?colorPrimary</item>
         <item name="titleTextStyle">@style/ThemeOverlay.LesPas.ActionMode.Title</item>
+        <item name="subtitleTextStyle">@style/ThemeOverlay.LesPas.ActionMode.SubTitle</item>
     </style>
 
     <style name="ThemeOverlay.LesPas.ActionMode.Title" parent="TextAppearance.AppCompat.Widget.ActionMode.Title">
+        <item name="android:textColor">?primaryTextWhite</item>
+    </style>
+
+    <style name="ThemeOverlay.LesPas.ActionMode.SubTitle" parent="TextAppearance.AppCompat.Widget.ActionMode.Subtitle">
         <item name="android:textColor">?primaryTextWhite</item>
     </style>
 

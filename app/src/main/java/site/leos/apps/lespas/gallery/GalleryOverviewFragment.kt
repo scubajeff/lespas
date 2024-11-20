@@ -238,13 +238,20 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         val selectionSize = selectionTracker.selection.size()
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
-                            actionMode?.let { it.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
+                            actionMode?.let {
+                                it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                                it.subtitle = overviewAdapter.getSelectionFileSize()
+                            }
                             selectionBackPressedCallback.isEnabled = true
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
+                            actionMode?.subtitle = ""
                             actionMode?.finish()
                             actionMode = null
                             selectionBackPressedCallback.isEnabled = false
-                        } else actionMode?.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})"
+                        } else {
+                            actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                            actionMode?.subtitle = overviewAdapter.getSelectionFileSize()
+                        }
                     }
                 })
 
