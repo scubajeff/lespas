@@ -498,10 +498,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
         private var footNoteMessage = ""
-        private var showLocation = false
 
         inner class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private var currentId = ""
             val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
                 foregroundGravity = Gravity.CENTER
                 setOnClickListener { if (!selectionTracker.hasSelection()) currentList[bindingAdapterPosition].let { item -> photoClickListener(this, item.media.photo.id, item.media.photo.mimeType, item.folder) }}
@@ -514,11 +512,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                 itemView.let {
                     with(ivPhoto) {
-                        if (currentId != photo.id) {
-                            // When selection state changed, this prevent loading image again which result in a flickering
-                            imageLoader(item.media, this)
-                            currentId = photo.id
-                        }
+                        // Prevent re-loading image again which result in a flickering
+                        if (getTag(R.id.PHOTO_ID) != item.media.photo.id) imageLoader(item.media, this)
+
                         ViewCompat.setTransitionName(this, photo.id)
 
                         it.isSelected = selectionTracker.isSelected(photo.id)
@@ -548,7 +544,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         }
 
         inner class OverflowHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private var currentId = ""
             private var overflow = true
             private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
             val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
@@ -569,10 +564,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 overflow = count > max
 
                 ivPhoto.run {
-                    if (currentId != photo.id) {
-                        imageLoader(item.media, this)
-                        currentId = photo.id
-                    }
+                    // Prevent re-loading image again which result in a flickering
+                    if (getTag(R.id.PHOTO_ID) != item.media.photo.id) imageLoader(item.media, this)
+
                     ViewCompat.setTransitionName(this, photo.id)
 
                     itemView.isSelected = selectionTracker.isSelected(photo.id)
@@ -702,7 +696,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 else TYPE_MEDIA
         }
 
-        internal fun toggleLocationDisplay(display: Boolean) { showLocation = display }
         internal fun getSelectionFileSize(): String {
             var size = 0L
             selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() }}

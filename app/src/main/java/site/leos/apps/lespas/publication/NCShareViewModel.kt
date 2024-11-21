@@ -1525,13 +1525,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                         view.setImageDrawable(this)
                         view.setTag(R.id.HDR_TAG, false)
+                        view.setTag(R.id.PHOTO_ID, "")
                     } ?: run {
                         bitmap?.let {
                             view.setImageBitmap(it)
                             view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && viewType == TYPE_FULL && it.hasGainmap())
+                            view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
                         } ?: run {
                             view.setImageBitmap(placeholderBitmap)
                             view.setTag(R.id.HDR_TAG, false)
+                            view.setTag(R.id.PHOTO_ID, "")
                         }
                     }
 

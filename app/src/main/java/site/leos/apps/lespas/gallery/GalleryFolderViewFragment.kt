@@ -703,8 +703,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private var sYesterday = ""
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            private var currentId = ""
-            val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply {
+            val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
                 foregroundGravity = Gravity.CENTER
                 setOnClickListener { if (!selectionTracker.hasSelection()) currentList[bindingAdapterPosition].media.photo.let { photo ->  clickListener(this, photo.id, photo.mimeType) }}
             }
@@ -717,11 +716,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     it.isSelected = selectionTracker.isSelected(photo.id)
 
                     with(ivPhoto) {
-                        if (currentId != photo.id) {
-                            // When selection state changed, this prevent loading image again which result in a flickering
-                            imageLoader(item.media, this)
-                            currentId = photo.id
-                        }
+                        // Prevent re-loading image again which result in a flickering
+                        if (getTag(R.id.PHOTO_ID) != item.media.photo.id) imageLoader(item.media, this)
 
                         bindLocationIndicator(item)
 
