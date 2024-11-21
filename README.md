@@ -4,8 +4,9 @@
 <a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='50'></a>
 <a href='https://github.com/scubajeff/lespas/releases/'><img alt='Get it on Github' src='https://ultrasonic.github.io/assets/img/get-it-on-github.png' height='50'></a>
 
-***Google Play latest developer policy requires hand-in of developer's home address. As an open-source free app developer, I strongly disagree with this. That's why I have terminated my developer account and the update to Les Pas will no longer be available from Google Play.
-You can still get the latest version from F-Droid and here on github. The github version has the same app signing key as Google Play version, hence you will have no problem install the updates. If you choose F-Droid update channel, you will need to uninstall the Google Play version first and re-install from F-Droid. Don't worry, Les Pas has a solid backup/restore mechanism, and your data and settings won't be lost in the process.***
+***Google Play latest developer policy requires hand-in of developer's home address. As an open-source free app developer, I strongly disagree with this. That's why I have terminated my developer account and the update to Les Pas will no longer be available from Google Play.***
+
+***You can still get the latest version from F-Droid and here on github. The github version has the same app signing key as Google Play version, hence you will have no problem install the updates. If you choose F-Droid update channel, you will need to uninstall the Google Play version first and re-install from F-Droid. Don't worry, Les Pas has a solid backup/restore mechanism, and your data and settings won't be lost in the process.***
 
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
