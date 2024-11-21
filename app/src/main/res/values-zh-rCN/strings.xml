@@ -353,4 +353,6 @@
     <string name="tooltips_local_copy">手机里有该文档</string>
     <string name="tooltips_archive_copy">服务器上有存档</string>
     <string name="show_archive_title">在图库中显示服务器存档</string>
+    <string name="action_download_to_device">下载到设备上</string>
+    <string name="action_upload_to_archive">备份至服务器</string>
 </resources>

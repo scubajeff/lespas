@@ -34,6 +34,18 @@
         android:icon="@drawable/ic_baseline_share_24"
         app:showAsAction="ifRoom" />
 
+    <item android:id="@+id/download_to_device"
+        android:title="@string/action_download_to_device"
+        android:icon="@drawable/ic_baseline_download_24"
+        android:enabled="false"
+        app:showAsAction="ifRoom" />
+
+    <item android:id="@+id/upload_to_archive"
+        android:title="@string/action_upload_to_archive"
+        android:icon="@drawable/ic_baseline_upload_24"
+        android:enabled="false"
+        app:showAsAction="ifRoom" />
+
     <item android:id="@+id/select_all"
         android:title="@string/action_select_all"
         android:icon="@drawable/ic_baseline_select_all_24"

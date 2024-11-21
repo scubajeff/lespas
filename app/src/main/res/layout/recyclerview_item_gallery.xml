@@ -35,26 +35,7 @@
         tools:ignore="ContentDescription,ImageContrastCheck"
         tools:src="@drawable/login_background_gradient_2" />
 
-    <View
-        android:id="@+id/local_media"
-        android:layout_width="4dp"
-        android:layout_height="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:layout_margin="@dimen/tiny_padding"
-        android:elevation="1dp"
-        android:background="@color/gallery_location_indicator_local" />
-
-    <View
-        android:id="@+id/archive_media"
-        android:layout_width="4dp"
-        android:layout_height="4dp"
-        app:layout_constraintBottom_toTopOf="@id/local_media"
-        app:layout_constraintRight_toRightOf="parent"
-        android:layout_margin="@dimen/tiny_padding"
-        android:elevation="1dp"
-        android:background="@color/gallery_location_indicator_remote" />
-
+    <include layout="@layout/recyclerview_item_gallery_location_indicator" />
     <!--
 
     <androidx.constraintlayout.widget.Guideline

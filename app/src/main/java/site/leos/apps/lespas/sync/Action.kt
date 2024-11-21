@@ -69,6 +69,7 @@ data class Action (
        const val ACTION_UPDATE_BLOG_SITE_TITLE = 32
 
        const val ACTION_BACKUP_PREFERENCE = 33
+       const val ACTION_BACKUP_INDIVIDUAL = 34
 
        const val ACTION_COLLECT_REMOTE_CHANGES = 1001
        const val ACTION_CREATE_ALBUM_FROM_SERVER = 1002

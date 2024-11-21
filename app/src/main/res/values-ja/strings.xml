@@ -354,4 +354,6 @@
     <string name="tooltips_local_copy">現地コピー</string>
     <string name="tooltips_archive_copy">アーカイブコピー</string>
     <string name="show_archive_title">ギャラリーにサーバーアーカイブを表示する</string>
+    <string name="action_download_to_device">デバイスにダウンロード</string>
+    <string name="action_upload_to_archive">アーカイブへのアップロード</string>
 </resources>

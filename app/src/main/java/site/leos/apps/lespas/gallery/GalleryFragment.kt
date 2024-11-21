@@ -602,6 +602,7 @@ class GalleryFragment: Fragment() {
                                             //Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
                                             existed.location = GalleryMedia.IS_BOTH
                                             existed.remoteFileId = archiveItem.media.photo.id
+                                            existed.media.remotePath = archiveItem.media.remotePath
                                             //existed.media.photo.eTag = archiveItem.media.photo.eTag
                                         } ?: run {
                                             //Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name} ${archiveItem.media.photo.id}",)
@@ -1022,6 +1023,15 @@ class GalleryFragment: Fragment() {
         fun saveCurrentSubFolder(name: String) { currentSubFolder = name }
         fun resetCurrentSubFolder() { currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG }
 
+        fun download(context: Context, photos: List<NCShareViewModel.RemotePhoto>) { imageModel.savePhoto(context, photos) }
+        fun upload(photos: List<GalleryMedia>) {
+            mutableListOf<Action>().let { actions ->
+                val ts = System.currentTimeMillis()
+                photos.forEach { actions.add(Action(null, Action.ACTION_BACKUP_INDIVIDUAL, folderName = it.folder, fileId = it.media.photo.id, date = ts)) }
+                if (actions.isNotEmpty()) actionModel.addActions(actions)
+            }
+        }
+
         companion object {
             const val ARCHIVE_OFF = -1
             const val ARCHIVE_ON = 1
@@ -1046,8 +1056,8 @@ class GalleryFragment: Fragment() {
         fun isLocal() = location == IS_LOCAL || location == IS_IN_GALLERY
         fun isRemote() = location == IS_REMOTE
         fun isNotMedia() = location == IS_NOT_MEDIA
-        fun atLocal() = location == IS_LOCAL || location == IS_BOTH
-        fun atRemote() = location == IS_REMOTE || location == IS_BOTH
+        fun atLocal() = location == IS_BOTH || location == IS_LOCAL
+        fun atRemote() = location == IS_BOTH || location == IS_REMOTE
 
         companion object {
             const val IS_IN_GALLERY = 0     // When media is in local gallery and archive is not showing

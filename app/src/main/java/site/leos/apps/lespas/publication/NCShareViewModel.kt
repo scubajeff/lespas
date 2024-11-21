@@ -1930,7 +1930,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     @Parcelize
     data class RemotePhoto(
         val photo: Photo,
-        val remotePath: String = "",
+        var remotePath: String = "",
         var coverBaseLine: Int = 0,
     ) : Parcelable
 

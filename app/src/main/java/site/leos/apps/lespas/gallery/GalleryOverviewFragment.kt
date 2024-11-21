@@ -70,7 +70,6 @@ import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.gallery.GalleryFolderViewFragment.MediaAdapter.MediaViewHolder
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.ShareOutDialogFragment
@@ -95,6 +94,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     private lateinit var overviewList: RecyclerView
 
     private var trashMenuItem: MenuItem? = null
+    private var downloadMenuItem: MenuItem? = null
+    private var uploadMenuItem: MenuItem? = null
 
     private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -434,13 +435,40 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         mode?.menuInflater?.inflate(R.menu.action_mode_gallery, menu)
+        downloadMenuItem = menu?.findItem(R.id.download_to_device)
+        uploadMenuItem = menu?.findItem(R.id.upload_to_archive)
 
         return true
     }
     override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+        // Disable "Select All" in Gallery Overview list, since it makes no sense when user can see all the photos
         menu?.findItem(R.id.select_all)?.run {
             isVisible = false
             isEnabled = false
+        }
+
+        downloadMenuItem?.apply {
+            isEnabled = false
+            run breaking@ {
+                selectionTracker.selection.forEach { photoId ->
+                    if (overviewAdapter.atRemote(photoId)) {
+                        isEnabled = true
+                        return@breaking
+                    }
+                }
+            }
+        }
+
+        uploadMenuItem?.apply {
+            isEnabled = false
+            run breaking@ {
+                selectionTracker.selection.forEach { photoId ->
+                    if (overviewAdapter.atLocal(photoId)) {
+                        isEnabled = true
+                        return@breaking
+                    }
+                }
+            }
         }
 
         return true
@@ -473,6 +501,22 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         galleryModel.shareOut(photoIds, strip = false, lowResolution = false, removeAfterwards = false)
                     }
 
+                true
+            }
+            R.id.download_to_device -> {
+                val photos = mutableListOf<NCShareViewModel.RemotePhoto>()
+                selectionTracker.selection.forEach { photoId -> overviewAdapter.getRemotePhoto(photoId)?.let { photos.add(it) }}
+                if (photos.isNotEmpty()) galleryModel.download(requireContext(), photos)
+
+                selectionTracker.clearSelection()
+                true
+            }
+            R.id.upload_to_archive -> {
+                val photos = mutableListOf<GalleryFragment.GalleryMedia>()
+                selectionTracker.selection.forEach { photoId -> overviewAdapter.getGalleryMedia(photoId)?.let { photos.add(it) }}
+                if (photos.isNotEmpty()) galleryModel.upload(photos)
+
+                selectionTracker.clearSelection()
                 true
             }
             else -> false
@@ -712,6 +756,11 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfFirst { it.media.photo.id == photoId }
         private fun getCount(folder: String): Int = currentList.find { it.folder == folder && it.media.photo.mimeType.isEmpty() }?.media?.photo?.height ?: 0
+
+        internal fun atRemote(photoId: String): Boolean = currentList.find { it.media.photo.id == photoId }?.atRemote() ?: false
+        internal fun atLocal(photoId: String): Boolean = currentList.find { it.media.photo.id == photoId }?.let { it.atLocal() || it.isLocal() }?: false
+        internal fun getRemotePhoto(photoId: String): NCShareViewModel.RemotePhoto? =  currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.atRemote()) item.media else null }
+        internal fun getGalleryMedia(photoId: String?): GalleryFragment.GalleryMedia? = currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.isLocal() || item.atLocal()) item else null }
 
         class PhotoKeyProvider(private val adapter: OverviewAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)

@@ -580,6 +580,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
                 Action.ACTION_UPDATE_BLOG_SITE_TITLE -> { updateBlogIndex() }
                 Action.ACTION_BACKUP_PREFERENCE -> { prefBackupNeeded = true }
+                Action.ACTION_BACKUP_INDIVIDUAL -> {
+                    // Property fileId holds individual file's content Uri
+                    // Property folderName holds individual file's top folder name
+                    backupGallery(fileUri = action.fileId, fileFolder = action.folderName)
+                }
                 Action.ACTION_META_RESCAN -> {
                     // Property folderId holds target folder Id
                     // Property folderName holds target folder name
@@ -1684,7 +1689,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
-    private fun backupGallery() {
+    private fun backupGallery(fileUri: String = "", fileFolder: String = "") {
         val deviceModel = Tools.getDeviceModel()
 
         reportStage(Action.SYNC_STAGE_BACKUP_PICTURES)
@@ -1699,10 +1704,21 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         val cr = application.contentResolver
         val contentUri = MediaStore.Files.getContentUri("external")
         var selection: String
-        var projection: Array<String>
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val dateTakenColumnName = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val orientationColumnName = "orientation"     // MediaStore.MediaColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
+        var projection = mutableListOf (
+            MediaStore.Files.FileColumns._ID,
+            pathSelection,
+            dateTakenColumnName,
+            orientationColumnName,
+            MediaStore.Files.FileColumns.DATE_ADDED,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.SIZE,
+            MediaStore.Files.FileColumns.WIDTH,
+            MediaStore.Files.FileColumns.HEIGHT,
+        )
 
         var contentId: Long
         var photoUri: Uri
@@ -1712,30 +1728,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var mTimeStamp: Long
         val photo = Photo(albumId = "", dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
 
-        backupSettingRepository.getEnabled().forEach {
+        val backupSettings = if (fileUri.isEmpty()) backupSettingRepository.getEnabled() else listOf(BackupSetting(folder = fileFolder, lastBackup = Long.MAX_VALUE, exclude = listOf(fileUri.toString()).toMutableSet()))
+
+        backupSettings.forEach {
             if (it.lastBackup == BackupSetting.NOT_YET) return@forEach
 
             val subFolder = "${backupFolder}/${it.folder}"
             makeSureFolderExisted(subFolder)
 
-            projection = arrayOf(
-                MediaStore.Files.FileColumns._ID,
-                pathSelection,
-                dateTakenColumnName,
-                orientationColumnName,
-                MediaStore.Files.FileColumns.DATE_ADDED,
-                MediaStore.Files.FileColumns.MEDIA_TYPE,
-                MediaStore.Files.FileColumns.MIME_TYPE,
-                MediaStore.Files.FileColumns.DISPLAY_NAME,
-                MediaStore.Files.FileColumns.SIZE,
-                MediaStore.Files.FileColumns.WIDTH,
-                MediaStore.Files.FileColumns.HEIGHT,
-            )
             selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                    "($pathSelection LIKE '${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.folder else "${GalleryFragment.STORAGE_EMULATED}_/${it.folder}"}%')" + " AND " +    // path start with specific folder
-                    "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${it.lastBackup})"   // DATE_ADDED is in second
+                        "($pathSelection LIKE '${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it.folder else "${GalleryFragment.STORAGE_EMULATED}_/${it.folder}"}%')" + " AND " +    // path start with specific folder
+                        "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${it.lastBackup})"   // DATE_ADDED is in second
 
-            cr.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC")?.use { cursor->
+            (if (fileUri.isEmpty()) cr.query(contentUri, projection.apply { add(MediaStore.Files.FileColumns.MEDIA_TYPE) }.toTypedArray(), selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC")
+            else cr.query(Uri.parse(fileUri), projection.toTypedArray(), null, null, null))?.use { cursor ->
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                 val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -1863,7 +1869,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     } catch (_: Exception) {}
 
                     // Save latest timestamp after successful upload
-                    backupSettingRepository.updateLastBackupTimestamp(it.folder, mTimeStamp)
+                    if (fileUri.isEmpty()) backupSettingRepository.updateLastBackupTimestamp(it.folder, mTimeStamp)
 
                     // Update archive snapshot file addition list
                     // Use system default zone for time display, sorting and grouping by date in Gallery list
@@ -1877,15 +1883,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             volume = deviceModel,
                             fullPath = "${it.folder}/${relativePath}/",
                             appName = relativePath.substringAfterLast('/'),
-                            remoteFileId = "",
+                            remoteFileId = photo.id,
                         )
                     )
                 }
             }
 
             // Stealth removing can only happen in older version of Android
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && it.autoRemove > 0) {
-                projection  = arrayOf(
+            if (fileUri.isEmpty() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R && it.autoRemove > 0) {
+                projection  = mutableListOf(
                     MediaStore.Files.FileColumns._ID,
                     pathSelection,
                     MediaStore.Files.FileColumns.DATE_ADDED,
@@ -1896,7 +1902,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         "(${MediaStore.Files.FileColumns.DATE_ADDED} < ${min(System.currentTimeMillis() / 1000 - it.autoRemove * 86400L, it.lastBackup)})"  // DATE_ADDED is in second
 
                 val deletion = arrayListOf<Long>()
-                cr.query(contentUri, projection, selection, null, null)?.use { cursor ->
+                cr.query(contentUri, projection.toTypedArray(), selection, null, null)?.use { cursor ->
                     val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                     val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
 

@@ -356,6 +356,8 @@
     <string name="action_export">Export</string>
     <string name="action_rename_media">Rename</string>
     <string name="action_select_all">Select all</string>
+    <string name="action_download_to_device">Download to Device</string>
+    <string name="action_upload_to_archive">Upload to Archive</string>
     <plurals name="selected_count">
         <item quantity="other">%1$d selected</item>
     </plurals>

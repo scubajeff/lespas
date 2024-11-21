@@ -418,4 +418,6 @@
     <string name="tooltips_local_copy">Cópia local</string>
     <string name="tooltips_archive_copy">Cópia de arquivo</string>
     <string name="show_archive_title">Mostrar o arquivo do servidor na Galeria</string>
+    <string name="action_download_to_device">Download para o dispositivo</string>
+    <string name="action_upload_to_archive">Fazer upload para o arquivo</string>
 </resources>

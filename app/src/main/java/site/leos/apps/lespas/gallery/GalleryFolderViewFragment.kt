@@ -127,6 +127,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     private var actionModeTitleUpdateJob: Job? = null
 
+    private var downloadMenuItem: MenuItem? = null
+    private var uploadMenuItem: MenuItem? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -522,14 +525,51 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         mode?.menuInflater?.inflate(R.menu.action_mode_gallery, menu)
-        if (folderArgument == GalleryFragment.TRASH_FOLDER) menu?.findItem(R.id.remove)?.let {
-            it.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_restore_from_trash_24)
-            it.title = getString(R.string.action_undelete)
+
+        downloadMenuItem = menu?.findItem(R.id.download_to_device)
+        uploadMenuItem = menu?.findItem(R.id.upload_to_archive)
+
+        // When Trash folder is displaying, disable Download/Upload, change "Select All" into "Restore from Trash"
+        if (folderArgument == GalleryFragment.TRASH_FOLDER) {
+            menu?.findItem(R.id.remove)?.let {
+                it.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_restore_from_trash_24)
+                it.title = getString(R.string.action_undelete)
+            }
+
+            downloadMenuItem?.isVisible = false
+            uploadMenuItem?.isVisible = false
         }
 
         return true
     }
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean  {
+        if (folderArgument != GalleryFragment.TRASH_FOLDER) {
+            downloadMenuItem?.apply {
+                isEnabled = false
+                run breaking@ {
+                    selectionTracker.selection.forEach { photoId ->
+                        if (mediaAdapter.atRemote(photoId)) {
+                            isEnabled = true
+                            return@breaking
+                        }
+                    }
+                }
+            }
+
+            uploadMenuItem?.apply {
+                isEnabled = false
+                run breaking@ {
+                    selectionTracker.selection.forEach { photoId ->
+                        if (mediaAdapter.atLocal(photoId)) {
+                            isEnabled = true
+                            return@breaking
+                        }
+                    }
+                }
+            }
+        }
+        return true
+    }
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
@@ -563,6 +603,22 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
             R.id.select_all -> {
                 selectionTracker.setItemsSelected(mediaAdapter.currentList.filter { it.location != GalleryFragment.GalleryMedia.IS_NOT_MEDIA }.map { it.media.photo.id }, true)
+                true
+            }
+            R.id.download_to_device -> {
+                val remoteIds = mutableListOf<NCShareViewModel.RemotePhoto>()
+                selectionTracker.selection.forEach { photoId -> mediaAdapter.getRemotePhoto(photoId)?.let { remoteIds.add(it) }}
+                if (remoteIds.isNotEmpty()) galleryModel.download(requireContext(), remoteIds)
+
+                selectionTracker.clearSelection()
+                true
+            }
+            R.id.upload_to_archive -> {
+                val photos = mutableListOf<GalleryFragment.GalleryMedia>()
+                selectionTracker.selection.forEach { photoId -> mediaAdapter.getGalleryMedia(photoId)?.let { photos.add(it) }}
+                if (photos.isNotEmpty()) galleryModel.upload(photos)
+
+                selectionTracker.clearSelection()
                 true
             }
             else -> false
@@ -826,6 +882,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         fun getPositionByDate(date: Long): Int  = currentList.indexOfFirst { it.location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA && it.media.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
         fun getDateByPosition(position: Int): Long = currentList[position].media.photo.lastModified.atZone(defaultOffset).toInstant().toEpochMilli()
         fun getAllItems(): List<GalleryFragment.GalleryMedia> = currentList.filter { it.location != GalleryFragment.GalleryMedia.IS_NOT_MEDIA }
+
+        internal fun atRemote(photoId: String): Boolean = currentList.find { it.media.photo.id == photoId }?.atRemote() ?: false
+        internal fun atLocal(photoId: String): Boolean = currentList.find { it.media.photo.id == photoId }?.let { it.atLocal() || it.isLocal() }?: false
+        internal fun getRemotePhoto(photoId: String): NCShareViewModel.RemotePhoto? =  currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.atRemote()) item.media else null }
+        internal fun getGalleryMedia(photoId: String?): GalleryFragment.GalleryMedia? = currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.isLocal() || item.atLocal()) item else null }
 
         class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
