@@ -8,6 +8,7 @@
 
 ***You can still get the latest version from F-Droid and here on github. The github version has the same app signing key as Google Play version, hence you will have no problem install the updates. If you choose F-Droid update channel, you will need to uninstall the Google Play version first and re-install from F-Droid. Don't worry, Les Pas has a solid backup/restore mechanism, and your data and settings won't be lost in the process.***
 
+
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
 Although it use Nextcloud as storage backend, you don't have to install any Nextcloud app on server for Les Pas to function. It's a perfect solution if you have limited knowledge or authorization to alter your Nextcloud configuration.
