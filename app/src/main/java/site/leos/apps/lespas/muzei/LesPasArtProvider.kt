@@ -21,6 +21,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -36,6 +37,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.MuzeiPhoto
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.tflite.ObjectDetectionModel
@@ -60,7 +62,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
             if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(LesPasArtProviderSettingActivity.KEY_SKIP_LATE_NIGHT_UPDATE, false)) {
                 LocalDateTime.now().hour in 0..5
             }
-            else false
+           else false
         if (initial || ((Date().time - (lastAddedArtwork?.dateAdded ?: Date()).time > 30000) && !skipLateNightUpdate)) updateArtwork()
     }
 
@@ -153,6 +155,63 @@ class LesPasArtProvider: MuzeiArtProvider() {
         return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
+    // get a single photo that was taken today (in history) if any exists
+    private fun getInHistory(
+        photoList: List<MuzeiPhoto>, today: LocalDate, sp: SharedPreferences
+    ): MuzeiPhoto? {
+        return photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }
+            .let { sameDayHits ->
+                when(sameDayHits.size) {
+                    0 -> null
+                    1 -> sameDayHits[0]
+                    else -> {
+/*
+                                            var index = random.nextInt(sameDayHits.size)
+                                            lastAddedArtwork?.let {
+                                                // Prevent from choosing the last one again
+                                                while(sameDayHits[index].id == it.token) index = random.nextInt(sameDayHits.size)
+                                            }
+                                            sameDayHits[index]
+*/
+                        // Try to get today's photo list from Preference
+                        val photosOfDate = mutableListOf<String>().apply { addAll(sp.getString(PHOTOS_OF_TODAY, "")?.split(',') ?: listOf()) }
+                        if (photosOfDate.contains(sameDayHits[0].id)) {
+                            // If list existed, loop thru. it
+                            photosOfDate[0] = (photosOfDate[0].toInt() + 1).let { i -> if (i == sameDayHits.size) 0 else i }.toString()
+                        } else {
+                            // Create today's photo shuffled list, add current index to the top of the list
+                            photosOfDate.clear()
+                            sameDayHits.shuffled().forEach { photosOfDate.add(it.id) }
+                            photosOfDate.add(0, "0")
+                        }
+
+                        // Save the list in Preference
+                        sp.edit().apply {
+                            putString(PHOTOS_OF_TODAY, photosOfDate.joinToString(","))
+                            apply()
+                        }
+
+                        // Supply the next in list to Muzei
+                        sameDayHits.find { it.id == photosOfDate[photosOfDate[0].toInt() + 1] }
+                    }
+                }
+            }
+    }
+
+    // get a single photo from the last month if any exists
+    private fun getLatest(
+        photoList: List<MuzeiPhoto>, today: LocalDate, random: Random
+    ): MuzeiPhoto? {
+        return photoList.filter { p ->
+            Period.between(p.dateTaken.toLocalDate(), today).toTotalMonths() < 1
+        }.let { recentList ->
+            when {
+                recentList.size == 1 -> recentList[0]
+                recentList.isNotEmpty() -> recentList[random.nextInt(recentList.size)]
+                else -> null
+            }
+        }
+    }
     private fun updateArtwork() {
         Thread {
             var additionalCaption = false
@@ -168,51 +227,41 @@ class LesPasArtProvider: MuzeiArtProvider() {
                         val random = Random(System.currentTimeMillis() * LocalDate.now().dayOfMonth / LocalDate.now().dayOfWeek.value)
                         when (sp.getInt(LesPasArtProviderSettingActivity.KEY_PREFER, LesPasArtProviderSettingActivity.PREFER_RANDOM)) {
                             LesPasArtProviderSettingActivity.PREFER_LATEST -> {
-                                photoList.filter { p -> Period.between(p.dateTaken.toLocalDate(), today).toTotalMonths() < 1 }.let { recentList ->
-                                    when {
-                                        recentList.size == 1 -> recentList[0]
-                                        recentList.isNotEmpty() -> recentList[random.nextInt(recentList.size)]
-                                        else -> photoList[random.nextInt(photoList.size)]
-                                    }
-                                }
+                                getLatest(photoList, today, random) ?: photoList[random.nextInt(photoList.size)]
                             }
                             LesPasArtProviderSettingActivity.PREFER_TODAY_IN_HISTORY -> {
-                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { sameDayHits ->
-                                    additionalCaption = sameDayHits.isNotEmpty()
+                                // temporary variable needed for side effect of caption
+                                val sameDayHit = getInHistory(photoList, today, sp)
+                                if (sameDayHit != null) {
+                                    additionalCaption = true
+                                    sameDayHit
+                                } else {
+                                    photoList[random.nextInt(photoList.size)]
+                                }
+                            }
 
-                                    when(sameDayHits.size) {
-                                        0 -> photoList[random.nextInt(photoList.size)]
-                                        1 -> sameDayHits[0]
-                                        else -> {
-/*
-                                            var index = random.nextInt(sameDayHits.size)
-                                            lastAddedArtwork?.let {
-                                                // Prevent from choosing the last one again
-                                                while(sameDayHits[index].id == it.token) index = random.nextInt(sameDayHits.size)
-                                            }
-                                            sameDayHits[index]
-*/
-                                            // Try to get today's photo list from Preference
-                                            val photosOfDate =  mutableListOf<String>().apply { addAll(sp.getString(PHOTOS_OF_TODAY, "")?.split(',') ?: listOf()) }
-                                            if (photosOfDate.contains(sameDayHits[0].id)) {
-                                                // If list existed, loop thru. it
-                                                photosOfDate[0] = (photosOfDate[0].toInt() + 1).let { i -> if (i == sameDayHits.size) 0 else i }.toString()
-                                            } else {
-                                                // Create today's photo shuffled list, add current index to the top of the list
-                                                photosOfDate.clear()
-                                                sameDayHits.shuffled().forEach { photosOfDate.add(it.id) }
-                                                photosOfDate.add(0, "0")
-                                            }
+                            LesPasArtProviderSettingActivity.PREFER_HISTORY_OVER_LATEST -> {
+                                val sameDayHit = getInHistory(photoList, today, sp)
+                                if (sameDayHit != null) {
+                                    additionalCaption = true
+                                    sameDayHit
+                                } else {
+                                    getLatest(photoList, today, random) ?: photoList[random.nextInt(photoList.size)]
+                                }
+                            }
 
-                                            // Save the list in Preference
-                                            sp.edit().apply {
-                                                putString(PHOTOS_OF_TODAY, photosOfDate.joinToString(","))
-                                                apply()
-                                            }
-
-                                            // Supply the next in list to Muzei
-                                            sameDayHits.find { it.id == photosOfDate[photosOfDate[0].toInt() + 1] }
-                                        }
+                            LesPasArtProviderSettingActivity.PREFER_LATEST_OVER_HISTORY -> {
+                                val retval = getLatest(photoList, today, random)
+                                // this if construct is needed as the Kotlin compiler can't reason about longer expressions with the ?: operator
+                                if (retval != null){
+                                    retval
+                                } else {
+                                    val sameDayHit = getInHistory(photoList, today, sp)
+                                    if (sameDayHit != null) {
+                                        additionalCaption = true
+                                        sameDayHit
+                                    } else {
+                                        getLatest(photoList, today, random) ?: photoList[random.nextInt(photoList.size)]
                                     }
                                 }
                             }

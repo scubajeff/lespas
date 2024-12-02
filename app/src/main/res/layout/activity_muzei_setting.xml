@@ -61,6 +61,20 @@
             android:textSize="16sp"
             android:text="@string/prefer_day_in_history" />
         <RadioButton
+            android:id="@+id/prefer_history_over_latest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/small_padding"
+            android:text="@string/prefer_history_over_latest"
+            android:textSize="16sp" />
+        <RadioButton
+            android:id="@+id/prefer_latest_over_history"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/small_padding"
+            android:text="@string/prefer_latest_over_history"
+            android:textSize="16sp" />
+        <RadioButton
             android:id="@+id/prefer_random"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

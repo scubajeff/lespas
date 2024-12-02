@@ -60,6 +60,8 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
         preferRadioGroup.check(when(lastPreferSetting) {
             PREFER_LATEST-> R.id.prefer_latest
             PREFER_TODAY_IN_HISTORY-> R.id.prefer_day_in_history
+            PREFER_HISTORY_OVER_LATEST-> R.id.prefer_history_over_latest
+            PREFER_LATEST_OVER_HISTORY-> R.id.prefer_latest_over_history
             else-> R.id.prefer_random
         })
 
@@ -79,6 +81,8 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
         val currentPreferSetting = when(preferRadioGroup.checkedRadioButtonId) {
             R.id.prefer_latest-> PREFER_LATEST
             R.id.prefer_day_in_history-> PREFER_TODAY_IN_HISTORY
+            R.id.prefer_history_over_latest-> PREFER_HISTORY_OVER_LATEST
+            R.id.prefer_latest_over_history-> PREFER_LATEST_OVER_HISTORY
             else-> PREFER_RANDOM
         }
 
@@ -135,5 +139,7 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
         const val PREFER_LATEST = 0
         const val PREFER_TODAY_IN_HISTORY = 1
         const val PREFER_RANDOM = 2
+        const val PREFER_HISTORY_OVER_LATEST = 3
+        const val PREFER_LATEST_OVER_HISTORY = 4
     }
 }
