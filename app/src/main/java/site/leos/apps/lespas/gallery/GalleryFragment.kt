@@ -33,6 +33,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.FileObserver
 import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
@@ -117,7 +118,6 @@ class GalleryFragment: Fragment() {
 
     private var archiveMenuItem: MenuItem? = null
 
-    //private lateinit var childFragmentBackPressedCallback: OnBackPressedCallback
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -158,14 +158,17 @@ class GalleryFragment: Fragment() {
                         childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
                     }
                 }
-                else -> finish()
+                else -> quit()
             }
         }
 
         // Removing item from MediaStore for Android 11 or above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
+/*
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) { galleryModel.removeFromArchive() }
         }
+*/
 
         // After media files moved to album
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { delete ->
@@ -183,7 +186,7 @@ class GalleryFragment: Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (childFragmentManager.backStackEntryCount > 1) childFragmentManager.popBackStack()
-                else finish()
+                else quit()
             }
         })
 
@@ -438,7 +441,7 @@ class GalleryFragment: Fragment() {
         super.onDestroyView()
     }
 
-    private fun finish() {
+    private fun quit() {
         if (tag == TAG_FROM_LAUNCHER) requireActivity().finish() else parentFragmentManager.popBackStack()
     }
 
@@ -564,72 +567,101 @@ class GalleryFragment: Fragment() {
                 context.contentResolver, imageModel, actionModel,
                 Tools.getPlayMarkDrawable(context, 0.32f / spanCount),
                 Tools.getSelectedMarkDrawable(context, 0.25f / spanCount),
+                Tools.getLocalRoot(context),
             ))!!
         }
     }
-    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable): ViewModel() {
+    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable, private val localRoot: String): ViewModel() {
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
         private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         private val _local = MutableStateFlow<List<GalleryMedia>>(mutableListOf())
         private val _medias = MutableStateFlow<List<GalleryMedia>?>(null)
-        val medias: StateFlow<List<GalleryMedia>?> = _medias.map { it?.filter { item -> item.folder != TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        val medias: StateFlow<List<GalleryMedia>?> = _medias.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         val trash: StateFlow<List<GalleryMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<GalleryMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        private val model = Tools.getDeviceModel()
+
+        private var archiveSnapshotFileObserver: FileObserver
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 launch {
-                    combine(_local, imageModel.archive) { localMedia, archiveMedia ->
-                        //Log.e(">>>>>>>>", "combining ${localMedia.size} ${archiveMedia?.size}:", )
-                        // Deep copy to create a brand new list for combining local and archive items
-                        val combinedList = localMedia.map { it.copy() }.toMutableList()
+                    combine(_local, imageModel.archive) { local, archiveMedia ->
+                        val localMedia = local.filter { it.folder != TRASH_FOLDER }
 
                         if (_showArchive.value != ARCHIVE_OFF) {
-                            // To facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment, need to alter item's 'location' property
-                            combinedList.forEach { it.location = GalleryMedia.IS_LOCAL }
-
-                            val model = Tools.getDeviceModel()
-
                             archiveMedia?.let {
-                                it.forEach { archiveItem ->
-                                    if (archiveItem.volume == model) {
-                                        // From this device, mark as IS_BOTH if there is a copy in device gallery
-                                        combinedList.find { item ->
-                                            item.media.photo.name == archiveItem.media.photo.name && item.fullPath == archiveItem.fullPath && item.folder != TRASH_FOLDER
-                                        }?.let { existed ->
-                                            //Log.e(">>>>>>>>", "update ${archiveItem.media.photo.name} to IS_BOTH",)
-                                            existed.location = GalleryMedia.IS_BOTH
-                                            existed.remoteFileId = archiveItem.media.photo.id
-                                            existed.media.remotePath = archiveItem.media.remotePath
-                                            //existed.media.photo.eTag = archiveItem.media.photo.eTag
-                                        } ?: run {
-                                            //Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name} ${archiveItem.media.photo.id}",)
-                                            combinedList.add(archiveItem)
-                                        }
-                                    } else {
-                                        //Log.e(">>>>>>>>", "adding ${archiveItem.media.photo.name}  ${archiveItem.media.photo.id} from ${archiveItem.volume}",)
-                                        // Not from this device, add it to the list
+/*
+                                Log.e(">>>>>>>>", "generating local list: ", )
+                                // Deep copy to create a brand new list for combining local and archive items
+                                // To facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment, need to alter item's 'location' property
+                                val combinedList: MutableList<GalleryMedia> = localMedia.filter { item -> item.folder != TRASH_FOLDER }.map { item -> item.copy(location = GalleryMedia.IS_LOCAL) }.toMutableList()
+                                Log.e(">>>>>>>>", "filtering device archive: from ${it.size}", )
+                                val archiveOfThisDevice = archiveMedia.filter { item -> item.volume == model && item.media.photo.lastModified >= combinedList.last().media.photo.lastModified }
+
+                                Log.e(">>>>>>>>", "combining: ${archiveOfThisDevice.size}", )
+                                val searchMap = combinedList.associateBy { item -> item.fullPath + item.media.photo.name }
+                                archiveOfThisDevice.forEach { archiveItem ->
+                                    // Mark as IS_BOTH if there is a copy in device gallery
+                                    searchMap[archiveItem.fullPath + archiveItem.media.photo.name]?.let { existed ->
+                                        existed.location = GalleryMedia.IS_BOTH
+                                        existed.remoteFileId = archiveItem.media.photo.id
+                                        existed.media.remotePath = archiveItem.media.remotePath
+                                        //existed.media.photo.eTag = archiveItem.media.photo.eTag
+                                    } ?: run {
+                                        // Otherwise, add it
                                         combinedList.add(archiveItem)
                                     }
                                 }
-                                _showArchive.value = ARCHIVE_ON
+
+                                Log.e(">>>>>>>>", "adding others: ", )
+                                // Add those items not from this device
+                                combinedList += archiveMedia subtract archiveOfThisDevice
+
+                                Log.e(">>>>>>>>", "sorting: ", )
+                                combinedList.sortedByDescending { item -> item.media.photo.lastModified }.apply { _showArchive.value = ARCHIVE_ON }
+*/
+                                // Deep copy to create a brand new list for combining local and archive items
+                                val combinedList = archiveMedia.map { it.copy() }.toMutableList()
+                                // Create a map of archive items from this device for matching local medias later
+                                val searchMap = combinedList.filter { item -> item.volume == model && item.media.photo.lastModified >= localMedia.last().media.photo.lastModified }.associateBy { item -> item.fullPath + item.media.photo.name }
+
+                                localMedia.forEach { localItem ->
+                                    searchMap[localItem.fullPath + localItem.media.photo.name]?.let { existed ->
+                                        // If local media existed in archive list, change properties to match local item
+                                        existed.location = GalleryMedia.IS_BOTH
+                                        existed.remoteFileId = existed.media.photo.id
+                                        existed.volume = localItem.volume
+                                        existed.media.photo.albumId = FROM_DEVICE_GALLERY
+                                        existed.media.photo.id = localItem.media.photo.id
+                                        existed.media.photo.eTag = Photo.ETAG_NOT_YET_UPLOADED
+                                    } ?: run {
+                                        // If local media not existed in archive list, add it's deep copy to combined list, change property 'location' to facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment
+                                        combinedList.add(localItem.copy(location = GalleryMedia.IS_LOCAL))
+                                    }
+                                }
+
+                                combinedList.sortedByDescending { item -> item.media.photo.lastModified }.apply { _showArchive.value = ARCHIVE_ON }
                             } ?: run {
                                 // Archive refreshing job in NCShareViewModel emit NULL list when the job is running
                                 _showArchive.value = ARCHIVE_REFRESHING
+                                localMedia
                             }
-                        }
-
-                        combinedList.sortedByDescending { it.media.photo.lastModified }
+                        } else localMedia
                     }.collect { result -> _medias.emit(result) }
                 }
             }
+
+            // Start observing archive snapshot file, which will be updated after new gallery image been backup to archive or files been removed from archive, snapshot file is updated by SyncAdapter after those actions finished successfully
+            archiveSnapshotFileObserver = object : FileObserver("${localRoot}/${NCShareViewModel.ARCHIVE_SNAPSHOT_FILE}", CLOSE_WRITE) { override fun onEvent(p0: Int, p1: String?) { viewModelScope.launch { imageModel.refreshArchive(false) }}}.apply { startWatching() }
         }
 
         override fun onCleared() {
             loadJob?.cancel()
             imageModel.stopRefreshingArchive()
+            archiveSnapshotFileObserver.stopWatching()
             super.onCleared()
         }
 
@@ -736,7 +768,6 @@ class GalleryFragment: Fragment() {
                                 } catch (_: Exception) { }
                             }
 
-
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 GalleryMedia(
@@ -814,6 +845,7 @@ class GalleryFragment: Fragment() {
         }
 
         val showArchive: StateFlow<Int> = _showArchive
+        private fun isArchiveOff(): Boolean = _showArchive.value != ARCHIVE_ON
         fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
             if (forcedRefresh) _showArchive.value = ARCHIVE_OFF
             if (_showArchive.value == ARCHIVE_OFF) {
@@ -867,7 +899,7 @@ class GalleryFragment: Fragment() {
         }
 
         fun getPhotoById(id: String): NCShareViewModel.RemotePhoto? = _medias.value?.find { it.media.photo.id == id }?.media
-        private fun getLocalMediaById(id: String): GalleryMedia? = _medias.value?.find { it.media.photo.id == id }
+        private fun getGalleryMediaById(id: String): GalleryMedia? = _medias.value?.find { it.media.photo.id == id }
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
@@ -875,22 +907,23 @@ class GalleryFragment: Fragment() {
 
         private val _deletions = MutableSharedFlow<List<Uri>>()
         val deletions: SharedFlow<List<Uri>> = _deletions
-        private val syncDeletionIdList = arrayListOf<String>()
-        fun remove(photoIds: List<String>, removeArchive: Boolean = false) {
-            // Prepare remote deletion list
+//        private val syncDeletionIdList = arrayListOf<String>()
+        fun remove(photoIds: List<String>, removeArchive: Boolean = false, removeLocal: Boolean = true) {
+/*
+            // Prepare deletion list
             val localFiles = arrayListOf<String>()
-            val archivedFiles = arrayListOf<String>()
-            val archiveOnly = arrayListOf<String>()
+            val bothSide = arrayListOf<GalleryMedia>()
+            val archiveOnly = arrayListOf<GalleryMedia>()
             photoIds.forEach { photoId ->
-                getLocalMediaById(photoId)?.let { localMedia ->
+                getLocalMediaById(photoId)?.let { galleryMedia ->
                     when {
-                        localMedia.isRemote() -> {
-                            archiveOnly.add(photoId)
-                            archivedFiles.add(photoId)
+                        galleryMedia.isRemote() -> {
+                            archiveOnly.add(galleryMedia)
+                            bothSide.add(galleryMedia)
                         }
-                        localMedia.isBoth() -> {
+                        galleryMedia.isBoth() -> {
                             localFiles.add(photoId)
-                            archivedFiles.add(localMedia.remoteFileId)
+                            bothSide.add(galleryMedia)
                         }
                         else -> localFiles.add(photoId)
                     }
@@ -898,28 +931,68 @@ class GalleryFragment: Fragment() {
             }
             if (removeArchive) {
                 // If sync deletion to archive is set, remove all archived files in the list
-                if (archivedFiles.isNotEmpty()) saveArchiveDeletionList(archivedFiles)
+                if (bothSide.isNotEmpty()) saveArchiveDeletionList(bothSide)
 
             } else {
                 // If sync deletion to archive is NOT set, remove only those IS_REMOTE files on server
                 if (archiveOnly.isNotEmpty()) saveArchiveDeletionList(archiveOnly)
             }
+*/
+            // Prepare deletion list for local and remote
+            val localFiles = arrayListOf<String>()
+            val archiveFiles = arrayListOf<GalleryMedia>()
+            photoIds.forEach { photoId ->
+                getGalleryMediaById(photoId)?.let { galleryMedia ->
+/*
+                    if (galleryMedia.isLocal() || galleryMedia.atLocal()) localFiles.add(photoId)
+                    if (galleryMedia.atRemote()) archiveFiles.add(galleryMedia)
+*/
+                    // Collecting local medias, IS_LOCAL and IS_BOTH medias have their photo id as a URI string
+                    if (galleryMedia.media.photo.id.startsWith("content://")) localFiles.add(photoId)
+
+                    // Collecting remote medias
+                    when {
+                        isArchiveOff() -> archiveFiles.add(galleryMedia)            // If archive is not shown, collect them all blindly
+                        galleryMedia.atRemote() -> archiveFiles.add(galleryMedia)   // If archive is shown, collect those do have archived copy
+                    }
+                }
+            }
 
             // Removing local files
-            if (localFiles.isNotEmpty()) {
+            if (removeLocal && localFiles.isNotEmpty()) {
                 arrayListOf<Uri>().let { uris ->
                     localFiles.forEach { uris.add(Uri.parse(it)) }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) viewModelScope.launch { _deletions.emit(uris) }
-                    else delete(uris)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                        // For Android 11 and above, use SAF
+                        viewModelScope.launch { _deletions.emit(uris) }
+                    else {
+                        // For Android 10 and lower, use ContentResolver
+                        val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
+                        cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
+                    }
                 }
-            } else removeFromArchive()
+            }
+
+            // Removing archived files
+            if (removeArchive && archiveFiles.isNotEmpty()) {
+                mutableListOf<String>().run {
+                    archiveFiles.forEach { add("${it.fullPath}/${it.media.photo.name}") }
+                    actionModel.deleteFileInArchive(this)
+                }
+                //if (!isArchiveOff()) imageModel.removeItemsFromArchiveList(archiveFiles)
+            }
+
+            setNextInLine()
         }
+/*
         fun delete(uris: ArrayList<Uri>) {
             val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
             cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
 
-            removeFromArchive()
+            //removeFromArchive()
         }
+*/
+/*
         fun removeFromArchive() {
             if (syncDeletionIdList.isNotEmpty()) {
                 imageModel.archive.value?.toMutableList()?.let { archiveList ->
@@ -939,11 +1012,12 @@ class GalleryFragment: Fragment() {
                 syncDeletionIdList.clear()
             } else setNextInLine()
         }
-        private fun saveArchiveDeletionList(deletions: List<String>) {
+        private fun saveArchiveDeletionList(deletionIds: List<GalleryMedia>) {
             // When deleting files or moving media files to album, saved the archive deletion waiting list now
             syncDeletionIdList.clear()
-            syncDeletionIdList.addAll(deletions)
+            syncDeletionIdList.addAll(deletionIds)
         }
+*/
 
         private val _restorations = MutableSharedFlow<List<String>>()
         val restorations: SharedFlow<List<String>> = _restorations
@@ -981,8 +1055,7 @@ class GalleryFragment: Fragment() {
 
         private val idsDeleteAfterwards = mutableListOf<String>()
         fun deleteAfterShared() {
-            // TODO respect "Sync deletion to server" setting
-            remove(idsDeleteAfterwards)
+            remove(idsDeleteAfterwards, removeLocal = true, removeArchive = true)
         }
 
         // Flag to disable selection when sharing out is working in the background for GalleryFolderViewFragment and GalleryOverviewFragment
@@ -1014,8 +1087,8 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        fun getMimeTypes(photoIds: List<String>): List<String> = mutableListOf<String>().apply { photoIds.forEach { photoId -> getLocalMediaById(photoId)?.let { add(it.media.photo.mimeType) }}}
-        fun getFullPath(photoId: String): String = getLocalMediaById(photoId)?.fullPath ?: ""
+        fun getMimeTypes(photoIds: List<String>): List<String> = mutableListOf<String>().apply { photoIds.forEach { photoId -> getGalleryMediaById(photoId)?.let { add(it.media.photo.mimeType) }}}
+        fun getFullPath(photoId: String): String = getGalleryMediaById(photoId)?.fullPath ?: ""
         fun getVolumeName(photoId: String): String = _medias.value?.find { it.media.photo.id.substringAfterLast('/') == photoId }?.volume ?: ""
 
         private var currentSubFolder = GalleryFolderViewFragment.CHIP_FOR_ALL_TAG

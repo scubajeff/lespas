@@ -129,6 +129,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
     val archive: StateFlow<List<GalleryFragment.GalleryMedia>?> = _archive
     private var archiveFetchingJob: Job? = null
+    private var lastSnapshot : List<GalleryFragment.GalleryMedia> = listOf()
 
     private val _publicShare = MutableSharedFlow<Recipient>()
     val publicShare: SharedFlow<Recipient> = _publicShare
@@ -591,52 +592,46 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
+    private var lastCheck = 0L
     fun refreshArchive(forcedRefresh: Boolean = false) {
         if (archiveFetchingJob == null) archiveFetchingJob = viewModelScope.launch(Dispatchers.IO) {
             var newETag = ""
             val result = mutableListOf<GalleryFragment.GalleryMedia>()
 
             try {
-                // Restore archive snapshot
-                var content = ""
-
                 if (!forcedRefresh) {
-                    ensureActive()
-                    try {
-                        File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).let { snapshotFile ->
-                            if (snapshotFile.exists()) snapshotFile.reader().use { content = it.readText() }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-
-                    if (content.isNotEmpty()) {
-                        // If snapshot file exists and has valid content, try using it
-                        ensureActive()
-                        result.addAll(Tools.jsonToArchiveList(content, archiveBase))
-
-                        // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
-                        ensureActive()
-                        try {
-                            webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
-                                if (davs.isEmpty()) {
-                                    // If we can't get latest archive folder eTag from server, use local snapshot
-                                    _archive.emit(result)
+                    //
+                    File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).let { snapshotFile ->
+                        if (snapshotFile.exists()) {
+                            snapshotFile.lastModified().let { lastModified ->
+                                if (lastModified <= lastCheck) {
+                                    _archive.emit(lastSnapshot)
                                     return@launch
-                                } else {
-                                    newETag = davs[0].eTag
-                                    if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
-                                        // Server archive folder eTag matched, use local snapshot
-                                        _archive.emit(result)
+                                } else lastCheck = lastModified
+                            }
+
+                            // Restore archive snapshot
+                            ensureActive()
+                            _archive.emit(Tools.jsonToArchiveList(snapshotFile, archiveBase))
+
+                            // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
+                            ensureActive()
+                            try {
+                                webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
+                                    if (davs.isEmpty()) {
+                                        // If we can't get latest archive folder eTag from server, use local snapshot
                                         return@launch
+                                    } else {
+                                        newETag = davs[0].eTag
+                                        if (newETag == (sp.getString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, "Z") ?: "Z")) {
+                                            // Server archive folder eTag matched, use local snapshot
+                                            return@launch
+                                        }
                                     }
                                 }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            if (result.isNotEmpty()) {
+                            } catch (e: Exception) {
+                                e.printStackTrace()
                                 // If we can't get latest archive folder eTag from server, use local snapshot
-                                _archive.emit(result)
                                 return@launch
                             }
                         }
@@ -646,7 +641,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Snapshot is not available or it's out of date
                 var path = ""
                 var volume: String
-                result.clear()
                 ensureActive()
                 webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                     ensureActive()
@@ -671,6 +665,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 volume = volume,                                      // volume name of archive item is device model name
                                 fullPath = "$path/",
                                 appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),                                      // last segment of file path
+                                //remoteFileId = dav.fileId,
                             )
                         )
                     } else {
@@ -693,6 +688,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun stopRefreshingArchive() {
         archiveFetchingJob?.cancel()
+        // Cache current snapshot data, emit null to activate flow collection
+        archive.value?.let { lastSnapshot = it }
         viewModelScope.launch { _archive.emit(null) }
     }
 
@@ -705,14 +702,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun removeItemsFromArchiveList(photoIds: List<String>) {
+/*
+    fun removeItemsFromArchiveList(photos: List<GalleryFragment.GalleryMedia>) {
         viewModelScope.launch {
             _archive.value?.toMutableList()?.let { archiveList ->
-                archiveList.removeAll { it.media.photo.id in photoIds }
+                Log.e(">>>>>>>>", "removeItemsFromArchiveList: before ${archiveList.size}", )
+                mutableListOf<String>().also { ids ->
+                    photos.forEach { ids.add(it.remoteFileId) }
+                    archiveList.removeAll { it.media.photo.id in ids }
+                }
+                Log.e(">>>>>>>>", "removeItemsFromArchiveList: after ${archiveList.size}", )
                 _archive.emit(archiveList)
             }
         }
     }
+*/
 
     fun getCameraRollArchive(): List<Photo> {
         val result = mutableListOf<Photo>()

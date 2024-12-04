@@ -390,7 +390,9 @@
     <string name="msg_remove_old_files_warning">WARNING: If you chose not to backup existing files when you first enabled backup for this folder, those existing files WILL ALSO BE REMOVED by turning on this setting!</string>
     <string name="button_text_i_understand">I understand</string>
     <string name="confirm_empty_trash">Are you sure you want to empty the trash?</string>
-    <string name="checkbox_text_remove_archive_copy">Also delete backup copy in server archive</string>
+    <string name="checkbox_text_remove_archive_too">Also delete backup copy in server archive</string>
+    <string name="checkbox_text_remove_local_copy">Local copy in this device</string>
+    <string name="checkbox_text_remove_archive_copy">Archived copy on server</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>

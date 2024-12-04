@@ -59,6 +59,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
 import org.json.JSONException
@@ -69,6 +71,7 @@ import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.gpx.TimezoneMapper
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
+import site.leos.apps.lespas.photo.SnapshotFile
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -835,14 +838,49 @@ object Tools {
         return content.dropLast(1) + "]}}"
     }
 
-    fun jsonToArchiveList(jsonString: String, archiveBase: String): List<GalleryFragment.GalleryMedia> {
+    fun jsonToArchiveList(snapshotFile: File, archiveBase: String): List<GalleryFragment.GalleryMedia> {
         val result = mutableListOf<GalleryFragment.GalleryMedia>()
         val defaultZone = ZoneId.systemDefault()
         var volume: String
         var fullPath: String
 
         try {
-            if (jsonString.isNotEmpty()) {
+            //if (jsonString.isNotEmpty()) {
+                jacksonObjectMapper().readValue<SnapshotFile>(snapshotFile).archive.photos.forEach { photo ->
+                    volume = photo.volume
+                    fullPath = photo.fullPath.dropLast(1)
+
+                    result.add(
+                        GalleryFragment.GalleryMedia(
+                            GalleryFragment.GalleryMedia.IS_REMOTE,
+                            if (fullPath.isEmpty()) volume else fullPath.substringBefore('/'),
+                            NCShareViewModel.RemotePhoto(
+                                photo = Photo(
+                                    id = photo.id,
+                                    albumId = "",
+                                    name = photo.name,
+                                    eTag = Photo.ETAG_ARCHIVE,
+                                    mimeType = photo.mime,
+                                    dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(photo.dateTaken), defaultZone),
+                                    lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(photo.lastModified), defaultZone),
+                                    width = photo.width,
+                                    height = photo.height,
+                                    orientation = photo.orientation,
+                                    caption = photo.size.toString(),
+                                    latitude = photo.latitude,
+                                    longitude = photo.longitude,
+                                    altitude = photo.altitude,
+                                    bearing = photo.bearing,
+                                ),
+                                remotePath = "${archiveBase}/${volume}/${fullPath}"
+                            ),
+                            volume = volume,
+                            fullPath = "${fullPath}/",
+                            appName = if (fullPath.isEmpty()) volume else fullPath.substringAfterLast('/'),
+                        )
+                    )
+                }
+/*
                 JSONObject(jsonString).getJSONObject("archive").let { archiveJSON ->
                     val photos = archiveJSON.getJSONArray("photos")
                     for (i in 0 until photos.length()) {
@@ -883,7 +921,8 @@ object Tools {
                         }
                     }
                 }
-            }
+*/
+            //}
         } catch (e: Exception) { e.printStackTrace() }
 
         return result

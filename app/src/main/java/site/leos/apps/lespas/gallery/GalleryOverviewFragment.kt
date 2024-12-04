@@ -275,7 +275,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         parentFragmentManager.setFragmentResultListener(GALLERY_OVERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)?.let { requestKey ->
                 when {
-                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
+                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotoIDs(), removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY))
                     // When ConfirmDialogFragment launched to confirm backup existing media files, INDIVIDUAL_REQUEST_KEY is the folder name. TODO hope that no body use 'DELETE_REQUEST_KEY' as their folder name
                     requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) 0L else System.currentTimeMillis() / 1000)
                 }
@@ -286,7 +286,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
             if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true))
                 galleryModel.shareOut(
-                    photoIds = getSelectedPhotos(),
+                    photoIds = getSelectedPhotoIDs(),
                     strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false),
                     lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false),
                     removeAfterwards = bundle.getBoolean(ShareOutDialogFragment.REMOVE_AFTERWARDS_RESULT_KEY, false),
@@ -477,23 +477,31 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.add -> {
-                galleryModel.add(getSelectedPhotos())
+                galleryModel.add(getSelectedPhotoIDs())
                 true
             }
             R.id.remove -> {
-                val defaultSyncDeletionSetting = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
-                when {
-                    Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotos(), removeArchive = defaultSyncDeletionSetting)
-                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
-                        getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
-                        checkBoxText = getString(R.string.checkbox_text_remove_archive_copy), checkBoxChecked = defaultSyncDeletionSetting
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
+                    val location = overviewAdapter.locationOfSelected()
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
+                        checkBoxText = if (location != GalleryFragment.GalleryMedia.IS_REMOTE) getString(R.string.checkbox_text_remove_local_copy) else "", checkBoxChecked = true,
+                        checkBox2Text = if (location != GalleryFragment.GalleryMedia.IS_LOCAL) getString(R.string.checkbox_text_remove_archive_copy) else "", checkBox2Checked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key) , false),
                     ).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
+/*
+                when {
+                    Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotoIDs(), removeArchive = defaultSyncDeletionSetting)
+                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
+                        getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
+                        checkBoxText = getString(R.string.checkbox_text_remove_archive_too), checkBoxChecked = defaultSyncDeletionSetting
+                    ).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+*/
 
                 true
             }
             R.id.share -> {
-                val photoIds = getSelectedPhotos(false)
+                val photoIds = getSelectedPhotoIDs(false)
                 if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
                     ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaStore.canManageMedia(requireContext()) else false)?.show(parentFragmentManager, SHARE_OUT_DIALOG)
                     ?: run {
@@ -528,7 +536,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         actionMode = null
     }
 
-    private fun getSelectedPhotos(clearSelectionAfterward: Boolean = true): List<String> = mutableListOf<String>().apply {
+    private fun getSelectedPhotoIDs(clearSelectionAfterward: Boolean = true): List<String> = mutableListOf<String>().apply {
         selectionTracker.selection.forEach { add(it) }
         if (clearSelectionAfterward) selectionTracker.clearSelection()
     }
@@ -761,6 +769,17 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         internal fun atLocal(photoId: String): Boolean = currentList.find { it.media.photo.id == photoId }?.let { it.atLocal() || it.isLocal() }?: false
         internal fun getRemotePhoto(photoId: String): NCShareViewModel.RemotePhoto? =  currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.atRemote()) item.media else null }
         internal fun getGalleryMedia(photoId: String?): GalleryFragment.GalleryMedia? = currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.isLocal() || item.atLocal()) item else null }
+
+        internal fun locationOfSelected(): Int {
+            val x: Int = currentList.find { it.media.photo.id == selectionTracker.selection.elementAt(0) }?.location ?: GalleryFragment.GalleryMedia.IS_NOT_MEDIA
+
+            for (i in 1 until selectionTracker.selection.size()) {
+                if (x == (currentList.find { it.media.photo.id == selectionTracker.selection.elementAt(i) }?.location ?: GalleryFragment.GalleryMedia.IS_NOT_MEDIA)) continue
+                else return GalleryFragment.GalleryMedia.IS_BOTH
+            }
+
+            return x
+        }
 
         class PhotoKeyProvider(private val adapter: OverviewAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)

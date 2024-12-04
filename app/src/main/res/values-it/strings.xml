@@ -259,7 +259,8 @@
     <string name="camera_roll_name">Macchina fotografica</string>
     <string name="msg_remove_old_files_warning">AVVERTENZA: se si è scelto di non eseguire il backup dei file esistenti quando si è abilitato il backup per questa cartella, i file esistenti verranno rimossi anche attivando questa impostazione!</string>
     <string name="button_text_i_understand">Capisco</string>
-    <string name="checkbox_text_remove_archive_copy">Eliminare anche la copia di backup nell\'archivio del server</string>
+    <string name="checkbox_text_remove_archive_too">Eliminare anche la copia di backup nell\'archivio del server</string>
+    <string name="checkbox_text_remove_archive_copy">La copia dell\'archivio sul server</string>
     <string name="tooltips_search_album">Cerca negli album</string>
     <string name="tooltips_search_gallery">Ricerca nella galleria</string>
     <string name="condition_to_perform_search">Per effettuare una ricerca è necessario almeno un album o il permesso di accesso all\'archivio.</string>
@@ -423,4 +424,5 @@
     <string name="show_archive_title">Mostra l\'archivio del server nella Galleria</string>
     <string name="action_download_to_device">Scarica sul dispositivo</string>
     <string name="action_upload_to_archive">Caricare nell\'archivio</string>
+    <string name="checkbox_text_remove_local_copy">La copia locale in questo dispositivo</string>
 </resources>

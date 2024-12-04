@@ -204,7 +204,8 @@
     <string name="camera_roll_name">Kamera</string>
     <string name="msg_remove_old_files_warning">WARNUNG: Wenn Sie bei der ersten Aktivierung der Datensicherung für diesen Ordner keine vorhandenen Dateien gesichert haben, werden diese vorhandenen Dateien durch die Aktivierung dieser Einstellung ebenfalls gelöscht!</string>
     <string name="button_text_i_understand">Ich verstehe</string>
-    <string name="checkbox_text_remove_archive_copy">Auch die auch die Sicherungskopie im Server-Archiv löschen</string>
+    <string name="checkbox_text_remove_archive_too">Auch die auch die Sicherungskopie im Server-Archiv löschen</string>
+    <string name="checkbox_text_remove_archive_copy">Archivierte Kopie auf dem Server</string>
     <string name="tooltips_search_album">In den Alben suchen</string>
     <string name="tooltips_search_gallery">Suche in der Galerie</string>
     <string name="condition_to_perform_search">Es muss mindestens ein Album vorhanden sein ODER Les Pas muss auf lokale zugreifen dürfen, um die Suchfunktion zu nutzen.</string>
@@ -408,4 +409,5 @@
     <string name="show_archive_title">Server-Archiv in der Galerie anzeigen</string>
     <string name="action_download_to_device">Auf das Gerät herunterladen</string>
     <string name="action_upload_to_archive">Hochladen ins Archiv</string>
+    <string name="checkbox_text_remove_local_copy">Lokale Kopie in diesem Gerät</string>
 </resources>

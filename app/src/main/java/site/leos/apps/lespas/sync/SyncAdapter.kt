@@ -353,9 +353,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 */
 
                 Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
-                    // Property fileName holds the camera archive file's path, relative to archiveBase
-                    webDav.delete("${userBase}/${action.fileName}")
-                    snapshotDeletion.add(action.fileName.substringAfterLast('/'))
+                    // Property fileName holds the file's path in the local device
+                    "${archiveBase}/${Tools.getDeviceModel()}/${action.fileName}".let { archivePath ->
+                        webDav.delete("${userBase}${archivePath}")
+                        snapshotDeletion.add(archivePath.substringAfterLast('/'))
+                    }
                 }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
@@ -1883,7 +1885,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             volume = deviceModel,
                             fullPath = "${it.folder}/${relativePath}/",
                             appName = relativePath.substringAfterLast('/'),
-                            remoteFileId = photo.id,
+                            //remoteFileId = photo.id,
                         )
                     )
                 }
@@ -2015,12 +2017,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             try {
                 File(localBaseFolder, NCShareViewModel.ARCHIVE_SNAPSHOT_FILE).let { file ->
                     if (file.exists()) {
-                        var jsonString: String
-                        file.reader().use { jsonString = it.readText() }
-
-                        Tools.jsonToArchiveList(jsonString, archiveBase).let { oldList ->
+                        Tools.jsonToArchiveList(file, archiveBase).let { oldList ->
                             file.writer().use {
                                 it.write(Tools.archiveToJSONString(
+                                    // TODO should match with remote IDs, however when archive is not shown, and user delete local file with sync to remote enable, file's remote ID is not available. There IS risk of deleting file with same name in different folder.
                                     (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> item.media.photo.name !in snapshotDeletion }).let { subList ->
                                         if (snapshotAddition.isEmpty()) subList else snapshotAddition.plus(subList)
                                     }

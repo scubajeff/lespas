@@ -92,7 +92,6 @@ class GallerySlideFragment : Fragment() {
 
     private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    //private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
     private lateinit var playerViewModel: VideoPlayerViewModel
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
@@ -179,7 +178,7 @@ class GallerySlideFragment : Fragment() {
                     super.onPageSelected(position)
 
                     try {
-                        mediaAdapter.getLocalMediaAt(position).run {
+                        mediaAdapter.getGalleryMediaAt(position).run {
                             media.run {
                                 if (autoRotate) requireActivity().requestedOrientation = if (this.photo.width > this.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                                 galleryModel.setCurrentPhotoId(photo.id)
@@ -235,17 +234,23 @@ class GallerySlideFragment : Fragment() {
             }
             setOnClickListener {
                 mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.let { photo ->
-                    val defaultSyncDeletionSetting = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
                     when {
                         folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(listOf(photo.id), nextInLine)
+/*
                         Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> {
                             galleryModel.registerNextInLine(getNextInLine(removeLocalCopyOnly = !defaultSyncDeletionSetting))
                             galleryModel.remove(listOf(photo.id), removeArchive = defaultSyncDeletionSetting)
                         }
-                        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
-                            getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY,
-                            checkBoxText = if (mediaAdapter.getLocalMediaAt(mediaViewPager.currentItem).isBoth()) getString(R.string.checkbox_text_remove_archive_copy) else "", checkBoxChecked = defaultSyncDeletionSetting
-                        ).show(parentFragmentManager, CONFIRM_DIALOG)
+*/
+                        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> {
+                            val location = mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem).location
+                            ConfirmDialogFragment.newInstance(
+                                getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY,
+//                            checkBoxText = if (mediaAdapter.getLocalMediaAt(mediaViewPager.currentItem).isBoth()) getString(R.string.checkbox_text_remove_archive_too) else "", checkBoxChecked = defaultSyncDeletionSetting
+                                checkBoxText = if (location != GalleryFragment.GalleryMedia.IS_REMOTE) getString(R.string.checkbox_text_remove_local_copy) else "", checkBoxChecked = true,
+                                checkBox2Text = if (location != GalleryFragment.GalleryMedia.IS_LOCAL) getString(R.string.checkbox_text_remove_archive_copy) else "", checkBox2Checked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key) , false),
+                            ).show(parentFragmentManager, CONFIRM_DIALOG)
+                        }
                     }
                 }
             }
@@ -264,23 +269,28 @@ class GallerySlideFragment : Fragment() {
             }
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
-            // removeLocalCopyOnly still can not be decided yet, so we won't call galleryModel.registerNextInLine here, wait until destinationModel result emitted
+            // Copy or Move still can not be decided yet, so we won't call galleryModel.registerNextInLine here, wait until destinationModel result emitted
             //galleryModel.registerNextInLine(getNextInLine(removeLocalCopyOnly = false))
             galleryModel.add(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id))
         }
+
         destinationModel.getDestination().observe(viewLifecycleOwner) {
             it?.let {
-                if (destinationModel.shouldRemoveOriginal()) galleryModel.registerNextInLine(getNextInLine(PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)))
+                if (destinationModel.shouldRemoveOriginal()) { mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem).let { galleryMedia ->
+                    // Remove local copy only, leave archive copy alone
+                    // If file is IS_REMOTE, then an ACTION_MOVER_ON_SERVER will be carried out later, result in remote copy being removed
+                    galleryModel.registerNextInLine(getNextInLine(removeLocal = galleryMedia.isLocal() || galleryMedia.atLocal(), removeRemote = galleryMedia.isRemote()))
+                }}
             }
         }
 
         parentFragmentManager.setFragmentResultListener(GALLERY_SLIDE_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
-                    bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY).let { syncDeletion ->
-                        galleryModel.registerNextInLine(getNextInLine(!syncDeletion))
-                        galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id), removeArchive = syncDeletion)
-                    }
+                    val removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY)
+                    val removeRemote = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY)
+                    galleryModel.registerNextInLine(getNextInLine(removeLocal , removeRemote))
+                    galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id), removeLocal = removeLocal, removeArchive = removeRemote)
                 }
             }
         }
@@ -301,8 +311,8 @@ class GallerySlideFragment : Fragment() {
                 when {
                     folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.trash.collect { setList(it) }                    // Trash view
                     folderArgument == GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { setList(it) }                     // All folder view
-                    folderArgument.indexOf('/') == -1 -> galleryModel.mediasInFolder(folderArgument).collect { setList(it) }   // Single main folder view
-                    else -> galleryModel.medias.collect { setList(it?.filter {item -> item.fullPath == folderArgument}) }           // Launched as viewer in a folder
+                    folderArgument.indexOf('/') == -1 -> galleryModel.mediasInFolder(folderArgument).collect { setList(it) }  // Single main folder view
+                    else -> galleryModel.medias.collect { setList(it?.filter { item -> item.fullPath == folderArgument }) }           // Launched as viewer in a folder
                 }
             }
         }
@@ -352,11 +362,13 @@ class GallerySlideFragment : Fragment() {
         super.onDestroy()
     }
 
-    private fun getNextInLine(removeLocalCopyOnly: Boolean): String {
-        val currentMedia = mediaAdapter.getLocalMediaAt(mediaViewPager.currentItem)
+    private fun getNextInLine(removeLocal: Boolean, removeRemote: Boolean): String {
+        val currentMedia = mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem)
         return when {
-            // Item to be deleted is IS_BOTH, and user decided not to delete the server copy, hence photo's remote fileId should be returned
-            currentMedia.isBoth() && removeLocalCopyOnly -> currentMedia.remoteFileId
+            // Media existed on both side, user request to remove the archive copy only
+            currentMedia.isBoth() && !removeLocal && removeRemote -> currentMedia.media.photo.id
+            // Media existed on both side, user request to remove the local copy only, hence photo's remote fileId should be returned
+            currentMedia.isBoth() && removeLocal && !removeRemote -> currentMedia.remoteFileId
             // Item to be deleted is not the last one in the list, next in line will be the next one
             mediaViewPager.currentItem < mediaAdapter.currentList.size - 1 -> mediaAdapter.getPhotoAt(mediaViewPager.currentItem + 1).photo.id
             // Item to be deleted is the last one in the list and the only one in list, next in line is ""
@@ -404,6 +416,10 @@ class GallerySlideFragment : Fragment() {
 
         TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 200 })
         controlsContainer.isVisible = true
+        mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem).run {
+            localIndicator.isActivated = atLocal()
+            archiveIndicator.isActivated = atRemote()
+        }
         handlerBottomControl.postDelayed(hideBottomControls, AUTO_HIDE_DELAY_MILLIS)
     }
 
@@ -420,7 +436,7 @@ class GallerySlideFragment : Fragment() {
 
         fun isPhotoAtLocal(position: Int): Boolean = !currentList[position].isRemote()
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media
-        fun getLocalMediaAt(position: Int): GalleryFragment.GalleryMedia = currentList[position]
+        fun getGalleryMediaAt(position: Int): GalleryFragment.GalleryMedia = currentList[position]
         fun getScrollingPosition(photoId: String): Int {
             val id = photoId.substringAfterLast('/')
             return currentList.indexOfFirst { it.media.photo.id.substringAfterLast('/') == id }     //.apply { Log.e(">>>>>>>>", "getScrollingPosition: $photoId $this", ) }

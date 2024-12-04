@@ -55,6 +55,17 @@
             tools:visibility="visible"
             tools:text="One more thing"/>
 
+        <CheckBox
+            android:id="@+id/checkbox2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/checkbox"
+            app:layout_constraintLeft_toLeftOf="parent"
+            style="@style/TextAppearance.MaterialComponents.Body2"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="One more thing"/>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cancel_button"
             android:layout_width="wrap_content"
@@ -68,7 +79,7 @@
             android:id="@+id/ok_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/checkbox"
+            app:layout_constraintTop_toBottomOf="@id/checkbox2"
             app:layout_constraintRight_toRightOf="parent"
             style="@style/Theme.LesPas.TextButton"
             android:text="@android:string/ok"/>

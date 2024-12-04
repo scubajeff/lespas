@@ -145,6 +145,9 @@ dependencies {
     // ZXing for blog QR code
     implementation 'com.google.zxing:zxingorg:3.5.0'
 
+    // Jackson for faster json string processing
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
+
     // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'

@@ -379,7 +379,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         parentFragmentManager.setFragmentResultListener(GALLERY_FOLDERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
+                //DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY))
+                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotos(), removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY))
                 EMPTY_TRASH_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.emptyTrash(arrayListOf<String>().apply { mediaAdapter.getAllItems().forEach { add(it.media.photo.id) }})
             }
         }
@@ -424,8 +425,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             }
                         }
                     }
-                    GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { prepareList(it) }
-                    else -> galleryModel.mediasInFolder(folderArgument).collect { prepareList(it) }
+                    GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { it?.let { prepareList(it) }}
+                    else -> galleryModel.mediasInFolder(folderArgument).collect { it?.let { prepareList(it) }}
                 }
             }
         }
@@ -578,15 +579,27 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.remove -> {
-                val defaultSyncDeletionSetting = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false)
+                when {
+                    folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(getSelectedPhotos())
+                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> {
+                        val location = mediaAdapter.locationOfSelected()
+                        // When archive is showing, let user decides upon which version to delete
+                        ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY,
+                            checkBoxText = if (location != GalleryFragment.GalleryMedia.IS_REMOTE) getString(R.string.checkbox_text_remove_local_copy) else "", checkBoxChecked = true,
+                            checkBox2Text = if (location != GalleryFragment.GalleryMedia.IS_LOCAL) getString(R.string.checkbox_text_remove_archive_copy) else "", checkBox2Checked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false),
+                        ).show(parentFragmentManager, CONFIRM_DIALOG)
+                    }
+                }
+/*
                 when {
                     folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.restore(getSelectedPhotos())
                     Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotos(), removeArchive = defaultSyncDeletionSetting)
                     parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
                         getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY,
-                        checkBoxText = getString(R.string.checkbox_text_remove_archive_copy), checkBoxChecked = defaultSyncDeletionSetting
+                        checkBoxText = getString(R.string.checkbox_text_remove_archive_too), checkBoxChecked = defaultSyncDeletionSetting
                     ).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
+*/
 
                 true
             }
@@ -655,8 +668,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     @SuppressLint("InflateParams")
-    private fun prepareList(localMedias: List<GalleryFragment.GalleryMedia>?) {
-        if (localMedias == null) return
+    private fun prepareList(localMedias: List<GalleryFragment.GalleryMedia>) {
         if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
         // Disable list setting for now
@@ -887,6 +899,17 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         internal fun atLocal(photoId: String): Boolean = currentList.find { it.media.photo.id == photoId }?.let { it.atLocal() || it.isLocal() }?: false
         internal fun getRemotePhoto(photoId: String): NCShareViewModel.RemotePhoto? =  currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.atRemote()) item.media else null }
         internal fun getGalleryMedia(photoId: String?): GalleryFragment.GalleryMedia? = currentList.find { it.media.photo.id == photoId }?.let { item -> if (item.isLocal() || item.atLocal()) item else null }
+
+        internal fun locationOfSelected(): Int {
+            val x: Int = currentList.find { it.media.photo.id == selectionTracker.selection.elementAt(0) }?.location ?: GalleryFragment.GalleryMedia.IS_NOT_MEDIA
+
+            for (i in 1 until selectionTracker.selection.size()) {
+                if (x == (currentList.find { it.media.photo.id == selectionTracker.selection.elementAt(i) }?.location ?: GalleryFragment.GalleryMedia.IS_NOT_MEDIA)) continue
+                else return GalleryFragment.GalleryMedia.IS_BOTH
+            }
+
+            return x
+        }
 
         class PhotoKeyProvider(private val adapter: MediaAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)

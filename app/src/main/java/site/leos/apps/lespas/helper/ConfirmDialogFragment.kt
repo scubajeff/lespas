@@ -28,13 +28,15 @@ import site.leos.apps.lespas.R
 
 class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dialog) {
     private lateinit var checkBox: CheckBox
+    private lateinit var checkBox2: CheckBox
 
     private val buttonClickListener: View.OnClickListener = View.OnClickListener { v ->
         v?.id.let { viewId ->
             parentFragmentManager.setFragmentResult(requireArguments().getString(REQUEST_KEY, CONFIRM_DIALOG_RESULT_KEY), Bundle().apply {
                 putBoolean(CONFIRM_DIALOG_RESULT_KEY, viewId == R.id.ok_button)
                 putString(INDIVIDUAL_REQUEST_KEY, requireArguments().getString(INDIVIDUAL_REQUEST_KEY, ""))
-                if (checkBox.isVisible) putBoolean(CHECKBOX_RESULT_KEY, checkBox.isChecked)
+                putBoolean(CHECKBOX_RESULT_KEY, if (checkBox.isVisible) checkBox.isChecked else false)
+                putBoolean(CHECKBOX2_RESULT_KEY, if (checkBox2.isVisible) checkBox2.isChecked else false)
             })
             dismiss()
         }
@@ -65,6 +67,16 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
             }
         }
 
+        checkBox2 = view.findViewById<CheckBox>(R.id.checkbox2).apply {
+            (requireArguments().getString(CHECK_BOX2_TEXT) ?: "").let {
+                if (it.isNotEmpty()) {
+                    text = it
+                    isChecked = this@ConfirmDialogFragment.requireArguments().getBoolean(CHECK_BOX2_CHECKED)
+                    isVisible = true
+                }
+            }
+        }
+
         view.findViewById<MaterialButton>(R.id.ok_button).apply {
             text = requireArguments().getString(POSITIVE_BUTTON) ?: getString(android.R.string.ok)
             setOnClickListener(buttonClickListener)
@@ -90,6 +102,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
     companion object {
         const val CONFIRM_DIALOG_RESULT_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
         const val CHECKBOX_RESULT_KEY = "CHECKBOX_RESULT_KEY"
+        const val CHECKBOX2_RESULT_KEY = "CHECKBOX2_RESULT_KEY"
         const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
         private const val REQUEST_KEY = "REQUEST_KEY"
         private const val MESSAGE = "MESSAGE"
@@ -99,9 +112,12 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         private const val CANCELABLE = "CANCELABLE"
         private const val CHECK_BOX_TEXT = "CHECK_BOX_TEXT"
         private const val CHECK_BOX_CHECKED = "CHECK_BOX_CHECKED"
+        private const val CHECK_BOX2_TEXT = "CHECK_BOX2_TEXT"
+        private const val CHECK_BOX2_CHECKED = "CHECK_BOX2_CHECKED"
 
         @JvmStatic
-        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY, checkBoxText: String = "", checkBoxChecked: Boolean = false, link: Boolean = false) = ConfirmDialogFragment().apply {
+        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, individualKey: String = "", requestKey: String = CONFIRM_DIALOG_RESULT_KEY,
+                        checkBoxText: String = "", checkBoxChecked: Boolean = false, checkBox2Text: String = "", checkBox2Checked: Boolean = false, link: Boolean = false) = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
                 putString(POSITIVE_BUTTON, positiveButtonText)
@@ -111,6 +127,8 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
                 putString(REQUEST_KEY, requestKey)
                 putString(CHECK_BOX_TEXT, checkBoxText)
                 putBoolean(CHECK_BOX_CHECKED, checkBoxChecked)
+                putString(CHECK_BOX2_TEXT, checkBox2Text)
+                putBoolean(CHECK_BOX2_CHECKED, checkBox2Checked)
                 putBoolean(LINK, link)
             }
         }

@@ -145,7 +145,8 @@
     <string name="camera_roll_name">カメラ</string>
     <string name="msg_remove_old_files_warning">警告：このフォルダのバックアップを最初に有効にしたときに、既存のファイルをバックアップしないことを選択した場合、この設定をオンにすると、既存のファイルも削除されます！</string>
     <string name="button_text_i_understand">なんでも</string>
-    <string name="checkbox_text_remove_archive_copy">サーバーアーカイブのバックアップコピーも削除</string>
+    <string name="checkbox_text_remove_archive_too">サーバーアーカイブのバックアップコピーも削除</string>
+    <string name="checkbox_text_remove_archive_copy">サーバー上のアーカイブ</string>
     <string name="tooltips_search_album">アルバム内検索</string>
     <string name="tooltips_search_gallery">ギャラリー内検索</string>
     <string name="condition_to_perform_search">画像検索機能を利用するためには、アルバムが存在するか、ストレージへのアクセスが許可されている必要があります。</string>
@@ -356,4 +357,5 @@
     <string name="show_archive_title">ギャラリーにサーバーアーカイブを表示する</string>
     <string name="action_download_to_device">デバイスにダウンロード</string>
     <string name="action_upload_to_archive">アーカイブへのアップロード</string>
+    <string name="checkbox_text_remove_local_copy">このデバイスのローカルコピー</string>
 </resources>

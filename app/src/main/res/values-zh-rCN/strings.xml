@@ -131,7 +131,8 @@
     <string name="camera_roll_name">相机</string>
     <string name="msg_remove_old_files_warning">警告：如果您在首次启用本文件夹备份时选择了不备份现有文件，那么激活此自动删除设置后，那些现有文件也将被按设定删除！</string>
     <string name="button_text_i_understand">知道了</string>
-    <string name="checkbox_text_remove_archive_copy">同时删除服务器存档中的备份副本</string>
+    <string name="checkbox_text_remove_archive_too">同时删除服务器存档中的备份副本</string>
+    <string name="checkbox_text_remove_archive_copy">服务器上的存档副本</string>
     <string name="tooltips_search_album">在相册中搜索</string>
     <string name="tooltips_search_gallery">在图库中搜索</string>
     <string name="title_in_album">相册中的%1$s</string>
@@ -355,4 +356,5 @@
     <string name="show_archive_title">在图库中显示服务器存档</string>
     <string name="action_download_to_device">下载到设备上</string>
     <string name="action_upload_to_archive">备份至服务器</string>
+    <string name="checkbox_text_remove_local_copy">本设备中的文件</string>
 </resources>

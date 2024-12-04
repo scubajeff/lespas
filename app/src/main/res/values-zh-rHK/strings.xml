@@ -131,7 +131,8 @@
     <string name="camera_roll_name">相機</string>
     <string name="msg_remove_old_files_warning">警告：如果您在首次啓用本文件夾備份時選擇了不備份現有文件，那麼激活此自動刪除設置後，那些現有文件也將被按設定刪除！</string>
     <string name="button_text_i_understand">明白</string>
-    <string name="checkbox_text_remove_archive_copy">同時刪除伺服器存檔中的備份副本</string>
+    <string name="checkbox_text_remove_archive_too">同時刪除伺服器存檔中的備份副本</string>
+    <string name="checkbox_text_remove_archive_copy">服務器上的存檔副本</string>
     <string name="tooltips_search_album">在相冊中搜索</string>
     <string name="tooltips_search_gallery">在圖庫中搜索</string>
     <string name="title_in_album">相冊中之%1$s</string>
@@ -355,4 +356,5 @@
     <string name="show_archive_title">在圖庫中顯示服務器存檔</string>
     <string name="action_download_to_device">下載到設備上</string>
     <string name="action_upload_to_archive">備份至服務器</string>
+    <string name="checkbox_text_remove_local_copy">本設備中的文件</string>
 </resources>
