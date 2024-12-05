@@ -660,7 +660,7 @@ class GalleryFragment: Fragment() {
 
         override fun onCleared() {
             loadJob?.cancel()
-            imageModel.stopRefreshingArchive()
+            imageModel.stopRefreshingArchive(false)
             archiveSnapshotFileObserver.stopWatching()
             super.onCleared()
         }
@@ -853,7 +853,7 @@ class GalleryFragment: Fragment() {
                 imageModel.refreshArchive(forcedRefresh)
             } else {
                 _showArchive.value = REFRESHING_GALLERY
-                imageModel.stopRefreshingArchive()
+                imageModel.stopRefreshingArchive(true)
             }
         }
 
