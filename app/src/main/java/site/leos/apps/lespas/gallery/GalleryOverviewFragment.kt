@@ -352,7 +352,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         }
                     }.collect { list ->
                         //overviewAdapter.toggleLocationDisplay(galleryModel.getCurrentArchiveShowState() != GalleryFragment.GalleryViewModel.ARCHIVE_OFF)
-                        overviewAdapter.submitList(list)
+                        overviewAdapter.submitList(list) { galleryModel.stopArchiveLoadingIndicator() }
                         val selectionSize = selectionTracker.selection.size()
                         actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
                         if (list?.isEmpty() == true) startPostponedEnterTransition()
@@ -543,7 +543,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     class OverviewAdapter(
         private val cameraRollName: String, private val trashName: String,
-        private val max: Int, private val enableBackupClickListener: (String, Boolean, Int) -> Unit,  private val backupOptionClickListener: (String) -> Unit, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+        private val max: Int, private val enableBackupClickListener: (String, Boolean, Int) -> Unit,  private val backupOptionClickListener: (String) -> Unit, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit,
+        private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<GalleryFragment.GalleryMedia, RecyclerView.ViewHolder>(OverviewDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })

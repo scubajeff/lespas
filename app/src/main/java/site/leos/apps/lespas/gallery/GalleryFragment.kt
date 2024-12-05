@@ -384,7 +384,7 @@ class GalleryFragment: Fragment() {
                     repeatOnLifecycle(Lifecycle.State.RESUMED) { galleryModel.showArchive.collect { currentState ->
                         archiveMenuItem?.let { menuItem ->
                             when(currentState) {
-                                GalleryViewModel.ARCHIVE_REFRESHING -> {
+                                GalleryViewModel.REFRESHING_ARCHIVE, GalleryViewModel.REFRESHING_GALLERY -> {
                                     menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
                                     (menuItem.icon as? AnimatedVectorDrawable)?.start()
                                 }
@@ -591,7 +591,7 @@ class GalleryFragment: Fragment() {
                     combine(_local, imageModel.archive) { local, archiveMedia ->
                         val localMedia = local.filter { it.folder != TRASH_FOLDER }
 
-                        if (_showArchive.value != ARCHIVE_OFF) {
+                        if (_showArchive.value != ARCHIVE_OFF && _showArchive.value != REFRESHING_GALLERY) {
                             archiveMedia?.let {
 /*
                                 Log.e(">>>>>>>>", "generating local list: ", )
@@ -643,10 +643,10 @@ class GalleryFragment: Fragment() {
                                     }
                                 }
 
-                                combinedList.sortedByDescending { item -> item.media.photo.lastModified }.apply { _showArchive.value = ARCHIVE_ON }
+                                combinedList.sortedByDescending { item -> item.media.photo.lastModified }   //.apply { _showArchive.value = ARCHIVE_ON }
                             } ?: run {
                                 // Archive refreshing job in NCShareViewModel emit NULL list when the job is running
-                                _showArchive.value = ARCHIVE_REFRESHING
+                                _showArchive.value = REFRESHING_ARCHIVE
                                 localMedia
                             }
                         } else localMedia
@@ -848,11 +848,11 @@ class GalleryFragment: Fragment() {
         private fun isArchiveOff(): Boolean = _showArchive.value != ARCHIVE_ON
         fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
             if (forcedRefresh) _showArchive.value = ARCHIVE_OFF
-            if (_showArchive.value == ARCHIVE_OFF) {
-                _showArchive.value = ARCHIVE_REFRESHING
+            if (_showArchive.value == ARCHIVE_OFF || _showArchive.value == REFRESHING_GALLERY) {
+                _showArchive.value = REFRESHING_ARCHIVE
                 imageModel.refreshArchive(forcedRefresh)
             } else {
-                _showArchive.value = ARCHIVE_OFF
+                _showArchive.value = REFRESHING_GALLERY
                 imageModel.stopRefreshingArchive()
             }
         }
@@ -1105,10 +1105,18 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        fun stopArchiveLoadingIndicator() {
+            when(_showArchive.value) {
+                REFRESHING_ARCHIVE -> _showArchive.value = ARCHIVE_ON
+                REFRESHING_GALLERY -> _showArchive.value = ARCHIVE_OFF
+            }
+        }
+
         companion object {
             const val ARCHIVE_OFF = -1
             const val ARCHIVE_ON = 1
-            const val ARCHIVE_REFRESHING = 0
+            const val REFRESHING_ARCHIVE = 0
+            const val REFRESHING_GALLERY = -1000
 
             const val SHARE_NORMAL = 1
             const val SHARE_USE_AS = 2

@@ -740,7 +740,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         //if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
-        if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate)
+        if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate) { galleryModel.stopArchiveLoadingIndicator() }
     }
 
     private var flashDateId = ""
