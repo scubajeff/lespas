@@ -23,6 +23,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.database.ContentObserver
 import android.graphics.ImageDecoder
@@ -120,6 +121,8 @@ class GalleryFragment: Fragment() {
 
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
 
+    private lateinit var sp: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -178,7 +181,7 @@ class GalleryFragment: Fragment() {
                         if (uri.scheme == ARCHIVE_SCHEME) uri.getQueryParameter("fileid")?.let { add(it) }
                         else add(uri.toString())
                     }
-                    galleryModel.remove(this, PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key), false))
+                    galleryModel.remove(this, sp.getBoolean(getString(R.string.sync_deletion_perf_key), false))
                 }
             }
         }
@@ -211,6 +214,8 @@ class GalleryFragment: Fragment() {
                 //finish()
             }
         }
+
+        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_container, container, false)
@@ -388,8 +393,14 @@ class GalleryFragment: Fragment() {
                                     menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
                                     (menuItem.icon as? AnimatedVectorDrawable)?.start()
                                 }
-                                GalleryViewModel.ARCHIVE_ON -> menuItem.setIcon(R.drawable.ic_baseline_archive_24)
-                                else -> menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
+                                GalleryViewModel.ARCHIVE_ON -> {
+                                    menuItem.setIcon(R.drawable.ic_baseline_archive_24)
+                                    sp.registerOnSharedPreferenceChangeListener(archiveWorksListener)
+                                }
+                                GalleryViewModel.ARCHIVE_OFF -> {
+                                    menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
+                                    sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
+                                }
                             }
                         }
                     }}
@@ -425,7 +436,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.show_archive_perf_key), true)) galleryModel.toggleArchiveShownState()
+        if (sp.getBoolean(getString(R.string.show_archive_perf_key), true)) galleryModel.toggleArchiveShownState()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -437,8 +448,25 @@ class GalleryFragment: Fragment() {
         requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
         requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+        sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
 
         super.onDestroyView()
+    }
+
+    private val archiveWorksListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        val syncActionKey = getString(R.string.sync_status_local_action_pref_key)
+        if (key == syncActionKey) {
+            try {
+                sp.getString(syncActionKey, "")?.split("``")?.let { action ->
+                    // action is String array of: actionId``folderId``folderName``fileId``fileName``timestamp in millisecond
+                    if (action.isNotEmpty()) {
+                        when (action[0].toInt()) {
+                            Action.ACTION_BACKUP_INDIVIDUAL, Action.ACTION_DELETE_FILE_IN_ARCHIVE -> if (galleryModel.showArchive.value == GalleryViewModel.ARCHIVE_ON) galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     private fun quit() {
@@ -985,7 +1013,6 @@ class GalleryFragment: Fragment() {
                     actionModel.deleteFileInArchive(this)
                 }
                 //if (!isArchiveOff()) imageModel.removeItemsFromArchiveList(archiveFiles)
-                if (_showArchive.value == ARCHIVE_ON) _showArchive.value = REFRESHING_ARCHIVE
             }
 
             setNextInLine()
@@ -1109,9 +1136,9 @@ class GalleryFragment: Fragment() {
                 photos.forEach { actions.add(Action(null, Action.ACTION_BACKUP_INDIVIDUAL, folderName = it.folder, fileId = it.media.photo.id, date = ts)) }
                 if (actions.isNotEmpty()) actionModel.addActions(actions)
             }
-            if (_showArchive.value == ARCHIVE_ON) _showArchive.value = REFRESHING_ARCHIVE
         }
 
+        fun startArchiveLoadingIndicator(state: Int) { _showArchive.value = state }
         fun stopArchiveLoadingIndicator() {
             when(_showArchive.value) {
                 REFRESHING_ARCHIVE -> _showArchive.value = ARCHIVE_ON
