@@ -690,7 +690,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun stopRefreshingArchive(cacheSnapshot: Boolean) {
         archiveFetchingJob?.cancel()
         // Cache current snapshot data, emit null to activate flow collection
-        if (cacheSnapshot) archive.value?.let { lastSnapshot = it } else lastSnapshot = listOf()
+        if (cacheSnapshot) archive.value?.let { lastSnapshot = it }
+        else {
+            lastCheck = 0L
+            lastSnapshot = listOf()
+        }
         viewModelScope.launch { _archive.emit(null) }
     }
 
