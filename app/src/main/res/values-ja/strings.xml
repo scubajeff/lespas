@@ -247,6 +247,7 @@
     <string name="tooltips_fetch_backup">サーバー上のバックアップを表示</string>
     <string name="tooltips_enable_backup">バックアップを有効にする</string>
     <string name="tooltips_backup_setting">バックアップの設定</string>
+    <string name="msg_archive_empty">ギャラリーのバックアップを開始してください。</string>
     <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
     <string name="option_menu_search">名前検索</string>
     <string name="tooltips_date_picker">日付を選択する</string>

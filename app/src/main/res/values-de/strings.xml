@@ -299,6 +299,7 @@
     <string name="tooltips_fetch_backup">Backups auf dem Server anzeigen</string>
     <string name="tooltips_enable_backup">Sicherung einschalten</string>
     <string name="tooltips_backup_setting">Backup-Einstellung</string>
+    <string name="msg_archive_empty">Archiv leer, bis Sie mit der Sicherung Ihrer Galerie beginnen.</string>
     <string name="msg_joint_album_not_updated_locally">Änderungen, die an einem gemeinsamen Album vorgenommen wurden, werden angezeigt, nachdem der Eigentümer des Albums sie bestätigt hat.</string>
     <string name="option_menu_search">Suche nach Name</string>
     <string name="tooltips_date_picker">Wählen Sie ein Datum</string>

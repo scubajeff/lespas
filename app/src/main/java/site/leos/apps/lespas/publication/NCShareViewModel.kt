@@ -605,6 +605,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (snapshotFile.exists()) {
                             snapshotFile.lastModified().let { lastModified ->
                                 if (lastModified <= lastCheck) {
+                                    // Use cached snapshot to speed up archive loading
                                     _archive.emit(lastSnapshot)
                                     return@launch
                                 } else lastCheck = lastModified
@@ -614,7 +615,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             ensureActive()
                             _archive.emit(Tools.jsonToArchiveList(snapshotFile, archiveBase))
 
-                            // Since refreshing the entire archive is both time and resource consuming, only proceed when it's actually changed
+                            // Since refreshing the entire archive from server is both time and resource consuming, only proceed when it's actually changed
                             ensureActive()
                             try {
                                 webDav.list("${resourceRoot}${archiveBase}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->

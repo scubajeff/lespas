@@ -247,6 +247,7 @@
     <string name="tooltips_fetch_backup">列示伺服器上的備份</string>
     <string name="tooltips_enable_backup">備份開關</string>
     <string name="tooltips_backup_setting">備份設定</string>
+    <string name="msg_archive_empty">存檔為空，請開始備份相簿。</string>
     <string name="msg_joint_album_not_updated_locally">更新將於合作相冊創建者確認後方會呈現。</string>
     <string name="option_menu_search">搜尋名字</string>
     <string name="tooltips_date_picker">選擇日期</string>

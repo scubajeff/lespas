@@ -370,6 +370,7 @@
     <string name="tooltips_local_copy">Local copy</string>
     <string name="tooltips_archive_copy">Archive copy</string>
     <string name="msg_no_media_found">No image or video found in device.</string>
+    <string name="msg_archive_empty">Archive empty until you start backup your gallery.</string>
     <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday</string>

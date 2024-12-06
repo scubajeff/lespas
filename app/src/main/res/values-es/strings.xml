@@ -248,6 +248,7 @@
     <string name="tooltips_fetch_backup">Mostrar las copias de seguridad en el servidor</string>
     <string name="tooltips_enable_backup">Activar copia de seguridad</string>
     <string name="tooltips_backup_setting">Configuración de la copia de seguridad</string>
+    <string name="msg_archive_empty">Archivo vacío hasta que empiece la copia de seguridad de su galería.</string>
     <string name="msg_joint_album_not_updated_locally">Los cambios realizados en el Álbum Conjunto se mostrarán después de que el propietario del álbum los confirme.</string>
     <string name="option_menu_search">Buscar por nombre</string>
     <string name="tooltips_date_picker">Elige una fecha</string>

@@ -238,6 +238,7 @@
     <string name="tooltips_date_picker">Choisir une date</string>
     <string name="tooltips_enable_backup">Activer la sauvegarde</string>
     <string name="tooltips_backup_setting">Paramètres de sauvegarde</string>
+    <string name="msg_archive_empty">L\'archive est vide jusqu\'à ce que vous commenciez à sauvegarder votre galerie.</string>
     <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album partagé seront affichées une fois que le propriétaire de l\'album les aura confirmées.</string>
     <!-- Search Fragment -->
     <string name="today">Aujourd\'hui</string>

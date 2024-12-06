@@ -313,6 +313,7 @@
     <string name="hint_timestamp_pattern">La data di creazione della foto può essere modificata includendo il modello yyyyMMdd_hhmmss nel nome.</string>
     <string name="tooltips_enable_backup">Abilita il backup</string>
     <string name="tooltips_backup_setting">Impostazione del backup</string>
+    <string name="msg_archive_empty">Archivio vuoto finché non si avvia il backup della galleria.</string>
     <string name="msg_joint_album_not_updated_locally">Le modifiche apportate all\'album comune saranno visualizzate dopo la conferma del proprietario dell\'album.</string>
     <string name="option_menu_search">Ricerca per nome</string>
     <string name="title_in_archive">%1$s nei backup della fotocamera</string>
