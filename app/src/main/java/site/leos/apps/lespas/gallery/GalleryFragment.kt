@@ -675,7 +675,7 @@ class GalleryFragment: Fragment() {
                                         searchMap[localItem.fullPath + localItem.media.photo.name]?.let { existed ->
                                             // If local media existed in archive list, change properties to match local item
                                             existed.location = GalleryMedia.IS_BOTH
-                                            existed.remoteFileId = existed.media.photo.id
+                                            //existed.remoteFileId = existed.media.photo.id     // remoteFileId set when archive being refreshed in NCShareViewModel.refreshArchive()
                                             existed.volume = localItem.volume
                                             existed.media.photo.albumId = FROM_DEVICE_GALLERY
                                             existed.media.photo.id = localItem.media.photo.id
@@ -1028,8 +1028,8 @@ class GalleryFragment: Fragment() {
 
             // Removing archived files
             if (removeArchive && archiveFiles.isNotEmpty()) {
-                mutableListOf<String>().run {
-                    archiveFiles.forEach { add("${it.fullPath}/${it.media.photo.name}") }
+                mutableListOf<Pair<String, String>>().run {
+                    archiveFiles.forEach { add(Pair(it.remoteFileId, "${it.fullPath}/${it.media.photo.name}")) }
                     actionModel.deleteFileInArchive(this)
                 }
                 //if (!isArchiveOff()) imageModel.removeItemsFromArchiveList(archiveFiles)

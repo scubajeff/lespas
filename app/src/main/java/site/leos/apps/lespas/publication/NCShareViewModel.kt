@@ -666,7 +666,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 volume = volume,                                      // volume name of archive item is device model name
                                 fullPath = "$path/",
                                 appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),                                      // last segment of file path
-                                //remoteFileId = dav.fileId,
+                                remoteFileId = dav.fileId,
                             )
                         )
                     } else {

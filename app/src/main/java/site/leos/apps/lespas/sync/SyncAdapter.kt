@@ -354,9 +354,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
                     // Property fileName holds the file's path in the local device
+                    // Property fileId holds the file's uid on server
                     "${archiveBase}/${Tools.getDeviceModel()}/${action.fileName}".let { archivePath ->
                         webDav.delete("${userBase}${archivePath}")
-                        snapshotDeletion.add(archivePath.substringAfterLast('/'))
+                        //snapshotDeletion.add(archivePath.substringAfterLast('/'))
+                        snapshotDeletion.add(action.fileId)
                     }
                 }
 
@@ -2020,8 +2022,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Tools.jsonToArchiveList(file, archiveBase).let { oldList ->
                             file.writer().use {
                                 it.write(Tools.archiveToJSONString(
-                                    // TODO should match with remote IDs, however when archive is not shown, and user delete local file with sync to remote enable, file's remote ID is not available. There IS risk of deleting file with same name in different folder.
-                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> item.media.photo.name !in snapshotDeletion }).let { subList ->
+                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> item.remoteFileId !in snapshotDeletion }).let { subList ->
                                         if (snapshotAddition.isEmpty()) subList else snapshotAddition.plus(subList)
                                     }
                                 ))
