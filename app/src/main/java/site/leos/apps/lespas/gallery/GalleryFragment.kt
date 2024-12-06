@@ -231,6 +231,7 @@ class GalleryFragment: Fragment() {
             launch {
                 galleryModel.additions.collect { ids ->
                     selectedUris = arrayListOf<Uri>().apply {
+                        // Prepare uri of media for the convenience of displaying photo thumbnail in DestinationDialogFragment, especially those of remote only medias
                         ids.forEach { id ->
                             add(Uri.parse(
                                 if (id.startsWith("content")) id
@@ -241,6 +242,7 @@ class GalleryFragment: Fragment() {
                             ))
                         }
                     }
+                    // TODO revisit canWrite condition, should be always yes now
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
                         .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                 }
@@ -352,29 +354,40 @@ class GalleryFragment: Fragment() {
 
         destinationModel.getDestination().observe(viewLifecycleOwner) {
             it?.let { targetAlbum ->
-                if (destinationModel.doOnServer()) {
-                    val actions = mutableListOf<Action>()
-                    val actionId = if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
+                val localUris = ArrayList<Uri>()
+                val actions = mutableListOf<Action>()
+                val actionId = if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
+                val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
+                val isJoinAlbum = targetAlbum.id == Album.JOINT_ALBUM_ID
+                val isRemoteAlbum = Tools.isRemoteAlbum(targetAlbum)
+                val timestamp = System.currentTimeMillis()
 
-                    when (targetAlbum.id) {
-                        "" -> {
-                            // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
-                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
-                        }
-                        Album.JOINT_ALBUM_ID -> Snackbar.make(requireView(), getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
+                when (targetAlbum.id) {
+                    "" -> {
+                        // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                        actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
                     }
+                    Album.JOINT_ALBUM_ID -> Snackbar.make(requireView(), getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
+                }
 
-                    destinationModel.getRemotePhotos().forEach { remotePhoto ->
-                        remotePhoto.photo.let { photo ->
-                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}|${Tools.isRemoteAlbum(targetAlbum)}", System.currentTimeMillis(), 1))
-                        }
+                selectedUris.forEach { mediaUri ->
+                    if (mediaUri.scheme == ARCHIVE_SCHEME)
+                        // Item is IS_REMOTE TODO meta string in property 'fileId'
+                        actions.add(Action(null, actionId, mediaUri.path!!.substringBeforeLast('/'), targetFolder, "", "${mediaUri.lastPathSegment ?: ""}|${isJoinAlbum}|${isRemoteAlbum}", timestamp, 1))
+                    else {
+                        galleryModel.getGalleryMediaById(mediaUri.toString())?.let { galleryMedia ->
+                            if (galleryMedia.atRemote()) {
+                                // Item is IS_BOTH, try using the remote version for copy/move, saving network traffic of re-upload it again TODO meta string in property 'fileId'
+                                actions.add(Action(null, actionId, galleryMedia.media.remotePath, targetFolder, "", "${galleryMedia.media.photo.name}|${isJoinAlbum}|${isRemoteAlbum}", timestamp, 1))
+                            } else localUris.add(mediaUri)      // Item is IS_LOCAL
+                        } ?: run { localUris.add(mediaUri) }    // Error finding the media in list
                     }
+                }
 
-                    if (actions.isNotEmpty()) actionModel.addActions(actions)
-                } else {
-                    // Acquire files
-                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(selectedUris, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                // TODO When adding both local and archive items to a new album, album folder will be created twice on server, which won't break app though
+                if (actions.isNotEmpty()) actionModel.addActions(actions)
+                if (localUris.isNotEmpty()) {
+                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(localUris, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
         }
@@ -593,7 +606,7 @@ class GalleryFragment: Fragment() {
             val spanCount = context.resources.getInteger(R.integer.cameraroll_grid_span_count)
             return modelClass.cast(GalleryViewModel(
                 context.contentResolver, imageModel, actionModel,
-                { Toast.makeText(context, context.getString(R.string.msg_archive_empty), Toast.LENGTH_LONG).show() },
+                { try { Toast.makeText(context, context.getString(R.string.msg_archive_empty), Toast.LENGTH_LONG).show() } catch (_: Exception) {} },
                 Tools.getPlayMarkDrawable(context, 0.32f / spanCount),
                 Tools.getSelectedMarkDrawable(context, 0.25f / spanCount),
                 Tools.getLocalRoot(context),
@@ -939,7 +952,7 @@ class GalleryFragment: Fragment() {
         }
 
         fun getPhotoById(id: String): NCShareViewModel.RemotePhoto? = _medias.value?.find { it.media.photo.id == id }?.media
-        private fun getGalleryMediaById(id: String): GalleryMedia? = _medias.value?.find { it.media.photo.id == id }
+        fun getGalleryMediaById(id: String): GalleryMedia? = _medias.value?.find { it.media.photo.id == id }
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions

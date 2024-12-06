@@ -438,7 +438,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
                 Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
-                    // folderId is source folder path, starts from lespasBase, dcimBase or share_to_me base
+                    // folderId is source folder path, starts from lespasBase, archiveBase or share_to_me base
                     // folderName is target folder path, starts from lespasBase or share_to_me base
                     // fileId holds string "target album's id(only valid for Joint Album)|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // fileName is a string "file name|ture or false, whether it's joint album|ture or false, whether it's remote album. fileName might contain subfolder name when the source is camera roll archive"

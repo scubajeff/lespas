@@ -518,7 +518,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         private var destination = SingleLiveEvent<Album?>()
         private var inEditing = false
         private var removeOriginal = false
-        private var onServer = false    // Checked by fragment AlbumDetailFragment when doing copy/move among albums
+        private var onServer = false    // Checked by calling fragments when doing copy/move among albums
         private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
 
         fun setDestination(newDestination: Album) { destination.value = newDestination }
