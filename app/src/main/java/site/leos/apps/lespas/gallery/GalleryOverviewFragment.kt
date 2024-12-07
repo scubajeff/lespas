@@ -398,7 +398,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         exitTransition = null
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
-                            .replace(R.id.container_child_fragment, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            .replace(R.id.container_child_fragment, SettingsFragment(), LAUNCH_BY_GALLERY).addToBackStack(null).commit()
                         return true
                     }
                     else -> false
@@ -858,5 +858,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private const val BACKUP_NOT_AVAILABLE = -1
         private const val BACKUP_DISABLED = 0
         private const val BACKUP_ENABLED = 1
+
+        const val LAUNCH_BY_GALLERY = "LAUNCH_BY_GALLERY"
     }
 }

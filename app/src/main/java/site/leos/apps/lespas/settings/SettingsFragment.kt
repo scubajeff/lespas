@@ -33,6 +33,9 @@ import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
 import android.provider.MediaStore
 import android.provider.Settings
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -42,6 +45,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
@@ -68,6 +72,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.auth.NCAuthenticationFragment
 import site.leos.apps.lespas.auth.NCLoginFragment
+import site.leos.apps.lespas.gallery.GalleryOverviewFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
@@ -98,6 +103,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private lateinit var manageMediaPermissionRequestLauncher: ActivityResultLauncher<Intent>
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels { NCLoginFragment.AuthenticateViewModelFactory(requireActivity()) }
+
+    private var archiveMenuItem: MenuItem? = null
+    private var refreshArchiveMenuItem: MenuItem? = null
+
 
     //private var syncPreference: SwitchPreferenceCompat? = null
 
@@ -162,6 +171,20 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
         manageMediaPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {}
+
+            override fun onPrepareMenu(menu: Menu) {
+                super.onPrepareMenu(menu)
+                if (tag == GalleryOverviewFragment.LAUNCH_BY_GALLERY) {
+                    archiveMenuItem = menu.findItem(R.id.option_menu_archive)?.apply { isVisible = false }
+                    refreshArchiveMenuItem = menu.findItem(R.id.option_menu_archive_forced_refresh)?.apply { isVisible = false }
+                }
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
+        })
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -389,6 +412,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
             })
         }
+
+        if (tag == GalleryOverviewFragment.LAUNCH_BY_GALLERY) {
+            archiveMenuItem?.isVisible = true
+            refreshArchiveMenuItem?.isVisible = true
+        }
+
         super.onDestroyView()
     }
 
