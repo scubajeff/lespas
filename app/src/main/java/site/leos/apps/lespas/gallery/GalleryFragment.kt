@@ -373,12 +373,12 @@ class GalleryFragment: Fragment() {
                 selectedUris.forEach { mediaUri ->
                     if (mediaUri.scheme == ARCHIVE_SCHEME)
                         // Item is IS_REMOTE TODO meta string in property 'fileId'
-                        actions.add(Action(null, actionId, mediaUri.path!!.substringBeforeLast('/'), targetFolder, "", "${mediaUri.lastPathSegment ?: ""}|${isJoinAlbum}|${isRemoteAlbum}", timestamp, 1))
+                        actions.add(Action(null, actionId, mediaUri.path!!.substringBeforeLast('/'), targetFolder, "", "${mediaUri.lastPathSegment ?: ""}|${isJoinAlbum}|${isRemoteAlbum}" + (mediaUri.getQueryParameter("fileid")?.let { id -> "|${id}" } ?: ""), timestamp, 1))
                     else {
                         galleryModel.getGalleryMediaById(mediaUri.toString())?.let { galleryMedia ->
                             if (galleryMedia.atRemote()) {
                                 // Item is IS_BOTH, try using the remote version for copy/move, saving network traffic of re-upload it again TODO meta string in property 'fileId'
-                                actions.add(Action(null, actionId, galleryMedia.media.remotePath, targetFolder, "", "${galleryMedia.media.photo.name}|${isJoinAlbum}|${isRemoteAlbum}", timestamp, 1))
+                                actions.add(Action(null, actionId, galleryMedia.media.remotePath, targetFolder, "", "${galleryMedia.media.photo.name}|${isJoinAlbum}|${isRemoteAlbum}|${galleryMedia.remoteFileId}", timestamp, 1))
                             } else localUris.add(mediaUri)      // Item is IS_LOCAL
                         } ?: run { localUris.add(mediaUri) }    // Error finding the media in list
                     }
@@ -467,18 +467,24 @@ class GalleryFragment: Fragment() {
     }
 
     private val archiveWorksListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        val syncActionKey = getString(R.string.sync_status_local_action_pref_key)
-        if (key == syncActionKey) {
-            try {
-                sp.getString(syncActionKey, "")?.split("``")?.let { action ->
-                    // action is String array of: actionId``folderId``folderName``fileId``fileName``timestamp in millisecond
-                    if (action.isNotEmpty()) {
-                        when (action[0].toInt()) {
-                            Action.ACTION_BACKUP_INDIVIDUAL, Action.ACTION_DELETE_FILE_IN_ARCHIVE -> if (galleryModel.showArchive.value == GalleryViewModel.ARCHIVE_ON) galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
+        if (galleryModel.showArchive.value == GalleryViewModel.ARCHIVE_ON) {
+            // If archive mode is On, update archive action status accordingly
+            val syncActionKey = getString(R.string.sync_status_local_action_pref_key)
+            if (key == syncActionKey) {
+                try {
+                    sp.getString(syncActionKey, "")?.split("``")?.let { action ->
+                        // action is String array of: actionId``folderId``folderName``fileId``fileName``timestamp in millisecond
+                        if (action.isNotEmpty()) {
+                            when (action[0].toInt()) {
+                                Action.ACTION_BACKUP_INDIVIDUAL, Action.ACTION_DELETE_FILE_IN_ARCHIVE -> galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
+                                Action.ACTION_MOVE_ON_SERVER ->
+                                    // action[1] contains ACTION_MOVE_ON_SERVER source folder
+                                    if (action[1].startsWith(Tools.getArchiveBase(requireContext()))) galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
+                            }
                         }
                     }
-                }
-            } catch (_: Exception) {}
+                } catch (_: Exception) {}
+            }
         }
     }
 

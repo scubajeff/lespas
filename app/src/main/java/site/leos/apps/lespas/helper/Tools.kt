@@ -877,6 +877,7 @@ object Tools {
                             volume = volume,
                             fullPath = "${fullPath}/",
                             appName = if (fullPath.isEmpty()) volume else fullPath.substringAfterLast('/'),
+                            remoteFileId = photo.id,
                         )
                     )
                 }

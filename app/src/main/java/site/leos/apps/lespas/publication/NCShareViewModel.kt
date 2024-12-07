@@ -651,21 +651,20 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         result.add(
                             GalleryFragment.GalleryMedia(
                                 GalleryFragment.GalleryMedia.IS_REMOTE,
-                                folder = if (path.isEmpty()) volume else path.substringBefore('/'),                                         // first segment of file path
+                                folder = if (path.isEmpty()) volume else path.substringBefore('/'),     // first segment of file path
                                 media = RemotePhoto(
                                     Photo(
                                         id = dav.fileId, albumId = GalleryFragment.FROM_ARCHIVE, name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
                                         dateTaken = dav.dateTaken, lastModified = dav.modified,
                                         width = dav.width, height = dav.height, orientation = dav.orientation,
                                         latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
-                                        // Store file size in property caption, TODO setup dedicated property for size
-                                        caption = dav.size.toString()
+                                        caption = dav.size.toString()       // Store file size in property caption, TODO setup dedicated property for size
                                     ),
                                     remotePath = archiveBase + dav.name.substringBeforeLast('/')
                                 ),
-                                volume = volume,                                      // volume name of archive item is device model name
+                                volume = volume,        // volume name of archive item is device model name
                                 fullPath = "$path/",
-                                appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),                                      // last segment of file path
+                                appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),     // last segment of file path
                                 remoteFileId = dav.fileId,
                             )
                         )

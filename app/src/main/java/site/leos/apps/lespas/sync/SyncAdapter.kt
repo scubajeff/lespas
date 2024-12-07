@@ -443,16 +443,18 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // folderId is source folder path, starts from lespasBase, archiveBase or share_to_me base
                     // folderName is target folder path, starts from lespasBase or share_to_me base
                     // fileId holds string "target album's id(only valid for Joint Album)|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
-                    // fileName is a string "file name|ture or false, whether it's joint album|ture or false, whether it's remote album. fileName might contain subfolder name when the source is camera roll archive"
+                    // fileName is a string "file name|ture or false, whether it's joint album|ture or false, whether it's remote album|remote file uid.
 
                     //Log.e(">>>>>>>>", "syncLocalChanges: ${action.fileName} ${action.folderId} ${action.folderName}")
                     val fileName: String
                     val targetIsJointAlbum: Boolean
                     val targetIsRemoteAlbum: Boolean
+                    var remoteFileId = ""
                     action.fileName.split('|').let {
                         fileName = it[0]
                         targetIsJointAlbum = it[1].toBoolean()
                         targetIsRemoteAlbum = it[2].toBoolean()
+                        if (it.size > 3) remoteFileId = it[3]      // Only from GalleryFragment when moving archived item to album
                     }
                     try {
                         webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName}").run {
@@ -497,6 +499,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     photoRepository.fixPhotoIdEtag(fileName, newId, if (mediaFileDownloaded) this.second.ifEmpty { ETAG_MISSING } else Photo.ETAG_FAKE, targetIsRemoteAlbum)
                                 }
                             }
+
+                            // When moving archived item to album, update snapshot cache file and eventually trigger UI refresh
+                            if (action.action == Action.ACTION_MOVE_ON_SERVER && remoteFileId.isNotEmpty()) snapshotDeletion.add(remoteFileId)
                         }
                     } catch (e: OkHttpWebDavException) {
                         if (e.statusCode != 403) {
@@ -2033,14 +2038,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 snapshotDeletion.clear()
                 snapshotAddition.clear()
-                fetchArchiveETag()
+                updateArchiveETag()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
-    private fun fetchArchiveETag() {
+    private fun updateArchiveETag() {
         try {
             webDav.list("${lespasBase}${ARCHIVE_BASE}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
                 if (davs.isNotEmpty()) {
