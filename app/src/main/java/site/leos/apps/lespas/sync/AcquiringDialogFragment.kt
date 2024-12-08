@@ -233,6 +233,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             // Get photo meta from special uri
                             try {
                                 meta = Photo(
+                                    id = uri.getQueryParameter("fileid") ?: run { return@forEachIndexed },
                                     name = fileId,
                                     lastModified = LocalDateTime.now(),
                                     dateTaken = Tools.epochToLocalDateTime(uri.getQueryParameter("datetaken")?.toLong() ?: System.currentTimeMillis(), true),
@@ -299,7 +300,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                         uri.path?.substringBeforeLast('/') ?: "",
                                         remoteTargetFolder,
                                         "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
-                                        "${fileId}|${album.isJoint()}|${album.isRemote()}",
+                                        "${fileId}|${album.isJoint()}|${album.isRemote()}|${meta.id}",
                                         System.currentTimeMillis(), 1
                                     )
                                 )
