@@ -1884,17 +1884,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Use system default zone for time display, sorting and grouping by date in Gallery list
                     photo.dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(cTimeStamp), ZoneId.systemDefault())
                     photo.lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(mTimeStamp * 1000), ZoneId.systemDefault())
-                    snapshotAddition.add(0,
-                        GalleryFragment.GalleryMedia(
-                            location = GalleryFragment.GalleryMedia.IS_REMOTE,
-                            folder = it.folder,
-                            NCShareViewModel.RemotePhoto(photo = photo.copy(), remotePath = "${archiveBase}/${deviceModel}/${it.folder}/${relativePath}"),
-                            volume = deviceModel,
-                            fullPath = "${it.folder}/${relativePath}/",
-                            appName = relativePath.substringAfterLast('/'),
-                            //remoteFileId = photo.id,
+                    snapshotAddition.find { item -> item.remoteFileId == photo.id } ?: run {
+                        snapshotAddition.add(0,
+                            GalleryFragment.GalleryMedia(
+                                location = GalleryFragment.GalleryMedia.IS_REMOTE,
+                                folder = it.folder,
+                                NCShareViewModel.RemotePhoto(photo = photo.copy(), remotePath = "${archiveBase}/${deviceModel}/${it.folder}/${relativePath}"),
+                                volume = deviceModel,
+                                fullPath = "${it.folder}/${relativePath}/",
+                                appName = relativePath.substringAfterLast('/'),
+                                remoteFileId = photo.id,
+                            )
                         )
-                    )
+                    }
                 }
             }
 
@@ -2020,6 +2022,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateArchiveSnapshot() {
+        Log.e(">>>>>>>>", "updateArchiveSnapshot: ${snapshotAddition.size}", )
+        Log.e(">>>>>>>>", "updateArchiveSnapshot: ${snapshotAddition}", )
         if (snapshotAddition.isNotEmpty() || snapshotDeletion.isNotEmpty()) {
             try {
                 File(localBaseFolder, NCShareViewModel.ARCHIVE_SNAPSHOT_FILE).let { file ->
