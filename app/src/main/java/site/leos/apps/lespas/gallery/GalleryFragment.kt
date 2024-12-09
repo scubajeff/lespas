@@ -693,10 +693,8 @@ class GalleryFragment: Fragment() {
             // Start observing archive snapshot file, which will be updated after new gallery image been backup to archive or files been removed from archive, snapshot file is updated by SyncAdapter after those actions finished successfully
             archiveSnapshotFileObserver = object : FileObserver("${localRoot}/${NCShareViewModel.ARCHIVE_SNAPSHOT_FILE}", CLOSE_WRITE) {
                 override fun onEvent(p0: Int, p1: String?) {
-                    if (_showArchive.value == ARCHIVE_ON) {
-                        _showArchive.value = REFRESHING_ARCHIVE
-                        viewModelScope.launch { imageModel.refreshArchive(false) }
-                    }
+                    if (_showArchive.value == ARCHIVE_ON) _showArchive.value = REFRESHING_ARCHIVE
+                    viewModelScope.launch { imageModel.refreshArchive(false) }
                 }
             }.apply { startWatching() }
         }
