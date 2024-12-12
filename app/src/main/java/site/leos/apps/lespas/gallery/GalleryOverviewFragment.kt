@@ -351,7 +351,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             } else overviewItems
                         }
                     }.collect { list ->
-                        //overviewAdapter.toggleLocationDisplay(galleryModel.getCurrentArchiveShowState() != GalleryFragment.GalleryViewModel.ARCHIVE_OFF)
                         overviewAdapter.submitList(list) { galleryModel.stopArchiveLoadingIndicator() }
                         val selectionSize = selectionTracker.selection.size()
                         actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }

@@ -2022,8 +2022,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateArchiveSnapshot() {
-        Log.e(">>>>>>>>", "updateArchiveSnapshot: ${snapshotAddition.size}", )
-        Log.e(">>>>>>>>", "updateArchiveSnapshot: ${snapshotAddition}", )
         if (snapshotAddition.isNotEmpty() || snapshotDeletion.isNotEmpty()) {
             try {
                 File(localBaseFolder, NCShareViewModel.ARCHIVE_SNAPSHOT_FILE).let { file ->
