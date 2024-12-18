@@ -133,6 +133,7 @@
     <string name="button_text_i_understand">瞭解了</string>
     <string name="checkbox_text_remove_archive_too">同時刪除伺服器存檔中的備份副本</string>
     <string name="checkbox_text_remove_archive_copy">伺服器上的備份副本</string>
+    <string name="button_text_grant">授予許可權</string>
     <string name="tooltips_search_album">在相冊中搜索</string>
     <string name="tooltips_search_gallery">在圖庫中搜索</string>
     <string name="title_in_album">相冊中的%1$s</string>
@@ -358,4 +359,5 @@
     <string name="action_download_to_device">下載到設備上</string>
     <string name="action_upload_to_archive">備份至伺服器</string>
     <string name="checkbox_text_remove_local_copy">本裝置中的檔案</string>
+    <string name="msg_media_manager_rationale_for_deletion">若需跳過系統的刪除確認對話方塊，請授予 Les Pas 管理媒體許可權。</string>
 </resources>

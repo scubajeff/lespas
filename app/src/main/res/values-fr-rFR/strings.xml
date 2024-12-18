@@ -249,6 +249,7 @@
     <string name="button_text_i_understand">Je comprends</string>
     <string name="checkbox_text_remove_archive_too">Supprimer également la copie de sauvegarde dans les archives du serveur</string>
     <string name="checkbox_text_remove_archive_copy">La copie d\'archive sur le serveur</string>
+    <string name="button_text_grant">Autoriser</string>
     <string name="tooltips_search_album">Rechercher dans les albums</string>
     <string name="tooltips_search_gallery">Recherche dans la galerie</string>
     <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>
@@ -396,4 +397,5 @@
     <string name="action_download_to_device">Télécharger sur l\'appareil</string>
     <string name="action_upload_to_archive">Télécharger vers les archives</string>
     <string name="checkbox_text_remove_local_copy">La copie locale dans cet appareil</string>
+    <string name="msg_media_manager_rationale_for_deletion">Pour éviter que le système ne confirme la suppression, vous devez accorder aux Pas l\'autorisation de gérer les médias.</string>
 </resources>

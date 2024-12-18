@@ -242,14 +242,13 @@ class GallerySlideFragment : Fragment() {
                             galleryModel.remove(listOf(photo.id), removeArchive = defaultSyncDeletionSetting)
                         }
 */
-                        parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> {
+                        parentFragmentManager.findFragmentByTag(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY) == null -> {
                             val location = mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem).location
-                            ConfirmDialogFragment.newInstance(
-                                getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_SLIDE_REQUEST_KEY,
-//                            checkBoxText = if (mediaAdapter.getLocalMediaAt(mediaViewPager.currentItem).isBoth()) getString(R.string.checkbox_text_remove_archive_too) else "", checkBoxChecked = defaultSyncDeletionSetting
-                                checkBoxText = if (location != GalleryFragment.GalleryMedia.IS_REMOTE) getString(R.string.checkbox_text_remove_local_copy) else "", checkBoxChecked = true,
-                                checkBox2Text = if (location != GalleryFragment.GalleryMedia.IS_LOCAL) getString(R.string.checkbox_text_remove_archive_copy) else "", checkBox2Checked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key) , false),
-                            ).show(parentFragmentManager, CONFIRM_DIALOG)
+                            GalleryDeletionDialogFragment.newInstance(
+                                GALLERY_SLIDE_REQUEST_KEY,
+                                location != GalleryFragment.GalleryMedia.IS_REMOTE, true,
+                                location != GalleryFragment.GalleryMedia.IS_LOCAL, PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key) , false)
+                            ).show(parentFragmentManager, GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY)
                         }
                     }
                 }
@@ -284,16 +283,15 @@ class GallerySlideFragment : Fragment() {
             }
         }
 
-        parentFragmentManager.setFragmentResultListener(GALLERY_SLIDE_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
-            when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
-                    val removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY)
-                    val removeRemote = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY)
-                    galleryModel.registerNextInLine(getNextInLine(removeLocal , removeRemote))
-                    galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id), removeLocal = removeLocal, removeArchive = removeRemote)
-                }
+        parentFragmentManager.setFragmentResultListener(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY)) {
+                val removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY)
+                val removeRemote = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY)
+                galleryModel.registerNextInLine(getNextInLine(removeLocal , removeRemote))
+                galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id), removeLocal = removeLocal, removeArchive = removeRemote)
             }
         }
+
 
         // Share out dialog result handler
         parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
