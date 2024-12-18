@@ -394,6 +394,8 @@
     <string name="checkbox_text_remove_archive_too">Also delete backup copy in server archive</string>
     <string name="checkbox_text_remove_local_copy">Local copy in this device</string>
     <string name="checkbox_text_remove_archive_copy">Archived copy on server</string>
+    <string name="msg_media_manager_rationale_for_deletion">To avoid system confirmation of deletion, you need to grant Les Pas the Manage Media permission.</string>
+    <string name="button_text_grant">Authorize</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>

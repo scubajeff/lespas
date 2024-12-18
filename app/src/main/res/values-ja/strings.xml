@@ -147,6 +147,7 @@
     <string name="button_text_i_understand">なんでも</string>
     <string name="checkbox_text_remove_archive_too">サーバーアーカイブのバックアップコピーも削除</string>
     <string name="checkbox_text_remove_archive_copy">サーバー上のアーカイブ</string>
+    <string name="button_text_grant">権限の付与</string>
     <string name="tooltips_search_album">アルバム内検索</string>
     <string name="tooltips_search_gallery">ギャラリー内検索</string>
     <string name="condition_to_perform_search">画像検索機能を利用するためには、アルバムが存在するか、ストレージへのアクセスが許可されている必要があります。</string>
@@ -359,4 +360,5 @@
     <string name="action_download_to_device">デバイスにダウンロード</string>
     <string name="action_upload_to_archive">アーカイブへのアップロード</string>
     <string name="checkbox_text_remove_local_copy">このデバイスのローカルコピー</string>
+    <string name="msg_media_manager_rationale_for_deletion">システムによる削除確認ダイアログをスキップするには、Les Pasにメディア管理権限を付与してください。</string>
 </resources>

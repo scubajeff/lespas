@@ -99,7 +99,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     private val actionModel: ActionViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    //private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() })
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
     private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
 
@@ -272,10 +271,13 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             }
         }
 
+        parentFragmentManager.setFragmentResultListener(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY)) galleryModel.remove(getSelectedPhotoIDs(), removeLocal = bundle.getBoolean(GalleryDeletionDialogFragment.DELETE_LOCAL_RESULT_KEY), removeArchive = bundle.getBoolean(GalleryDeletionDialogFragment.DELETE_REMOTE_RESULT_KEY))
+        }
+
         parentFragmentManager.setFragmentResultListener(GALLERY_OVERVIEW_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)?.let { requestKey ->
                 when {
-                    requestKey == DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) galleryModel.remove(getSelectedPhotoIDs(), removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY), removeArchive = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY))
                     // When ConfirmDialogFragment launched to confirm backup existing media files, INDIVIDUAL_REQUEST_KEY is the folder name. TODO hope that no body use 'DELETE_REQUEST_KEY' as their folder name
                     requestKey.startsWith(BACKUP_EXISTING_REQUEST_KEY) -> backupSettingModel.updateLastBackupTimestamp(requestKey.substringAfter(BACKUP_EXISTING_REQUEST_KEY), if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) 0L else System.currentTimeMillis() / 1000)
                 }
@@ -480,22 +482,14 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
+                if (parentFragmentManager.findFragmentByTag(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY) == null) {
                     val location = overviewAdapter.locationOfSelected()
-                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
-                        checkBoxText = if (location != GalleryFragment.GalleryMedia.IS_REMOTE) getString(R.string.checkbox_text_remove_local_copy) else "", checkBoxChecked = true,
-                        checkBox2Text = if (location != GalleryFragment.GalleryMedia.IS_LOCAL) getString(R.string.checkbox_text_remove_archive_copy) else "", checkBox2Checked = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key) , false),
-                    ).show(parentFragmentManager, CONFIRM_DIALOG)
+                    GalleryDeletionDialogFragment.newInstance(
+                        GALLERY_OVERVIEW_REQUEST_KEY,
+                        location != GalleryFragment.GalleryMedia.IS_REMOTE, true,
+                        location != GalleryFragment.GalleryMedia.IS_LOCAL, PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.sync_deletion_perf_key) , false)
+                    ).show(parentFragmentManager, GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY)
                 }
-/*
-                when {
-                    Build.VERSION.SDK_INT == Build.VERSION_CODES.R || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) -> galleryModel.remove(getSelectedPhotoIDs(), removeArchive = defaultSyncDeletionSetting)
-                    parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null -> ConfirmDialogFragment.newInstance(
-                        getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), individualKey = DELETE_REQUEST_KEY, requestKey = GALLERY_OVERVIEW_REQUEST_KEY,
-                        checkBoxText = getString(R.string.checkbox_text_remove_archive_too), checkBoxChecked = defaultSyncDeletionSetting
-                    ).show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-*/
 
                 true
             }

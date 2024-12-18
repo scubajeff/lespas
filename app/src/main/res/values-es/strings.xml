@@ -134,6 +134,7 @@
     <string name="button_text_i_understand">Comprendo</string>
     <string name="checkbox_text_remove_archive_too">Eliminar también la copia de seguridad en el archivo del servidor</string>
     <string name="checkbox_text_remove_archive_copy">Copia de archivo en servidor</string>
+    <string name="button_text_grant">Autorizzare</string>
     <string name="tooltips_search_album">En álbumes</string>
     <string name="tooltips_search_gallery">Buscar en la galería</string>
     <string name="title_in_album">%1$s en álbumes</string>
@@ -361,4 +362,5 @@
     <string name="action_download_to_device">Descargar al dispositivo</string>
     <string name="action_upload_to_archive">Cargar en el archivo</string>
     <string name="checkbox_text_remove_local_copy">Copia local en este dispositivo</string>
+    <string name="msg_media_manager_rationale_for_deletion">Para evitar que el sistema confirme el borrado, debe conceder a Les Pas el permiso Gestionar medios.</string>
 </resources>
