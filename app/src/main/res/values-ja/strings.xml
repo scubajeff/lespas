@@ -154,7 +154,7 @@
     <string name="button_text_leave">出口</string>
     <string name="need_albums">まずはアルバムを作成してください。</string>
     <string name="title_in_album">アルバム内の %1$s</string>
-    <string name="title_in_device">デバイス内の %1$s</string>
+    <string name="title_in_gallery">ギャラリーの %1$s</string>
     <string name="object_unknown">未知</string>
     <string name="object_animal">動物</string>
     <string name="object_plant">花や植物や木</string>
@@ -252,8 +252,6 @@
     <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
     <string name="option_menu_search">名前検索</string>
     <string name="tooltips_date_picker">日付を選択する</string>
-    <string name="title_in_archive">カメラバックアップの%1$s</string>
-    <string name="tooltips_search_archive">カメラロールバックアップで検索</string>
     <string name="hint_timestamp_pattern">写真の作成日は、名前にyyyyMMdd_hhmmssというパターンを含めることで変更することができます。</string>
     <string name="should_allow_launching_other_app">セキュリティ設定でLes Pasが他のアプリを起動することを許可してください。</string>
     <string name="backup_remaining">残量 %d</string>

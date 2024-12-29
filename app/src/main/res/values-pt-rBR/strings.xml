@@ -253,7 +253,7 @@
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s em álbuns</string>
-    <string name="title_in_device">%1$s no dispositivo</string>
+    <string name="title_in_gallery">%1$s na Galeria</string>
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">"Publicação de amigos"</string>
@@ -315,8 +315,6 @@
     <string name="msg_joint_album_not_updated_locally">As mudanças feitas no Álbum Conjunto serão mostradas depois que o proprietário do álbum as confirmar.</string>
     <string name="option_menu_search">Busca por nome</string>
     <string name="tooltips_date_picker">Escolha uma data</string>
-    <string name="title_in_archive">%1$s em Backups de Câmera</string>
-    <string name="tooltips_search_archive">Pesquisar nos Backups de rolo de câmera</string>
     <string name="hint_timestamp_pattern">A data de criação da foto pode ser alterada incluindo o padrão yyyyyMMdd_hhmmss no nome.</string>
     <string name="should_allow_launching_other_app">Por favor, permita que o Les Pas lance outros aplicativos em suas configurações de segurança.</string>
     <string name="msg_low_storage_space">Seu espaço interno de armazenamento é menos de 10% livre, isto impedirá a Les Pas de sincronizar-se com o servidor.</string>

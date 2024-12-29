@@ -258,7 +258,8 @@ class PhotoWithMapFragment: Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_with_map_menu, menu)
         menu.findItem(R.id.option_menu_lespas).isVisible = target != R.id.search_album
-        menu.findItem(R.id.option_menu_share).icon = ContextCompat.getDrawable(requireContext(), if (target == R.id.search_archive) R.drawable.ic_baseline_archivev_download_24 else R.drawable.ic_baseline_share_24)
+        //menu.findItem(R.id.option_menu_share).icon = ContextCompat.getDrawable(requireContext(), if (target == R.id.search_archive) R.drawable.ic_baseline_archivev_download_24 else R.drawable.ic_baseline_share_24)
+        menu.findItem(R.id.option_menu_share).icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_share_24)
 
         // See if map app installed
         Intent(Intent.ACTION_VIEW).apply {
@@ -271,7 +272,7 @@ class PhotoWithMapFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
-                if (target == R.id.search_cameraroll) shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_LESPAS)
+                if (target == R.id.search_gallery) shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_LESPAS)
                 else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 true
             }

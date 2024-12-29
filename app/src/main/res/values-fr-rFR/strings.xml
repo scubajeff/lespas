@@ -252,14 +252,12 @@
     <string name="button_text_grant">Autoriser</string>
     <string name="tooltips_search_album">Rechercher dans les albums</string>
     <string name="tooltips_search_gallery">Recherche dans la galerie</string>
-    <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>
     <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
     <string name="button_text_leave">Quitter</string>
     <string name="need_albums">Veuillez d\'abord créer un album.</string>
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s dans les albums</string>
-    <string name="title_in_device">%1$s dans l\'appareil</string>
-    <string name="title_in_archive">%1$s dans les sauvegardes de la galerie</string>
+    <string name="title_in_gallery">%1$s dans la galerie</string>
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">"Publications des amis"</string>
     <string name="confirm_download_publication">Vous êtes connecté au réseau mobile, êtes-vous sûr de vouloir voir cette publication maintenant ?</string>

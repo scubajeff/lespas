@@ -270,7 +270,7 @@
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s negli album</string>
-    <string name="title_in_device">%1$s nel dispositivo</string>
+    <string name="title_in_gallery">%1$s in Galleria</string>
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">Pubblicazioni degli amici</string>
@@ -317,10 +317,8 @@
     <string name="msg_archive_empty">Archivio vuoto finché non si avvia il backup della galleria.</string>
     <string name="msg_joint_album_not_updated_locally">Le modifiche apportate all\'album comune saranno visualizzate dopo la conferma del proprietario dell\'album.</string>
     <string name="option_menu_search">Ricerca per nome</string>
-    <string name="title_in_archive">%1$s nei backup della fotocamera</string>
     <string name="tooltips_date_picker">Scegliere una data</string>
     <string name="tooltips_fetch_backup">Mostra i backup sul server</string>
-    <string name="tooltips_search_archive">tooltips_search_archive</string>
     <string name="should_allow_launching_other_app">Consentire l\'avvio di Les Pas ad altre applicazioni nelle impostazioni di sicurezza.</string>
     <string name="msg_low_storage_space">Lo spazio di archiviazione interno è inferiore al 10%, il che impedisce a Les Pas di sincronizzarsi con il server.</string>
     <string name="msg_login_first">Effettuare prima il login al proprio server.</string>

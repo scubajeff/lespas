@@ -199,8 +199,11 @@ class PhotosInMapFragment: Fragment() {
 
                 if (locality != null) remotePhotos = ViewModelProvider(
                     requireParentFragment(),
-                    LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel)
-                )[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos
+                    SearchFragment.SearchModelFactory(
+                        //requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel,
+                        requireActivity().application, imageLoaderModel
+                    )
+                )[SearchFragment.SearchModel::class.java].locationSearchResult.value.find { it.locality == locality && it.country == country }?.photos
 
                 remotePhotos?.forEach { remotePhoto ->
                     poi = GeoPoint(remotePhoto.photo.latitude, remotePhoto.photo.longitude)

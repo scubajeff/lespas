@@ -138,7 +138,7 @@
     <string name="tooltips_search_album">En álbumes</string>
     <string name="tooltips_search_gallery">Buscar en la galería</string>
     <string name="title_in_album">%1$s en álbumes</string>
-    <string name="title_in_device">%1$s en el dispositivo</string>
+    <string name="title_in_gallery">%1$s en Galería</string>
     <string name="condition_to_perform_search">Debe haber al menos un álbum existente O un permiso de acceso al almacenamiento concedido para realizar la función de búsqueda.</string>
     <string name="button_text_leave">Salir</string>
     <string name="need_albums">Por favor, cree primero un álbum.</string>
@@ -253,8 +253,6 @@
     <string name="msg_joint_album_not_updated_locally">Los cambios realizados en el Álbum Conjunto se mostrarán después de que el propietario del álbum los confirme.</string>
     <string name="option_menu_search">Buscar por nombre</string>
     <string name="tooltips_date_picker">Elige una fecha</string>
-    <string name="title_in_archive">%1$s en las copias de seguridad de la cámara</string>
-    <string name="tooltips_search_archive">Buscar en las copias de seguridad de la cámara</string>
     <string name="hint_timestamp_pattern">La fecha de creación de la foto se puede cambiar incluyendo el patrón yyyyMMdd_hhmmss en el nombre.</string>
     <string name="should_allow_launching_other_app">Permita que Les Pas inicie otras aplicaciones en su configuración de seguridad.</string>
     <string name="msg_low_storage_space">Tu espacio de almacenamiento interno está libre en menos de un 10%, esto impedirá que Les Pas se sincronice con el servidor.</string>

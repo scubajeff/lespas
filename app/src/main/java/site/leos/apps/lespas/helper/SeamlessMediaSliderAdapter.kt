@@ -23,7 +23,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Parcelable
-import android.view.*
+import android.view.GestureDetector
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
@@ -50,7 +54,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     context: Context,
     private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
-    private val playerViewModel: VideoPlayerViewModel,
+    private val playerViewModel: VideoPlayerViewModel?,
     private val clickListener: ((Boolean?) -> Unit)?, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
     private val volumeDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_volume_on_24)
@@ -90,13 +94,13 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
                 override fun onDoubleTap(e: MotionEvent): Boolean {
                     if (e.x < displayWidth / 2) {
-                        playerViewModel.skip(-5)
+                        playerViewModel?.skip(-5)
                         rewindMessage?.isVisible = true
                         forwardMessage?.isVisible = false
                         handler.removeCallbacks(hideRewindMessageCallback)
                         handler.postDelayed(hideRewindMessageCallback, 1000)
                     } else {
-                        playerViewModel.skip(5)
+                        playerViewModel?.skip(5)
                         forwardMessage?.isVisible = true
                         rewindMessage?.isVisible = false
                         handler.removeCallbacks(hideForwardMessageCallback)
@@ -115,12 +119,12 @@ abstract class SeamlessMediaSliderAdapter<T>(
                             // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
                             if (e1.x > displayWidth / 2) {
                                 knobIcon?.setImageDrawable(volumeDrawable)
-                                playerViewModel.setVolume(distanceY / 300)
-                                knobPosition?.progress = (playerViewModel.getVolume() * 100).toInt()
+                                playerViewModel?.setVolume(distanceY / 300)
+                                knobPosition?.progress = (playerViewModel!!.getVolume() * 100).toInt()
                             } else {
                                 knobIcon?.setImageDrawable(brightnessDrawable)
-                                playerViewModel.setBrightness(distanceY / 300)
-                                knobPosition?.progress = (playerViewModel.getBrightness() * 100).toInt()
+                                playerViewModel?.setBrightness(distanceY / 300)
+                                knobPosition?.progress = (playerViewModel!!.getBrightness() * 100).toInt()
                             }
 
                             handler.removeCallbacks(hideSettingCallback)
@@ -166,7 +170,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
         super.onViewAttachedToWindow(holder)
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
-            playerViewModel.resume(holder.videoView, holder.videoUri)
+            playerViewModel?.resume(holder.videoView, holder.videoUri)
             currentVideoView = holder.videoView
             clickListener?.let {
                 knobLayout = holder.knobLayout
@@ -183,8 +187,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
-            if (shouldPauseVideo) playerViewModel.pause(holder.videoUri)
-            playerViewModel.resetBrightness()
+            if (shouldPauseVideo) playerViewModel?.pause(holder.videoUri)
+            playerViewModel?.resetBrightness()
             holder.videoView.player = null
             clickListener?.let {
                 holder.knobLayout.isVisible = false
@@ -325,7 +329,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             forwardMessage = itemView.findViewById(R.id.fast_forward_msg)
             rewindMessage = itemView.findViewById(R.id.fast_rewind_msg)
 
-            playerViewModel.addListener(object : Player.Listener {
+            playerViewModel?.addListener(object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
                     videoView.keepScreenOn = isPlaying
@@ -344,8 +348,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
-        fun play() { playerViewModel.play() }
-        fun pause() { playerViewModel.pause(videoUri) }
+        fun play() { playerViewModel?.play() }
+        fun pause() { playerViewModel?.pause(videoUri) }
     }
 
     @Parcelize

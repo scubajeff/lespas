@@ -400,15 +400,13 @@
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>
     <string name="tooltips_search_gallery">Search in Gallery</string>
-    <string name="tooltips_search_archive">Search in Camera Backups</string>
     <string name="condition_to_perform_search">There must be at least one existing album OR storage access permission in order to search.</string>
     <string name="button_text_leave">Leave</string>
     <string name="need_albums">Please create an album first.</string>
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in albums</string>
-    <string name="title_in_device">%1$s in Device</string>
-    <string name="title_in_archive">%1$s in Camera Backups</string>
+    <string name="title_in_gallery">%1$s in Gallery</string>
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">"Friend's publications"</string>

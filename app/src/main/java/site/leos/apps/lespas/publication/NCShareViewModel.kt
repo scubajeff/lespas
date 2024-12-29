@@ -723,8 +723,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 */
 
     fun getCameraRollArchive(): List<Photo> {
+        val newETag: String
         val result = mutableListOf<Photo>()
         try {
+/*
             webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                 if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
                     result.add(Photo(
@@ -743,6 +745,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             File(localFileFolder, SNAPSHOT_FILENAME).writer().use {
                 it.write(Tools.photosToMetaJSONString(result))
             }
+*/
+            webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).let { archive ->
+                newETag = archive[0].eTag.apply { Log.e(">>>>>>>>", "getCameraRollArchive: ${archive[0].name} ${archive[0].isFolder}", ) }
+                archive.forEach { dav ->
+                    if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
+                        result.add(
+                            Photo(
+                                id = dav.fileId, albumId = dav.albumId, name = dav.name.substringAfterLast('/'), eTag = dav.eTag, mimeType = dav.contentType,
+                                dateTaken = dav.dateTaken, lastModified = dav.modified,
+                                width = dav.width, height = dav.height, orientation = dav.orientation,
+                                latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
+                                shareId = dav.size.toInt(),     // Store file size in property shareId
+                            )
+                        )
+                    }
+                }
+                result.sortByDescending { it.dateTaken }
+            }
+
+            //viewModelScope.launch { saveArchiveSnapshot(result, newETag) }
         } catch (_: Exception) {}
 
         return result

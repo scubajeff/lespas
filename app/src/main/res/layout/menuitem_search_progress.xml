@@ -15,24 +15,19 @@
   ~   limitations under the License.
   -->
 
-<RelativeLayout
+<com.google.android.material.progressindicator.CircularProgressIndicator
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal">
-
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/search_progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:paddingRight="12dp"
-        android:max="100"
-        app:indicatorColor="?primaryTextWhite"
-        app:indicatorSize="18dp"
-        app:trackColor="#28ffffff"
-        app:trackThickness="9dp"
-        tools:ignore="RtlHardcoded,RtlSymmetry" />
-</RelativeLayout>
+    android:id="@+id/search_progress"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_centerInParent="true"
+    android:paddingRight="12dp"
+    android:indeterminate="true"
+    app:indicatorColor="?primaryTextWhite"
+    app:indicatorSize="18dp"
+    app:trackColor="#28ffffff"
+    app:trackThickness="9dp"
+    tools:ignore="RtlHardcoded,RtlSymmetry">
+</com.google.android.material.progressindicator.CircularProgressIndicator>

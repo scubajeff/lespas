@@ -137,7 +137,7 @@
     <string name="tooltips_search_album">在相册中搜索</string>
     <string name="tooltips_search_gallery">在图库中搜索</string>
     <string name="title_in_album">相册中的%1$s</string>
-    <string name="title_in_device">本设备中的%1$s</string>
+    <string name="title_in_gallery">图库中的%1$s</string>
     <string name="button_text_leave">退出</string>
     <string name="condition_to_perform_search">需要存在有相册或授予了存储访问权限，才能使用图片搜索功能。</string>
     <string name="need_albums">请先创建相册。</string>
@@ -252,8 +252,6 @@
     <string name="msg_joint_album_not_updated_locally">更新将在合作相册创建者确认后呈现。</string>
     <string name="option_menu_search">搜索名字</string>
     <string name="tooltips_date_picker">选择日期</string>
-    <string name="title_in_archive">相机相册备份中的%1$s</string>
-    <string name="tooltips_search_archive">在相机相册备份中搜索</string>
     <string name="hint_timestamp_pattern">名字中包含的字符串yyyyMMdd_hhmmss将用于设置照片的拍摄时间。</string>
     <string name="should_allow_launching_other_app">请设置允许Les Pas关联启动。</string>
     <string name="msg_low_storage_space">内部存储空间剩余不足10%，Les Pas将无法与服务器同步。</string>

@@ -31,11 +31,13 @@ import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -43,7 +45,8 @@ import java.text.Collator
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel) }
+    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel)}
+    //private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels(ownerProducer = { requireParentFragment() }) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel, searchPayloadModel) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView
@@ -84,7 +87,6 @@ class LocationResultByLocalitiesFragment: Fragment() {
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context,
                 when(searchTarget) {
                     R.id.search_album -> R.drawable.ic_baseline_footprint_24
-                    R.id.search_archive -> R.drawable.ic_baseline_archive_24
                     else -> R.drawable.ic_baseline_device_24
                 }
             )!!))
@@ -101,34 +103,29 @@ class LocationResultByLocalitiesFragment: Fragment() {
             }
         }
 
-        searchViewModel.getResult().observe(viewLifecycleOwner) {
-            val result = mutableListOf<LocationSearchHostFragment.LocationSearchResult>().apply { addAll(it) }
-            val items = mutableListOf<LocationSearchHostFragment.LocationSearchResult>()
-            var photoList: List<NCShareViewModel.RemotePhoto>
+        viewLifecycleOwner.lifecycleScope.launch {
+            searchModel.locationSearchResult.collect {
+                val result = mutableListOf<SearchFragment.SearchModel.LocationSearchResult>().apply { addAll(it) }
+                val items = mutableListOf<SearchFragment.SearchModel.LocationSearchResult>()
+                var photoList: List<NCShareViewModel.RemotePhoto>
 
-            // TODO intermediary
-            // General a new result list, this is crucial for DiffUtil to detect changes
-            result.forEach {
-                // Take the last 4 since we only show 4, this also create a new list which is crucial for DiffUtil to detect changes in nested list
-                photoList = it.photos.takeLast(4)
-                items.add(LocationSearchHostFragment.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality, it.flag))
+                // TODO intermediary
+                // General a new result list, this is crucial for DiffUtil to detect changes
+                result.forEach {
+                    // Take the last 4 since we only show 4, this also create a new list which is crucial for DiffUtil to detect changes in nested list
+                    photoList = it.photos.takeLast(4)
+                    items.add(SearchFragment.SearchModel.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality, it.flag))
+                }
+
+                resultAdapter.submitList(items.sortedWith(compareBy<SearchFragment.SearchModel.LocationSearchResult, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.country }.then(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.locality })))
             }
-
-            resultAdapter.submitList(items.sortedWith(compareBy<LocationSearchHostFragment.LocationSearchResult, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.country }.then(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.locality })))
         }
     }
 
     override fun onResume() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = getString(
-                when(searchTarget) {
-                    R.id.search_album -> R.string.title_in_album
-                    R.id.search_cameraroll -> R.string.title_in_device
-                    else -> R.string.title_in_archive
-                },
-                getString(R.string.item_location_search)
-            )
+            title = getString(if (searchTarget == R.id.search_album) R.string.title_in_album else R.string.title_in_gallery, getString(R.string.item_location_search))
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
@@ -139,8 +136,8 @@ class LocationResultByLocalitiesFragment: Fragment() {
         super.onDestroyView()
     }
 
-    class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
-    ): ListAdapter<LocationSearchHostFragment.LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
+    class LocationSearchResultAdapter(private val clickListener: (SearchFragment.SearchModel.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    ): ListAdapter<SearchFragment.SearchModel.LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var photoAdapter = PhotoAdapter({ photo, imageView ->  imageLoader(photo, imageView) }, { view -> cancelLoader(view) })
             private val tvCountry = itemView.findViewById<TextView>(R.id.country)
@@ -162,7 +159,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
                 }
             }
 
-            fun bind(item: LocationSearchHostFragment.LocationSearchResult) {
+            fun bind(item: SearchFragment.SearchModel.LocationSearchResult) {
                 tvLocality.text = item.locality
                 tvCountry.text = String.format("%s %s", item.flag, item.country)
                 tvCount.text = if (item.total >= 4) item.total.toString() else ""
@@ -182,9 +179,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
         }
     }
 
-    class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<LocationSearchHostFragment.LocationSearchResult>() {
-        override fun areItemsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
-        override fun areContentsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.photos.first().photo.id == newItem.photos.first().photo.id
+    class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<SearchFragment.SearchModel.LocationSearchResult>() {
+        override fun areItemsTheSame(oldItem: SearchFragment.SearchModel.LocationSearchResult, newItem: SearchFragment.SearchModel.LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
+        override fun areContentsTheSame(oldItem: SearchFragment.SearchModel.LocationSearchResult, newItem: SearchFragment.SearchModel.LocationSearchResult): Boolean = oldItem.photos.first().photo.id == newItem.photos.first().photo.id
     }
 
     class PhotoAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
