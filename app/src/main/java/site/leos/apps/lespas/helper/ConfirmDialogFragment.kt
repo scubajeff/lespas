@@ -74,8 +74,6 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
 
     companion object {
         const val CONFIRM_DIALOG_RESULT_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
-        const val CHECKBOX_RESULT_KEY = "CHECKBOX_RESULT_KEY"
-        const val CHECKBOX2_RESULT_KEY = "CHECKBOX2_RESULT_KEY"
         const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
         private const val REQUEST_KEY = "REQUEST_KEY"
         private const val MESSAGE = "MESSAGE"
