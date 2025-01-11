@@ -60,7 +60,6 @@ import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
@@ -285,8 +284,8 @@ class GallerySlideFragment : Fragment() {
 
         parentFragmentManager.setFragmentResultListener(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
             if (bundle.getBoolean(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY)) {
-                val removeLocal = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX_RESULT_KEY)
-                val removeRemote = bundle.getBoolean(ConfirmDialogFragment.CHECKBOX2_RESULT_KEY)
+                val removeLocal = bundle.getBoolean(GalleryDeletionDialogFragment.DELETE_LOCAL_RESULT_KEY)
+                val removeRemote = bundle.getBoolean(GalleryDeletionDialogFragment.DELETE_REMOTE_RESULT_KEY)
                 galleryModel.registerNextInLine(getNextInLine(removeLocal , removeRemote))
                 galleryModel.remove(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id), removeLocal = removeLocal, removeArchive = removeRemote)
             }
