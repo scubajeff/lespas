@@ -468,6 +468,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 else throw OkHttpWebDavException(response)
             }
         } ?: throw IllegalStateException("InputStream provider crashed")
+        @Suppress("UNREACHABLE_CODE")
         return Pair("", "")
     }
 
@@ -602,7 +603,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         private const val MAX_AGE = "864000"                        // 10 days
         //const val VIDEO_CACHE_FOLDER = "videos"
 
-        private const val CHUNK_SIZE = 50L * 1024L * 1024L          // Default chunk size is 50MB
+        private const val CHUNK_SIZE = 20L * 1024L * 1024L          // Default chunk size is 50MB
 
         // PROPFIND depth
         const val JUST_FOLDER_DEPTH = "0"
