@@ -506,7 +506,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         exitTransition = null
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
-                            .replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_DEVICE_GALLERY)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            .replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == GalleryFragment.FROM_DEVICE_GALLERY), SearchFragment.SEARCH_ALBUM), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                         return true
                     }
                     R.id.option_menu_received_shares-> {

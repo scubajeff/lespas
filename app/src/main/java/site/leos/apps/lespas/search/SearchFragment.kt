@@ -17,12 +17,16 @@
 package site.leos.apps.lespas.search
 
 import android.app.Application
+import android.content.ClipData
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.Menu
@@ -31,6 +35,9 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -42,12 +49,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.zip
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import site.leos.apps.lespas.BuildConfig
@@ -55,12 +66,14 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.album.IDandAttribute
-import site.leos.apps.lespas.gallery.GalleryFragment.Companion.FROM_DEVICE_GALLERY
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.gallery.GalleryFragment.Companion.STORAGE_EMULATED
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.ShareReceiverActivity
 import site.leos.apps.lespas.tflite.ObjectDetectionModel
 import java.time.Instant
 import java.time.LocalDateTime
@@ -72,7 +85,13 @@ class SearchFragment: Fragment() {
     private var searchProgressBar: CircularProgressIndicator? = null
 
     private val archiveModel: NCShareViewModel by activityViewModels()
-    private val searchModel: SearchModel by viewModels { SearchModelFactory(requireActivity().application, archiveModel) }
+    private val actionModel: ActionViewModel by viewModels()
+    private val searchModel: SearchModel by viewModels { SearchModelFactory(requireActivity().application, archiveModel, actionModel) }
+
+    private lateinit var trashMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
+    private var waitingMsg: Snackbar? = null
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,8 +103,25 @@ class SearchFragment: Fragment() {
             }
         })
 
+        shareOutBackPressedCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                waitingMsg?.let {
+                    if (it.isShownOrQueued) {
+                        archiveModel.cancelShareOut()
+                        //searchModel.setIsPreparingShareOut(false)
+                        it.dismiss()
+                    }
+                }
+                isEnabled = false
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
+
         // Launch Search launcher fragment
-        savedInstanceState ?: run { childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, SearchLauncherFragment.newInstance(requireArguments().getBoolean(NO_ALBUM)), SearchLauncherFragment::class.java.canonicalName).addToBackStack(null).commit() }
+        savedInstanceState ?: run { childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, SearchLauncherFragment.newInstance(requireArguments().getBoolean(NO_ALBUM), requireArguments().getInt(SEARCH_SCOPE, SEARCH_ALBUM)), SearchLauncherFragment::class.java.canonicalName).addToBackStack(null).commit() }
+
+        // Removing item from MediaStore for Android 11 or above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) trashMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
     }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_container, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -98,9 +134,9 @@ class SearchFragment: Fragment() {
                 searchProgressIndicator = menu.findItem(R.id.option_menu_search_progress)
                 searchProgressBar = searchProgressIndicator?.actionView?.findViewById<CircularProgressIndicator>(R.id.search_progress)?.apply {
                     if (searchModel.maxProgress.value != SearchModel.PROGRESS_INDETERMINATE) max = searchModel.maxProgress.value
-                    if (searchModel.progress.value == SearchModel.PROGRESS_FINISH) searchProgressIndicator?.run {
-                        isVisible = false
-                        isEnabled = false
+                    searchProgressIndicator?.run {
+                        isVisible = searchModel.progress.value != SearchModel.PROGRESS_FINISH
+                        isEnabled = searchModel.progress.value != SearchModel.PROGRESS_FINISH
                     }
                 }
             }
@@ -110,7 +146,13 @@ class SearchFragment: Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    searchModel.progress.collect { progress -> searchProgressBar?.setProgressCompat(progress, true) }
+                    searchModel.progress.collect { progress -> searchProgressBar?.run {
+                        setProgressCompat(progress, true)
+                        searchProgressIndicator?.run {
+                            isVisible = progress != SearchModel.PROGRESS_FINISH
+                            isEnabled = progress != SearchModel.PROGRESS_FINISH
+                        }
+                    }}
                 }
                 launch {
                     searchModel.maxProgress.collect { maxProgress -> searchProgressBar?.run {
@@ -121,30 +163,90 @@ class SearchFragment: Fragment() {
                         }
                     }}
                 }
+                launch {
+                    searchModel.deletion.collect { deletions ->
+                        if (deletions.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) trashMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, deletions, true)).setFillInIntent(null).build())
+                    }
+                }
+                launch {
+                    searchModel.strippingEXIF.collect {
+                        waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
+                            archiveModel.cancelShareOut()
+                            shareOutBackPressedCallback.isEnabled = false
+                            //galleryModel.setIsPreparingShareOut(false)
+                        }
+
+                        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+                        handler.postDelayed({
+                            waitingMsg?.show()
+                            shareOutBackPressedCallback.isEnabled = true
+                        }, 500)
+                    }
+                }
+                launch {
+                    archiveModel.shareOutUris.collect { uris ->
+                        handler.removeCallbacksAndMessages(null)
+                        if (waitingMsg?.isShownOrQueued == true) {
+                            waitingMsg?.dismiss()
+                            shareOutBackPressedCallback.isEnabled = false
+                        }
+
+                        if (uris.isNotEmpty()) {
+                            val cr = requireActivity().contentResolver
+                            val clipData = ClipData.newUri(cr, "", uris[0])
+                            for (i in 1 until uris.size) {
+                                if (isActive) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                    else clipData.addItem(ClipData.Item(uris[i]))
+                                }
+                            }
+                            startActivity(Intent.createChooser(Intent().apply {
+                                if (uris.size > 1) {
+                                    action = Intent.ACTION_SEND_MULTIPLE
+                                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                } else {
+                                    // If sharing only one item, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                }
+                                type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                                if (type!!.startsWith("image")) type = "image/*"
+                                this.clipData = clipData
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
+                            }, null))
+
+                            // IDs of photos meant to be deleted are saved in GalleryViewModel
+                            //searchModel.deleteAfterShared()
+
+                        }
+
+                        //searchModel.setIsPreparingShareOut(false)
+                    }
+                }
             }
         }
     }
 
-    class SearchModelFactory(private val application: Application, private val archiveModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
+    class SearchModelFactory(private val application: Application, private val archiveModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModelProvider.NewInstanceFactory() {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = SearchModel(application, archiveModel) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = SearchModel(application, archiveModel, actionModel) as T
     }
 
-    class SearchModel(val application: Application, private val archiveModel: NCShareViewModel): ViewModel() {
+    class SearchModel(val application: Application, private val archiveModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModel() {
         private val albumRepository = AlbumRepository(application)
         private val photoRepository = PhotoRepository(application)
         private val cr = application.contentResolver
         private val rootPath = Tools.getLocalRoot(application)
         private val lespasBasePath = Tools.getRemoteHome(application)
         private lateinit var albumTable: List<IDandAttribute>
-        private val od = ObjectDetectionModel(application.assets)
+        private lateinit var od: ObjectDetectionModel
         private var searchJob: Job? = null
+        private var removeList = mutableListOf<ObjectDetectResult>()
 
         private val localGallery = MutableStateFlow<List<NCShareViewModel.RemotePhoto>>(mutableListOf())
-        private val _albumPhotos = MutableStateFlow<List<NCShareViewModel.RemotePhoto>>(mutableListOf())
-        val albumPhotos: StateFlow<List<NCShareViewModel.RemotePhoto>> = _albumPhotos
-        private val _galleryPhotos = MutableStateFlow<List<NCShareViewModel.RemotePhoto>>(mutableListOf())
-        val galleryPhotos: StateFlow<List<NCShareViewModel.RemotePhoto>> = _galleryPhotos
+        private val albumPhotos = MutableStateFlow<List<NCShareViewModel.RemotePhoto>>(mutableListOf())
+        private val galleryPhotos = MutableStateFlow<List<NCShareViewModel.RemotePhoto>>(mutableListOf())
         private val _progress = MutableStateFlow(0)
         val progress: StateFlow<Int> = _progress
         private val _maxProgress = MutableStateFlow(PROGRESS_INDETERMINATE)
@@ -158,8 +260,11 @@ class SearchFragment: Fragment() {
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
+                // Initialize object detection model instance here, since it's time consuming
+                od = ObjectDetectionModel(application.assets)
+
                 launch {
-                    _albumPhotos.emit(
+                    albumPhotos.emit(
                         photoRepository.getAllImageNotHidden().map { photo ->
                             NCShareViewModel.RemotePhoto(photo,
                                 albumTable.find { album -> album.id == photo.albumId }?.let { album -> if ((album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBasePath}/${album.name}" else ""} ?: ""
@@ -178,7 +283,7 @@ class SearchFragment: Fragment() {
                                 val searchMap = local.associateBy { item -> item.remotePath + item.photo.name }
 
                                 ensureActive()
-                                archiveMedia.partition { it.media.photo.lastModified >= if (local.isEmpty()) LocalDateTime.now() else local.last().photo.lastModified }.let {
+                                archiveMedia.filter { it.media.photo.mimeType.startsWith("image/") }.partition { it.media.photo.lastModified >= if (local.isEmpty()) LocalDateTime.now() else local.last().photo.lastModified }.let {
                                     ensureActive()
                                     combinedList.addAll(it.first.filter { item -> searchMap[item.fullPath + item.media.photo.name] == null }.map { item ->  item.media })   // Add all archive media which date falls in device Gallery date range and does not exit in device
 
@@ -193,7 +298,7 @@ class SearchFragment: Fragment() {
 
                         ensureActive()
                         combinedList
-                    }.collect { result -> _galleryPhotos.emit(result) }
+                    }.collect { result -> galleryPhotos.emit(result) }
                 }
                 launch {
                     loadDeviceGallery()
@@ -223,7 +328,7 @@ class SearchFragment: Fragment() {
                     MediaStore.Files.FileColumns.HEIGHT,
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
-                val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
+                val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}"
 
                 // Sort gallery items by DATE_ADDED instead of DATE_TAKEN to address situation like a photo shot a long time ago being added to gallery recently and be placed in the bottom of the gallery list
                 val sortOrder = "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
@@ -232,7 +337,7 @@ class SearchFragment: Fragment() {
                     projection = projection.plus(MediaStore.Files.FileColumns.VOLUME_NAME)
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, sortOrder)
-                    queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_EXCLUDE)
+                    //queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_EXCLUDE)
                 }
 
                 try {
@@ -253,8 +358,10 @@ class SearchFragment: Fragment() {
                         var dateTaken: Long
                         var relativePath: String
 
+/*
                         var volumeColumn = 0
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
+*/
 
                         cursorLoop@ while (cursor.moveToNext()) {
                             ensureActive()
@@ -274,7 +381,7 @@ class SearchFragment: Fragment() {
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
                                         id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
-                                        albumId = FROM_DEVICE_GALLERY,
+                                        albumId = GalleryFragment.FROM_DEVICE_GALLERY,
                                         name = cursor.getString(nameColumn) ?: "",
                                         // Use system default zone for time display, sorting and grouping by date in Gallery list
                                         dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(dateTaken), defaultZone),          // DATE_TAKEN has nano adjustment
@@ -323,6 +430,13 @@ class SearchFragment: Fragment() {
                                 ensureActive()
                                 _progress.emit(i)
 
+                                // Remove items deleted by user
+                                if (removeList.isNotEmpty()) {
+                                    resultList.removeAll(removeList)
+                                    removeList.clear()
+                                    _objectDetectResult.emit(resultList.toList())
+                                }
+
                                 // Decode file with dimension just above 300
                                 size = 1
                                 length = Integer.min(photo.width, photo.height)
@@ -350,7 +464,8 @@ class SearchFragment: Fragment() {
                                             }
                                         }
                                     }
-                                } catch (_: Exception) {
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
                             }
                         }
@@ -358,6 +473,8 @@ class SearchFragment: Fragment() {
                         _progress.emit(PROGRESS_FINISH)
                     }
                 }
+            }.apply {
+                invokeOnCompletion { searchJob = null }
             }
         }
 
@@ -504,6 +621,8 @@ class SearchFragment: Fragment() {
                         _progress.emit(PROGRESS_FINISH)
                     }
                 }
+            }.apply {
+                invokeOnCompletion { searchJob = null }
             }
         }
 
@@ -511,12 +630,92 @@ class SearchFragment: Fragment() {
 
         fun stopSearching() {
             searchJob?.cancel()
+            searchJob = null
             viewModelScope.launch {
                 _progress.emit(PROGRESS_FINISH)
                 _objectDetectResult.emit(mutableListOf())
                 _locationSearchResult.emit(mutableListOf())
             }
         }
+
+        private val _deletions = MutableStateFlow<List<Uri>>(mutableListOf())
+        val deletion: StateFlow<List<Uri>> = _deletions
+        fun delete(photos: List<NCShareViewModel.RemotePhoto>) {
+            // Remove from result list
+            photos.map { it.photo.id }.let { ids ->
+                objectDetectResult.value.filter { it.remotePhoto.photo.id in ids }.let { removals ->
+                    searchJob?.let {
+                        viewModelScope.launch { _objectDetectResult.emit(objectDetectResult.value.toMutableList().minus(removals.toSet())) }
+                    } ?: run { removeList.addAll(removals) }
+                }
+            }
+
+            // Remove photos in album, gallery and archive
+            val photosFromArchive = mutableListOf<NCShareViewModel.RemotePhoto>()
+            val photosFromGallery = mutableListOf<NCShareViewModel.RemotePhoto>()
+            val photosFromAlbums = mutableListOf<NCShareViewModel.RemotePhoto>()
+
+            // Group photos by source
+            photos.forEach { rp ->
+                when (rp.photo.albumId) {
+                    GalleryFragment.FROM_ARCHIVE -> photosFromArchive.add(rp)
+                    GalleryFragment.FROM_DEVICE_GALLERY -> photosFromGallery.add(rp)
+                    else -> photosFromAlbums.add(rp)
+                }
+            }
+
+            // Remove photos from album
+            // TODO actionModel.deletePhotos() should be optimized later
+            if (photosFromAlbums.isNotEmpty()) {
+                mutableMapOf<Album, MutableList<Photo>>().let { dMap ->
+                    photosFromAlbums.forEach { media ->
+                        (if (media.remotePath.isEmpty()) albumRepository.getThisAlbum(media.photo.albumId) else albumRepository.getAlbumByName(media.remotePath.substringAfterLast('/')))?.let { album ->
+                            dMap[album]?.add(media.photo) ?: run { dMap.put(album, mutableListOf(media.photo)) }
+                        }
+                    }
+
+                    dMap.forEach { actionModel.deletePhotos(it.value, it.key) }
+                }
+            }
+
+            // Remove photos from device gallery
+            if (photosFromGallery.isNotEmpty()) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    val ids = arrayListOf<String>().apply { photosFromGallery.forEach { add(it.photo.id.substringAfterLast('/')) }}.joinToString()
+                    cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
+                }
+                else viewModelScope.launch { _deletions.emit(photosFromGallery.map { Uri.parse(it.photo.id) }) }
+            }
+
+            // Remove photos from server archive
+            if (photosFromArchive.isNotEmpty()) {
+                mutableListOf<Pair<String, String>>().let { files ->
+                    photosFromArchive.forEach { files.add(Pair(it.photo.id, it.remotePath)) }
+                    actionModel.deleteFileInArchive(files)
+                }
+            }
+        }
+
+        private val idsDeleteAfterwards = mutableListOf<NCShareViewModel.RemotePhoto>()
+        private val _strippingEXIF = MutableSharedFlow<Boolean>()
+        val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
+        fun shareOut(photos: List<NCShareViewModel.RemotePhoto>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean) {
+            viewModelScope.launch(Dispatchers.IO) {
+                _strippingEXIF.emit(strip)
+                //setIsPreparingShareOut(true)
+
+                // Save photo id for deletion after shared
+                if (removeAfterwards) idsDeleteAfterwards.addAll(photos)
+                else idsDeleteAfterwards.clear()
+
+                // Prepare media files for sharing
+                archiveModel.prepareFileForShareOut(photos, strip, lowResolution)
+            }
+        }
+
+        private var currentSlideItem = 0
+        fun getCurrentSlideItem() = currentSlideItem
+        fun setCurrentSlideItem(item: Int) { currentSlideItem = item }
 
         override fun onCleared() {
             deviceGalleryLoadingJob?.cancel()
@@ -553,8 +752,16 @@ class SearchFragment: Fragment() {
     
     companion object {
         private const val NO_ALBUM = "NO_ALBUM"
+        private const val SEARCH_SCOPE = "SEARCH_SCOPE"
+        const val SEARCH_ALBUM = 1
+        const val SEARCH_GALLERY = 2
 
         @JvmStatic
-        fun newInstance(noAlbum: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(NO_ALBUM, noAlbum) }}
+        fun newInstance(noAlbum: Boolean, searchScope: Int) = SearchFragment().apply {
+            arguments = Bundle().apply {
+                putBoolean(NO_ALBUM, noAlbum)
+                putInt(SEARCH_SCOPE, searchScope)
+            }
+        }
     }
 }

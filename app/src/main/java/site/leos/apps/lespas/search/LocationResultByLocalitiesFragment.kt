@@ -41,11 +41,13 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.ActionViewModel
 import java.text.Collator
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel)}
+    private val actionModel: ActionViewModel by viewModels()
+    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel, actionModel)}
     //private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels(ownerProducer = { requireParentFragment() }) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel, searchPayloadModel) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter

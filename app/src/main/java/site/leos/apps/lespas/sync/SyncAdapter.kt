@@ -353,9 +353,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 */
 
                 Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
-                    // Property fileName holds the file's path in the local device
+                    // Property fileName holds the file's path in the local device (from GalleryFragment), or full remote path (from SearchFragment)
                     // Property fileId holds the file's uid on server
-                    "${archiveBase}/${Tools.getDeviceModel()}/${action.fileName}".let { archivePath ->
+                    (if (action.fileName.startsWith(archiveBase)) action.fileName else "${archiveBase}/${Tools.getDeviceModel()}/${action.fileName}").let { archivePath ->
                         webDav.delete("${userBase}${archivePath}")
                         //snapshotDeletion.add(archivePath.substringAfterLast('/'))
                         snapshotDeletion.add(action.fileId)

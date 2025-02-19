@@ -24,6 +24,12 @@
         android:title="@string/option_menu_show_archive"
         app:showAsAction="always" />
     <item
+        android:id="@+id/option_menu_search_gallery"
+        android:icon="@drawable/ic_baseline_search_24"
+        app:iconTint="@color/color_on_primary"
+        android:title="@string/item_search"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/option_menu_archive_forced_refresh"
         android:icon="@drawable/ic_baseline_archive_refreshing_animated_24"
         app:iconTint="@color/color_on_primary"

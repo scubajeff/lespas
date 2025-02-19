@@ -49,6 +49,7 @@ import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.ActionViewModel
 
 class SearchLauncherFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
@@ -63,7 +64,8 @@ class SearchLauncherFragment : Fragment() {
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
     private val archiveModel: NCShareViewModel by activityViewModels()
-    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, archiveModel)}
+    private val actionModel: ActionViewModel by viewModels()
+    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, archiveModel, actionModel)}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -152,6 +154,7 @@ class SearchLauncherFragment : Fragment() {
                 inflater.inflate(R.menu.search_launcher_menu, menu)
                 scopeToggleGroup = menu.findItem(R.id.option_menu_search_scope).actionView?.findViewById<MaterialButtonToggleGroup>(R.id.search_scope_toogle_group)?.apply {
                     //addOnButtonCheckedListener { group, checkedId, isChecked -> if (checkedId == R.id.search_gallery && isChecked) searchModel.preloadGallery() }
+                    if (requireArguments().getInt(SEARCH_SCOPE) == SearchFragment.SEARCH_GALLERY) check(R.id.search_gallery)
                 }
 
                 // Hide search progress indicator
@@ -163,7 +166,6 @@ class SearchLauncherFragment : Fragment() {
 
             override fun onPrepareMenu(menu: Menu) {
                 if (savedScope != View.NO_ID) scopeToggleGroup?.check(savedScope)
-
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true
@@ -240,9 +242,15 @@ class SearchLauncherFragment : Fragment() {
 
     companion object {
         private const val NO_ALBUM = "NO_ALBUM"
+        private const val SEARCH_SCOPE = "SEARCH_SCOPE"
         private const val LAST_SELECTION = "LAST_SELECTION"
 
         @JvmStatic
-        fun newInstance(noAlbum: Boolean) = SearchLauncherFragment().apply { arguments = Bundle().apply { putBoolean(NO_ALBUM, noAlbum) }}
+        fun newInstance(noAlbum: Boolean, searchScope: Int) = SearchLauncherFragment().apply {
+            arguments = Bundle().apply {
+                putBoolean(NO_ALBUM, noAlbum)
+                putInt(SEARCH_SCOPE, searchScope)
+            }
+        }
     }
 }

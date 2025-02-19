@@ -18,7 +18,6 @@ package site.leos.apps.lespas.search
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -38,28 +37,23 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.IDandName
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.ActionViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
-import kotlin.collections.set
 
 class ObjectSearchFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    //private val albumModel: AlbumViewModel by activityViewModels()
-    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel)}
-
-    private var loadingIndicator: MenuItem? = null
-    private var loadingProgressBar: CircularProgressIndicator? = null
+    private val actionModel: ActionViewModel by viewModels()
+    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel, actionModel)}
 
     private var searchScope = 0
 
@@ -70,45 +64,20 @@ class ObjectSearchFragment : Fragment() {
 
         searchResultAdapter = SearchResultAdapter(
             searchScope,
-            { result, imageView ->
-/*
-                if (searchScope == R.id.search_album) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        val album: Album = albumModel.getThisAlbum(result.remotePhoto.photo.albumId)
-                        withContext(Dispatchers.Main) {
-                            exitTransition = MaterialElevationScale(false).apply {
-                                duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                                excludeTarget(imageView, true)
-                            }
-                            //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
-                            parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                                .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, result.remotePhoto.photo.id), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
-                        }
-                    }
-                }
-                else {
-                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                    exitTransition = MaterialElevationScale(false).apply {
-                        duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                        excludeTarget(imageView, true)
-                    }
-                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                        .replace(R.id.container_root, GalleryFragment.newInstance(Uri.parse(result.remotePhoto.photo.id)), GalleryFragment::class.java.canonicalName).addToBackStack(null).commit()
-                }
-*/
+            { position, imageView ->
+                searchModel.setCurrentSlideItem(position)
+
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
                     excludeTarget(imageView, true)
                 }
                 parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                    .replace(R.id.container_child_fragment, ObjectSearchSlideFragment.newInstance(result.remotePhoto.photo.id), ObjectSearchSlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, ObjectSearchSlideFragment.newInstance(), ObjectSearchSlideFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply {
-            // Get album's name for display
-            //lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
     }
@@ -166,12 +135,12 @@ class ObjectSearchFragment : Fragment() {
         super.onDestroyView()
     }
 
-    class SearchResultAdapter(private val searchTarget: Int, private val clickListener: (SearchFragment.SearchModel.ObjectDetectResult, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    class SearchResultAdapter(private val searchTarget: Int, private val clickListener: (Int, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<SearchFragment.SearchModel.ObjectDetectResult, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { setOnClickListener { clickListener(currentList[bindingAdapterPosition], this) } }
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { setOnClickListener { clickListener(bindingAdapterPosition, this) } }
             private val tvLabel = itemView.findViewById<TextView>(R.id.label)
 
             fun bind(item: SearchFragment.SearchModel.ObjectDetectResult) {
@@ -199,10 +168,6 @@ class ObjectSearchFragment : Fragment() {
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
             super.onDetachedFromRecyclerView(recyclerView)
-        }
-
-        fun setAlbumNameList(list: List<IDandName>) {
-            for (album in list) { albumNames[album.id] = album.name }
         }
     }
 

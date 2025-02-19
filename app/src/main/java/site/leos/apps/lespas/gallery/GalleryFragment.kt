@@ -81,14 +81,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -410,6 +413,15 @@ class GalleryFragment: Fragment() {
                     }
                     R.id.option_menu_archive_forced_refresh -> {
                         galleryModel.toggleArchiveShownState(forcedRefresh = true)
+                        true
+                    }
+                    R.id.option_menu_search_gallery -> {
+                        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                            val noAlbum = AlbumRepository(requireActivity().application).getAlbumTotal() == 0
+                            withContext(Dispatchers.Main) {
+                                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(noAlbum, SearchFragment.SEARCH_GALLERY), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            }
+                        }
                         true
                     }
                     else -> false

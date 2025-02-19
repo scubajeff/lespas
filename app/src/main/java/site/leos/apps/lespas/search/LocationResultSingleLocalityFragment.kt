@@ -50,6 +50,7 @@ import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.IDandName
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.ActionViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -63,7 +64,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var photoList: RecyclerView
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel)}
+    private val actionModel: ActionViewModel by viewModels()
+    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel, actionModel)}
     //private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels(ownerProducer = { requireParentFragment() }) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel, searchPayloadModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {

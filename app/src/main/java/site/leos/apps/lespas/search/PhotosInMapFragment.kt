@@ -46,6 +46,7 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -79,6 +80,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.story.BGMViewModel
 import site.leos.apps.lespas.story.BGMViewModelFactory
+import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 import java.lang.Double.max
 import java.time.format.DateTimeFormatter
@@ -110,6 +112,7 @@ class PhotosInMapFragment: Fragment() {
     private var hasBGM = false
     private var muteMenuItem: MenuItem? = null
 
+    private val actionModel: ActionViewModel by viewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var remotePath: String
     private var isLocalAlbum = false
@@ -201,7 +204,7 @@ class PhotosInMapFragment: Fragment() {
                     requireParentFragment(),
                     SearchFragment.SearchModelFactory(
                         //requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel,
-                        requireActivity().application, imageLoaderModel
+                        requireActivity().application, imageLoaderModel, actionModel
                     )
                 )[SearchFragment.SearchModel::class.java].locationSearchResult.value.find { it.locality == locality && it.country == country }?.photos
 

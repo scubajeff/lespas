@@ -76,7 +76,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         if (sync) deleteBlogPosts(albums)
     }
 
-    fun deletePhotos(photos: List<Photo>, album: Album)  {
+    fun deletePhotos(photos: List<Photo>, album: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             // Delete from local database
             photoRepository.deletePhotos(photos)
