@@ -68,6 +68,7 @@ import java.util.regex.Pattern
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
+import kotlin.math.min
 
 class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSigned: Boolean, certificate: String?, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
@@ -452,7 +453,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun upload(source: File, dest: String, mimeType: String, ctx: Context): Pair<String, String> {
         source.length().run {
-            if (this > CHUNK_SIZE) return chunksUpload(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this, ctx)
+            if (this > CHUNK_SIZE) return chunksUploadV2(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this, ctx)
             else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "&=?/:")).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
                 else throw OkHttpWebDavException(response)
@@ -462,7 +463,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun uploadWithSpecialHeader(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long, ctx: Context, specialHeaders: Headers): Pair<String, String> {
         contentResolver.openInputStream(source)?.use { input->
-            if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx, specialHeaders)
+            if (size > CHUNK_SIZE) return chunksUploadV2(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx, specialHeaders)
             else httpClient.newCall(Request.Builder().url(Uri.encode(dest, "&=?/:")).headers(specialHeaders).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), size)).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
                 else throw OkHttpWebDavException(response)
@@ -542,6 +543,103 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
                 val header = Headers.Builder().add("DESTINATION", Uri.encode(dest, "&=?/:")).add("OVERWRITE", "T").apply { specialHeaders?.let { addAll(it) }}.build()
+                uploadHttpClient.newCall(Request.Builder().url(Uri.encode("${chunkFolder}/.file", "&=?/:")).method("MOVE", null).headers(header).build()).execute().use { response ->
+                    if (response.isSuccessful) result = Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
+                    else {
+                        // Upload interrupted, delete uploaded chunks
+                        //try { httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "&=?/:")).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        throw OkHttpWebDavException(response)
+                    }
+                }
+            }
+            catch (e: InterruptedIOException) { e.printStackTrace() }
+            catch (e: SocketTimeoutException) { e.printStackTrace() }
+        } finally {
+            try { inputStream.close() } catch (e: Exception) { e.printStackTrace() }
+        }
+
+        return result
+    }
+
+    private fun chunksUploadV2(inputStream: InputStream, source: String, dest: String, mimeType: String, fileSize: Long, ctx: Context, specialHeaders: Headers? = null): Pair<String, String> {
+        val chunkFolder = "${chunkUploadBase}/${source}"
+        var result = Pair("", "")
+        val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
+        val wifionlyKey = ctx.getString(R.string.wifionly_pref_key)
+        val destHeader = Headers.headersOf("Destination", Uri.encode(dest, "&=?/:"))
+        val connectivityManager = ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        try {
+            var chunkName: String
+            var index = 0
+
+            // Create upload folder on server
+            httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "&=?/:")).method("MKCOL", null).headers(destHeader).build()).execute().use { response->
+                when {
+                    response.isSuccessful-> {}
+                    response.code == 405-> {
+                        // Response 405 means the folder is already there
+                        // Try to resume from the last position, assume that all uploaded chunks except the last 1 are intact
+                        try {
+                            val existing = list(chunkFolder, FOLDER_CONTENT_DEPTH).drop(1)
+                            if (existing.isNotEmpty()) {
+                                existing.filter { it.name.length == 5 }.maxByOrNull { it.name }?.run {
+                                    index = this.name.toInt()
+
+                                    // If last chunk uploaded is incomplete, restart from it
+                                    if (this.size != CHUNK_SIZE) index--
+
+                                    // Skip to resume position, if skip failed, start from the very beginning
+                                    (index * CHUNK_SIZE).let { skipSize ->
+                                        inputStream.skip(skipSize).let { skipped ->
+                                            //Log.e(">>>>>", "should skip $index, actually skip $skipped")
+                                            if (skipped != skipSize) index = 0
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) {
+                            // Whatever bad happened, start from the very beginning
+                            index = 0
+                        }
+                    }
+                    else-> throw OkHttpWebDavException(response)
+                }
+            }
+
+            // Upload chunks
+            // Longer timeout adapting to slow connection. TODO: Since Android 15, this timeout won't work, the OS will kill background process with it's own timeout setting
+            val uploadHttpClient = httpClient.newBuilder().readTimeout(10, TimeUnit.MINUTES).writeTimeout(10, TimeUnit.MINUTES).build()
+            var chunkSize = CHUNK_SIZE
+            val lengthHeader = Headers.headersOf("OC-Total-Length", fileSize.toString())
+            while(true) {
+                val uploadedSize = index * CHUNK_SIZE
+                if (fileSize - uploadedSize > 0) {
+                    chunkSize = min(fileSize - uploadedSize, CHUNK_SIZE)
+                    index++
+                } else break
+
+                if (sp.getBoolean(wifionlyKey, true) && connectivityManager.isActiveNetworkMetered) throw NetworkErrorException()
+
+                chunkName = "${chunkFolder}/${String.format(Locale.ROOT, "%05d", index)}"
+                //Log.e(">>>>>>", chunkName)
+
+                //sleep(1000)
+                uploadHttpClient.newCall(Request.Builder().url(chunkName).headers(Headers.Builder().addAll(destHeader).addAll(lengthHeader).build()).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        if (response.code == 507) {
+                            // TODO: Insufficient Storage error after quota checking
+                        }
+                        // Upload interrupted, delete uploaded chunks
+                        //try { httpClient.newCall(Request.Builder().url(Uri.encode(chunkFolder, "&=?/:")).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        throw OkHttpWebDavException(response)
+                    }
+                }
+            }
+
+            try {
+                // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
+                val header = Headers.Builder().addAll(destHeader).addAll(lengthHeader).apply { specialHeaders?.let { addAll(it) }}.build()
                 uploadHttpClient.newCall(Request.Builder().url(Uri.encode("${chunkFolder}/.file", "&=?/:")).method("MOVE", null).headers(header).build()).execute().use { response ->
                     if (response.isSuccessful) result = Pair(response.header(HEADER_OC_FILEID, "") ?: "", response.header(HEADER_OC_ETAG, "") ?: "")
                     else {
