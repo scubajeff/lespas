@@ -353,12 +353,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 */
 
                 Action.ACTION_DELETE_FILE_IN_ARCHIVE -> {
-                    // Property fileName holds the file's path in the local device
-                    // Property fileId holds the file's uid on server
-                    "${archiveBase}/${Tools.getDeviceModel()}/${action.fileName}".let { archivePath ->
-                        webDav.delete("${userBase}${archivePath}")
-                        //snapshotDeletion.add(archivePath.substringAfterLast('/'))
-                        snapshotDeletion.add(action.fileId)
+                    // Property folderName holds the file's path in the local device
+                    // Property fileName holds the file's name
+                    "${action.folderName}${action.fileName}".let { filePath ->
+                        webDav.delete("${userBase}${archiveBase}/${Tools.getDeviceModel()}/$filePath")
+                        snapshotDeletion.add(filePath)
                     }
                 }
 
@@ -2029,7 +2028,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Tools.jsonToArchiveList(file, archiveBase).let { oldList ->
                             file.writer().use {
                                 it.write(Tools.archiveToJSONString(
-                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> item.remoteFileId !in snapshotDeletion }).let { subList ->
+                                    // TODO more light way to match deletion
+                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> "${item.fullPath}${item.media.photo.name}" !in snapshotDeletion }).let { subList ->
                                         if (snapshotAddition.isEmpty()) subList else snapshotAddition.plus(subList)
                                     }
                                 ))

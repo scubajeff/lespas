@@ -1019,7 +1019,7 @@ class GalleryFragment: Fragment() {
             // Removing archived files
             if (removeArchive && archiveFiles.isNotEmpty()) {
                 mutableListOf<Pair<String, String>>().run {
-                    archiveFiles.forEach { add(Pair(it.remoteFileId, "${it.fullPath}/${it.media.photo.name}")) }
+                    archiveFiles.forEach { add(Pair(it.fullPath, it.media.photo.name)) }
                     actionModel.deleteFileInArchive(this)
                 }
                 //if (!isArchiveOff()) imageModel.removeItemsFromArchiveList(archiveFiles)
