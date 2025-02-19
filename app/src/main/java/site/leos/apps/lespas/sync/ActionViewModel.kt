@@ -285,7 +285,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun deleteFileInArchive(files: List<Pair<String, String>>) {
         viewModelScope.launch(Dispatchers.IO) {
             val actions = arrayListOf<Action>()
-            files.forEach { actions.add(Action(id = null, action = Action.ACTION_DELETE_FILE_IN_ARCHIVE, fileId = it.first, fileName = it.second, date = System.currentTimeMillis())) }
+            files.forEach { actions.add(Action(id = null, action = Action.ACTION_DELETE_FILE_IN_ARCHIVE, folderName = it.first, fileName = it.second, date = System.currentTimeMillis())) }
 
             if (actions.isNotEmpty()) actionRepository.addActions(actions)
         }
