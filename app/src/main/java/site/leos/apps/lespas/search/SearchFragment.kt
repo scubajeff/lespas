@@ -690,7 +690,10 @@ class SearchFragment: Fragment() {
             // Remove photos from server archive
             if (photosFromArchive.isNotEmpty()) {
                 mutableListOf<Pair<String, String>>().let { files ->
-                    photosFromArchive.forEach { files.add(Pair(it.photo.id, it.remotePath)) }
+                    val modelName = Tools.getDeviceModel()
+                    photosFromArchive.forEach {
+                        it.remotePath.substringAfter(modelName).drop(1).let { filePath -> files.add(Pair(filePath.substringBeforeLast("/") + "/", filePath.substringAfterLast("/"))) }
+                    }
                     actionModel.deleteFileInArchive(files)
                 }
             }
