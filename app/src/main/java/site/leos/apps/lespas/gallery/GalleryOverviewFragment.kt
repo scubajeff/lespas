@@ -203,6 +203,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         overviewList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = overviewAdapter
 
+            itemAnimator = null     // Disable recyclerview item animation to avoid ANR in AdapterHelper.findPositionOffset() when DiffResult applying at the moment that the list is scrolling
+
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
@@ -221,8 +223,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && key.isNotEmpty()
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
-            }).build()
-            selectionTracker.apply {
+            }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -255,9 +256,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     }
                 })
 
-                overviewAdapter.setSelectionTracker(this)
                 savedInstanceState?.let { onRestoreInstanceState(it) }
             }
+            overviewAdapter.setSelectionTracker(selectionTracker)
 
             // Avoid window inset overlapping
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
@@ -845,7 +846,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
 
         private const val GALLERY_OVERVIEW_REQUEST_KEY = "GALLERY_OVERVIEW_REQUEST_KEY"
-        private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val BACKUP_EXISTING_REQUEST_KEY = "BACKUP_EXISTING_REQUEST_KEY"
 
         private const val BACKUP_NOT_AVAILABLE = -1

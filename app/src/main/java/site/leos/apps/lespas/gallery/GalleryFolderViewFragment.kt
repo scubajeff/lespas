@@ -234,6 +234,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
         mediaList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = mediaAdapter
+
             itemAnimator = null     // Disable recyclerview item animation to avoid ANR in AdapterHelper.findPositionOffset() when DiffResult applying at the moment that the list is scrolling
 
             spanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
@@ -279,8 +280,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
-            }).build()
-            selectionTracker.apply {
+            }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -306,9 +306,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                 })
 
-                mediaAdapter.setSelectionTracker(this)
                 savedInstanceState?.let { onRestoreInstanceState(it) }
             }
+            mediaAdapter.setSelectionTracker(selectionTracker)
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 private val hideHandler = Handler(Looper.getMainLooper())
@@ -948,7 +948,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
         private const val GALLERY_FOLDERVIEW_REQUEST_KEY = "GALLERY_FOLDERVIEW_REQUEST_KEY"
-        private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
         private const val EMPTY_TRASH_REQUEST_KEY = "EMPTY_TRASH_REQUEST_KEY"
 
         // Default to All, same tag set in R.layout.fragment_gallery_list for view R.id.chip_for_all

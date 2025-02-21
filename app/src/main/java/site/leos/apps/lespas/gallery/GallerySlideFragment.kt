@@ -448,11 +448,9 @@ class GallerySlideFragment : Fragment() {
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
         private const val GALLERY_SLIDE_REQUEST_KEY = "GALLERY_SLIDE_REQUEST_KEY"
-        private const val DELETE_REQUEST_KEY = "GALLERY_DELETE_REQUEST_KEY"
 
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 

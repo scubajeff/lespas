@@ -452,9 +452,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         }
 
                         it.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
-                            ContextCompat.getColor(requireContext(), R.color.lespas_white).let {
-                                setTextColor(it)
-                                setHintTextColor(ColorUtils.setAlphaComponent(it, 0xA0))
+                            ContextCompat.getColor(requireContext(), R.color.lespas_white).let { white ->
+                                setTextColor(white)
+                                setHintTextColor(ColorUtils.setAlphaComponent(white, 0xA0))
                             }
                         }
                     }
