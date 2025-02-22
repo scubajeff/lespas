@@ -39,6 +39,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.MenuProvider
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -57,7 +58,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.zip
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.osmdroid.bonuspack.location.GeocoderNominatim
@@ -273,7 +274,11 @@ class SearchFragment: Fragment() {
                     )
                 }
                 launch {
-                    localGallery.zip(archiveModel.archive) { local, archiveMedia ->
+                    loadDeviceGallery()
+                    archiveModel.refreshArchive(false)
+                }
+                launch {
+                    combine(localGallery, archiveModel.archive) { local, archiveMedia ->
                         val combinedList = local.map { it.copy(remotePath = "") }.toMutableList()
 
                         ensureActive()
@@ -299,10 +304,6 @@ class SearchFragment: Fragment() {
                         ensureActive()
                         combinedList
                     }.collect { result -> galleryPhotos.emit(result) }
-                }
-                launch {
-                    loadDeviceGallery()
-                    archiveModel.refreshArchive(false)
                 }
                 albumTable = albumRepository.getAllAlbumAttribute()
             }
@@ -505,13 +506,20 @@ class SearchFragment: Fragment() {
                         _locationSearchResult.emit(resultList)
                         _maxProgress.emit(remotePhotos.size)
 
-                        remotePhotos.asReversed().forEachIndexed { i, remotePhoto ->
+                        remotePhotos.forEachIndexed { i, remotePhoto ->
                             remotePhoto.photo.let { photo ->
                                 ensureActive()
                                 _progress.emit(i)
 
-                                if (photo.latitude == Photo.NO_GPS_DATA) return@forEachIndexed
-                                else doubleArrayOf(photo.latitude, photo.longitude).let { latLong ->
+                                if (searchScope == R.id.search_album) {
+                                    if (photo.latitude == Photo.NO_GPS_DATA) return@forEachIndexed
+                                    else doubleArrayOf(photo.latitude, photo.longitude)
+                                } else {
+                                    cr.openInputStream(Uri.parse(remotePhoto.photo.id))?.use { s -> ExifInterface(s).latLong?.apply {
+                                        remotePhoto.photo.latitude = first()
+                                        remotePhoto.photo.longitude = last()
+                                    }}
+                                }?.let { latLong ->
                                     if (photo.country.isEmpty()) {
                                         ensureActive()
                                         try {

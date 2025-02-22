@@ -53,12 +53,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView
 
-    private var searchTarget = 0
+    private var searchScope = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
+        searchScope = requireArguments().getInt(KEY_SEARCH_SCOPE)
 
         resultAdapter = LocationSearchResultAdapter(
             { result, view ->
@@ -71,7 +71,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country, searchTarget), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country, searchScope), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -87,7 +87,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
         resultView = view.findViewById<RecyclerView>(R.id.locality_list).apply {
             adapter = resultAdapter
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context,
-                when(searchTarget) {
+                when(searchScope) {
                     R.id.search_album -> R.drawable.ic_baseline_footprint_24
                     else -> R.drawable.ic_baseline_device_24
                 }
@@ -127,7 +127,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = getString(if (searchTarget == R.id.search_album) R.string.title_in_album else R.string.title_in_gallery, getString(R.string.item_location_search))
+            title = getString(if (searchScope == R.id.search_album) R.string.title_in_album else R.string.title_in_gallery, getString(R.string.item_location_search))
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
@@ -211,9 +211,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
     }
 
     companion object {
-        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
+        private const val KEY_SEARCH_SCOPE = "KEY_SEARCH_SCOPE"
 
         @JvmStatic
-        fun newInstance(target: Int) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_TARGET, target) } }
+        fun newInstance(scope: Int) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_SCOPE, scope) } }
     }
 }
