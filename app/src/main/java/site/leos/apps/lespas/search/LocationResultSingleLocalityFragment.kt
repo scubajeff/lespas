@@ -153,7 +153,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             searchModel.locationSearchResult.collect { resultList ->
-                resultList.find { it.locality == locality && it.country == country }?.photos?.apply { photoAdapter.submitList(asReversed().toMutableList()) }
+                resultList.find { it.locality == locality && it.country == country }?.photos?.apply { photoAdapter.submitList(toMutableList()) }
             }
         }
     }
