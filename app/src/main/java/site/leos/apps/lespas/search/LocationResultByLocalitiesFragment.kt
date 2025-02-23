@@ -164,17 +164,25 @@ class LocationResultByLocalitiesFragment: Fragment() {
             fun bind(item: SearchFragment.SearchModel.LocationSearchResult) {
                 tvLocality.text = item.locality
                 tvCountry.text = String.format("%s %s", item.flag, item.country)
-                tvCount.text = if (item.total >= 4) item.total.toString() else ""
 
-                photoAdapter.submitList(item.photos)
+                bindTotalChanged(item)
 
                 itemView.setOnClickListener { clickListener(item, rvPhoto) }
                 ViewCompat.setTransitionName(rvPhoto, item.locality)
+            }
+
+            fun bindTotalChanged(item: SearchFragment.SearchModel.LocationSearchResult) {
+                tvCount.text = if (item.total >= 4) item.total.toString() else ""
+                photoAdapter.submitList(item.photos)
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_location_search, parent, false))
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+            if (payloads.isEmpty()) onBindViewHolder(holder, position)
+            else holder.bindTotalChanged(getItem(position))
+        }
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<RecyclerView>(R.id.photos)?.adapter = null }
             super.onDetachedFromRecyclerView(recyclerView)
@@ -183,7 +191,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
     class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<SearchFragment.SearchModel.LocationSearchResult>() {
         override fun areItemsTheSame(oldItem: SearchFragment.SearchModel.LocationSearchResult, newItem: SearchFragment.SearchModel.LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
-        override fun areContentsTheSame(oldItem: SearchFragment.SearchModel.LocationSearchResult, newItem: SearchFragment.SearchModel.LocationSearchResult): Boolean = oldItem.photos.first().photo.id == newItem.photos.first().photo.id
+        override fun areContentsTheSame(oldItem: SearchFragment.SearchModel.LocationSearchResult, newItem: SearchFragment.SearchModel.LocationSearchResult): Boolean = oldItem.total == newItem.total
+        override fun getChangePayload(oldItem: SearchFragment.SearchModel.LocationSearchResult, newItem: SearchFragment.SearchModel.LocationSearchResult): Any? = if (oldItem.total != newItem.total) DIFF_PAYLOAD_TOTAL else null
+
+        companion object {
+            const val DIFF_PAYLOAD_TOTAL = 1
+        }
     }
 
     class PhotoAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {

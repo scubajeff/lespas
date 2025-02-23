@@ -552,7 +552,7 @@ class SearchFragment: Fragment() {
                                             ?: run { resultList.add(LocationSearchResult(arrayListOf(remotePhoto), 1, this.country, this.locality, getFlagEmoji(this.countryCode.uppercase()))) }
 
                                         // Update UI
-                                        _locationSearchResult.emit(resultList.toList())
+                                        _locationSearchResult.emit(resultList.map { it.copy() })
                                     }
                                 }
 
