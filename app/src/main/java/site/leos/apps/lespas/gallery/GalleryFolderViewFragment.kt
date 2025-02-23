@@ -521,6 +521,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onDestroyView() {
+        mediaList.clearOnScrollListeners()
         mediaList.adapter = null
 
         super.onDestroyView()

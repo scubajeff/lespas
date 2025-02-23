@@ -425,6 +425,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroyView() {
         overviewList.adapter = null
+
         if (syncRequired) {
             val accounts = AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))
             if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
