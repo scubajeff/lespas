@@ -194,8 +194,9 @@ class LesPasArtProvider: MuzeiArtProvider() {
 */
                                             // Try to get today's photo list from Preference
                                             val photosOfDate =  mutableListOf<String>().apply { addAll(sp.getString(PHOTOS_OF_TODAY, "")?.split(',') ?: listOf()) }
-                                            if (photosOfDate.contains(sameDayHits[0].id)) {
-                                                // If list existed, loop thru. it
+                                            // TODO more accurate list comparison needed for cases like same day hits added and/or deleted in the middle of the day
+                                            if (photosOfDate.contains(sameDayHits[0].id) && photosOfDate.size == sameDayHits.size + 1) {
+                                                // If list existed and haven't changed
                                                 photosOfDate[0] = (photosOfDate[0].toInt() + 1).let { i -> if (i == sameDayHits.size) 0 else i }.toString()
                                             } else {
                                                 // Create today's photo shuffled list, add current index to the top of the list
