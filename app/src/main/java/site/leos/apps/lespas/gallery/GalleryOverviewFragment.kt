@@ -111,6 +111,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         overviewAdapter = OverviewAdapter(
             getString(R.string.camera_roll_name),
             getString(R.string.trash_name),
+            ("${Tools.getDeviceArchiveBase(requireContext())}/").let { getString(R.string.msg_archive_location, "<br><a href=\"${imageLoaderModel.getServerBaseUrl()}/apps/files/?dir=${Uri.encode(it)}\">$it</a>") },
             spanCount * 2,
             { folder, isEnabled, lastBackup ->
                 if (isEnabled) {
@@ -166,13 +167,9 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 }
             },
             { remotePhoto, imageView ->
-                //Log.e(">>>>>>>>", "loading image: ${remotePhoto.photo.id} ${remotePhoto.photo.name} ${remotePhoto.photo.albumId} ${remotePhoto.photo.eTag} ${remotePhoto.remotePath}", )
                 imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
-        ).apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-            with("${Tools.getRemoteHome(requireContext())}${SyncAdapter.ARCHIVE_BASE}/${Tools.getDeviceModel()}/") { setFootNote(getString(R.string.msg_archive_location, "<br><a href=\"${imageLoaderModel.getServerBaseUrl()}/apps/files/?dir=${Uri.encode(this)}\">$this</a>")) }
-        }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         selectionBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -186,8 +183,10 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         // Adjusting the shared element mapping
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                if (names?.isNotEmpty() == true) overviewList.findViewHolderForAdapterPosition(overviewAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()))?.let {
-                    sharedElements?.put(names[0], it.itemView.findViewById(R.id.photo))
+                galleryModel.getCurrentPhotoId().let { photoId ->
+                    if (photoId.isNotEmpty() && names?.isNotEmpty() == true) overviewList.findViewHolderForAdapterPosition(overviewAdapter.getPhotoPosition(photoId))?.let { viewHolder ->
+                        sharedElements?.put(names[0], viewHolder.itemView.findViewById(R.id.photo))
+                    }
                 }
             }
         })
@@ -204,8 +203,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             adapter = overviewAdapter
 
             itemAnimator = null     // Disable recyclerview item animation to avoid ANR in AdapterHelper.findPositionOffset() when DiffResult applying at the moment that the list is scrolling
-
-            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
@@ -259,6 +256,8 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 savedInstanceState?.let { onRestoreInstanceState(it) }
             }
             overviewAdapter.setSelectionTracker(selectionTracker)
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
 
             // Avoid window inset overlapping
             ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
@@ -537,7 +536,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     }
 
     class OverviewAdapter(
-        private val cameraRollName: String, private val trashName: String,
+        private val cameraRollName: String, private val trashName: String, private val footNote: String,
         private val max: Int, private val enableBackupClickListener: (String, Boolean, Int) -> Unit,  private val backupOptionClickListener: (String) -> Unit, private val folderClickListener: (String) -> Unit, private val photoClickListener: (View, String, String, String) -> Unit,
         private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<GalleryFragment.GalleryMedia, RecyclerView.ViewHolder>(OverviewDiffCallback()) {
@@ -545,7 +544,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
-        private var footNoteMessage = ""
 
         inner class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
@@ -683,7 +681,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         inner class FootNoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private val tvMessage = itemView.findViewById<TextView>(R.id.message).apply { movementMethod = LinkMovementMethod.getInstance() }
-            fun bind() { tvMessage.text = Html.fromHtml(footNoteMessage, Html.FROM_HTML_MODE_LEGACY) }
+            fun bind() { tvMessage.text = Html.fromHtml(footNote, Html.FROM_HTML_MODE_LEGACY) }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
@@ -751,7 +749,6 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             return Tools.humanReadableByteCountSI(size)
         }
         internal fun toSpan(position: Int): Boolean = getItemViewType(position) == TYPE_HEADER || getItemViewType(position) == TYPE_FOOTNOTE
-        internal fun setFootNote(message: String) { footNoteMessage = message }
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark

@@ -391,6 +391,7 @@ object Tools {
         return "${manufacturer}_${model}"
     }
 
+/*
     fun listGalleryImages(cr: ContentResolver): MutableList<Photo> {
         val medias = mutableListOf<Photo>()
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -462,6 +463,7 @@ object Tools {
 
         return medias
     }
+*/
 
     fun getGalleryAlbum(cr: ContentResolver, albumName: String): Album {
         val externalStorageUri = MediaStore.Files.getContentUri("external")
@@ -564,6 +566,7 @@ object Tools {
 
     fun getRemoteHome(context: Context): String = getPathOnServer(context, 1)
     fun getArchiveBase(context: Context): String = getPathOnServer(context, 3)
+    fun getDeviceArchiveBase(context: Context): String = "${getRemoteHome(context)}${getArchiveBase(context)}/${getDeviceModel()}"
     private fun getPathOnServer(context: Context, id: Int): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {

@@ -136,6 +136,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: GalleryFragment.ALL_FOLDER
 
         mediaAdapter = MediaAdapter(
+            getString(R.string.today), getString(R.string.yesterday),
             { view, photoId, mimeType ->
                 galleryModel.setCurrentPhotoId(photoId)
 
@@ -164,10 +165,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             },
             { photo, imageView -> imageLoaderModel.setImagePhoto(photo, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
-        ).apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-            setDateStrings(getString(R.string.today), getString(R.string.yesterday))
-        }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         selectionBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -181,8 +179,11 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         // Adjusting the shared element mapping
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                if (names?.isNotEmpty() == true) mediaList.findViewHolderForAdapterPosition(mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()))?.let {
-                    sharedElements?.put(names[0], it.itemView.findViewById(R.id.photo))
+                galleryModel.getCurrentPhotoId().let { photoId ->
+                    galleryModel.setCurrentPhotoId("")
+                    if (photoId.isNotEmpty() && names?.isNotEmpty() == true) mediaList.findViewHolderForAdapterPosition(mediaAdapter.getPhotoPosition(photoId))?.let { viewHolder ->
+                        sharedElements?.put(names[0], viewHolder.itemView.findViewById(R.id.photo))
+                    }
                 }
             }
         })
@@ -349,10 +350,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
                 override fun onLayoutChange(v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
                     mediaList.removeOnLayoutChangeListener(this)
-                    val position = mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId()).run { if (this < 0) 0 else this }
-                    mediaList.layoutManager?.let { layoutManager ->
+                    val position = mediaAdapter.getPhotoPosition(galleryModel.getCurrentPhotoId())
+                    if (position >= 0) mediaList.layoutManager?.let { layoutManager ->
                         layoutManager.findViewByPosition(position).let { view ->
-                            if (view == null || layoutManager.isViewPartiallyVisible(view, false, true)) mediaList.post { layoutManager.scrollToPosition(position) }
+                            if (view == null || layoutManager.isViewPartiallyVisible(view, false, true)) mediaList.post {
+                                layoutManager.scrollToPosition(if (position < (layoutManager as GridLayoutManager).findLastCompletelyVisibleItemPosition()) position else min(mediaAdapter.currentList.size - 1, position + spanCount))
+                            }
                         }
                     }
                 }
@@ -753,15 +756,15 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         if (clearSelection) selectionTracker.clearSelection()
     }
 
-    class MediaAdapter(private val clickListener: (View, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    class MediaAdapter(
+        private val today: String, private val yesterday: String,
+        private val clickListener: (View, String, String) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<GalleryFragment.GalleryMedia, RecyclerView.ViewHolder>(MediaDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
         private val defaultOffset = OffsetDateTime.now().offset
-        private var sToday = ""
-        private var sYesterday = ""
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
@@ -816,8 +819,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     val now = LocalDate.now()
                     val date = this.toLocalDate()
                     tvDate.text = when {
-                        date == now -> sToday
-                        date == now.minusDays(1) -> sYesterday
+                        date == now -> today
+                        date == now.minusDays(1) -> yesterday
                         date.year == now.year -> "${format(DateTimeFormatter.ofPattern("MMM d"))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                         else -> "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                     }
@@ -868,10 +871,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
-        }
-        internal fun setDateStrings(today: String, yesterday: String) {
-            sToday = today
-            sYesterday = yesterday
         }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id
