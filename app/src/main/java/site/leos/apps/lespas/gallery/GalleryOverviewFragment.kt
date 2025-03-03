@@ -30,6 +30,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
@@ -220,41 +221,40 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && key.isNotEmpty()
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
-            }).build().apply {
-                addObserver(object : SelectionTracker.SelectionObserver<String>() {
-                    override fun onSelectionChanged() {
-                        super.onSelectionChanged()
-                        updateUI()
-                    }
+            }).build()
+            selectionTracker.addObserver(object : SelectionTracker.SelectionObserver<String>() {
+                override fun onSelectionChanged() {
+                    super.onSelectionChanged()
+                    updateUI()
+                }
 
-                    override fun onSelectionRestored() {
-                        super.onSelectionRestored()
-                        updateUI()
-                    }
+                override fun onSelectionRestored() {
+                    super.onSelectionRestored()
+                    updateUI()
+                }
 
-                    private fun updateUI() {
-                        val selectionSize = selectionTracker.selection.size()
-                        if (selectionTracker.hasSelection() && actionMode == null) {
-                            actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
-                            actionMode?.let {
-                                it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                                it.subtitle = overviewAdapter.getSelectionFileSize()
-                            }
-                            selectionBackPressedCallback.isEnabled = true
-                        } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
-                            actionMode?.subtitle = ""
-                            actionMode?.finish()
-                            actionMode = null
-                            selectionBackPressedCallback.isEnabled = false
-                        } else {
-                            actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                            actionMode?.subtitle = overviewAdapter.getSelectionFileSize()
+                private fun updateUI() {
+                    val selectionSize = selectionTracker.selection.size()
+                    if (selectionTracker.hasSelection() && actionMode == null) {
+                        actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
+                        actionMode?.run {
+                            title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                            subtitle = overviewAdapter.getSelectionFileSize()
+                        }
+                        selectionBackPressedCallback.isEnabled = true
+                    } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
+                        actionMode?.subtitle = ""
+                        actionMode?.finish()
+                        actionMode = null
+                        selectionBackPressedCallback.isEnabled = false
+                    } else {
+                        actionMode?.run {
+                            title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                            subtitle = overviewAdapter.getSelectionFileSize()
                         }
                     }
-                })
-
-                savedInstanceState?.let { onRestoreInstanceState(it) }
-            }
+                }
+            })
             overviewAdapter.setSelectionTracker(selectionTracker)
 
             addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_device_24)!!))
@@ -353,9 +353,10 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             } else overviewItems
                         }
                     }.collect { list ->
-                        overviewAdapter.submitList(list) { galleryModel.stopArchiveLoadingIndicator() }
-                        val selectionSize = selectionTracker.selection.size()
-                        actionMode?.let { actionBar -> actionBar.title = "${resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)} (${overviewAdapter.getSelectionFileSize()})" }
+                        overviewAdapter.submitList(list) {
+                            galleryModel.stopArchiveLoadingIndicator()
+                            savedInstanceState?.let { selectionTracker.onRestoreInstanceState(it) }
+                        }
                         if (list?.isEmpty() == true) startPostponedEnterTransition()
                     }
                 }
@@ -744,7 +745,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         internal fun getSelectionFileSize(): String {
             var size = 0L
-            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() }}
+            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() } ?: run { Log.wtf(">>>>>>>>", "getSelectionFileSize: can't find", ) }}
 
             return Tools.humanReadableByteCountSI(size)
         }

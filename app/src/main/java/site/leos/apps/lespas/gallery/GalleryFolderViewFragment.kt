@@ -281,34 +281,31 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
                 override fun canSelectMultiple(): Boolean = true
-            }).build().apply {
-                addObserver(object : SelectionTracker.SelectionObserver<String>() {
-                    override fun onSelectionChanged() {
-                        super.onSelectionChanged()
-                        updateUI()
-                    }
+            }).build()
+            selectionTracker.addObserver(object : SelectionTracker.SelectionObserver<String>() {
+                override fun onSelectionChanged() {
+                    super.onSelectionChanged()
+                    updateUI()
+                }
 
-                    override fun onSelectionRestored() {
-                        super.onSelectionRestored()
-                        updateUI()
-                    }
+                override fun onSelectionRestored() {
+                    super.onSelectionRestored()
+                    updateUI()
+                }
 
-                    private fun updateUI() {
-                        if (selectionTracker.hasSelection() && actionMode == null) {
-                            actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
-                            selectionBackPressedCallback.isEnabled = true
-                        } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
-                            actionMode?.subtitle = ""
-                            actionMode?.finish()
-                            actionMode = null
-                            selectionBackPressedCallback.isEnabled = false
-                        }
-                        updateSelectionInfo()
+                private fun updateUI() {
+                    if (selectionTracker.hasSelection() && actionMode == null) {
+                        actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
+                        selectionBackPressedCallback.isEnabled = true
+                    } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
+                        actionMode?.subtitle = ""
+                        actionMode?.finish()
+                        actionMode = null
+                        selectionBackPressedCallback.isEnabled = false
                     }
-                })
-
-                savedInstanceState?.let { onRestoreInstanceState(it) }
-            }
+                    updateSelectionInfo()
+                }
+            })
             mediaAdapter.setSelectionTracker(selectionTracker)
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
@@ -425,13 +422,13 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                             }
 
                             if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else {
-                                mediaAdapter.submitList(listGroupedByDate)
-                                updateSelectionInfo()
+                                mediaAdapter.submitList(listGroupedByDate) { savedInstanceState?.let { states -> selectionTracker.onRestoreInstanceState(states) }}
+                                //updateSelectionInfo()
                             }
                         }
                     }
-                    GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { it?.let { prepareList(it) }}
-                    else -> galleryModel.mediasInFolder(folderArgument).collect { it?.let { prepareList(it) }}
+                    GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { it?.let { prepareList(it, savedInstanceState) }}
+                    else -> galleryModel.mediasInFolder(folderArgument).collect { it?.let { prepareList(it, savedInstanceState) }}
                 }
             }
         }
@@ -664,7 +661,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     @SuppressLint("InflateParams")
-    private fun prepareList(localMedias: List<GalleryFragment.GalleryMedia>) {
+    private fun prepareList(localMedias: List<GalleryFragment.GalleryMedia>, savedInstanceState: Bundle?) {
         if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
         // Disable list setting for now
@@ -704,15 +701,15 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         )
         subFolderChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentCheckedTag = subFolderChipGroup.findViewById<Chip>(checkedIds[0]).tag as String
-            setList()
+            setList(savedInstanceState)
         }
 
-        setList()
+        setList(savedInstanceState)
 
-        updateSelectionInfo()
+        //updateSelectionInfo()
     }
 
-    private fun setList() {
+    private fun setList(savedInstanceState: Bundle?) {
         val listGroupedByDate = mutableListOf<GalleryFragment.GalleryMedia>()
         var theDate: LocalDate
         var currentDate = LocalDate.now().plusDays(1)
@@ -736,7 +733,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         }
 
         //if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
-        if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate) { galleryModel.stopArchiveLoadingIndicator() }
+        if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate) {
+            galleryModel.stopArchiveLoadingIndicator()
+            savedInstanceState?.let { states -> selectionTracker.onRestoreInstanceState(states) }
+        }
     }
 
     private var flashDateId = ""
