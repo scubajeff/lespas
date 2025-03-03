@@ -303,7 +303,27 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         actionMode = null
                         selectionBackPressedCallback.isEnabled = false
                     }
-                    updateSelectionInfo()
+
+                    // Update UI
+                    actionModeTitleUpdateJob?.cancel()
+                    actionModeTitleUpdateJob = lifecycleScope.launch {
+                        selectionTracker.selection.size().let { selectionSize ->
+                            actionMode?.let {
+                                delay(100)
+                                var totalSize = 0L
+                                selectionTracker.selection.forEach { selected ->
+                                    ensureActive()
+                                    totalSize += mediaAdapter.getFileSize(selected)
+                                }
+
+                                actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                                actionMode?.subtitle = Tools.humanReadableByteCountSI(totalSize)
+                            }
+
+                            // Enable or disable sub folder chips base on selection mode
+                            (selectionSize <= 0).let { state -> subFolderChipGroup.forEach { it.isClickable = state } }
+                        }
+                    }
                 }
             })
             mediaAdapter.setSelectionTracker(selectionTracker)
@@ -637,27 +657,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     private fun updateSelectionInfo()  {
-        actionModeTitleUpdateJob?.cancel()
-        actionModeTitleUpdateJob = lifecycleScope.launch {
-            actionMode?.let {
-                delay(100)
-                var totalSize = 0L
-                selectionTracker.selection.forEach { selected ->
-                    ensureActive()
-                    totalSize += mediaAdapter.getFileSize(selected)
-                }
-                selectionTracker.selection.size().let { selectionSize ->
-                    actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                    actionMode?.subtitle = Tools.humanReadableByteCountSI(totalSize)
-
-                    // Disable sub folder chips when in selection mode
-                    when {
-                        selectionSize == 1 -> subFolderChipGroup.forEach { it.isEnabled = false }
-                        selectionSize <= 0 -> subFolderChipGroup.forEach { it.isEnabled = true }
-                    }
-                }
-            } ?: run { subFolderChipGroup.forEach { it.isEnabled = true } }
-        }
     }
 
     @SuppressLint("InflateParams")
@@ -701,7 +700,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         )
         subFolderChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentCheckedTag = subFolderChipGroup.findViewById<Chip>(checkedIds[0]).tag as String
-            setList(savedInstanceState)
+
+            // Appview changed, clear selection
+            selectionTracker.clearSelection()
+            setList(null)
         }
 
         setList(savedInstanceState)
