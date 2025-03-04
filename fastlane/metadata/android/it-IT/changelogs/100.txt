@@ -1,0 +1,6 @@
+* Nuovo modo di gestire l'archivio fotografico sul server, molto più chiaro per differenziare la posizione dei file multimediali con l'indicatore di posizione aggiunto di recente.
+* Aggiunta di funzioni per scaricare i file multimediali dall'archivio al dispositivo e per caricare singoli file multimediali nell'archivio.
+* Revisione della ricerca: quando l'utente esegue una ricerca nella Galleria, Les Pas cercherà tutti i file multimediali sia sul dispositivo che nell'archivio.
+* Caricamento fisso dei file chunk per il backup di file multimediali di grandi dimensioni
+* Correzione della funzione di ricerca per il rilevamento degli oggetti a causa della mancanza di librerie OpenCL.
+* Vari miglioramenti e correzioni di bug

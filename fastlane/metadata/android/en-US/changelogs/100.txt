@@ -1,0 +1,6 @@
+* New way to manage photo archive on server, much more clear way to differentiate media file location with newly added location indicator
+* Added functions to download media files from archive to device, and upload individual media files to archive
+* Overhaul search, when user perform search on Gallery, Les Pas will search all media files both on device and in archive
+* Fixed chunk file uploading for large media file backup
+* Fixed object detection search function due to missing OpenCL libraries
+* Various improvements and bugs fixes

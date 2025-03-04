@@ -1,0 +1,6 @@
+* Nueva forma de gestionar el archivo de fotos en el servidor, una forma mucho más clara de diferenciar la ubicación de los archivos multimedia con el nuevo indicador de ubicación añadido.
+* Se han añadido funciones para descargar archivos multimedia del archivo al dispositivo y para cargar archivos multimedia individuales al archivo.
+* Revisión de la búsqueda, cuando el usuario realiza una búsqueda en la Galería, Les Pas buscará todos los archivos multimedia tanto en el dispositivo como en el archivo.
+* Corrección de la carga de archivos a trozos para copias de seguridad de archivos multimedia de gran tamaño.
+* Corrección de la función de búsqueda de detección de objetos debido a la falta de bibliotecas OpenCL.
+* Varias mejoras y correcciones de errores

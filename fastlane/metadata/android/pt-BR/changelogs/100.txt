@@ -1,0 +1,6 @@
+* Nova maneira de gerenciar o arquivo de fotos no servidor, uma maneira muito mais clara de diferenciar o local do arquivo de mídia com o indicador de local recém-adicionado.
+* Funções adicionadas para fazer download de arquivos de mídia do arquivo para o dispositivo e fazer upload de arquivos de mídia individuais para o arquivo.
+* Revisão da pesquisa: quando o usuário fizer uma pesquisa na Galeria, o Les Pas pesquisará todos os arquivos de mídia, tanto no dispositivo quanto no arquivo.
+* Corrigido o upload de arquivos em blocos para backup de arquivos de mídia grandes.
+* Correção da função de pesquisa de detecção de objetos devido à falta de bibliotecas OpenCL.
+* Vários aprimoramentos e correções de bugs

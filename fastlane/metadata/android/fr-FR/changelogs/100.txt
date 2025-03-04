@@ -1,0 +1,6 @@
+* Nouvelle méthode de gestion de l'archive photo sur le serveur, méthode beaucoup plus claire pour différencier l'emplacement des fichiers multimédias avec le nouvel indicateur d'emplacement ajouté.
+* Ajout de fonctions pour télécharger des fichiers média de l'archive vers l'appareil, et pour télécharger des fichiers média individuels vers l'archive.
+* Les Pas a été conçu pour permettre à l'utilisateur d'effectuer une recherche dans la galerie et de rechercher tous les fichiers multimédias présents sur l'appareil et dans l'archive à la fois.
+* Correction de la fonction de recherche par détection d'objet en raison de l'utilisation de la fonction de recherche par détection d'objet.
+* Correction de la fonction de recherche de détection d'objet en raison de l'absence de bibliothèques OpenCL
+* Diverses améliorations et corrections de bugs

@@ -1,0 +1,6 @@
+* Neue Methode zur Verwaltung des Fotoarchivs auf dem Server, deutlichere Unterscheidung des Speicherortes der Mediendateien mit neu hinzugefügter Speicherortanzeige
+* Zusätzliche Funktionen zum Herunterladen von Mediendateien aus dem Archiv auf das Gerät und zum Hochladen einzelner Mediendateien in das Archiv
+* Überarbeitung der Suche, wenn der Benutzer eine Suche in der Galerie durchführt, durchsucht Les Pas alle Mediendateien sowohl auf dem Gerät als auch im Archiv
+* Behoben: Hochladen von Chunk-Dateien für die Sicherung großer Mediendateien
+* Behobene Suchfunktion zur Objekterkennung aufgrund fehlender OpenCL-Bibliotheken
+* Verschiedene Verbesserungen und Fehlerkorrekturen
