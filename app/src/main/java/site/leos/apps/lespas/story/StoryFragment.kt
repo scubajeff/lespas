@@ -59,8 +59,10 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.Player
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -71,6 +73,7 @@ import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.platform.MaterialContainerTransform
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -252,12 +255,18 @@ class StoryFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) { showCurrentSlide() }
         })
 
-        if (isPublication) imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { if (it.isNotEmpty()) loadSlideshow(it, startAt) }
-        else albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
-            Tools.sortPhotos(photos, album.sortOrder).run {
-                val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
-                forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
-                loadSlideshow(rpList, startAt)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    if (isPublication) imageLoaderModel.publicationContentMeta.collect { if (it.isNotEmpty()) loadSlideshow(it, startAt) }
+                    else albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
+                        Tools.sortPhotos(photos, album.sortOrder).run {
+                            val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
+                            forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
+                            loadSlideshow(rpList, startAt)
+                        }
+                    }
+                }
             }
         }
 

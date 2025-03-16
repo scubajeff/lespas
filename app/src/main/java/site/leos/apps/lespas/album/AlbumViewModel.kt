@@ -18,10 +18,9 @@ package site.leos.apps.lespas.album
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -35,14 +34,14 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
 
     private var filterText = ""
 
-    val allAlbumsByEndDate: LiveData<List<Album>> = albumRepository.getAllAlbumsSortByEndDate().asLiveData()
-    fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
-    fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
+    val allAlbumsByEndDate: Flow<List<Album>> = albumRepository.getAllAlbumsSortByEndDate()
+    fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>? = albumRepository.getAlbumDetail(albumId)
+    fun getAllPhotoInAlbum(albumId: String): Flow<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId)
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }
     fun getAllAlbumIdName(): List<IDandName> = albumRepository.getAllAlbumIdName()
     fun getThisAlbum(albumId: String): Album = albumRepository.getThisAlbum(albumId)
     fun getAllAlbumName(): List<String> = albumRepository.getAllAlbumName()
-    val allHiddenAlbums: LiveData<List<Album>> = albumRepository.getAllHiddenAlbumsFlow().asLiveData()
+    val allHiddenAlbums: Flow<List<Album>> = albumRepository.getAllHiddenAlbumsFlow()
 
     fun setAsRemote(albumIds: List<String>, asRemote: Boolean) {
         // Update local db

@@ -36,7 +36,7 @@ class AlbumRepository(application: Application){
     fun getMeta(albumId: String): Meta = albumDao.getMeta(albumId)
     fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun getAllAlbumIdAndETag(): List<IDandETag> = albumDao.getAllIdAndETag()
-    fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
+    fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>? = albumDao.getAlbumDetail(albumId)
     fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
     fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}
     fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}

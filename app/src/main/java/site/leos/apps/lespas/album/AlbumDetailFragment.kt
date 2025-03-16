@@ -67,8 +67,8 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -526,62 +526,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         currentQuery = currentPhotoModel.getCurrentQuery()
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
-            if (it?.album != null) {
-                // Cover might changed, photo might be deleted, so get updates from latest here
-                val oldListType = this.album.sortOrder
-                this.album = it.album
-
-                // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
-                if (abs(oldListType - this.album.sortOrder) == 100) {
-                    recyclerView.adapter = null
-                    recyclerView.layoutManager = newLayoutManger()
-                    recyclerView.adapter = mAdapter
-
-                    updateSearchMenu()
-                }
-
-                mAdapter.setAlbum(it, currentQuery)
-                (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
-
-                // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
-                if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
-                    (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
-                    currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
-                }
-
-                // Scroll to designated photo at first run
-                if (scrollTo.isNotEmpty()) {
-                    (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
-                    scrollTo = ""
-                }
-
-                // Restore selection state
-                if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
-
-                lifecycleScope.launch {
-                    it.photos.forEach { photo ->
-                        if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
-                            mapOptionMenu?.isVisible = true
-                            gpxExportOptionMenu?.isVisible = true
-                            return@launch
-                        }
-                    }
-                }
-
-                // Disable "Manage Blog" menu if this is a all video album
-                it.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
-            }
-        }
-
-        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { shares ->
-            sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
-            mAdapter.setRecipient(sharedByMe)
-        }
-
-        publishModel.blogs.asLiveData().observe(viewLifecycleOwner) {
-            blogOptionMenu?.isEnabled = it != null
-        }
 
         destinationViewModel.getDestination().observe(viewLifecycleOwner) {
             it?.let { targetAlbum ->
@@ -683,70 +627,128 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            publishModel.shareOutUris.collect { uris ->
-                handler.removeCallbacksAndMessages(null)
-                if (waitingMsg?.isShownOrQueued == true) {
-                    waitingMsg?.dismiss()
-                    shareOutBackPressedCallback.isEnabled = false
-                }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    publishModel.shareOutUris.collect { uris ->
+                        handler.removeCallbacksAndMessages(null)
+                        if (waitingMsg?.isShownOrQueued == true) {
+                            waitingMsg?.dismiss()
+                            shareOutBackPressedCallback.isEnabled = false
+                        }
 
-                // Collect share out files preparation result'
-                if (uris.isNotEmpty()) when (shareOutType) {
-                    GENERAL_SHARE -> {
-                        // Call system share chooser
-                        val cr = requireActivity().contentResolver
-                        val clipData = ClipData.newUri(cr, "", uris[0])
-                        for (i in 1 until uris.size) {
-                            if (isActive) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                                else clipData.addItem(ClipData.Item(uris[i]))
+                        // Collect share out files preparation result'
+                        if (uris.isNotEmpty()) when (shareOutType) {
+                            GENERAL_SHARE -> {
+                                // Call system share chooser
+                                val cr = requireActivity().contentResolver
+                                val clipData = ClipData.newUri(cr, "", uris[0])
+                                for (i in 1 until uris.size) {
+                                    if (isActive) {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                        else clipData.addItem(ClipData.Item(uris[i]))
+                                    }
+                                }
+
+                                if (isActive) startActivity(Intent.createChooser(Intent().apply {
+                                    if (uris.size == 1) {
+                                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    } else {
+                                        action = Intent.ACTION_SEND_MULTIPLE
+                                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                    }
+                                    type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
+                                    this.clipData = clipData
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                                }, null))
+                            }
+                            SHARE_TO_SNAPSEED -> {
+                                startActivity(Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    data = uris[0]
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                                })
+
+                                // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
+                                requireContext().sendBroadcast(Intent().apply {
+                                    action = CHOOSER_SPY_ACTION
+                                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                                })
+                            }
+                            /*
+                                                // Copy/Move to another album is always a server job now
+                                                SHARE_TO_LESPAS -> {
+                                                    reuseUris = uris
+                                                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                                                }
+                            */
+                        }
+                    }
+                }.invokeOnCompletion {
+                    handler.removeCallbacksAndMessages(null)
+                    if (waitingMsg?.isShownOrQueued == true) {
+                        waitingMsg?.dismiss()
+                        shareOutBackPressedCallback.isEnabled = false
+                    }
+                }
+                launch { publishModel.blogs.collect { blogOptionMenu?.isEnabled = it != null }}
+                launch {
+                    publishModel.shareByMe.collect { shares ->
+                        sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
+                        mAdapter.setRecipient(sharedByMe)
+                    }
+                }
+                launch {
+                    albumModel.getAlbumDetail(album.id)?.collect { newAlbumDetail ->
+                        // Cover might changed, photo might be deleted, so get updates from latest here
+                        val oldListType = album.sortOrder
+                        album = newAlbumDetail.album
+
+                        // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
+                        if (abs(oldListType - album.sortOrder) == 100) {
+                            recyclerView.adapter = null
+                            recyclerView.layoutManager = newLayoutManger()
+                            recyclerView.adapter = mAdapter
+
+                            updateSearchMenu()
+                        }
+
+                        mAdapter.setAlbum(newAlbumDetail, currentQuery)
+                        (activity as? AppCompatActivity)?.supportActionBar?.title = newAlbumDetail.album.name
+
+                        // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
+                        if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
+                            (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
+                            currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
+                        }
+
+                        // Scroll to designated photo at first run
+                        if (scrollTo.isNotEmpty()) {
+                            (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
+                            scrollTo = ""
+                        }
+
+                        // Restore selection state
+                        if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
+
+                        lifecycleScope.launch {
+                            newAlbumDetail.photos.forEach { photo ->
+                                if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
+                                    mapOptionMenu?.isVisible = true
+                                    gpxExportOptionMenu?.isVisible = true
+                                    return@launch
+                                }
                             }
                         }
 
-                        if (isActive) startActivity(Intent.createChooser(Intent().apply {
-                            if (uris.size == 1) {
-                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_STREAM, uris[0])
-                            } else {
-                                action = Intent.ACTION_SEND_MULTIPLE
-                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                            }
-                            type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
-                            this.clipData = clipData
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null))
+                        // Disable "Manage Blog" menu if this is a all video album
+                        newAlbumDetail.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
                     }
-                    SHARE_TO_SNAPSEED -> {
-                        startActivity(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            data = uris[0]
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
-                        })
-
-                        // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
-                        requireContext().sendBroadcast(Intent().apply {
-                            action = CHOOSER_SPY_ACTION
-                            putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                        })
-                    }
-/*
-                    // Copy/Move to another album is always a server job now
-                    SHARE_TO_LESPAS -> {
-                        reuseUris = uris
-                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                    }
-*/
                 }
-            }
-        }.invokeOnCompletion {
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg?.isShownOrQueued == true) {
-                waitingMsg?.dismiss()
-                shareOutBackPressedCallback.isEnabled = false
             }
         }
 

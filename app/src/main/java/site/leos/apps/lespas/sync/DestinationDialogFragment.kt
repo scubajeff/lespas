@@ -47,8 +47,10 @@ import androidx.core.view.doOnPreDraw
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -337,45 +339,51 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         // Maintain current mode after screen rotation
         if (destinationModel.isEditing()) showNewAlbumEditText()
 
-        albumModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
-            val nullAlbum = Album(shareId = Album.NULL_ALBUM, lastModified = LocalDateTime.now())
-            val base = Tools.getRemoteHome(requireContext())
-            val remoteAlbums = mutableListOf(RemoteAlbum(nullAlbum, "", ""))
-            albums.forEach { album -> if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", "")) }
-            this.albums = remoteAlbums
-            setAlbums()
-
-            if (sharedWithMeCollectionJob == null) sharedWithMeCollectionJob = viewLifecycleOwner.lifecycleScope.launch {
-                publicationModel.shareWithMe.collect { receivedJointAlbums ->
-                    val jointAlbums = mutableListOf<RemoteAlbum>()
-                    for (publication in receivedJointAlbums) {
-                        if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
-                            RemoteAlbum(
-                                Album(
-                                    publication.albumId, publication.albumName,
-                                    LocalDateTime.now(), LocalDateTime.now(),
-                                    publication.cover.cover, publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
-                                    LocalDateTime.now(), publication.sortOrder, "",
-                                    Album.REMOTE_ALBUM, 1f,
-                                    publication.cover.coverFileName, publication.cover.coverMimeType, publication.cover.coverOrientation
-                                ),
-                                publication.sharePath, publication.shareBy
-                            )
-                        )
-                    }
-                    if (jointAlbums.isNotEmpty()) {
-                        this@DestinationDialogFragment.albums = this@DestinationDialogFragment.albums.plus(jointAlbums)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    albumModel.allAlbumsByEndDate.collect { albums ->
+                        val nullAlbum = Album(shareId = Album.NULL_ALBUM, lastModified = LocalDateTime.now())
+                        val base = Tools.getRemoteHome(requireContext())
+                        val remoteAlbums = mutableListOf(RemoteAlbum(nullAlbum, "", ""))
+                        albums.forEach { album -> if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", "")) }
+                        this@DestinationDialogFragment.albums = remoteAlbums
                         setAlbums()
 
-                        sharedWithMeCollectionJob?.cancel()
+                        if (sharedWithMeCollectionJob == null) sharedWithMeCollectionJob = viewLifecycleOwner.lifecycleScope.launch {
+                            publicationModel.shareWithMe.collect { receivedJointAlbums ->
+                                val jointAlbums = mutableListOf<RemoteAlbum>()
+                                for (publication in receivedJointAlbums) {
+                                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
+                                        RemoteAlbum(
+                                            Album(
+                                                publication.albumId, publication.albumName,
+                                                LocalDateTime.now(), LocalDateTime.now(),
+                                                publication.cover.cover, publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
+                                                LocalDateTime.now(), publication.sortOrder, "",
+                                                Album.REMOTE_ALBUM, 1f,
+                                                publication.cover.coverFileName, publication.cover.coverMimeType, publication.cover.coverOrientation
+                                            ),
+                                            publication.sharePath, publication.shareBy
+                                        )
+                                    )
+                                }
+                                if (jointAlbums.isNotEmpty()) {
+                                    this@DestinationDialogFragment.albums = this@DestinationDialogFragment.albums.plus(jointAlbums)
+                                    setAlbums()
+
+                                    sharedWithMeCollectionJob?.cancel()
+                                }
+                            }
+                        }.apply {
+                            invokeOnCompletion { sharedWithMeCollectionJob = null }
+                        }
+
+                        // Create new title validator dictionary with current album names
+                        newAlbumTitleTextInputEditText.addTextChangedListener(FileNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { albums.forEach { album -> this.add(album.name) } }))
                     }
                 }
-            }.apply {
-                invokeOnCompletion { sharedWithMeCollectionJob = null }
             }
-
-            // Create new title validator dictionary with current album names
-            newAlbumTitleTextInputEditText.addTextChangedListener(FileNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { albums.forEach { album -> this.add(album.name) } }))
         }
     }
 

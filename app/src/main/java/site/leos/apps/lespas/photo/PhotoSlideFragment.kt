@@ -53,9 +53,11 @@ import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
@@ -421,9 +423,15 @@ class PhotoSlideFragment : Fragment() {
             movementMethod = ScrollingMovementMethod()
         }
 
-        albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
-            pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder)
-            slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
+                        pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder)
+                        slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
+                    }
+                }
+            }
         }
 
         currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner) { appliedStatus ->

@@ -26,7 +26,11 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.util.TypedValue
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
@@ -37,7 +41,9 @@ import androidx.core.view.doOnLayout
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
@@ -51,6 +57,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
@@ -243,24 +250,29 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
             }
         }
 
-        shareModel.blogPostThemeId.asLiveData().observe(viewLifecycleOwner) { themeId ->
-            if (themeId.isNotEmpty()) {
-                when(themeId) {
-                    SyncAdapter.THEME_CASCADE -> themeChoice.check(R.id.theme_cascade)
-                    SyncAdapter.THEME_MAGAZINE -> themeChoice.check(R.id.theme_magazine)
-                    SyncAdapter.THEME_TIMELINE -> themeChoice.check(R.id.theme_timeline)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    shareModel.blogPostThemeId.collect { themeId ->
+                        if (themeId.isNotEmpty()) {
+                            when(themeId) {
+                                SyncAdapter.THEME_CASCADE -> themeChoice.check(R.id.theme_cascade)
+                                SyncAdapter.THEME_MAGAZINE -> themeChoice.check(R.id.theme_magazine)
+                                SyncAdapter.THEME_TIMELINE -> themeChoice.check(R.id.theme_timeline)
+                            }
+
+                            removeBlogButton.isVisible = true
+                            showQRCode()
+                        }
+                    }
                 }
+                launch {
+                    albumModel.getAlbumDetail(album.id)?.collect { newAlbumDetail ->
+                        photoAdapter.submitList(Tools.sortPhotos(newAlbumDetail.photos, newAlbumDetail.album.sortOrder))
 
-                removeBlogButton.isVisible = true
-                showQRCode()
-            }
-        }
-
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
-            photoAdapter.submitList(Tools.sortPhotos(it.photos, it.album.sortOrder))
-
-            photoAdapter.currentList.forEach { photo ->
-                if (!Tools.isBitSet(photo.shareId, Photo.EXCLUDE_FROM_BLOG)) selectionTracker.select(photo.id)
+                        photoAdapter.currentList.forEach { photo -> if (!Tools.isBitSet(photo.shareId, Photo.EXCLUDE_FROM_BLOG)) selectionTracker.select(photo.id) }
+                    }
+                }
             }
         }
     }

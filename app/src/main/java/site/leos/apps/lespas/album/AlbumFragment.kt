@@ -52,6 +52,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
@@ -64,8 +65,8 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
@@ -148,6 +149,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var selectionBackPressedCallback: OnBackPressedCallback
     private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
+
+    private val currentHiddenList = mutableListOf<Album>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -288,23 +291,33 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
-            this.albums = albums
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    albumsModel.allAlbumsByEndDate.collect {
+                        albums.clear()
+                        albums.addAll(it)
 
-            setAlbums {
-                if (scrollTo != -1) {
-                    recyclerView.scrollToPosition(scrollTo)
-                    scrollTo = -1
+                        setAlbums {
+                            if (scrollTo != -1) {
+                                recyclerView.scrollToPosition(scrollTo)
+                                scrollTo = -1
+                            }
+                        }
+
+                        nameFilterMenu?.isEnabled = albums.isNotEmpty()
+                        sortByMenu?.isEnabled = albums.isNotEmpty()
+                    }
                 }
+                launch { albumsModel.allHiddenAlbums.collect { hidden ->
+                    currentHiddenList.clear()
+                    currentHiddenList.addAll(hidden)
+                    unhideMenu?.isEnabled = hidden.isNotEmpty()
+                }}
+                launch { publishViewModel.shareByMe.collect { mAdapter.setRecipients(it) }}
+                launch { publishViewModel.shareWithMe.collect { fixMenuIcon(it, true) }}
             }
-
-            nameFilterMenu?.isEnabled = this.albums.isNotEmpty()
-            sortByMenu?.isEnabled = this.albums.isNotEmpty()
         }
-        albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
-
-        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { mAdapter.setRecipients(it) }
-        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { fixMenuIcon(it, true) }
 
         with(recyclerView) {
             // Stop item from blinking when notifying changes
@@ -462,7 +475,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
 
             override fun onPrepareMenu(menu: Menu) {
-                albumsModel.allHiddenAlbums.value.let { unhideMenu?.isEnabled = it?.isNotEmpty() ?: false }
+                unhideMenu?.isEnabled = currentHiddenList.isNotEmpty()
                 publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
 
                 galleryAlbumMenu?.isEnabled = !showGallery
@@ -510,7 +523,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         return true
                     }
                     R.id.option_menu_received_shares-> {
-                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit { putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp) }
 
                         exitTransition = null
                         reenterTransition = null
@@ -530,7 +543,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
                         setAlbums { recyclerView.scrollToPosition(0) }
 
-                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder).apply()
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit { putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder) }
 
                         return true
                     }
@@ -641,7 +654,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             R.id.hide -> {
                 val refused = mutableListOf<String>()
                 val hidden = mutableListOf<String>()
-                albumsModel.allHiddenAlbums.value?.let { for (album in it) hidden.add(album.name.substring(1)) }
+                currentHiddenList.let { for (album in it) hidden.add(album.name.substring(1)) }
 
                 mutableListOf<Album>().let { albums ->
                     selectionTracker.selection.forEach { id->
@@ -694,7 +707,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab.isEnabled = true
     }
 
-    private var albums = listOf<Album>()
+    private var albums = mutableListOf<Album>()
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var currentFilter = ""
     private fun setAlbums(callback: () -> Unit) {
@@ -728,12 +741,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private fun unhide() {
         if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) {
-            val hidden = mutableListOf<Album>()
+            val hidden = mutableListOf<Album>().apply { addAll(currentHiddenList) }
 
-            albumsModel.allHiddenAlbums.value?.let { hidden.addAll(it) }
             for (album in mAdapter.currentList) {
                 // If there is same name existed in album list, mark this hidden album's name with 2 dots prefix
-                hidden.find { it.name.substring(1) == album.name}?.let { it.name = ".${it.name}" }
+                hidden.find { it.name.substring(1) == album.name }?.let { it.name = ".${it.name}" }
             }
 
             UnhideDialogFragment.newInstance(hidden).show(parentFragmentManager, UNHIDE_DIALOG)
