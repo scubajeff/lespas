@@ -45,6 +45,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -87,7 +88,6 @@ import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
 import site.leos.apps.lespas.helper.ShareOutDialogFragment
-import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -161,11 +161,11 @@ class PhotoSlideFragment : Fragment() {
             playerViewModel,
             { photo->
                 with(photo) {
-                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) SeamlessMediaSliderAdapter.VideoItem(Uri.parse("${serverFullPath}/${name}"), mimeType, width, height, id)
+                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) SeamlessMediaSliderAdapter.VideoItem("${serverFullPath}/${name}".toUri(), mimeType, width, height, id)
                     else {
                         var fileName = "${rootPath}/${id}"
                         if (!(File(fileName).exists())) fileName = "${rootPath}/${name}"
-                        SeamlessMediaSliderAdapter.VideoItem(Uri.parse("file:///$fileName"), mimeType, width, height, id)
+                        SeamlessMediaSliderAdapter.VideoItem("file:///$fileName".toUri(), mimeType, width, height, id)
                     }
                 }
             },
@@ -356,7 +356,7 @@ class PhotoSlideFragment : Fragment() {
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
-                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(album.name, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             }
         }
@@ -431,70 +431,62 @@ class PhotoSlideFragment : Fragment() {
                         slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
                     }
                 }
-            }
-        }
+                launch {
+                    imageLoaderModel.shareOutUris.collect { uris ->
+                        // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
+                        handler.removeCallbacksAndMessages(null)
+                        if (waitingMsg?.isShownOrQueued == true) {
+                            waitingMsg?.dismiss()
+                            shareOutBackPressedCallback.isEnabled = false
+                        }
 
-        currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner) { appliedStatus ->
-            showCoverAppliedStatus(appliedStatus == true)
+                        // Call system share chooser
+                        if (uris.isNotEmpty()) when (shareOutType) {
+                            GENERAL_SHARE -> {
+                                startActivity(Intent.createChooser(Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = shareOutMimeType
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    clipData = ClipData.newUri(requireContext().contentResolver, "", uris[0])
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                                    putExtra(ShareReceiverActivity.KEY_CURRENT_ALBUM_ID, album.id)
+                                }, null))
+                            }
+                            SHARE_TO_SNAPSEED -> {
+                                startActivity(Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    setDataAndType(uris[0], shareOutMimeType)
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                                })
 
-            // Clear transition when coming back from CoverSettingFragment
-            exitTransition = null
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            imageLoaderModel.shareOutUris.collect { uris ->
-                // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                handler.removeCallbacksAndMessages(null)
-                if (waitingMsg?.isShownOrQueued == true) {
-                    waitingMsg?.dismiss()
-                    shareOutBackPressedCallback.isEnabled = false
-                }
-
-                // Call system share chooser
-                if (uris.isNotEmpty()) when (shareOutType) {
-                    GENERAL_SHARE -> {
-                        startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = shareOutMimeType
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                            clipData = ClipData.newUri(requireContext().contentResolver, "", uris[0])
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                            putExtra(ShareReceiverActivity.KEY_CURRENT_ALBUM_ID, album.id)
-                        }, null))
+                                // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
+                                view.context.sendBroadcast(Intent().apply {
+                                    action = CHOOSER_SPY_ACTION
+                                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                                })
+                            }
+                            SHARE_TO_WALLPAPER -> {
+                                startActivity(Intent.createChooser(Intent().apply {
+                                    action = Intent.ACTION_ATTACH_DATA
+                                    addCategory(Intent.CATEGORY_DEFAULT)
+                                    setDataAndType(uris[0], shareOutMimeType)
+                                    putExtra("mimeType", shareOutMimeType)
+                                    //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                }, getString(R.string.button_text_use_as)))
+                            }
+                        }
                     }
-                    SHARE_TO_SNAPSEED -> {
-                        startActivity(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            setDataAndType(uris[0], shareOutMimeType)
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
-                        })
-
-                        // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
-                        view.context.sendBroadcast(Intent().apply {
-                            action = CHOOSER_SPY_ACTION
-                            putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                        })
-                    }
-                    SHARE_TO_WALLPAPER -> {
-                        startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_ATTACH_DATA
-                            addCategory(Intent.CATEGORY_DEFAULT)
-                            setDataAndType(uris[0], shareOutMimeType)
-                            putExtra("mimeType", shareOutMimeType)
-                            //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        }, getString(R.string.button_text_use_as)))
+                }.invokeOnCompletion {
+                    handler.removeCallbacksAndMessages(null)
+                    if (waitingMsg?.isShownOrQueued == true) {
+                        waitingMsg?.dismiss()
+                        shareOutBackPressedCallback.isEnabled = false
                     }
                 }
-            }
-        }.invokeOnCompletion {
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg?.isShownOrQueued == true) {
-                waitingMsg?.dismiss()
-                shareOutBackPressedCallback.isEnabled = false
             }
         }
 
@@ -519,6 +511,17 @@ class PhotoSlideFragment : Fragment() {
         // Share out dialog result handler
         parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
             if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) shareOut(bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), GENERAL_SHARE)
+        }
+
+        // Cover setting result handler
+        parentFragmentManager.setFragmentResultListener(CoverSettingFragment.KEY_COVER_SETTING_RESULT, viewLifecycleOwner) { _, bundle ->
+            bundle.parcelable<Cover>(CoverSettingFragment.KEY_NEW_COVER)?.let { newCover ->
+                showCoverAppliedStatus(true)
+                actionModel.updateCover(album.id, album.name, newCover)
+            } ?: run { showCoverAppliedStatus(false) }
+
+            // Clear transition when coming back from CoverSettingFragment
+            exitTransition = null
         }
 
         savedInstanceState?.let {
@@ -684,11 +687,6 @@ class PhotoSlideFragment : Fragment() {
         fun getCurrentPosition(): Int = currentPosition
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
-
-        // Cover applied status shared with CoverSettingFragment
-        private val coverAppliedStatus = SingleLiveEvent<Boolean>()
-        fun coverApplied(applied: Boolean) { coverAppliedStatus.value = applied}
-        fun getCoverAppliedStatus(): SingleLiveEvent<Boolean> = coverAppliedStatus
 
         private var currentQuery = ""
         fun setCurrentQuery(query: String) { currentQuery = query }

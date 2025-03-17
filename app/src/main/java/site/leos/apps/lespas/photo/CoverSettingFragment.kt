@@ -23,14 +23,17 @@ import android.os.Bundle
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.util.DisplayMetrics
-import android.view.*
+import android.view.GestureDetector
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.os.bundleOf
 import androidx.core.view.GestureDetectorCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.transition.Fade
 import androidx.transition.Slide
 import androidx.transition.Transition
@@ -39,11 +42,9 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
-import site.leos.apps.lespas.sync.ActionViewModel
 import kotlin.math.roundToInt
 
 class CoverSettingFragment : Fragment() {
-    private lateinit var albumName: String
     private lateinit var currentPhoto: Photo
 
     private lateinit var root: ConstraintLayout
@@ -51,7 +52,6 @@ class CoverSettingFragment : Fragment() {
     private lateinit var cropArea: ViewGroup
     private lateinit var cropFrameGestureDetector: GestureDetectorCompat
     private lateinit var layoutParams: ConstraintLayout.LayoutParams
-    private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
@@ -64,9 +64,6 @@ class CoverSettingFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        albumName = requireArguments().getString(KEY_ALBUM_NAME)!!
-        //currentPhoto = requireArguments().getParcelable(KEY_PHOTO)!!
         currentPhoto = requireArguments().parcelable(KEY_PHOTO)!!
     }
 
@@ -127,8 +124,7 @@ class CoverSettingFragment : Fragment() {
 
         cropFrameGestureDetector = GestureDetectorCompat(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                //Handler(requireContext().mainLooper).post { Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT).show() }
-                currentPhotoModel.coverApplied(false)
+                parentFragmentManager.setFragmentResult(KEY_COVER_SETTING_RESULT, bundleOf(KEY_NEW_COVER to null))
                 parentFragmentManager.popBackStack()
                 return true
             }
@@ -182,9 +178,8 @@ class CoverSettingFragment : Fragment() {
             currentPhoto.run {
                 var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 if (baseLine < 0) baseLine = 0
-                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(this.albumId, albumName, Cover(id, baseLine, width, height, name, mimeType, orientation))
+                parentFragmentManager.setFragmentResult(KEY_COVER_SETTING_RESULT, bundleOf(KEY_NEW_COVER to Cover(id, baseLine, width, height, name, mimeType, orientation)))
             }
-            currentPhotoModel.coverApplied(true)
 
             parentFragmentManager.popBackStack()
         }
@@ -264,15 +259,12 @@ class CoverSettingFragment : Fragment() {
         private const val FH = "FH"
         private const val DH = "DH"
 
-        private const val KEY_ALBUM_NAME = "KEY_ALBUM_NAME"
         private const val KEY_PHOTO = "KEY_PHOTO"
 
+        const val KEY_COVER_SETTING_RESULT = "KEY_COVER_SETTING_RESULT"
+        const val KEY_NEW_COVER = "KEY_COVER_SET"
+
         @JvmStatic
-        fun newInstance(albumName: String, photo: Photo) = CoverSettingFragment().apply {
-            arguments = Bundle().apply{
-                putString(KEY_ALBUM_NAME, albumName)
-                putParcelable(KEY_PHOTO, photo)
-            }
-        }
+        fun newInstance(photo: Photo) = CoverSettingFragment().apply { arguments = Bundle().apply{ putParcelable(KEY_PHOTO, photo) }}
     }
 }
