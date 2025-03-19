@@ -38,6 +38,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.core.view.MenuProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
@@ -510,15 +511,20 @@ class SearchFragment: Fragment() {
                             remotePhoto.photo.let { photo ->
                                 ensureActive()
                                 _progress.emit(i)
-
-                                if (searchScope == R.id.search_album) {
-                                    if (photo.latitude == Photo.NO_GPS_DATA) return@forEachIndexed
-                                    else doubleArrayOf(photo.latitude, photo.longitude)
-                                } else {
-                                    cr.openInputStream(Uri.parse(remotePhoto.photo.id))?.use { s -> ExifInterface(s).latLong?.apply {
-                                        remotePhoto.photo.latitude = first()
-                                        remotePhoto.photo.longitude = last()
-                                    }}
+                                when {
+                                    searchScope == R.id.search_album ->
+                                        // If file in album
+                                        if (photo.latitude == Photo.NO_GPS_DATA) return@forEachIndexed else doubleArrayOf(photo.latitude, photo.longitude)
+                                    remotePhoto.photo.id.startsWith("content") ->
+                                        // If file is in local gallery
+                                        cr.openInputStream(remotePhoto.photo.id.toUri())?.use { s -> ExifInterface(s).latLong?.apply {
+                                            remotePhoto.photo.latitude = first()
+                                            remotePhoto.photo.longitude = last()
+                                        }}
+                                    remotePhoto.photo.latitude != Photo.NO_GPS_DATA ->
+                                        // If file in archive and has GPS location data patched
+                                        doubleArrayOf(remotePhoto.photo.latitude, remotePhoto.photo.longitude)
+                                    else -> null    // TODO get remote exif and patched for later use
                                 }?.let { latLong ->
                                     if (photo.country.isEmpty()) {
                                         ensureActive()
