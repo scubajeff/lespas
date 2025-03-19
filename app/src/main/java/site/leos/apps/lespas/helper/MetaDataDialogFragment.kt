@@ -22,7 +22,6 @@ import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.ColorMatrixColorFilter
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -35,20 +34,23 @@ import android.view.ViewGroup
 import android.widget.TableRow
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import org.osmdroid.config.Configuration
@@ -62,6 +64,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
@@ -110,43 +113,50 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", remotePhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), remotePhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
         if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA && !isMapInitialized) lifecycleScope.launch(mapDisplayThread) { showMap(remotePhoto.photo) }
 
-        exifModel.getPhotoMeta().observe(viewLifecycleOwner) { photoMeta ->
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    exifModel.photoMeta.collect { photoMeta ->
 
-            with(photoMeta.photo) {
-                // Size row
-                val pWidth: Int
-                val pHeight: Int
-                if (orientation == 90 || orientation == 270) {
-                    pWidth = height
-                    pHeight = width
-                } else {
-                    pWidth = width
-                    pHeight = height
-                }
-                view.findViewById<TextView>(R.id.info_size).text = if (photoMeta.size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(photoMeta.size), String.format("%sw × %sh", "$pWidth", "$pHeight"))
-                view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
+                        handler.removeCallbacksAndMessages(null)
+                        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
 
-                if (photoMeta.mfg.isNotEmpty()) {
-                    view.findViewById<TableRow>(R.id.mfg_row).visibility = View.VISIBLE
-                    view.findViewById<TextView>(R.id.info_camera_mfg).text = photoMeta.mfg
-                }
-                if (photoMeta.model.isNotEmpty()) {
-                    view.findViewById<TableRow>(R.id.model_row).visibility = View.VISIBLE
-                    view.findViewById<TextView>(R.id.info_camera_model).text = photoMeta.model
-                }
-                if (photoMeta.params.trim().isNotEmpty()) {
-                    view.findViewById<TableRow>(R.id.param_row).visibility = View.VISIBLE
-                    view.findViewById<TextView>(R.id.info_parameter).text = photoMeta.params
-                }
-                if (photoMeta.artist.isNotEmpty()) {
-                    view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
-                    view.findViewById<TextView>(R.id.info_artist).text = photoMeta.artist
-                }
-                photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM))) }
+                        photoMeta.photo?.run {
+                            // Size row
+                            val pWidth: Int
+                            val pHeight: Int
+                            if (orientation == 90 || orientation == 270) {
+                                pWidth = height
+                                pHeight = width
+                            } else {
+                                pWidth = width
+                                pHeight = height
+                            }
+                            view.findViewById<TextView>(R.id.info_size).text = if (photoMeta.size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(photoMeta.size), String.format("%sw × %sh", "$pWidth", "$pHeight"))
+                            view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
 
-                if (!isMapInitialized && latitude != Photo.NO_GPS_DATA && latitude != remotePhoto.photo.latitude && longitude != remotePhoto.photo.longitude) lifecycleScope.launch(mapDisplayThread) { showMap(photoMeta.photo) }
+                            if (photoMeta.mfg.isNotEmpty()) {
+                                view.findViewById<TableRow>(R.id.mfg_row).visibility = View.VISIBLE
+                                view.findViewById<TextView>(R.id.info_camera_mfg).text = photoMeta.mfg
+                            }
+                            if (photoMeta.model.isNotEmpty()) {
+                                view.findViewById<TableRow>(R.id.model_row).visibility = View.VISIBLE
+                                view.findViewById<TextView>(R.id.info_camera_model).text = photoMeta.model
+                            }
+                            if (photoMeta.params.trim().isNotEmpty()) {
+                                view.findViewById<TableRow>(R.id.param_row).visibility = View.VISIBLE
+                                view.findViewById<TextView>(R.id.info_parameter).text = photoMeta.params
+                            }
+                            if (photoMeta.artist.isNotEmpty()) {
+                                view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
+                                view.findViewById<TextView>(R.id.info_artist).text = photoMeta.artist
+                            }
+                            photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM))) }
+
+                            if (!isMapInitialized && latitude != Photo.NO_GPS_DATA && latitude != remotePhoto.photo.latitude && longitude != remotePhoto.photo.longitude) lifecycleScope.launch(mapDisplayThread) { showMap(photoMeta.photo) }
+                        }
+                    }
+                }
             }
         }
     }
@@ -232,11 +242,11 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             }
 
             with(photo) {
-                mapIntent.data = Uri.parse(
+                mapIntent.data = (
                     if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
                         Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
                     else "geo:${latitude},${longitude}?z=20"
-                )
+                ).toUri()
                 mapIntent.resolveActivity(requireActivity().packageManager)?.let {
                     mapButton.apply {
                         setOnClickListener {
@@ -286,7 +296,8 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     }
 
     private class ExifModel(context: FragmentActivity, rPhoto: NCShareViewModel.RemotePhoto): ViewModel() {
-        val photoMeta = MutableLiveData<PhotoMeta>()
+        private val _photoMeta = MutableStateFlow(PhotoMeta())
+        val photoMeta: StateFlow<PhotoMeta> = _photoMeta
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
@@ -298,7 +309,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         if (Tools.isPhotoFromGallery(rPhoto)) {
                             // Media from device gallery
                             pm.size = rPhoto.photo.caption.toLong()
-                            val pUri = Uri.parse(rPhoto.photo.id)
+                            val pUri = rPhoto.photo.id.toUri()
                             if (Tools.hasExif(rPhoto.photo.mimeType)) {
                                 exif = try {
                                     (context.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri))
@@ -314,8 +325,8 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                             setDataSource(context, pUri)
                                             Tools.getVideoDateAndLocation(this, rPhoto.photo.name).let {
                                                 pm.date = it.first
-                                                pm.photo.latitude = it.second[0]
-                                                pm.photo.longitude = it.second[1]
+                                                pm.photo?.latitude = it.second[0]
+                                                pm.photo?.longitude = it.second[1]
                                             }
                                         } catch (_: SecurityException) {}
                                         release()
@@ -350,26 +361,24 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         pm.artist = getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
 
                         latLong?.let {
-                            pm.photo.latitude = it[0]
-                            pm.photo.longitude = it[1]
+                            pm.photo?.latitude = it[0]
+                            pm.photo?.longitude = it[1]
                         }
                         pm.date = Tools.getImageTakenDate(this)
 
-                        pm.photo.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
-                        pm.photo.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
+                        pm.photo?.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
+                        pm.photo?.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
                     }
 
-                    photoMeta.postValue(pm)
+                    _photoMeta.emit(pm)
 
                 } catch (_: Exception) {}
             }
         }
-
-        fun getPhotoMeta(): LiveData<PhotoMeta> = photoMeta
     }
 
     private data class PhotoMeta(
-        val photo: Photo,
+        val photo: Photo? = null,
         var size: Long = 0L,
         var mfg: String = "",
         var model: String = "",

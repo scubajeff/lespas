@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Setup observer to fire up SyncAdapter
-            actionsPendingModel.allPendingActions.observe(this) { actions -> if (actions.isNotEmpty()) requestSync() }
+            lifecycleScope.launch { actionsPendingModel.allPendingActions.collect { actions -> if (actions.isNotEmpty()) requestSync() } }
         }
     }
 

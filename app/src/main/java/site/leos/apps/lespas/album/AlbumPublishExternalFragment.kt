@@ -19,19 +19,21 @@ package site.leos.apps.lespas.album
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.TextInputEditText
@@ -139,20 +141,23 @@ class AlbumPublishExternalFragment: Fragment() {
         showShareLinkButton()
 
         viewLifecycleOwner.lifecycleScope.launch {
-            publishModel.publicShare.collect {
-                currentPublicRecipient = it
-                updatePublicationType()
-                showShareLinkButton()
-                publishButton.text = getString(R.string.button_text_done)
-                publishButton.isEnabled = true
-                unPublishButton.isEnabled = true
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            publishModel.publicShareError.collect {
-                passwordTextInputEditText.error = it
-                publishButton.isEnabled = true
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    publishModel.publicShare.collect {
+                        currentPublicRecipient = it
+                        updatePublicationType()
+                        showShareLinkButton()
+                        publishButton.text = getString(R.string.button_text_done)
+                        publishButton.isEnabled = true
+                        unPublishButton.isEnabled = true
+                    }
+                }
+                launch {
+                    publishModel.publicShareError.collect {
+                        passwordTextInputEditText.error = it
+                        publishButton.isEnabled = true
+                    }
+                }
             }
         }
     }
@@ -168,7 +173,7 @@ class AlbumPublishExternalFragment: Fragment() {
                 val offset = y * qrcode.width
                 for (x in 0 until qrcode.width) pixels[offset + x] = if (qrcode.get(x,y)) -1 else 0
             }
-            shareLinkButton.icon = BitmapDrawable(resources, Bitmap.createBitmap(qrcode.width, qrcode.height, Bitmap.Config.ARGB_8888).apply { setPixels(pixels, 0, qrcode.width, 0, 0, qrcode.width, qrcode.height) })
+            shareLinkButton.icon = createBitmap(qrcode.width, qrcode.height).apply { setPixels(pixels, 0, qrcode.width, 0, 0, qrcode.width, qrcode.height) }.toDrawable(resources)
 
             TransitionManager.beginDelayedTransition(shareLinkButton.parent as ViewGroup, android.transition.Fade().apply { duration = 500 })
             shareLinkButton.isVisible = true
