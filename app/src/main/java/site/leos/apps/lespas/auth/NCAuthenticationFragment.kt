@@ -33,8 +33,19 @@ import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.http.SslCertificate
 import android.net.http.SslError
 import android.os.Bundle
-import android.view.*
-import android.webkit.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.SslErrorHandler
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -42,12 +53,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import okio.ByteString.Companion.encode
 import site.leos.apps.lespas.R
@@ -125,7 +138,7 @@ class NCAuthenticationFragment: Fragment() {
                                 authenticateModel.fetchUserId(server, username, token, !reLogin)
                             } ?: run {
                                 // Can't parse Nextcloud server's return
-                                authenticateModel.setAuthResult(false)
+                                parentFragmentManager.setFragmentResult(KEY_AUTHENTICATION_REQUEST, bundleOf(KEY_AUTHENTICATION_RESULT to false))
                                 parentFragmentManager.popBackStack()
                             }
 
@@ -255,15 +268,20 @@ class NCAuthenticationFragment: Fragment() {
             }
         }
 
-        authenticateModel.fetchUserIdResult().observe(viewLifecycleOwner) { success ->
-            if (success) prepareCredentialAndQuit()
-            else {
-                // Can't get userId
-                authenticateModel.setAuthResult(false)
-                parentFragmentManager.popBackStack()
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    authenticateModel.fetchUserIdResult.collect { success ->
+                        if (success) prepareCredentialAndQuit()
+                        else {
+                            // Can't get userId
+                            parentFragmentManager.setFragmentResult(KEY_AUTHENTICATION_REQUEST, bundleOf(KEY_AUTHENTICATION_RESULT to false))
+                            parentFragmentManager.popBackStack()
+                        }
+                    }
+                }
             }
         }
-
 
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
@@ -399,6 +417,10 @@ class NCAuthenticationFragment: Fragment() {
 
         private const val KEY_RELOGIN = "KEY_RELOGIN"
         private const val KEY_THEMING = "KEY_THEMING"
+
+        const val KEY_AUTHENTICATION_REQUEST = "KEY_AUTHENTICATION_REQUEST"
+        const val KEY_AUTHENTICATION_RESULT = "KEY_AUTHENTICATION_RESULT"
+
         @JvmStatic
         fun newInstance(reLogin: Boolean, theming: NCLoginFragment.AuthenticateViewModel.NCTheming = NCLoginFragment.AuthenticateViewModel.NCTheming()) = NCAuthenticationFragment().apply {
             arguments = Bundle().apply {

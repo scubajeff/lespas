@@ -45,14 +45,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.graphics.toColorInt
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
 import com.google.android.material.progressindicator.IndeterminateDrawable
@@ -60,6 +64,9 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import okhttp3.Call
@@ -72,7 +79,6 @@ import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
-import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import java.io.ByteArrayOutputStream
 import java.net.SocketException
@@ -190,59 +196,67 @@ class NCLoginFragment: Fragment() {
             }
         }
 
-        authenticateModel.getPingResult().observe(viewLifecycleOwner) { result ->
-            pingJobBackPressedCallback.isEnabled = false
-            when (result) {
-                200 -> {
-                    // If host verification ok, start loading the nextcloud authentication page in webview
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    authenticateModel.pingResult.collect { result ->
+                        pingJobBackPressedCallback.isEnabled = false
+                        when (result) {
+                            200 -> {
+                                // If host verification ok, start loading the nextcloud authentication page in webview
 
-                    // Clean up the input area
-                    (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostEditText.windowToken, 0) }
-                    setEndIconMode(ICON_MODE_INPUT)
+                                // Clean up the input area
+                                (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostEditText.windowToken, 0) }
+                                setEndIconMode(ICON_MODE_INPUT)
 
-                    parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(false, authenticateModel.getTheming()), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
-                }
-                998 -> {
-                    // Prompt user to accept self-signed certificate
-                    val cert = authenticateModel.getCredential().certificate
-                    AlertDialog.Builder(hostEditText.context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                        .setIcon(ContextCompat.getDrawable(hostEditText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark)) })
-                        .setTitle(getString(R.string.verify_ssl_certificate_title))
-                        .setCancelable(false)
-                        .setMessage(
-                            if (cert == null)
-                                // SSLPeerUnverifiedException
-                                getString(R.string.verify_ssl_certificate_message, authenticateModel.getCredential().serverUrl.substringAfterLast("://").substringBefore('/'))
-                            else {
-                                // CertValidatorException
-                                val dFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
-                                getString(
-                                    R.string.untrusted_ssl_certificate_message,
-                                    cert.subjectDN.name,
-                                    cert.issuerDN.name,
-                                    try { MessageDigest.getInstance("SHA-256").digest(cert.encoded).joinToString(separator = "") { eachByte -> "%02x:".format(eachByte).uppercase(Locale.ROOT) }.dropLast(1) } catch(_: Exception) { "" },
-                                    try { dFormat.format(cert.notBefore) } catch (_: Exception) { "" },
-                                    try { dFormat.format(cert.notAfter) } catch (_: Exception) { "" }
-                                )
+                                parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(false, authenticateModel.getTheming()), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
                             }
-                        )
-                        .setPositiveButton(R.string.accept_certificate) { _, _ ->
-                            authenticateModel.pingServer(null, true)
-                            pingJobBackPressedCallback.isEnabled = true
+                            998 -> {
+                                // Prompt user to accept self-signed certificate
+                                val cert = authenticateModel.getCredential().certificate
+                                AlertDialog.Builder(hostEditText.context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                                    .setIcon(ContextCompat.getDrawable(hostEditText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark)) })
+                                    .setTitle(getString(R.string.verify_ssl_certificate_title))
+                                    .setCancelable(false)
+                                    .setMessage(
+                                        if (cert == null)
+                                        // SSLPeerUnverifiedException
+                                            getString(R.string.verify_ssl_certificate_message, authenticateModel.getCredential().serverUrl.substringAfterLast("://").substringBefore('/'))
+                                        else {
+                                            // CertValidatorException
+                                            val dFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
+                                            getString(
+                                                R.string.untrusted_ssl_certificate_message,
+                                                cert.subjectDN.name,
+                                                cert.issuerDN.name,
+                                                try { MessageDigest.getInstance("SHA-256").digest(cert.encoded).joinToString(separator = "") { eachByte -> "%02x:".format(eachByte).uppercase(Locale.ROOT) }.dropLast(1) } catch(_: Exception) { "" },
+                                                try { dFormat.format(cert.notBefore) } catch (_: Exception) { "" },
+                                                try { dFormat.format(cert.notAfter) } catch (_: Exception) { "" }
+                                            )
+                                        }
+                                    )
+                                    .setPositiveButton(R.string.accept_certificate) { _, _ ->
+                                        authenticateModel.pingServer(null, true)
+                                        pingJobBackPressedCallback.isEnabled = true
+                                    }
+                                    .setNegativeButton(android.R.string.cancel) { _, _ -> showError(CERTIFICATE_ERROR) }
+                                    .create().show()
+                            }
+                            else -> showError(result)
                         }
-                        .setNegativeButton(android.R.string.cancel) { _, _ -> showError(CERTIFICATE_ERROR) }
-                        .create().show()
+                    }
                 }
-                else -> showError(result)
             }
         }
 
-        authenticateModel.getAuthResult().observe(viewLifecycleOwner) { success ->
-            if (success) {
-                // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
-            } else showError(NETWORK_ERROR)
+        parentFragmentManager.setFragmentResultListener(NCAuthenticationFragment.KEY_AUTHENTICATION_REQUEST, viewLifecycleOwner) { _, result ->
+            result.getBoolean(NCAuthenticationFragment.KEY_AUTHENTICATION_RESULT).let { success ->
+                if (success) {
+                    // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                    storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
+                } else showError(NETWORK_ERROR)
+            }
         }
 
         // Take care edittext UX
@@ -359,10 +373,7 @@ class NCLoginFragment: Fragment() {
             textColor = ContextCompat.getColor(context, R.color.lespas_black)
         }
         private val userAgent = "LesPas_${context.getString(R.string.lespas_version)}"
-        private var pingJob: Job? = null
         private var httpCall: Call? = null
-
-        private val pingResult = SingleLiveEvent<Int>()
 
         private val colorWhite = ContextCompat.getColor(context, R.color.lespas_white)
         private val colorBlack = ContextCompat.getColor(context, R.color.lespas_black)
@@ -370,20 +381,23 @@ class NCLoginFragment: Fragment() {
         private var loadingIndicator = IndeterminateDrawable.createCircularDrawable(context, CircularProgressIndicatorSpec(context, null, 0, com.google.android.material.R.style.Widget_MaterialComponents_CircularProgressIndicator_ExtraSmall))
         fun getLoadingIndicatorDrawable(): IndeterminateDrawable<CircularProgressIndicatorSpec> = loadingIndicator
 
+        private var pingJob: Job? = null
         fun isPinging() = pingJob?.isActive ?: false
         fun stopPinging() { pingJob?.let {
             if (it.isActive) {
                 httpCall?.cancel()
             }
         }}
-        fun getPingResult() = pingResult
+
+        private val _pingResult = MutableSharedFlow<Int>()
+        val pingResult: SharedFlow<Int> = _pingResult
         fun pingServer(serverUrl: String?, acceptSelfSign: Boolean) {
             // Use nextcloud server capabilities OCS endpoint to validate host
             serverUrl?.let { credential.serverUrl = it }
             credential.selfSigned = acceptSelfSign
 
             pingJob = viewModelScope.launch(Dispatchers.IO) {
-                pingResult.postValue(
+                _pingResult.emit(
                     try {
                         httpCall = OkHttpClient.Builder().apply {
                             if (acceptSelfSign) {
@@ -411,12 +425,14 @@ class NCLoginFragment: Fragment() {
                             writeTimeout(20, TimeUnit.SECONDS)
                         }.build().newCall(Request.Builder().url("${credential.serverUrl}${NEXTCLOUD_CAPABILITIES_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
 
+                        ensureActive()
                         httpCall?.execute()?.use { response ->
+                            ensureActive()
                             if (response.isSuccessful) {
                                 try {
                                     response.body?.string()?.let { json ->
                                         JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
-                                            try { serverTheme.color = Color.parseColor(getString("color")) } catch (_: Exception) {}
+                                            try { serverTheme.color = getString("color").toColorInt() } catch (_: Exception) {}
                                             //try { serverTheme.textColor = Color.parseColor(getString("color-text")) } catch (_: Exception) {}
                                             serverTheme.textColor = if (ColorUtils.calculateContrast(colorWhite, serverTheme.color) > 1.5f) colorWhite else colorBlack
                                             try { serverTheme.slogan = Html.fromHtml(getString("slogan"), Html.FROM_HTML_MODE_LEGACY).toString() } catch (_: Exception) {}
@@ -462,13 +478,13 @@ class NCLoginFragment: Fragment() {
                         NETWORK_ERROR
                     }
                 )
-
-                pingJob = null
+            }.apply {
+                invokeOnCompletion { pingJob = null }
             }
         }
 
-        private val fetchUserIdResult = SingleLiveEvent<Boolean>()
-        fun fetchUserIdResult() = fetchUserIdResult
+        private val _fetchUserIdResult = MutableSharedFlow<Boolean>()
+        val fetchUserIdResult: SharedFlow<Boolean> = _fetchUserIdResult
         fun fetchUserId(server: String, username: String, token: String, willFetch: Boolean) {
             // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
             // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
@@ -504,16 +520,16 @@ class NCLoginFragment: Fragment() {
                             if (response.isSuccessful) {
                                 response.body?.string()?.let { json ->
                                     credential.userName = JSONObject(json).getJSONObject("ocs").getJSONObject("data").getString("id")
-                                    fetchUserIdResult.postValue(true)
+                                    _fetchUserIdResult.emit(true)
                                 }
                             }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        fetchUserIdResult.postValue(false)
+                        _fetchUserIdResult.emit(false)
                     }
                 }
-            } else fetchUserIdResult.postValue(true)
+            } else _fetchUserIdResult.tryEmit(true)
         }
 
         fun setToken(username: String, token: String, serverUrl: String = "", userId: String = "") {
@@ -528,10 +544,6 @@ class NCLoginFragment: Fragment() {
         fun setSelfSignedCertificateString(certificateString: String) { credential.certificateString = certificateString }
         fun getCredential() = credential
         fun getTheming() = serverTheme
-
-        private val authResult = SingleLiveEvent<Boolean>()
-        fun getAuthResult() = authResult
-        fun setAuthResult(result: Boolean) { this.authResult.postValue(result) }
 
         data class NCCredential(
             var serverUrl: String = "",
