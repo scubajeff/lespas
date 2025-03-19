@@ -42,6 +42,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.os.bundleOf
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.TextViewCompat
@@ -70,7 +71,6 @@ import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.FileNameValidator
 import site.leos.apps.lespas.helper.LesPasDialogFragment
-import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
@@ -83,7 +83,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private lateinit var clipDataAdapter: ClipDataAdapter
 
     private val albumModel: AlbumViewModel by viewModels()
-    private val destinationModel: DestinationViewModel by activityViewModels()
+    private val destinationModel: DestinationViewModel by viewModels()
     private val publicationModel: NCShareViewModel by activityViewModels()
     private var sharedWithMeCollectionJob: Job? = null
 
@@ -103,6 +103,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private var albums = listOf<RemoteAlbum>()
     private var currentFilter = ""
     private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
+    private val remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -121,15 +122,18 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     }
                     else {
                         // Chosen an existing album
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
-                            val theAlbum: Album = if (remoteAlbum.shareBy.isNotEmpty()) album.copy(id = Album.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id) else album
-
-                            withContext(Dispatchers.Main) {
-                                destinationModel.setDestination(theAlbum)
-                                dismiss()
-                            }
+                        requireArguments().getString(KEY_REQUEST)?.let { requestKey ->
+                            parentFragmentManager.setFragmentResult(requestKey,
+                                bundleOf(
+                                    KEY_TARGET_ALBUM to if (remoteAlbum.shareBy.isNotEmpty()) album.copy(id = Album.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id) else album,
+                                    KEY_REMOVE_ORIGINAL to (copyOrMoveToggleGroup.checkedButtonId == R.id.move),
+                                    KEY_DO_ON_SERVER to remotePhotos.isNotEmpty(),
+                                    KEY_REMOTE_PHOTOS to remotePhotos
+                                )
+                            )
                         }
+
+                        dismiss()
                     }
                 }
             },
@@ -158,7 +162,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     when {
                         uri.scheme == "lespas" -> {
                             // Remote photos from albums
-                            publicationModel.setImagePhoto(destinationModel.getRemotePhotos()[position], view, NCShareViewModel.TYPE_GRID)
+                            publicationModel.setImagePhoto(remotePhotos[position], view, NCShareViewModel.TYPE_GRID)
                             null
                         }
                         uri.scheme == GalleryFragment.ARCHIVE_SCHEME -> {
@@ -210,12 +214,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         clipDataAdapter.submitList(
             requireArguments().parcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
                 // Mark operation should be carried out on server, if KEY_URIS is null, which means the other argument KEY_REMOTE_PHOTO passed to this fragment
-                destinationModel.setOnServer(true)
 
                 val uris = mutableListOf<Uri>()
                 (requireArguments().parcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
                     forEach { uris.add(Uri.fromParts("lespas", "//${it.remotePath}", "")) }
-                    destinationModel.setRemotePhotos(this)
+                    remotePhotos.addAll(this)
                 }
                 uris
             }
@@ -254,7 +257,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
         clipDataRecyclerView = view.findViewById(R.id.clipdata_recyclerview)
         destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
-        copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)
+        copyOrMoveToggleGroup = view.findViewById<MaterialButtonToggleGroup?>(R.id.move_or_copy).apply { check(if (destinationModel.shouldRemoveOriginal()) R.id.move else R.id.copy) }
         nameFilterSearchView = view.findViewById<SearchView>(R.id.name_filter).apply {
             // When resume from device rotation
             if (currentFilter.isNotEmpty()) {
@@ -321,12 +324,18 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     error ?: run {
                         val name = this.text.toString().trim()    // Trim the leading and trailing blank
                         if (name.isNotEmpty()) {
-                            destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
-                            // Return with album id field empty, calling party will know this is a new album
-                            destinationModel.setDestination(Album(name = name, lastModified = LocalDateTime.now(), shareId = if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM))
-
                             // Clear editing mode
                             destinationModel.setEditMode(false)
+
+                            requireArguments().getString(KEY_REQUEST)?.let { requestKey ->
+                                parentFragmentManager.setFragmentResult(requestKey, bundleOf(
+                                    // Return with album id field empty, calling party will know this is a new album
+                                    KEY_TARGET_ALBUM to Album(name = name, lastModified = LocalDateTime.now(), shareId = if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM),
+                                    KEY_REMOVE_ORIGINAL to (copyOrMoveToggleGroup.checkedButtonId == R.id.move),
+                                    KEY_DO_ON_SERVER to remotePhotos.isNotEmpty(),
+                                    KEY_REMOTE_PHOTOS to remotePhotos
+                                ))
+                            }
 
                             dismiss()
                         }
@@ -523,28 +532,13 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     }
 
     class DestinationViewModel: ViewModel() {
-        private var destination = SingleLiveEvent<Album?>()
         private var inEditing = false
         private var removeOriginal = false
-        private var onServer = false    // Checked by calling fragments when doing copy/move among albums
-        private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
-
-        fun setDestination(newDestination: Album) { destination.value = newDestination }
-        fun getDestination(): SingleLiveEvent<Album?> = destination
 
         fun setEditMode(mode: Boolean) { inEditing = mode }
         fun isEditing() = inEditing
-
         fun setRemoveOriginal(remove: Boolean) { removeOriginal = remove }
         fun shouldRemoveOriginal() = removeOriginal
-
-        fun setOnServer(onServer: Boolean) { this.onServer = onServer }
-        fun doOnServer(): Boolean = onServer
-        fun setRemotePhotos(remotePhotos: MutableList<NCShareViewModel.RemotePhoto>) {
-            this.remotePhotos.clear()
-            this.remotePhotos.addAll(remotePhotos)
-        }
-        fun getRemotePhotos(): MutableList<NCShareViewModel.RemotePhoto> = remotePhotos
     }
 
     data class RemoteAlbum(
@@ -554,18 +548,26 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     )
 
     companion object {
-        const val KEY_URIS = "KEY_URIS"
-        const val KEY_CAN_WRITE = "KEY_CAN_WRITE"
-        const val KEY_REMOTE_PHOTO = "KEY_REMOTE_PHOTO"
-        const val KEY_IGNORE_ALBUM = "KEY_IGNORE_ALBUM"
+        private const val KEY_REQUEST = "KEY_REQUEST"
+        private const val KEY_URIS = "KEY_URIS"
+        private const val KEY_CAN_WRITE = "KEY_CAN_WRITE"
+        private const val KEY_REMOTE_PHOTO = "KEY_REMOTE_PHOTO"
+        private const val KEY_IGNORE_ALBUM = "KEY_IGNORE_ALBUM"
 
         private const val KEY_COPY_OR_MOVE = "KEY_COPY_OR_MOVE"
         private const val KEY_NAME_FILTER = "KEY_NAME_FILTER"
 
+        const val KEY_TARGET_ALBUM = "KEY_TARGET_ALBUM"
+        const val KEY_REMOVE_ORIGINAL = "KEY_REMOVE_ORIGINAL"
+        const val KEY_DO_ON_SERVER = "KEY_DO_ON_SERVER"
+        const val KEY_REMOTE_PHOTOS = "KEY_REMOTE_PHOTOS"
+
+
         @JvmName("newInstance1")
         @JvmStatic
-        fun newInstance(uris: ArrayList<Uri>, canWrite: Boolean, ignoreAlbumId: String = "") = DestinationDialogFragment().apply {
+        fun newInstance(requestKey: String, uris: ArrayList<Uri>, canWrite: Boolean, ignoreAlbumId: String = "") = DestinationDialogFragment().apply {
             arguments = Bundle().apply {
+                putString(KEY_REQUEST, requestKey)
                 putParcelableArrayList(KEY_URIS, uris)
                 putString(KEY_IGNORE_ALBUM, ignoreAlbumId)
                 putBoolean(KEY_CAN_WRITE, canWrite)
@@ -573,8 +575,9 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
 
         @JvmStatic
-        fun newInstance(remotePhotos: ArrayList<NCShareViewModel.RemotePhoto>, ignoreAlbumId: String, canWrite: Boolean) = DestinationDialogFragment().apply {
+        fun newInstance(requestKey: String, remotePhotos: ArrayList<NCShareViewModel.RemotePhoto>, ignoreAlbumId: String, canWrite: Boolean) = DestinationDialogFragment().apply {
             arguments = Bundle().apply {
+                putString(KEY_REQUEST, requestKey)
                 putParcelableArrayList(KEY_REMOTE_PHOTO, remotePhotos)
                 putString(KEY_IGNORE_ALBUM, ignoreAlbumId)
                 putBoolean(KEY_CAN_WRITE, canWrite)

@@ -109,6 +109,7 @@ import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -147,7 +148,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val actionModel: ActionViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
-    private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -527,105 +527,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         currentQuery = currentPhotoModel.getCurrentQuery()
 
-        destinationViewModel.getDestination().observe(viewLifecycleOwner) {
-            it?.let { targetAlbum ->
-                if (destinationViewModel.doOnServer()) {
-                    val localFileBase = Tools.getLocalRoot(requireContext())
-                    val actionRequired = if (destinationViewModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val photosToBeRemoved = mutableListOf<Photo>()
-                    val newPhotos = mutableListOf<Photo>()
-                    val targetAlbumIsJoint = targetAlbum.id == Album.JOINT_ALBUM_ID
-                    val targetFolder = if (targetAlbumIsJoint) targetAlbum.coverFileName.substringBeforeLast('/') else "${lespasPath}/${targetAlbum.name}"
-                    val targetAlbumIsRemote = Tools.isRemoteAlbum(targetAlbum)
-                    val targetAlbumId = targetAlbum.id.ifEmpty { System.currentTimeMillis().toString() }    // Current system time as fake ID for new album
-                    var startDate = targetAlbum.startDate
-                    var endDate = targetAlbum.endDate
-
-                    var metaString: String
-                    val actions = mutableListOf<Action>()
-                    destinationViewModel.getRemotePhotos().forEach { remotePhoto ->
-                        // No matter the photo is uploaded or not, add action to move or copy on server. If it's not yet uploaded, another ACTION_ADD_FILES_ON_SERVER should be in the pending list by now
-                        remotePhoto.photo.let { photo ->
-                            if (!targetAlbumIsJoint) {
-                                // Create new photo row in target album with it's id after it's name, pretends as a new photo just been added
-                                //newPhotos.add(remotePhoto.photo.copy(id = photo.name, albumId = targetAlbumId, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
-                                newPhotos.add(remotePhoto.photo.copy(id = photo.name, albumId = targetAlbumId, eTag = Photo.ETAG_NOT_YET_UPLOADED))
-                                if (photo.dateTaken > endDate) endDate = photo.dateTaken
-                                if (photo.dateTaken < startDate) startDate = photo.dateTaken
-
-                                // Prepare image file, they will be correctly renamed/removed when actions are taken in SyncAdapter later
-                                // Even when target is remote album, still need the file for displaying thumbnail immediately
-                                // If image file has not been uploaded yet, don't copy it. TODO cases when copy/move a file not yet uploaded, the file could be renamed when upload completed
-                                if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) try {
-                                    File(localFileBase, photo.id).let { sourceFile ->
-                                        if (sourceFile.exists()) sourceFile.inputStream().use { source -> File(localFileBase, photo.name).outputStream().use { target -> source.copyTo(target, 4096) } }
-                                    }
-                                } catch (_: Exception) {}
-                            }
-
-                            // The metaString is for joint album only, but set it here anyway to differentiate from cases when ACTION_MOVE_ON_SERVER or ACTION_COPY_ON_SERVER is called by server archive management
-                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
-
-                            // Prepare copy or move actions
-                            if (photo.id == album.cover) {
-                                // Can't move cover photo
-                                actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbumIsJoint}|${targetAlbumIsRemote}", System.currentTimeMillis(), 1))
-                            } else {
-                                actions.add(Action(null, actionRequired, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbumIsJoint}|${targetAlbumIsRemote}", System.currentTimeMillis(), 1))
-                                photosToBeRemoved.add(photo)
-                            }
-                        }
-                    }
-
-                    if (targetAlbumIsJoint) {
-                        // Update Joint Album's content metadata
-                        actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
-                    } else {
-                        // Target album is own album, create new records in local DB now, ACTION_MOVE_ON_SERVER or ACTION_COPY_ON_SERVER taken in SyncAdapter will fill in the correct fileId and eTag later
-                        actionModel.addPhotosAtLocal(newPhotos)
-
-                        // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
-                        if (targetAlbum.id.isEmpty()) {
-                            newPhotos[0].run {
-                                targetAlbum.coverBaseline = if (mimeType == "image/jpeg" || mimeType == "image/png") (height - (width * 9 / 21)) / 2 else Album.SPECIAL_COVER_BASELINE
-                                targetAlbum.coverWidth = width
-                                targetAlbum.coverHeight = height
-                                targetAlbum.cover = name
-                                targetAlbum.coverFileName = name
-                                targetAlbum.coverMimeType = mimeType
-                                targetAlbum.coverOrientation = orientation
-                            }
-                            targetAlbum.sortOrder = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
-                            targetAlbum.startDate = startDate
-                            targetAlbum.endDate = endDate
-                            targetAlbum.id = targetAlbumId
-
-                            // Create new album first, store cover, e.g. first photo in new album, in property filename
-                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, targetAlbumId, targetAlbum.name, "", newPhotos[0].id, System.currentTimeMillis(), 1))
-
-                            // Create album record in local DB now
-                            actionModel.addAlbumAtLocal(targetAlbum)
-                        } else actionModel.updateAlbumDates(targetAlbumId, startDate, endDate)
-
-                        // Making sure album's content meta gets updated at the end
-                        actions.add(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
-                        if (actionRequired == Action.ACTION_MOVE_ON_SERVER) actions.add(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", album.name, "", "", System.currentTimeMillis(), 1))
-
-                        actions.add(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
-                    }
-
-                    actionModel.addActions(actions)
-
-                    if (actionRequired == Action.ACTION_MOVE_ON_SERVER) actionModel.deletePhotosLocalRecord(photosToBeRemoved, album)
-
-                    // If target album is own album, new photos will appear in list immediately, if target album is a joint album, ACTION_UPDATE_JOINT_ALBUM_PHOTO_META action will update it's content meta at the end, no need to show the waiting sign
-                    //if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation), requestKey = ALBUM_DETAIL_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-                // Copy/Move to another album is always a server job now
-                //else if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, targetAlbum, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
-            }
-        }
-
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -806,6 +707,106 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             else {
                 sharedSelection.clear()
                 selectionTracker.clearSelection()
+            }
+        }
+
+        // Destination dialog result handler
+        parentFragmentManager.setFragmentResultListener(DESTINATION_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
+                if (result.getBoolean(DestinationDialogFragment.KEY_DO_ON_SERVER)) {
+                    val localFileBase = Tools.getLocalRoot(requireContext())
+                    val actionRequired = if (result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
+                    val photosToBeRemoved = mutableListOf<Photo>()
+                    val newPhotos = mutableListOf<Photo>()
+                    val targetAlbumIsJoint = targetAlbum.id == Album.JOINT_ALBUM_ID
+                    val targetFolder = if (targetAlbumIsJoint) targetAlbum.coverFileName.substringBeforeLast('/') else "${lespasPath}/${targetAlbum.name}"
+                    val targetAlbumIsRemote = Tools.isRemoteAlbum(targetAlbum)
+                    val targetAlbumId = targetAlbum.id.ifEmpty { System.currentTimeMillis().toString() }    // Current system time as fake ID for new album
+                    var startDate = targetAlbum.startDate
+                    var endDate = targetAlbum.endDate
+
+                    var metaString: String
+                    val actions = mutableListOf<Action>()
+                    result.parcelableArrayList<NCShareViewModel.RemotePhoto>(DestinationDialogFragment.KEY_REMOTE_PHOTOS)?.forEach { remotePhoto ->
+                        // No matter the photo is uploaded or not, add action to move or copy on server. If it's not yet uploaded, another ACTION_ADD_FILES_ON_SERVER should be in the pending list by now
+                        remotePhoto.photo.let { photo ->
+                            if (!targetAlbumIsJoint) {
+                                // Create new photo row in target album with it's id after it's name, pretends as a new photo just been added
+                                //newPhotos.add(remotePhoto.photo.copy(id = photo.name, albumId = targetAlbumId, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
+                                newPhotos.add(remotePhoto.photo.copy(id = photo.name, albumId = targetAlbumId, eTag = Photo.ETAG_NOT_YET_UPLOADED))
+                                if (photo.dateTaken > endDate) endDate = photo.dateTaken
+                                if (photo.dateTaken < startDate) startDate = photo.dateTaken
+
+                                // Prepare image file, they will be correctly renamed/removed when actions are taken in SyncAdapter later
+                                // Even when target is remote album, still need the file for displaying thumbnail immediately
+                                // If image file has not been uploaded yet, don't copy it. TODO cases when copy/move a file not yet uploaded, the file could be renamed when upload completed
+                                if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) try {
+                                    File(localFileBase, photo.id).let { sourceFile ->
+                                        if (sourceFile.exists()) sourceFile.inputStream().use { source -> File(localFileBase, photo.name).outputStream().use { target -> source.copyTo(target, 4096) } }
+                                    }
+                                } catch (_: Exception) {}
+                            }
+
+                            // The metaString is for joint album only, but set it here anyway to differentiate from cases when ACTION_MOVE_ON_SERVER or ACTION_COPY_ON_SERVER is called by server archive management
+                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
+
+                            // Prepare copy or move actions
+                            if (photo.id == album.cover) {
+                                // Can't move cover photo
+                                actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbumIsJoint}|${targetAlbumIsRemote}", System.currentTimeMillis(), 1))
+                            } else {
+                                actions.add(Action(null, actionRequired, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbumIsJoint}|${targetAlbumIsRemote}", System.currentTimeMillis(), 1))
+                                photosToBeRemoved.add(photo)
+                            }
+                        }
+                    }
+
+                    if (targetAlbumIsJoint) {
+                        // Update Joint Album's content metadata
+                        actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
+                    } else {
+                        // Target album is own album, create new records in local DB now, ACTION_MOVE_ON_SERVER or ACTION_COPY_ON_SERVER taken in SyncAdapter will fill in the correct fileId and eTag later
+                        actionModel.addPhotosAtLocal(newPhotos)
+
+                        // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                        if (targetAlbum.id.isEmpty()) {
+                            newPhotos[0].run {
+                                targetAlbum.coverBaseline = if (mimeType == "image/jpeg" || mimeType == "image/png") (height - (width * 9 / 21)) / 2 else Album.SPECIAL_COVER_BASELINE
+                                targetAlbum.coverWidth = width
+                                targetAlbum.coverHeight = height
+                                targetAlbum.cover = name
+                                targetAlbum.coverFileName = name
+                                targetAlbum.coverMimeType = mimeType
+                                targetAlbum.coverOrientation = orientation
+                            }
+                            targetAlbum.sortOrder = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
+                            targetAlbum.startDate = startDate
+                            targetAlbum.endDate = endDate
+                            targetAlbum.id = targetAlbumId
+
+                            // Create new album first, store cover, e.g. first photo in new album, in property filename
+                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, targetAlbumId, targetAlbum.name, "", newPhotos[0].id, System.currentTimeMillis(), 1))
+
+                            // Create album record in local DB now
+                            actionModel.addAlbumAtLocal(targetAlbum)
+                        } else actionModel.updateAlbumDates(targetAlbumId, startDate, endDate)
+
+                        // Making sure album's content meta gets updated at the end
+                        actions.add(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                        if (actionRequired == Action.ACTION_MOVE_ON_SERVER) actions.add(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", album.name, "", "", System.currentTimeMillis(), 1))
+
+                        actions.add(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                    }
+
+                    actionModel.addActions(actions)
+
+                    if (actionRequired == Action.ACTION_MOVE_ON_SERVER) actionModel.deletePhotosLocalRecord(photosToBeRemoved, album)
+
+                    // If target album is own album, new photos will appear in list immediately, if target album is a joint album, ACTION_UPDATE_JOINT_ALBUM_PHOTO_META action will update it's content meta at the end, no need to show the waiting sign
+                    //if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation), requestKey = ALBUM_DETAIL_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+                // Copy/Move to another album is always a server job now
+                //else if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, targetAlbum, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
         }
 
@@ -1116,7 +1117,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                 }
                 selectionTracker.clearSelection()
-                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(remotePhotos, album.id, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_REQUEST_KEY, remotePhotos, album.id, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
 
                 true
             }
@@ -1446,6 +1447,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         private const val ALBUM_DETAIL_REQUEST_KEY = "ALBUM_DETAIL_REQUEST_KEY"
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
+        private const val DESTINATION_REQUEST_KEY = "ALBUMDETAIL_DESTINATION_REQUEST_KEY"
 
         private const val TAG_DESTINATION_DIALOG = "ALBUM_DETAIL_DESTINATION_DIALOG"
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"

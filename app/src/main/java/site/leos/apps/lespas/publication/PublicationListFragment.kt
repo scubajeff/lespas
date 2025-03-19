@@ -37,11 +37,13 @@ import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
@@ -113,26 +115,32 @@ class PublicationListFragment: Fragment() {
             }
         }
 
-        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { shareListAdapter.submitList(it) }
-        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner) {
-            when (it) {
-                0 -> {
-                    activateRefresh?.isVisible = false
-                    refreshProgress?.isVisible = true
-                }
-                100 -> {
-                    activateRefresh?.isVisible = true
-                    refreshProgress?.isVisible = false
-                    progressIndicator?.isIndeterminate = true
-                }
-                else -> {
-                    if (refreshProgress?.isVisible == false) {
-                        activateRefresh?.isVisible = false
-                        progressIndicator?.isIndeterminate = false
-                        refreshProgress?.isVisible = true
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { shareModel.shareWithMe.collect { shareListAdapter.submitList(it) } }
+                launch {
+                    shareModel.shareWithMeProgress.collect { progress ->
+                        when (progress) {
+                            0 -> {
+                                activateRefresh?.isVisible = false
+                                refreshProgress?.isVisible = true
+                            }
+                            100 -> {
+                                activateRefresh?.isVisible = true
+                                refreshProgress?.isVisible = false
+                                progressIndicator?.isIndeterminate = true
+                            }
+                            else -> {
+                                if (refreshProgress?.isVisible == false) {
+                                    activateRefresh?.isVisible = false
+                                    progressIndicator?.isIndeterminate = false
+                                    refreshProgress?.isVisible = true
+                                }
+                                progressIndicator?.isIndeterminate = false
+                                progressIndicator?.progress = progress
+                            }
+                        }
                     }
-                    progressIndicator?.isIndeterminate = false
-                    progressIndicator?.progress = it
                 }
             }
         }

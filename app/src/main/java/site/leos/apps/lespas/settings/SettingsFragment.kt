@@ -25,7 +25,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -45,6 +44,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -283,9 +284,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     }
                     INSTALL_SNAPSEED_DIALOG ->
                         try {
-                            installSnapseedLauncher.launch(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${SNAPSEED_PACKAGE_NAME}")))
+                            installSnapseedLauncher.launch(Intent(Intent.ACTION_VIEW, "market://details?id=${SNAPSEED_PACKAGE_NAME}".toUri()))
                         } catch (e: ActivityNotFoundException) {
-                            installSnapseedLauncher.launch(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=${SNAPSEED_PACKAGE_NAME}")))
+                            installSnapseedLauncher.launch(Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=${SNAPSEED_PACKAGE_NAME}".toUri()))
                         }
                     CLEAR_CACHE_CONFIRM_DIALOG -> {
                         File("${Tools.getLocalRoot(requireContext())}/cache").deleteRecursively()
@@ -306,7 +307,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                         }
                     }
 */
-                    MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) manageMediaPermissionRequestLauncher.launch(Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, Uri.parse("package:${BuildConfig.APPLICATION_ID}")))
+                    MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) manageMediaPermissionRequestLauncher.launch(Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, "package:${BuildConfig.APPLICATION_ID}".toUri()))
                 }
             } else {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
@@ -718,7 +719,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     add(5000)
                 }))
                 setOnItemClickListener { _, _, position, _ ->
-                    sp.edit().putInt(CACHE_SIZE, (if (position < 10) position + 1 else 50) * 100).apply()
+                    sp.edit { putInt(CACHE_SIZE, (if (position < 10) position + 1 else 50) * 100) }
                     dismiss()
                 }
             }

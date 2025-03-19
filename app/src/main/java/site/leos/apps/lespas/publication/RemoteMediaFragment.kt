@@ -40,6 +40,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -64,7 +65,9 @@ import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArray
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.helper.VideoPlayerViewModel
 import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.photo.Photo
@@ -84,7 +87,6 @@ class RemoteMediaFragment: Fragment() {
 
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
-    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), shareModel.getCallFactory(), shareModel.getPlayerCache()) }
 
     private var autoRotate = false
@@ -214,7 +216,7 @@ class RemoteMediaFragment: Fragment() {
             setOnClickListener {
                 handler.post(hideBottomControls)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                    DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, arrayListOf(pAdapter.currentList[currentPositionModel.currentPosition.value]), albumId, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
         }
         view.findViewById<Button>(R.id.info_button).run {
@@ -222,7 +224,7 @@ class RemoteMediaFragment: Fragment() {
             setOnClickListener {
                 handler.post(hideBottomControls)
                 if (parentFragmentManager.findFragmentByTag(TAG_INFO_DIALOG) == null) {
-                    MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]).show(parentFragmentManager, TAG_INFO_DIALOG)
+                    MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.currentPosition.value]).show(parentFragmentManager, TAG_INFO_DIALOG)
                 }
             }
         }
@@ -245,11 +247,11 @@ class RemoteMediaFragment: Fragment() {
             }
         }
 
-        // When DestinationDialog returns
-        destinationModel.getDestination().observe(viewLifecycleOwner) {
-            it?.let { targetAlbum ->
+        // Destination dialog result handler
+        parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
                 val targetIsRemoteAlbum = Tools.isRemoteAlbum(targetAlbum)
-                destinationModel.getRemotePhotos()[0].let { remotePhoto ->
+                result.parcelableArrayList<NCShareViewModel.RemotePhoto>(DestinationDialogFragment.KEY_REMOTE_PHOTOS)?.get(0)?.let { remotePhoto ->
                     val actionModel = ViewModelProvider(requireActivity())[ActionViewModel::class.java]
                     val actions = mutableListOf<Action>()
                     val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
@@ -383,7 +385,7 @@ class RemoteMediaFragment: Fragment() {
 */
 
     private fun saveMedia() {
-        pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
+        pAdapter.currentList[currentPositionModel.currentPosition.value].apply {
             shareModel.savePhoto(requireContext(), listOf(this))
             Snackbar.make(requireView(), getString(R.string.msg_saved_location), Snackbar.LENGTH_LONG).show()
         }
@@ -391,7 +393,7 @@ class RemoteMediaFragment: Fragment() {
 
     class RemoteMediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
         fun getCaption(position: Int): String = try { currentList[position].photo.caption } catch (_: Exception) { "" }
@@ -413,8 +415,9 @@ class RemoteMediaFragment: Fragment() {
 
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 
-        private const val TAG_DESTINATION_DIALOG = "REMOTEMEDIA_DESTINATION_DIALOG"
-        private const val TAG_INFO_DIALOG = "REMOTEMEDIA_INFO_DIALOG"
+        private const val TAG_DESTINATION_DIALOG = "REMOTE_MEDIA_DESTINATION_DIALOG"
+        private const val TAG_INFO_DIALOG = "REMOTE_MEDIA_INFO_DIALOG"
+        private const val DESTINATION_DIALOG_REQUEST_KEY = "REMOTE_MEDIA_FRAGMENT_DESTINATION_DIALOG_REQUEST_KEY"
 
         @JvmStatic
         fun newInstance(media: List<NCShareViewModel.RemotePhoto>, position: Int, albumId: String) = RemoteMediaFragment().apply {

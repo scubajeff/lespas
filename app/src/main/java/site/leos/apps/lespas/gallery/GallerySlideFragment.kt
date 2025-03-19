@@ -38,6 +38,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -93,7 +94,7 @@ class GallerySlideFragment : Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
     private lateinit var playerViewModel: VideoPlayerViewModel
-    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
+    //private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private lateinit var window: Window
 
@@ -272,6 +273,7 @@ class GallerySlideFragment : Fragment() {
             galleryModel.add(listOf(mediaAdapter.getPhotoAt(mediaViewPager.currentItem).photo.id))
         }
 
+/*
         destinationModel.getDestination().observe(viewLifecycleOwner) {
             it?.let {
                 if (destinationModel.shouldRemoveOriginal()) { mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem).let { galleryMedia ->
@@ -280,6 +282,15 @@ class GallerySlideFragment : Fragment() {
                     galleryModel.registerNextInLine(getNextInLine(removeLocal = galleryMedia.isLocal() || galleryMedia.atLocal(), removeRemote = galleryMedia.isRemote()))
                 }}
             }
+        }
+*/
+
+        parentFragmentManager.setFragmentResultListener(DestinationDialogFragment.KEY_REMOVE_ORIGINAL, viewLifecycleOwner) { _, result ->
+            if (result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)) { mediaAdapter.getGalleryMediaAt(mediaViewPager.currentItem).let { galleryMedia ->
+                // Remove local copy only, leave archive copy alone
+                // If file is IS_REMOTE, then an ACTION_MOVER_ON_SERVER will be carried out later, result in remote copy being removed
+                galleryModel.registerNextInLine(getNextInLine(removeLocal = galleryMedia.isLocal() || galleryMedia.atLocal(), removeRemote = galleryMedia.isRemote()))
+            }}
         }
 
         parentFragmentManager.setFragmentResultListener(GalleryDeletionDialogFragment.GALLERY_DELETION_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
@@ -427,8 +438,8 @@ class GallerySlideFragment : Fragment() {
         override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
         override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.GalleryMedia).media) {
-            if (Tools.isPhotoFromGallery(photo)) VideoItem(Uri.parse(photo.id), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
-            else VideoItem(Uri.parse("${basePath}/${remotePath}/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id)
+            if (Tools.isPhotoFromGallery(photo)) VideoItem(photo.id.toUri(), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
+            else VideoItem("${basePath}/${remotePath}/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id)
         }
 
         fun isPhotoAtLocal(position: Int): Boolean = !currentList[position].isRemote()

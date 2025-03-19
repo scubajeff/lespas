@@ -25,12 +25,12 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
@@ -38,7 +38,6 @@ import java.io.File
 
 class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
-    private val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Tools.applyTheme(this, R.style.Theme_LesPas_Transparent, R.style.Theme_LesPas_Transparent_TrueBlack)
@@ -64,16 +63,15 @@ class ShareReceiverActivity: AppCompatActivity() {
         }
 
         if (files.isNotEmpty()) {
-            destinationModel.getDestination().observe (this) { album ->
-                album?.apply {
+            supportFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, this) { _, result ->
+                result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
                     // Acquire files
-                    if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                        AcquiringDialogFragment.newInstance(files, album, destinationModel.shouldRemoveOriginal()).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
+                    if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(files, targetAlbum, result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                DestinationDialogFragment.newInstance(files, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION > 0 || intent.getBooleanExtra(KEY_SHOW_REMOVE_OPTION, false), intent.getStringExtra(KEY_CURRENT_ALBUM_ID) ?: "").show(supportFragmentManager, TAG_DESTINATION_DIALOG)
+                DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, files, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION > 0 || intent.getBooleanExtra(KEY_SHOW_REMOVE_OPTION, false), intent.getStringExtra(KEY_CURRENT_ALBUM_ID) ?: "").show(supportFragmentManager, TAG_DESTINATION_DIALOG)
         }
         else {
             finish()
@@ -108,6 +106,7 @@ class ShareReceiverActivity: AppCompatActivity() {
     companion object {
         const val TAG_DESTINATION_DIALOG = "UPLOAD_ACTIVITY_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "UPLOAD_ACTIVITY_ACQUIRING_DIALOG"
+        private const val DESTINATION_DIALOG_REQUEST_KEY = "SHARE_RECEIVER_DESTINATION_DIALOG_REQUEST_KEY"
 
         const val KEY_SHOW_REMOVE_OPTION = "KEY_SHOW_REMOVE_OPTION"
         const val KEY_CURRENT_ALBUM_ID = "KEY_CURRENT_ALBUM_ID"

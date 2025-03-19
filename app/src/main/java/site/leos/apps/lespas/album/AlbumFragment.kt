@@ -92,6 +92,7 @@ import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.LesPasFastScroller
 import site.leos.apps.lespas.helper.LesPasGetMediaContract
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -122,7 +123,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private val publishViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
-    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private var receivedShareMenu: MenuItem? = null
     private var galleryAlbumMenu: MenuItem? = null
@@ -164,14 +164,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 uris.clear()
                 uris.addAll(it)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                    DestinationDialogFragment.newInstance(uris,false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-            }
-        }
-        destinationModel.getDestination().observe (this) { album ->
-            // Acquire files
-            album?.apply {
-                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(uris, album, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                    DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, uris,false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
         }
 
@@ -393,6 +386,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
             resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
         )
+
+        // Destination dialog result handler
+        parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
+                // Acquire files
+                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(uris, targetAlbum, result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            }
+        }
 
         // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ALBUM_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
@@ -1023,6 +1024,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DELETE_REQUEST = "CONFIRM_DELETE_REQUEST"
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
+        private const val DESTINATION_DIALOG_REQUEST_KEY = "ALBUM_FRAGMENT_DESTINATION_DIALOG_REQUEST_KEY"
 
         private const val KEY_SELECTION = "KEY_SELECTION"
 

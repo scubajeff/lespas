@@ -21,7 +21,13 @@ import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -42,21 +48,26 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.LesPasGetMediaContract
-import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
@@ -68,7 +79,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 
 class PublicationDetailFragment: Fragment() {
     private lateinit var share: NCShareViewModel.ShareWithMe
@@ -242,40 +253,46 @@ class PublicationDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner) { currentItem = it }
-        shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) {
-            if (it.isNotEmpty()) {
-                photoListAdapter.setList(it, currentQuery) {
-                    // Setup UI in this submitList commitCallback
-                    loadingIndicator?.run {
-                        isEnabled = false
-                        isVisible = false
-                    }
-                    slideshowMenuItem?.run {
-                        isEnabled = true
-                        isVisible = true
-                    }
-                    (if (showName) searchMenuItem else showMetaMenuItem)?.run {
-                        isVisible = true
-                        isEnabled = true
-                    }
-                    if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
-                        isVisible = true
-                        isEnabled = true
-                    }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { currentPositionModel.currentPosition.collect { currentItem = it } }
+                launch {
+                    shareModel.publicationContentMeta.collect {
+                        if (it.isNotEmpty()) {
+                            photoListAdapter.setList(it, currentQuery) {
+                                // Setup UI in this submitList commitCallback
+                                loadingIndicator?.run {
+                                    isEnabled = false
+                                    isVisible = false
+                                }
+                                slideshowMenuItem?.run {
+                                    isEnabled = true
+                                    isVisible = true
+                                }
+                                (if (showName) searchMenuItem else showMetaMenuItem)?.run {
+                                    isVisible = true
+                                    isEnabled = true
+                                }
+                                if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
+                                    isVisible = true
+                                    isEnabled = true
+                                }
 
-                    it.forEach { remotePhoto ->
-                        if (remotePhoto.photo.mimeType.startsWith("image/") && remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
-                            mapMenuItem?.isVisible = true
-                            mapMenuItem?.isEnabled = true
+                                it.forEach { remotePhoto ->
+                                    if (remotePhoto.photo.mimeType.startsWith("image/") && remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
+                                        mapMenuItem?.isVisible = true
+                                        mapMenuItem?.isEnabled = true
 
-                            return@setList
+                                        return@setList
+                                    }
+                                }
+                            }
+
+                            if (currentItem != -1) with(currentPositionModel.getLastRange()) {
+                                if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as RecyclerView.LayoutManager).scrollToPosition(currentItem)
+                            }
                         }
                     }
-                }
-
-                if (currentItem != -1) with(currentPositionModel.getLastRange()) {
-                    if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as RecyclerView.LayoutManager).scrollToPosition(currentItem)
                 }
             }
         }
@@ -552,10 +569,15 @@ class PublicationDetailFragment: Fragment() {
     }
 
     class CurrentPublicationViewModel: ViewModel() {
+/*
         private val currentPosition = SingleLiveEvent<Int>()
         fun setCurrentPosition(pos: Int) { currentPosition.value = pos }
         fun getCurrentPosition(): SingleLiveEvent<Int> = currentPosition
         fun getCurrentPositionValue(): Int = currentPosition.value ?: -1
+*/
+        private val _currentPosition = MutableStateFlow(-1)
+        val currentPosition: StateFlow<Int> = _currentPosition
+        fun setCurrentPosition(position: Int) { _currentPosition.tryEmit(position) }
 
         private var firstItem = -1
         private var lastItem = -1

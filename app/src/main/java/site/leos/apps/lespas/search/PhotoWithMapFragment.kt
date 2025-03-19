@@ -34,6 +34,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -77,7 +78,6 @@ class PhotoWithMapFragment: Fragment() {
     private val handler = Handler(Looper.getMainLooper())
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private lateinit var remoteBase: String
 
@@ -163,9 +163,10 @@ class PhotoWithMapFragment: Fragment() {
             if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) shareOut(bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), GENERAL_SHARE)
         }
 
-        destinationModel.getDestination().observe(viewLifecycleOwner) {
-            it?.let { targetAlbum ->
-                if (destinationModel.doOnServer()) {
+        // Destination dialog result handler
+        parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
+                if (result.getBoolean(DestinationDialogFragment.KEY_DO_ON_SERVER)) {
                     val actions = mutableListOf<Action>()
 
                     when (targetAlbum.id) {
@@ -178,7 +179,7 @@ class PhotoWithMapFragment: Fragment() {
 
                     actions.add(Action(
                         null,
-                        if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER,
+                        if (result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER,
                         remotePhoto.remotePath,
                         if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${remoteBase}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
                         "",
@@ -189,7 +190,7 @@ class PhotoWithMapFragment: Fragment() {
                     ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(actions)
                 } else {
                     // Acquire files
-                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(shareOutUri, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(shareOutUri, targetAlbum, result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
         }
@@ -203,9 +204,9 @@ class PhotoWithMapFragment: Fragment() {
                     shareOutBackPressedCallback.isEnabled = false
                 }
 
-                // Call system share chooser
                 if (uris.isNotEmpty()) when (shareOutType) {
                     GENERAL_SHARE -> {
+                        // Call system share chooser
                         startActivity(Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
                             type = shareOutMimeType
@@ -218,7 +219,7 @@ class PhotoWithMapFragment: Fragment() {
                     }
                     SHARE_TO_LESPAS -> {
                         // Allow removing original (e.g. move) is too much. TODO or is it?
-                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(uris, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, uris, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                     }
                 }
             }
@@ -263,7 +264,7 @@ class PhotoWithMapFragment: Fragment() {
 
         // See if map app installed
         Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("geo:0.0,0.0?z=20")
+            data = "geo:0.0,0.0?z=20".toUri()
             resolveActivity(requireActivity().packageManager)?.let { menu.findItem(R.id.option_menu_open_in_map_app).isEnabled = true }
         }
     }
@@ -273,7 +274,7 @@ class PhotoWithMapFragment: Fragment() {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
                 if (target == R.id.search_gallery) shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_LESPAS)
-                else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 true
             }
             R.id.option_menu_share -> {
@@ -287,11 +288,11 @@ class PhotoWithMapFragment: Fragment() {
             }
             R.id.option_menu_open_in_map_app -> {
                 startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse(
+                    data = (
                         if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
                             Tools.wGS84ToGCJ02(doubleArrayOf(remotePhoto.photo.latitude, remotePhoto.photo.longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
                         else "geo:${remotePhoto.photo.latitude},${remotePhoto.photo.longitude}?z=20"
-                    )
+                    ).toUri()
                 })
                 true
             }
@@ -326,6 +327,7 @@ class PhotoWithMapFragment: Fragment() {
         const val TAG_DESTINATION_DIALOG = "PHOTO_WITH_MAP_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "PHOTO_WITH_MAP_ACQUIRING_DIALOG"
         private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
+        private const val DESTINATION_DIALOG_REQUEST_KEY = "PHOTO_WITH_MAP_DESTINATION_DIALOG_REQUEST_KEY"
 
         @JvmStatic
         fun newInstance(photo: NCShareViewModel.RemotePhoto, target: Int) = PhotoWithMapFragment().apply {

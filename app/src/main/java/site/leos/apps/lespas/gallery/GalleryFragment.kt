@@ -53,6 +53,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.core.view.MenuProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
@@ -106,7 +108,6 @@ import java.time.ZoneOffset
 
 class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
-    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
 
@@ -152,11 +153,11 @@ class GalleryFragment: Fragment() {
                             galleryModel.asGallery(delayStart = false, order = "ASC")
                             // Launched as viewer from system file manager, set list sort order to date ascending
                             galleryModel.setCurrentPhotoId(it.second)
-                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(it.first)).addToBackStack(null).commit()
+                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(it.first), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
                         } ?: run {
                             // Can't extract folder name from Uri, launched as a single file viewer
                             galleryModel.asSingleFileViewer(uri, requireContext())
-                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(uri.toString())).addToBackStack(null).commit()
+                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(uri.toString()), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }
                     } ?: run {
                         // Launcher as Gallery within our own app, set list sort order to date descending
@@ -236,17 +237,15 @@ class GalleryFragment: Fragment() {
                     selectedUris = arrayListOf<Uri>().apply {
                         // Prepare uri of media for the convenience of displaying photo thumbnail in DestinationDialogFragment, especially those of remote only medias
                         ids.forEach { id ->
-                            add(Uri.parse(
-                                if (id.startsWith("content")) id
-                                else galleryModel.getPhotoById(id)?.let {
-                                    // TODO caption property value is file size in this case
-                                    "${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}"
-                                }
-                            ))
+                            if (id.startsWith("content")) add(id.toUri())
+                            else galleryModel.getPhotoById(id)?.let {
+                                // TODO caption property value is file size in this case
+                                add("${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}".toUri())
+                            }
                         }
                     }
                     // TODO revisit canWrite condition, should be always yes now
-                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
+                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
                         .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                 }
             }
@@ -256,7 +255,7 @@ class GalleryFragment: Fragment() {
             launch {
                 galleryModel.restorations.collect { restorations ->
                     if (restorations.isNotEmpty()) {
-                        val uris = arrayListOf<Uri>().apply { restorations.forEach { add(Uri.parse(it)) } }
+                        val uris = arrayListOf<Uri>().apply { restorations.forEach { add(it.toUri()) } }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, uris, false)).setFillInIntent(null).build())
                     }
                 }
@@ -264,7 +263,7 @@ class GalleryFragment: Fragment() {
             launch {
                 galleryModel.emptyTrash.collect { ids ->
                     if (ids.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val uris = arrayListOf<Uri>().apply { ids.forEach { add(Uri.parse(it)) } }
+                        val uris = arrayListOf<Uri>().apply { ids.forEach { add(it.toUri()) } }
                         deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireActivity().contentResolver, uris)).setFillInIntent(null).build())
                     }
                 }
@@ -355,8 +354,13 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        destinationModel.getDestination().observe(viewLifecycleOwner) { dest ->
-            dest?.let { targetAlbum ->
+        parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            // Inform GallerySliderFragment
+            childFragmentManager.findFragmentByTag(GallerySlideFragment::class.java.canonicalName)?.let {
+                childFragmentManager.setFragmentResult(DestinationDialogFragment.KEY_REMOVE_ORIGINAL, bundleOf(DestinationDialogFragment.KEY_REMOVE_ORIGINAL to result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)))
+            }
+
+            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
                 if (targetAlbum.id == Album.JOINT_ALBUM_ID) Snackbar.make(requireView(), getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
 
                 if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) {
@@ -366,12 +370,12 @@ class GalleryFragment: Fragment() {
                                 // When media item is IS_BOTH, try using the remote version for copy/move, saving network traffic of re-uploading it again
                                 galleryModel.getGalleryMediaById(mediaUri.toString())?.let { galleryMedia ->
                                     if (galleryMedia.atRemote()) galleryMedia.media.let {
-                                        Uri.parse("${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}")
+                                        "${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}".toUri()
                                     } else mediaUri
                                 } ?: mediaUri
                             } else mediaUri
                         }),
-                        targetAlbum, destinationModel.shouldRemoveOriginal()
+                        targetAlbum, result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)
                     ).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
@@ -1016,7 +1020,7 @@ class GalleryFragment: Fragment() {
             // Removing local files
             if (removeLocal && localFiles.isNotEmpty()) {
                 arrayListOf<Uri>().let { uris ->
-                    localFiles.forEach { uris.add(Uri.parse(it)) }
+                    localFiles.forEach { uris.add(it.toUri()) }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                         // For Android 11 and above, use SAF
                         viewModelScope.launch { _deletions.emit(uris) }
@@ -1219,8 +1223,8 @@ class GalleryFragment: Fragment() {
 
         const val TAG_ACQUIRING_DIALOG = "GALLERY_ACQUIRING_DIALOG"
         private const val TAG_DESTINATION_DIALOG = "GALLERY_DESTINATION_DIALOG"
+        private const val DESTINATION_DIALOG_REQUEST_KEY = "GALLERY_FRAGMENT_DESTINATION_DIALOG_REQUEST_KEY"
         const val TAG_FROM_LAUNCHER = "TAG_FROM_LAUNCHER"
-
         private const val KEY_SHARING_OUT = "KEY_SHARING_OUT"
 
         private const val ARGUMENT_URI = "ARGUMENT_URI"

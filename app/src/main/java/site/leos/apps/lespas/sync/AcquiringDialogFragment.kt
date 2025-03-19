@@ -34,10 +34,11 @@ import androidx.core.widget.ContentLoadingProgressBar
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
@@ -45,6 +46,8 @@ import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
@@ -100,45 +103,53 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         fileNameTextView = view.findViewById(R.id.filename_textview)
         contentLoadingProgressBar = view.findViewById(R.id.current_progress)
 
-        acquiringModel.getProgress().observe(viewLifecycleOwner) { progress ->
-            when {
-                progress >= total -> {
-                    finished = true
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    acquiringModel.currentProgress.collect { progress ->
+                        when {
+                            progress >= total -> {
+                                finished = true
 
-                    TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                    progressLinearLayout.visibility = View.GONE
-                    dialogTitleTextView.text = getString(R.string.finished_preparing_files)
-                    var note = getString(R.string.it_takes_time)
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.wifionly_pref_key), true)) {
-                        if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                            note += requireContext().getString(R.string.mind_network_setting)
+                                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                                progressLinearLayout.visibility = View.GONE
+                                dialogTitleTextView.text = getString(R.string.finished_preparing_files)
+                                var note = getString(R.string.it_takes_time)
+                                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.wifionly_pref_key), true)) {
+                                    if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                                        note += requireContext().getString(R.string.mind_network_setting)
+                                    }
+                                }
+                                messageTextView.text = note
+                                messageTextView.visibility = View.VISIBLE
+                                dialog?.setCanceledOnTouchOutside(true)
+                            }
+
+                            progress >= 0 -> {
+                                dialogTitleTextView.text = getString(R.string.preparing_files_progress, progress + 1, total)
+                                fileNameTextView.text = acquiringModel.getCurrentName()
+                                contentLoadingProgressBar.progress = progress
+                            }
+
+                            progress == AcquiringViewModel.DO_NOTHING -> {}
+
+                            progress < 0 -> {
+                                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                                progressLinearLayout.visibility = View.GONE
+                                dialogTitleTextView.text = getString(R.string.error_preparing_files)
+                                messageTextView.text = getString(
+                                    when (progress) {
+                                        AcquiringViewModel.ACCESS_RIGHT_EXCEPTION -> R.string.access_right_violation
+                                        AcquiringViewModel.NO_MEDIA_FILE_FOUND -> R.string.no_media_file_found
+                                        AcquiringViewModel.SAME_FILE_EXISTED -> R.string.same_file_found
+                                        else -> 0
+                                    }
+                                )
+                                messageTextView.visibility = View.VISIBLE
+                                dialog?.setCanceledOnTouchOutside(true)
+                            }
                         }
                     }
-                    messageTextView.text = note
-                    messageTextView.visibility = View.VISIBLE
-                    dialog?.setCanceledOnTouchOutside(true)
-                }
-
-                progress >= 0 -> {
-                    dialogTitleTextView.text = getString(R.string.preparing_files_progress, progress + 1, total)
-                    fileNameTextView.text = acquiringModel.getCurrentName()
-                    contentLoadingProgressBar.progress = progress
-                }
-
-                progress < 0 -> {
-                    TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                    progressLinearLayout.visibility = View.GONE
-                    dialogTitleTextView.text = getString(R.string.error_preparing_files)
-                    messageTextView.text = getString(
-                        when (progress) {
-                            AcquiringViewModel.ACCESS_RIGHT_EXCEPTION -> R.string.access_right_violation
-                            AcquiringViewModel.NO_MEDIA_FILE_FOUND -> R.string.no_media_file_found
-                            AcquiringViewModel.SAME_FILE_EXISTED -> R.string.same_file_found
-                            else -> 0
-                        }
-                    )
-                    messageTextView.visibility = View.VISIBLE
-                    dialog?.setCanceledOnTouchOutside(true)
                 }
             }
         }
@@ -172,8 +183,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
     }
 
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album, private val removeOriginal: Boolean): AndroidViewModel(application) {
-        private var currentProgress = MutableLiveData<Int>()
-        private var currentName: String = ""
         private val newPhotos = mutableListOf<Photo>()
         private val actions = mutableListOf<Action>()
         private val photoRepository = PhotoRepository(application)
@@ -399,18 +408,20 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
             }
         }
 
+        private var currentName: String = ""
+        fun getCurrentName() = currentName
+        private val _currentProgress = MutableStateFlow(DO_NOTHING)
+        val currentProgress: StateFlow<Int> = _currentProgress
         private fun setProgress(progress: Int, name: String) {
             currentName = name
-            currentProgress.postValue(progress)
+            _currentProgress.tryEmit(progress)
         }
-
-        fun getProgress(): LiveData<Int> = currentProgress
-        fun getCurrentName() = currentName
 
         companion object {
             const val ACCESS_RIGHT_EXCEPTION = -100
             const val NO_MEDIA_FILE_FOUND = -200
             const val SAME_FILE_EXISTED = -300
+            const val DO_NOTHING = -1
         }
     }
 
