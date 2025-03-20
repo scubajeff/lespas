@@ -837,7 +837,7 @@ object Tools {
             }
         }
 
-        return content.dropLast(1) + "]}}"
+        return (if (archiveList.isEmpty()) content else content.dropLast(1)) + "]}}"
     }
 
     fun jsonToArchiveList(snapshotFile: File, archiveBase: String): List<GalleryFragment.GalleryMedia> {
