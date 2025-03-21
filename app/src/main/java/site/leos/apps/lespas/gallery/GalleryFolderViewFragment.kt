@@ -258,22 +258,14 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         key.isEmpty() -> false                                                          // Empty space in list
                         key.startsWith("content") -> true                                        // Normal media items in device gallery
                         key.isDigitsOnly() -> true                                                      // fileId for archived items
-                        else -> {                                                                       // Date items
-                            val startPos = mediaAdapter.getPhotoPosition(key)
-                            var index = startPos
-                            var selectWholeDate = false
-                            val keys = arrayListOf<String>()
-                            while(true) {
-                                index++
-                                if (index == mediaAdapter.currentList.size) break                       // End of list
-                                if (mediaAdapter.currentList[index].location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA) break     // Next date
-                                mediaAdapter.getPhotoId(index).let { id ->
-                                    keys.add(id)
-                                    if (!selectionTracker.isSelected(id)) selectWholeDate = true
-                                }
-                            }
+                        else -> {                                                                       // Date items, select or deselect photos in the same day when user click on Date item
+                            val startPos = mediaAdapter.getPhotoPosition(key) + 1   // There is at least one photos in this date
+                            var endPos = startPos
+                            while(endPos != mediaAdapter.currentList.size && mediaAdapter.currentList[endPos].location != GalleryFragment.GalleryMedia.IS_NOT_MEDIA) { endPos ++ }
 
-                            selectionTracker.setItemsSelected(keys, selectWholeDate)
+                            // Enable selected state ping-pong effect, the selection state will be set true if the first or last item in this date is not selected
+                            // Ideal way is to check all selected state in the date, but that seems to take a long time when there are a lot photos in the date
+                            selectionTracker.setItemsSelected(mediaAdapter.currentList.subList(startPos, endPos).map { it.media.photo.id }, !selectionTracker.isSelected(mediaAdapter.currentList[endPos - 1].media.photo.id) || !selectionTracker.isSelected(mediaAdapter.currentList[startPos].media.photo.id))
 
                             false
                         }
@@ -316,8 +308,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                                     totalSize += mediaAdapter.getFileSize(selected)
                                 }
 
-                                actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                                actionMode?.subtitle = Tools.humanReadableByteCountSI(totalSize)
+                                it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                                it.subtitle = Tools.humanReadableByteCountSI(totalSize)
                             }
 
                             // Enable or disable sub folder chips base on selection mode
