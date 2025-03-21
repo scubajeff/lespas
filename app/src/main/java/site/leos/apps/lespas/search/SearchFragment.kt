@@ -142,7 +142,7 @@ class SearchFragment: Fragment() {
                     }
                 }
             }
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
         }, viewLifecycleOwner, Lifecycle.State.STARTED)
 
         viewLifecycleOwner.lifecycleScope.launch {

@@ -168,7 +168,7 @@ class SearchLauncherFragment : Fragment() {
                 if (savedScope != View.NO_ID) scopeToggleGroup?.check(savedScope)
             }
 
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
