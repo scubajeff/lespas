@@ -106,8 +106,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            searchModel.locationSearchResult.collect {
-                val result = mutableListOf<SearchFragment.SearchModel.LocationSearchResult>().apply { addAll(it) }
+            searchModel.locationSearchResult.collect { result ->
                 val items = mutableListOf<SearchFragment.SearchModel.LocationSearchResult>()
                 var photoList: List<NCShareViewModel.RemotePhoto>
 

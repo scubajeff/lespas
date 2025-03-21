@@ -541,7 +541,6 @@ class SearchFragment: Fragment() {
 */
 
                         resultList = mutableListOf()
-                        _locationSearchResult.emit(resultList)
                         _maxProgress.emit(remotePhotos.size)
 
                         remotePhotos.forEachIndexed { i, remotePhoto ->
