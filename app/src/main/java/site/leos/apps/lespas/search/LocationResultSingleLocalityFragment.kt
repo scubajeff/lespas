@@ -66,13 +66,9 @@ class LocationResultSingleLocalityFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
     private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel, actionModel)}
-    //private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels(ownerProducer = { requireParentFragment() }) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel, searchPayloadModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        @Suppress("DEPRECATION")
-        setHasOptionsMenu(true)
 
         photoAdapter = PhotoAdapter(
             { photo, view, labelView ->

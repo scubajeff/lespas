@@ -24,7 +24,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -200,9 +199,7 @@ class ObjectSearchSlideFragment : Fragment() {
             setOnClickListener {
                 pAdapter.getPhotoAt(slider.currentItem).let { remotePhoto ->
                     handlerBottomControl.post(hideBottomControls)
-                    if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
-                        ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType), showRemoveAfterwards = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaStore.canManageMedia(requireContext()) else false)
-                            ?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { searchModel.shareOut(listOf(remotePhoto), strip = false, lowResolution = false, removeAfterwards = false) }
+                    if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType), showRemoveAfterwards = false)!!.show(parentFragmentManager, SHARE_OUT_DIALOG)    // ?: run { searchModel.shareOut(listOf(remotePhoto), strip = false, lowResolution = false, removeAfterwards = false) }
                 }
             }
         }

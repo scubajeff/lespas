@@ -16,35 +16,29 @@
 
 package site.leos.apps.lespas.search
 
-import android.content.ClipData
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.ColorMatrixColorFilter
-import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceManager
 import com.github.chrisbanes.photoview.PhotoView
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.coroutines.launch
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -52,45 +46,29 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
-import site.leos.apps.lespas.sync.DestinationDialogFragment
-import site.leos.apps.lespas.sync.ShareReceiverActivity
 
 class PhotoWithMapFragment: Fragment() {
     private lateinit var remotePhoto: NCShareViewModel.RemotePhoto
-    private var target = 0
+    private var searchScope = 0
 
     private lateinit var mapView: MapView
     private lateinit var photoView: PhotoView
 
-    private var shareOutUri = arrayListOf<Uri>()
-    private var shareOutType = GENERAL_SHARE
-    private var shareOutMimeType = ""
-    private var waitingMsg: Snackbar? = null
-    private val handler = Handler(Looper.getMainLooper())
-
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-
-    private lateinit var remoteBase: String
-
-    private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
+    private val actionModel: ActionViewModel by viewModels()
+    private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel, actionModel)}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        remoteBase = Tools.getRemoteHome(requireContext())
-
-        //remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
         remotePhoto = requireArguments().parcelable(KEY_PHOTO)!!
-        target = requireArguments().getInt(KEY_TARGET)
+        searchScope = requireArguments().getInt(KEY_SEARCH_SCOPE)
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -102,23 +80,6 @@ class PhotoWithMapFragment: Fragment() {
                 if ((width < height) || (albumId == GalleryFragment.FROM_DEVICE_GALLERY && (orientation == 90 || orientation == 270)) || (remotePhoto.remotePath.isNotEmpty() && (orientation == 90 || orientation == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
-
-        @Suppress("DEPRECATION")
-        setHasOptionsMenu(true)
-
-        shareOutBackPressedCallback = object: OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                // Cancel share out job if it's running
-                waitingMsg?.let {
-                    if (it.isShownOrQueued) {
-                        imageLoaderModel.cancelShareOut()
-                        it.dismiss()
-                    }
-                }
-                isEnabled = false
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photo_with_map, container, false)
@@ -160,76 +121,52 @@ class PhotoWithMapFragment: Fragment() {
 
         // Share out dialog result handler
         parentFragmentManager.setFragmentResultListener(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, viewLifecycleOwner) { _, bundle ->
-            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true)) shareOut(bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false), bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false), GENERAL_SHARE)
+            if (bundle.getBoolean(ShareOutDialogFragment.SHARE_OUT_DIALOG_RESULT_KEY, true))
+                searchModel.shareOut(
+                    photos = listOf(remotePhoto),
+                    strip = bundle.getBoolean(ShareOutDialogFragment.STRIP_RESULT_KEY, false),
+                    lowResolution = bundle.getBoolean(ShareOutDialogFragment.LOW_RESOLUTION_RESULT_KEY, false),
+                    removeAfterwards = bundle.getBoolean(ShareOutDialogFragment.REMOVE_AFTERWARDS_RESULT_KEY, false),
+                )
         }
 
-        // Destination dialog result handler
-        parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
-            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
-                if (result.getBoolean(DestinationDialogFragment.KEY_DO_ON_SERVER)) {
-                    val actions = mutableListOf<Action>()
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.photo_with_map_menu, menu)
+                menu.findItem(R.id.option_menu_lespas).isVisible = searchScope != R.id.search_album
 
-                    when (targetAlbum.id) {
-                        "" -> {
-                            // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
-                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
-                        }
-                        Album.JOINT_ALBUM_ID -> Snackbar.make(mapView, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
-                    }
-
-                    actions.add(Action(
-                        null,
-                        if (result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER,
-                        remotePhoto.remotePath,
-                        if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${remoteBase}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
-                        "",
-                        "${remotePhoto.photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}|${Tools.isRemoteAlbum(targetAlbum)}",
-                        System.currentTimeMillis(), 1
-                    ))
-
-                    ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(actions)
-                } else {
-                    // Acquire files
-                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(shareOutUri, targetAlbum, result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                // See if map app installed
+                Intent(Intent.ACTION_VIEW).apply {
+                    data = "geo:0.0,0.0?z=20".toUri()
+                    resolveActivity(requireActivity().packageManager)?.let { menu.findItem(R.id.option_menu_open_in_map_app).isEnabled = true }
                 }
             }
-        }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            imageLoaderModel.shareOutUris.collect { uris ->
-                // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                handler.removeCallbacksAndMessages(null)
-                if (waitingMsg?.isShownOrQueued == true) {
-                    waitingMsg?.dismiss()
-                    shareOutBackPressedCallback.isEnabled = false
-                }
-
-                if (uris.isNotEmpty()) when (shareOutType) {
-                    GENERAL_SHARE -> {
-                        // Call system share chooser
-                        startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = shareOutMimeType
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                            clipData = ClipData.newUri(requireContext().contentResolver, "", uris[0])
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            // Allow removing original (e.g. move) is too much. TODO or is it?
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
-                        }, null))
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when(menuItem.itemId) {
+                    R.id.option_menu_lespas -> {
+                        // Add to LesPas menu enabled for photo from gallery only
+                        searchModel.add(listOf(remotePhoto))
+                        true
                     }
-                    SHARE_TO_LESPAS -> {
-                        // Allow removing original (e.g. move) is too much. TODO or is it?
-                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, uris, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    R.id.option_menu_share -> {
+                        if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType), showRemoveAfterwards = false)!!.show(parentFragmentManager, SHARE_OUT_DIALOG)    // ?: run { searchModel.shareOut(listOf(remotePhoto), strip = false, lowResolution = false, removeAfterwards = false) }
+                        true
                     }
+                    R.id.option_menu_open_in_map_app -> {
+                        startActivity(Intent(Intent.ACTION_VIEW).apply {
+                            data = (
+                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
+                                    Tools.wGS84ToGCJ02(doubleArrayOf(remotePhoto.photo.latitude, remotePhoto.photo.longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
+                                else "geo:${remotePhoto.photo.latitude},${remotePhoto.photo.longitude}?z=20"
+                            ).toUri()
+                        })
+                        true
+                    }
+                    else -> false
                 }
             }
-        }.invokeOnCompletion {
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg?.isShownOrQueued == true) {
-                waitingMsg?.dismiss()
-                shareOutBackPressedCallback.isEnabled = false
-            }
-        }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -253,87 +190,16 @@ class PhotoWithMapFragment: Fragment() {
         super.onDestroy()
     }
 
-    @Suppress("DEPRECATION")
-    @Deprecated("Deprecated in Java")
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.photo_with_map_menu, menu)
-        menu.findItem(R.id.option_menu_lespas).isVisible = target != R.id.search_album
-        //menu.findItem(R.id.option_menu_share).icon = ContextCompat.getDrawable(requireContext(), if (target == R.id.search_archive) R.drawable.ic_baseline_archivev_download_24 else R.drawable.ic_baseline_share_24)
-        menu.findItem(R.id.option_menu_share).icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_share_24)
-
-        // See if map app installed
-        Intent(Intent.ACTION_VIEW).apply {
-            data = "geo:0.0,0.0?z=20".toUri()
-            resolveActivity(requireActivity().packageManager)?.let { menu.findItem(R.id.option_menu_open_in_map_app).isEnabled = true }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
-            R.id.option_menu_lespas -> {
-                if (target == R.id.search_gallery) shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_LESPAS)
-                else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                true
-            }
-            R.id.option_menu_share -> {
-/*
-                if (target == R.id.search_archive) imageLoaderModel.batchDownload(requireContext(), listOf(remotePhoto))
-                else if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null) ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
-*/
-                if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
-                    ShareOutDialogFragment.newInstance(mimeTypes = listOf(remotePhoto.photo.mimeType))?.show(parentFragmentManager, SHARE_OUT_DIALOG) ?: run { shareOut(strip = false, lowResolution = false, shareType = GENERAL_SHARE) }
-                true
-            }
-            R.id.option_menu_open_in_map_app -> {
-                startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    data = (
-                        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
-                            Tools.wGS84ToGCJ02(doubleArrayOf(remotePhoto.photo.latitude, remotePhoto.photo.longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
-                        else "geo:${remotePhoto.photo.latitude},${remotePhoto.photo.longitude}?z=20"
-                    ).toUri()
-                })
-                true
-            }
-            else -> false
-        }
-    }
-
-    private fun shareOut(strip: Boolean, lowResolution: Boolean, shareType: Int) {
-        shareOutType = shareType
-        waitingMsg = Tools.getPreparingSharesSnackBar(mapView) {
-            imageLoaderModel.cancelShareOut()
-            shareOutBackPressedCallback.isEnabled = false
-        }
-
-        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-        handler.postDelayed({
-            waitingMsg?.show()
-            shareOutBackPressedCallback.isEnabled = true
-        }, 500)
-
-        // Prepare media files for sharing
-        imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.apply { shareOutMimeType = photo.mimeType }), strip, lowResolution)
-    }
-
     companion object {
         private const val KEY_PHOTO = "KEY_PHOTO"
-        private const val KEY_TARGET = "KEY_TARGET"
-
-        private const val GENERAL_SHARE = 0
-        private const val SHARE_TO_LESPAS = 2
-
-        const val TAG_DESTINATION_DIALOG = "PHOTO_WITH_MAP_DESTINATION_DIALOG"
-        const val TAG_ACQUIRING_DIALOG = "PHOTO_WITH_MAP_ACQUIRING_DIALOG"
+        private const val KEY_SEARCH_SCOPE = "KEY_SEARCH_SCOPE"
         private const val SHARE_OUT_DIALOG = "SHARE_OUT_DIALOG"
-        private const val DESTINATION_DIALOG_REQUEST_KEY = "PHOTO_WITH_MAP_DESTINATION_DIALOG_REQUEST_KEY"
 
         @JvmStatic
-        fun newInstance(photo: NCShareViewModel.RemotePhoto, target: Int) = PhotoWithMapFragment().apply {
+        fun newInstance(photo: NCShareViewModel.RemotePhoto, scope: Int) = PhotoWithMapFragment().apply {
             arguments = Bundle().apply {
                 putParcelable(KEY_PHOTO, photo)
-                putInt(KEY_TARGET, target)
+                putInt(KEY_SEARCH_SCOPE, scope)
             }
         }
     }

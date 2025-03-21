@@ -69,17 +69,22 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.album.IDandAttribute
 import site.leos.apps.lespas.gallery.GalleryFragment
+import site.leos.apps.lespas.gallery.GalleryFragment.Companion.ARCHIVE_SCHEME
 import site.leos.apps.lespas.gallery.GalleryFragment.Companion.STORAGE_EMULATED
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import site.leos.apps.lespas.tflite.ObjectDetectionModel
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.Locale
 
 class SearchFragment: Fragment() {
@@ -94,6 +99,8 @@ class SearchFragment: Fragment() {
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    private var additionUris = arrayListOf<Uri>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,7 +117,6 @@ class SearchFragment: Fragment() {
                 waitingMsg?.let {
                     if (it.isShownOrQueued) {
                         archiveModel.cancelShareOut()
-                        //searchModel.setIsPreparingShareOut(false)
                         it.dismiss()
                     }
                 }
@@ -145,6 +151,16 @@ class SearchFragment: Fragment() {
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
         }, viewLifecycleOwner, Lifecycle.State.STARTED)
 
+        parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            result.parcelable<Album>(DestinationDialogFragment.KEY_TARGET_ALBUM)?.let { targetAlbum ->
+                if (targetAlbum.id == Album.JOINT_ALBUM_ID)
+                    Snackbar.make(requireView(), getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
+
+                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                    AcquiringDialogFragment.newInstance(additionUris, targetAlbum, result.getBoolean(DestinationDialogFragment.KEY_REMOVE_ORIGINAL)).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -166,6 +182,19 @@ class SearchFragment: Fragment() {
                     }}
                 }
                 launch {
+                    searchModel.additions.collect { remotePhotos ->
+                        // Photos are from Gallery only
+                        additionUris = arrayListOf<Uri>().apply {
+                            // Prepare uri of media for the convenience of displaying photo thumbnail in DestinationDialogFragment, especially those of remote only medias
+                            remotePhotos.forEach { rp ->
+                                if (rp.photo.id.startsWith("content")) add(rp.photo.id.toUri())
+                                else add("$ARCHIVE_SCHEME://${rp.remotePath}/${rp.photo.name}?fileid=${rp.photo.id}&datetaken=${rp.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${rp.photo.mimeType}&width=${rp.photo.width}&height=${rp.photo.height}&orientation=${rp.photo.orientation}&lat=${rp.photo.latitude}&long=${rp.photo.longitude}&alt=${rp.photo.altitude}&bearing=${rp.photo.bearing}".toUri())
+                            }
+                        }
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, additionUris, false, "").show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    }
+                }
+                launch {
                     searchModel.deletion.collect { deletions ->
                         if (deletions.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) trashMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, deletions, true)).setFillInIntent(null).build())
                     }
@@ -175,7 +204,6 @@ class SearchFragment: Fragment() {
                         waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
                             archiveModel.cancelShareOut()
                             shareOutBackPressedCallback.isEnabled = false
-                            //galleryModel.setIsPreparingShareOut(false)
                         }
 
                         // Show a SnackBar if it takes too long (more than 500ms) preparing shares
@@ -217,17 +245,30 @@ class SearchFragment: Fragment() {
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
                             }, null))
-
-                            // IDs of photos meant to be deleted are saved in GalleryViewModel
-                            //searchModel.deleteAfterShared()
-
                         }
-
-                        //searchModel.setIsPreparingShareOut(false)
                     }
                 }
             }
         }
+
+        // Restore sharing out waiting snackbar
+        savedInstanceState?.let {
+            if (it.getBoolean(KEY_SHARING_OUT)) {
+                waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
+                    archiveModel.cancelShareOut()
+                    shareOutBackPressedCallback.isEnabled = false
+                }
+                waitingMsg?.run {
+                    show()
+                    shareOutBackPressedCallback.isEnabled = true
+                }
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_SHARING_OUT, waitingMsg?.isShownOrQueued == true)
     }
 
     class SearchModelFactory(private val application: Application, private val archiveModel: NCShareViewModel, private val actionModel: ActionViewModel): ViewModelProvider.NewInstanceFactory() {
@@ -360,17 +401,13 @@ class SearchFragment: Fragment() {
                         var dateTaken: Long
                         var relativePath: String
 
-/*
-                        var volumeColumn = 0
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
-*/
-
                         cursorLoop@ while (cursor.moveToNext()) {
                             ensureActive()
 
                             mimeType = cursor.getString(typeColumn)
+
                             // Make sure image type is supported
-                            if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
+                            if (!Tools.hasExif(mimeType)) continue@cursorLoop
                             if (cursor.getLong(sizeColumn) == 0L) continue@cursorLoop
 
                             dateAdded = cursor.getLong(dateAddedColumn)
@@ -450,7 +487,7 @@ class SearchFragment: Fragment() {
                                 try {
                                     ensureActive()
                                     when {
-                                        photo.id.startsWith("content") -> BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)), null, option)
+                                        photo.id.startsWith("content") -> BitmapFactory.decodeStream(cr.openInputStream(photo.id.toUri()), null, option)
                                         remotePhoto.remotePath.isNotEmpty() -> archiveModel.getPreview(remotePhoto)
                                         else -> BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
                                     }?.let {
@@ -561,74 +598,6 @@ class SearchFragment: Fragment() {
                                         _locationSearchResult.emit(resultList.map { it.copy() })
                                     }
                                 }
-
-/*
-                                if (Tools.hasExif(photo.mimeType)) {
-                                    when (searchScope) {
-                                        R.id.search_album -> {
-                                            if (photo.latitude != Photo.NO_GPS_DATA)
-                                            else return@forEachIndexed
-                                        }
-                                        R.id.search_gallery -> {
-                                            try {
-                                                cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
-                                            } catch (e: SecurityException) {
-                                                cr.openInputStream(Uri.parse(photo.id))
-                                            } catch (e: UnsupportedOperationException) {
-                                                cr.openInputStream(Uri.parse(photo.id))
-                                            }?.let {
-                                                try {
-                                                    ExifInterface(it).latLong
-                                                } catch (_: NullPointerException) {
-                                                    return@forEachIndexed
-                                                } catch (_: OutOfMemoryError) {
-                                                    null
-                                                }
-                                            } ?: run { return@forEachIndexed }
-                                        }
-*/
-/*
-                        R.id.search_archive -> {
-                        when(photo.latitude) {
-                            Photo.NO_GPS_DATA -> return@forEachIndexed
-                            Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteCameraArchiveFolder))?.let { exif ->
-                                exif.latLong?.run {
-                                    latitude = this[0]
-                                    longitude = this[1]
-                                    altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                                    bearing = Tools.getBearing(exif)
-                                } ?: run {
-                                    latitude = Photo.NO_GPS_DATA
-                                    longitude = Photo.NO_GPS_DATA
-                                    altitude = Photo.NO_GPS_DATA
-                                    bearing = Photo.NO_GPS_DATA
-                                }
-
-                                // Patch WebDAV properties in archive
-                                // exif.dateTimeOriginal, exif.dateTimeDigitized both return timestamp in UTC time zone
-                                // Property folder name should "/DCIM" here, SyncAdapter will handle user base correctly
-                                // FIXME foldername under new backup folder structure
-                                patchActions.add(Action(null, Action.ACTION_PATCH_PROPERTIES, "","/DCIM",
-                                    "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
-                                            "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
-                                            "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
-                                            "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>" +
-                                            "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + exif.rotationDegrees + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
-                                            "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
-                                            "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
-                                            //"<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: try { (photo.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) } catch (e: Exception) { System.currentTimeMillis() }) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
-                                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: try { (photo.dateTaken.atZone(ZoneId.of("Z")).toInstant().toEpochMilli()) } catch (e: Exception) { System.currentTimeMillis() }) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
-                                    photo.name, System.currentTimeMillis(), 1)
-                                )
-
-                                exif.latLong
-                            }
-                            else -> doubleArrayOf(photo.latitude, photo.longitude)
-                        }
-                        }
-*/
-                            //else -> null
-                            //}?.also { latLong ->
                             }
                         }
 
@@ -652,8 +621,12 @@ class SearchFragment: Fragment() {
             }
         }
 
-        private val _deletions = MutableStateFlow<List<Uri>>(mutableListOf())
-        val deletion: StateFlow<List<Uri>> = _deletions
+        private val _additions = MutableSharedFlow<List<NCShareViewModel.RemotePhoto>>()
+        val additions: SharedFlow<List<NCShareViewModel.RemotePhoto>> = _additions
+        fun add(remotePhotos: List<NCShareViewModel.RemotePhoto>) { viewModelScope.launch { _additions.emit(remotePhotos) }}
+
+        private val _deletions = MutableSharedFlow<List<Uri>>()
+        val deletion: SharedFlow<List<Uri>> = _deletions
         fun delete(photos: List<NCShareViewModel.RemotePhoto>) {
             // Remove from result list
             photos.map { it.photo.id }.let { ids ->
@@ -698,7 +671,7 @@ class SearchFragment: Fragment() {
                     val ids = arrayListOf<String>().apply { photosFromGallery.forEach { add(it.photo.id.substringAfterLast('/')) }}.joinToString()
                     cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
                 }
-                else viewModelScope.launch { _deletions.emit(photosFromGallery.map { Uri.parse(it.photo.id) }) }
+                else viewModelScope.launch { _deletions.emit(photosFromGallery.map { it.photo.id.toUri() }) }
             }
 
             // Remove photos from server archive
@@ -772,6 +745,11 @@ class SearchFragment: Fragment() {
         private const val SEARCH_SCOPE = "SEARCH_SCOPE"
         const val SEARCH_ALBUM = 1
         const val SEARCH_GALLERY = 2
+
+        private const val KEY_SHARING_OUT = "KEY_SHARING_OUT"
+        private const val DESTINATION_DIALOG_REQUEST_KEY = "SEARCH_DESTINATION_DIALOG_REQUEST_KEY"
+        const val TAG_DESTINATION_DIALOG = "SEARCH_DESTINATION_DIALOG"
+        const val TAG_ACQUIRING_DIALOG = "SEARCH_ACQUIRING_DIALOG"
 
         @JvmStatic
         fun newInstance(noAlbum: Boolean, searchScope: Int) = SearchFragment().apply {
