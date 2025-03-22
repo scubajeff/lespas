@@ -17,7 +17,6 @@
 package site.leos.apps.lespas.search
 
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.ColorMatrixColorFilter
@@ -46,7 +45,6 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -75,11 +73,6 @@ class PhotoWithMapFragment: Fragment() {
             scrimColor = Color.TRANSPARENT
             //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }
-        with(remotePhoto.photo) {
-            requireActivity().requestedOrientation =
-                if ((width < height) || (albumId == GalleryFragment.FROM_DEVICE_GALLERY && (orientation == 90 || orientation == 270)) || (remotePhoto.remotePath.isNotEmpty() && (orientation == 90 || orientation == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photo_with_map, container, false)
@@ -88,9 +81,8 @@ class PhotoWithMapFragment: Fragment() {
         postponeEnterTransition()
 
         photoView = view.findViewById<PhotoView>(R.id.photo).apply {
-            imageLoaderModel.setImagePhoto(remotePhoto, this, NCShareViewModel.TYPE_IN_MAP) { startPostponedEnterTransition() }
-
             ViewCompat.setTransitionName(this, remotePhoto.photo.id)
+            imageLoaderModel.setImagePhoto(remotePhoto, this, NCShareViewModel.TYPE_FULL) { startPostponedEnterTransition() }
         }
 
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
@@ -183,11 +175,6 @@ class PhotoWithMapFragment: Fragment() {
         imageLoaderModel.cancelSetImagePhoto(photoView)
 
         super.onDestroyView()
-    }
-
-    override fun onDestroy() {
-        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        super.onDestroy()
     }
 
     companion object {
