@@ -566,12 +566,11 @@ object Tools {
 
     fun getRemoteHome(context: Context): String = getPathOnServer(context, 1)
     fun getArchiveBase(context: Context): String = getPathOnServer(context, 3)
-    fun getDeviceArchiveBase(context: Context): String = "${getRemoteHome(context)}${getArchiveBase(context)}/${getDeviceModel()}"
+    fun getDeviceArchiveBase(context: Context): String = "${getArchiveBase(context)}/${getDeviceModel()}"
     private fun getPathOnServer(context: Context, id: Int): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         return (sp.getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
             1 -> if (sp.getBoolean(SettingsFragment.NEW_HOME_SETTING, false)) "" else context.getString(R.string.local_base)
-            2 -> "/DCIM"
             3 -> SyncAdapter.ARCHIVE_BASE
             else -> ""
         }
