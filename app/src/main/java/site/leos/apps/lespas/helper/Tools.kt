@@ -33,7 +33,6 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.drawable.AnimatedImageDrawable
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -54,6 +53,8 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -100,11 +101,11 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 object Tools {
-    private val COMMON_FORMAT = arrayOf("jpeg", "png", "webp", "heif", "heic",)
+    private val COMMON_FORMAT = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val RAW_FORMAT = arrayOf("x-dcraw", "x-sony-arw", "x-sony-sr2", "x-sony-srf", "x-adobe-dng", "x-fuji-raf", "x-canon-cr2", "x-canon-crw", "x-nikon-nef", "x-olympus-orf", "x-panasonic-raw", "x-pentax-pef", "x-sigma-x3f", "x-kodak-dcr", "x-kodak-k25", "x-kodak-kdc", "x-minolta-mrw")
     private val FORMATS_WITH_EXIF = COMMON_FORMAT + RAW_FORMAT
     //val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic", "x-dcraw", "x-sony-arw", "x-sony-sr2", "x-sony-srf", "x-adobe-dng", "x-fuji-raf", "x-canon-cr2", "x-canon-crw", "x-nikon-nef", "x-olympus-orf", "x-panasonic-raw", "x-pentax-pef", "x-sigma-x3f", "x-kodak-dcr", "x-kodak-k25", "x-kodak-kdc", "x-minolta-mrw")
-    val SUPPORTED_PICTURE_FORMATS = COMMON_FORMAT + arrayOf("gif", "bmp",) + RAW_FORMAT
+    val SUPPORTED_PICTURE_FORMATS = COMMON_FORMAT + arrayOf("gif", "bmp") + RAW_FORMAT
 
     @SuppressLint("RestrictedApi")
     fun getPhotoParams(
@@ -591,7 +592,7 @@ object Tools {
     fun getRoundBitmap(context: Context, bitmap: Bitmap): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
-        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+        return createBitmap(width, height).apply {
             Canvas(this).apply {
                 clipPath(Path().apply { addCircle((width.toFloat() / 2), (height.toFloat() / 2), min(width.toFloat(), (height.toFloat() / 2)), Path.Direction.CCW) })
                 drawPaint(Paint().apply {
@@ -608,13 +609,13 @@ object Tools {
     private fun getScaledDrawable(context: Activity, scale: Float, resId: Int): Drawable {
         val size: Int = (scale * getDisplayDimension(context).first).toInt()
 
-        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val bmp = createBitmap(size, size)
         ContextCompat.getDrawable(context, resId)?.apply {
             setBounds(0, 0, size, size)
             draw(Canvas(bmp))
         }
 
-        return BitmapDrawable(context.resources, bmp)
+        return bmp.toDrawable(context.resources)
     }
 
     fun setImmersive(window: Window, on: Boolean) {
@@ -780,6 +781,7 @@ object Tools {
         return result
     }
 
+/*
     fun photosToMetaJSONString(photos: List<Photo>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
 
@@ -792,6 +794,7 @@ object Tools {
 
         return content.dropLast(1) + "]}}"
     }
+*/
 
     fun remotePhotosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
