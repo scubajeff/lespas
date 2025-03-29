@@ -127,6 +127,28 @@ class GalleryFragment: Fragment() {
 
     private lateinit var sp: SharedPreferences
 
+    private val archiveWorksListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (galleryModel.showArchive.value == GalleryViewModel.ARCHIVE_ON) {
+            // If archive mode is On, update archive action status accordingly
+            val syncActionKey = getString(R.string.sync_status_local_action_pref_key)
+            if (key == syncActionKey) {
+                try {
+                    sp.getString(syncActionKey, "")?.split("``")?.let { action ->
+                        // action is String array of: actionId``folderId``folderName``fileId``fileName``timestamp in millisecond
+                        if (action.isNotEmpty()) {
+                            when (action[0].toInt()) {
+                                Action.ACTION_BACKUP_INDIVIDUAL, Action.ACTION_DELETE_FILE_IN_ARCHIVE -> galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
+                                Action.ACTION_MOVE_ON_SERVER ->
+                                    // action[1] contains ACTION_MOVE_ON_SERVER source folder
+                                    if (action[1].startsWith(Tools.getArchiveBase(requireContext()))) galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -232,122 +254,154 @@ class GalleryFragment: Fragment() {
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         viewLifecycleOwner.lifecycleScope.launch {
-            launch {
-                galleryModel.additions.collect { ids ->
-                    selectedUris = arrayListOf<Uri>().apply {
-                        // Prepare uri of media for the convenience of displaying photo thumbnail in DestinationDialogFragment, especially those of remote only medias
-                        ids.forEach { id ->
-                            if (id.startsWith("content")) add(id.toUri())
-                            else galleryModel.getPhotoById(id)?.let {
-                                // TODO caption property value is file size in this case
-                                add("${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}".toUri())
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    galleryModel.additions.collect { ids ->
+                        selectedUris = arrayListOf<Uri>().apply {
+                            // Prepare uri of media for the convenience of displaying photo thumbnail in DestinationDialogFragment, especially those of remote only medias
+                            ids.forEach { id ->
+                                if (id.startsWith("content")) add(id.toUri())
+                                else galleryModel.getPhotoById(id)?.let {
+                                    // TODO caption property value is file size in this case
+                                    add(
+                                        "${ARCHIVE_SCHEME}://${it.remotePath}/${it.photo.name}?fileid=${it.photo.id}&datetaken=${
+                                            it.photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()
+                                        }&mimetype=${it.photo.mimeType}&width=${it.photo.width}&height=${it.photo.height}&orientation=${it.photo.orientation}&lat=${it.photo.latitude}&long=${it.photo.longitude}&alt=${it.photo.altitude}&bearing=${it.photo.bearing}".toUri()
+                                    )
+                                }
                             }
                         }
-                    }
-                    // TODO revisit canWrite condition, should be always yes now
-                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
-                        .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
-                }
-            }
-            launch {
-                galleryModel.deletions.collect { deletions -> if (deletions.isNotEmpty()) removeFilesSAF(deletions) }
-            }
-            launch {
-                galleryModel.restorations.collect { restorations ->
-                    if (restorations.isNotEmpty()) {
-                        val uris = arrayListOf<Uri>().apply { restorations.forEach { add(it.toUri()) } }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, uris, false)).setFillInIntent(null).build())
+                        // TODO revisit canWrite condition, should be always yes now
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(DESTINATION_DIALOG_REQUEST_KEY, selectedUris, galleryModel.getPhotoById(ids[0])?.photo?.lastModified != LocalDateTime.MAX)
+                            .show(parentFragmentManager, if (tag == TAG_FROM_LAUNCHER) TAG_FROM_LAUNCHER else TAG_DESTINATION_DIALOG)
                     }
                 }
-            }
-            launch {
-                galleryModel.emptyTrash.collect { ids ->
-                    if (ids.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val uris = arrayListOf<Uri>().apply { ids.forEach { add(it.toUri()) } }
-                        deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireActivity().contentResolver, uris)).setFillInIntent(null).build())
+                launch {
+                    galleryModel.deletions.collect { deletions -> if (deletions.isNotEmpty()) removeFilesSAF(deletions) }
+                }
+                launch {
+                    galleryModel.restorations.collect { restorations ->
+                        if (restorations.isNotEmpty()) {
+                            val uris = arrayListOf<Uri>().apply { restorations.forEach { add(it.toUri()) } }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createTrashRequest(requireContext().contentResolver, uris, false)).setFillInIntent(null).build())
+                        }
                     }
                 }
-            }
-            launch {
-                galleryModel.strippingEXIF.collect {
-                    waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
-                        imageLoaderModel.cancelShareOut()
-                        shareOutBackPressedCallback.isEnabled = false
+                launch {
+                    galleryModel.emptyTrash.collect { ids ->
+                        if (ids.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            val uris = arrayListOf<Uri>().apply { ids.forEach { add(it.toUri()) } }
+                            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireActivity().contentResolver, uris)).setFillInIntent(null).build())
+                        }
+                    }
+                }
+                launch {
+                    galleryModel.strippingEXIF.collect {
+                        waitingMsg = Tools.getPreparingSharesSnackBar(requireView()) {
+                            imageLoaderModel.cancelShareOut()
+                            shareOutBackPressedCallback.isEnabled = false
+                            galleryModel.setIsPreparingShareOut(false)
+                        }
+
+                        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+                        handler.postDelayed({
+                            waitingMsg?.show()
+                            shareOutBackPressedCallback.isEnabled = true
+                        }, 500)
+                    }
+                }
+                launch {
+                    imageLoaderModel.shareOutUris.collect { uris ->
+                        handler.removeCallbacksAndMessages(null)
+                        if (waitingMsg?.isShownOrQueued == true) {
+                            waitingMsg?.dismiss()
+                            shareOutBackPressedCallback.isEnabled = false
+                        }
+
+                        if (uris.isNotEmpty()) {
+                            val cr = requireActivity().contentResolver
+
+                            if (galleryModel.isUseAs()) {
+                                startActivity(Intent.createChooser(Intent().apply {
+                                    action = Intent.ACTION_ATTACH_DATA
+                                    requireContext().contentResolver.getType(uris[0])?.apply {
+                                        setDataAndType(uris[0], this)
+                                        putExtra("mimeType", this)
+                                    }
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                }, null))
+                            } else {
+                                val clipData = ClipData.newUri(cr, "", uris[0])
+                                for (i in 1 until uris.size) {
+                                    if (isActive) {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                        else clipData.addItem(ClipData.Item(uris[i]))
+                                    }
+                                }
+                                startActivity(Intent.createChooser(Intent().apply {
+                                    if (uris.size > 1) {
+                                        action = Intent.ACTION_SEND_MULTIPLE
+                                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                    } else {
+                                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    }
+                                    type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                                    if (type!!.startsWith("image")) type = "image/*"
+                                    this.clipData = clipData
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
+                                }, null))
+
+                                // IDs of photos meant to be deleted are saved in GalleryViewModel
+                                galleryModel.deleteAfterShared()
+                            }
+                        }
+
                         galleryModel.setIsPreparingShareOut(false)
                     }
-
-                    // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-                    handler.postDelayed({
-                        waitingMsg?.show()
-                        shareOutBackPressedCallback.isEnabled = true
-                    }, 500)
-                }
-            }
-            launch {
-                imageLoaderModel.shareOutUris.collect { uris ->
+                }.invokeOnCompletion {
                     handler.removeCallbacksAndMessages(null)
                     if (waitingMsg?.isShownOrQueued == true) {
                         waitingMsg?.dismiss()
                         shareOutBackPressedCallback.isEnabled = false
                     }
-
-                    if (uris.isNotEmpty()) {
-                        val cr = requireActivity().contentResolver
-
-                        if (galleryModel.isUseAs()) {
-                            startActivity(Intent.createChooser(Intent().apply {
-                                action = Intent.ACTION_ATTACH_DATA
-                                requireContext().contentResolver.getType(uris[0])?.apply {
-                                    setDataAndType(uris[0], this)
-                                    putExtra("mimeType", this)
-                               }
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            }, null))
-                        } else {
-                            val clipData = ClipData.newUri(cr, "", uris[0])
-                            for (i in 1 until uris.size) {
-                                if (isActive) {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                                    else clipData.addItem(ClipData.Item(uris[i]))
-                                }
-                            }
-                            startActivity(Intent.createChooser(Intent().apply {
-                                if (uris.size > 1) {
-                                    action = Intent.ACTION_SEND_MULTIPLE
-                                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                                } else {
-                                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                    action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_STREAM, uris[0])
-                                }
-                                type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
-                                if (type!!.startsWith("image")) type = "image/*"
-                                this.clipData = clipData
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
-                            }, null))
-
-                            // IDs of photos meant to be deleted are saved in GalleryViewModel
-                            galleryModel.deleteAfterShared()
-                        }
-                    }
-
                     galleryModel.setIsPreparingShareOut(false)
                 }
-            }.invokeOnCompletion {
-                handler.removeCallbacksAndMessages(null)
-                if (waitingMsg?.isShownOrQueued == true) {
-                    waitingMsg?.dismiss()
-                    shareOutBackPressedCallback.isEnabled = false
+                launch {
+                    galleryModel.medias.collect { localMedias ->
+                        localMedias?.let {
+                            if (localMedias.size == 1 && localMedias[0].media.photo.lastModified == LocalDateTime.MAX) {
+                                requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
+                                requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
+                            }
+                        }
+                    }
                 }
-                galleryModel.setIsPreparingShareOut(false)
             }
-            launch {
-                galleryModel.medias.collect { localMedias ->
-                    localMedias?.let {
-                        if (localMedias.size == 1 && localMedias[0].media.photo.lastModified == LocalDateTime.MAX) {
-                            requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
-                            requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                launch {
+                    // Archive toolbar icon management
+                    galleryModel.showArchive.collect { currentState ->
+                        archiveMenuItem?.let { menuItem ->
+                            when(currentState) {
+                                GalleryViewModel.REFRESHING_ARCHIVE, GalleryViewModel.REFRESHING_GALLERY -> {
+                                    menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
+                                    (menuItem.icon as? AnimatedVectorDrawable)?.start()
+                                }
+                                GalleryViewModel.ARCHIVE_ON -> {
+                                    menuItem.setIcon(R.drawable.ic_baseline_archive_24)
+                                    sp.registerOnSharedPreferenceChangeListener(archiveWorksListener)
+                                }
+                                GalleryViewModel.ARCHIVE_OFF -> {
+                                    menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
+                                    sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
+                                }
+                            }
                         }
                     }
                 }
@@ -384,29 +438,7 @@ class GalleryFragment: Fragment() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_menu, menu)
-
-                // Archive toolbar icon management
                 archiveMenuItem = menu.findItem(R.id.option_menu_archive)
-                lifecycleScope.launch {
-                    repeatOnLifecycle(Lifecycle.State.RESUMED) { galleryModel.showArchive.collect { currentState ->
-                        archiveMenuItem?.let { menuItem ->
-                            when(currentState) {
-                                GalleryViewModel.REFRESHING_ARCHIVE, GalleryViewModel.REFRESHING_GALLERY -> {
-                                    menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
-                                    (menuItem.icon as? AnimatedVectorDrawable)?.start()
-                                }
-                                GalleryViewModel.ARCHIVE_ON -> {
-                                    menuItem.setIcon(R.drawable.ic_baseline_archive_24)
-                                    sp.registerOnSharedPreferenceChangeListener(archiveWorksListener)
-                                }
-                                GalleryViewModel.ARCHIVE_OFF -> {
-                                    menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
-                                    sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
-                                }
-                            }
-                        }
-                    }}
-                }
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -462,28 +494,6 @@ class GalleryFragment: Fragment() {
         sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
 
         super.onDestroyView()
-    }
-
-    private val archiveWorksListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (galleryModel.showArchive.value == GalleryViewModel.ARCHIVE_ON) {
-            // If archive mode is On, update archive action status accordingly
-            val syncActionKey = getString(R.string.sync_status_local_action_pref_key)
-            if (key == syncActionKey) {
-                try {
-                    sp.getString(syncActionKey, "")?.split("``")?.let { action ->
-                        // action is String array of: actionId``folderId``folderName``fileId``fileName``timestamp in millisecond
-                        if (action.isNotEmpty()) {
-                            when (action[0].toInt()) {
-                                Action.ACTION_BACKUP_INDIVIDUAL, Action.ACTION_DELETE_FILE_IN_ARCHIVE -> galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
-                                Action.ACTION_MOVE_ON_SERVER ->
-                                    // action[1] contains ACTION_MOVE_ON_SERVER source folder
-                                    if (action[1].startsWith(Tools.getArchiveBase(requireContext()))) galleryModel.startArchiveLoadingIndicator(GalleryViewModel.REFRESHING_ARCHIVE)
-                            }
-                        }
-                    }
-                } catch (_: Exception) {}
-            }
-        }
     }
 
     private fun quit() {
@@ -621,7 +631,6 @@ class GalleryFragment: Fragment() {
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
-        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         private val _local = MutableStateFlow<List<GalleryMedia>>(mutableListOf())
         private val _medias = MutableStateFlow<List<GalleryMedia>?>(null)
         val medias: StateFlow<List<GalleryMedia>?> = _medias.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
@@ -639,36 +648,6 @@ class GalleryFragment: Fragment() {
 
                         if (_showArchive.value != ARCHIVE_OFF && _showArchive.value != REFRESHING_GALLERY) {
                             archiveMedia?.let {
-/*
-                                Log.e(">>>>>>>>", "generating local list: ", )
-                                // Deep copy to create a brand new list for combining local and archive items
-                                // To facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment, need to alter item's 'location' property
-                                val combinedList: MutableList<GalleryMedia> = localMedia.filter { item -> item.folder != TRASH_FOLDER }.map { item -> item.copy(location = GalleryMedia.IS_LOCAL) }.toMutableList()
-                                Log.e(">>>>>>>>", "filtering device archive: from ${it.size}", )
-                                val archiveOfThisDevice = archiveMedia.filter { item -> item.volume == model && item.media.photo.lastModified >= combinedList.last().media.photo.lastModified }
-
-                                Log.e(">>>>>>>>", "combining: ${archiveOfThisDevice.size}", )
-                                val searchMap = combinedList.associateBy { item -> item.fullPath + item.media.photo.name }
-                                archiveOfThisDevice.forEach { archiveItem ->
-                                    // Mark as IS_BOTH if there is a copy in device gallery
-                                    searchMap[archiveItem.fullPath + archiveItem.media.photo.name]?.let { existed ->
-                                        existed.location = GalleryMedia.IS_BOTH
-                                        existed.remoteFileId = archiveItem.media.photo.id
-                                        existed.media.remotePath = archiveItem.media.remotePath
-                                        //existed.media.photo.eTag = archiveItem.media.photo.eTag
-                                    } ?: run {
-                                        // Otherwise, add it
-                                        combinedList.add(archiveItem)
-                                    }
-                                }
-
-                                Log.e(">>>>>>>>", "adding others: ", )
-                                // Add those items not from this device
-                                combinedList += archiveMedia subtract archiveOfThisDevice
-
-                                Log.e(">>>>>>>>", "sorting: ", )
-                                combinedList.sortedByDescending { item -> item.media.photo.lastModified }.apply { _showArchive.value = ARCHIVE_ON }
-*/
                                 if (archiveMedia.isNotEmpty()) {
                                     // Deep copy to create a brand new list for combining local and archive items
                                     val combinedList = archiveMedia.map { it.copy() }.toMutableList()
@@ -903,6 +882,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         val showArchive: StateFlow<Int> = _showArchive
         private fun isArchiveOff(): Boolean = _showArchive.value != ARCHIVE_ON
         fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
@@ -968,44 +948,11 @@ class GalleryFragment: Fragment() {
         val deletions: SharedFlow<List<Uri>> = _deletions
 //        private val syncDeletionIdList = arrayListOf<String>()
         fun remove(photoIds: List<String>, removeArchive: Boolean = false, removeLocal: Boolean = true) {
-/*
-            // Prepare deletion list
-            val localFiles = arrayListOf<String>()
-            val bothSide = arrayListOf<GalleryMedia>()
-            val archiveOnly = arrayListOf<GalleryMedia>()
-            photoIds.forEach { photoId ->
-                getLocalMediaById(photoId)?.let { galleryMedia ->
-                    when {
-                        galleryMedia.isRemote() -> {
-                            archiveOnly.add(galleryMedia)
-                            bothSide.add(galleryMedia)
-                        }
-                        galleryMedia.isBoth() -> {
-                            localFiles.add(photoId)
-                            bothSide.add(galleryMedia)
-                        }
-                        else -> localFiles.add(photoId)
-                    }
-                }
-            }
-            if (removeArchive) {
-                // If sync deletion to archive is set, remove all archived files in the list
-                if (bothSide.isNotEmpty()) saveArchiveDeletionList(bothSide)
-
-            } else {
-                // If sync deletion to archive is NOT set, remove only those IS_REMOTE files on server
-                if (archiveOnly.isNotEmpty()) saveArchiveDeletionList(archiveOnly)
-            }
-*/
             // Prepare deletion list for local and remote
             val localFiles = arrayListOf<String>()
             val archiveFiles = arrayListOf<GalleryMedia>()
             photoIds.forEach { photoId ->
                 getGalleryMediaById(photoId)?.let { galleryMedia ->
-/*
-                    if (galleryMedia.isLocal() || galleryMedia.atLocal()) localFiles.add(photoId)
-                    if (galleryMedia.atRemote()) archiveFiles.add(galleryMedia)
-*/
                     // Collecting local medias, IS_LOCAL and IS_BOTH medias have their photo id as a URI string
                     if (galleryMedia.media.photo.id.startsWith("content://")) localFiles.add(photoId)
 
@@ -1038,45 +985,10 @@ class GalleryFragment: Fragment() {
                     archiveFiles.forEach { add(Pair(it.fullPath, it.media.photo.name)) }
                     actionModel.deleteFileInArchive(this)
                 }
-                //if (!isArchiveOff()) imageModel.removeItemsFromArchiveList(archiveFiles)
             }
 
             setNextInLine()
         }
-/*
-        fun delete(uris: ArrayList<Uri>) {
-            val ids = arrayListOf<String>().apply { uris.forEach { add(it.toString().substringAfterLast('/')) }}.joinToString()
-            cr.delete(MediaStore.Files.getContentUri("external"), "${MediaStore.Files.FileColumns._ID} IN (${ids})", null)
-
-            //removeFromArchive()
-        }
-*/
-/*
-        fun removeFromArchive() {
-            if (syncDeletionIdList.isNotEmpty()) {
-                imageModel.archive.value?.toMutableList()?.let { archiveList ->
-                    // Remove files from server archive
-                    mutableListOf<String>().let { deletions ->
-                        archiveList.filter { it.media.photo.id in syncDeletionIdList }.let { hits -> hits.forEach { deletions.add("${it.media.remotePath}/${it.media.photo.name}") }}
-                        // Remove archive items on server
-                        actionModel.deleteFileInArchive(deletions)
-                    }
-
-                    setNextInLine()
-                    // Updating archive list in NCShareViewModel locally, save some network traffic of refreshing archive list from server
-                    imageModel.removeItemsFromArchiveList(syncDeletionIdList)
-                }
-
-                // Clean up
-                syncDeletionIdList.clear()
-            } else setNextInLine()
-        }
-        private fun saveArchiveDeletionList(deletionIds: List<GalleryMedia>) {
-            // When deleting files or moving media files to album, saved the archive deletion waiting list now
-            syncDeletionIdList.clear()
-            syncDeletionIdList.addAll(deletionIds)
-        }
-*/
 
         private val _restorations = MutableSharedFlow<List<String>>()
         val restorations: SharedFlow<List<String>> = _restorations

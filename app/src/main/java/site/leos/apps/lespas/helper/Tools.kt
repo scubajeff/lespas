@@ -849,85 +849,41 @@ object Tools {
         var fullPath: String
 
         try {
-            //if (jsonString.isNotEmpty()) {
-                jacksonObjectMapper().readValue<SnapshotFile>(snapshotFile).archive.photos.forEach { photo ->
-                    volume = photo.volume
-                    fullPath = photo.fullPath.dropLast(1)
+            jacksonObjectMapper().readValue<SnapshotFile>(snapshotFile).archive.photos.forEach { photo ->
+                volume = photo.volume
+                fullPath = photo.fullPath.dropLast(1)
 
-                    result.add(
-                        GalleryFragment.GalleryMedia(
-                            GalleryFragment.GalleryMedia.IS_REMOTE,
-                            if (fullPath.isEmpty()) volume else fullPath.substringBefore('/'),
-                            NCShareViewModel.RemotePhoto(
-                                photo = Photo(
-                                    id = photo.id,
-                                    albumId = "",
-                                    name = photo.name,
-                                    eTag = Photo.ETAG_ARCHIVE,
-                                    mimeType = photo.mime,
-                                    dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(photo.dateTaken), defaultZone),
-                                    lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(photo.lastModified), defaultZone),
-                                    width = photo.width,
-                                    height = photo.height,
-                                    orientation = photo.orientation,
-                                    caption = photo.size.toString(),
-                                    latitude = photo.latitude,
-                                    longitude = photo.longitude,
-                                    altitude = photo.altitude,
-                                    bearing = photo.bearing,
-                                ),
-                                remotePath = "${archiveBase}/${volume}/${fullPath}"
+                result.add(
+                    GalleryFragment.GalleryMedia(
+                        GalleryFragment.GalleryMedia.IS_REMOTE,
+                        if (fullPath.isEmpty()) volume else fullPath.substringBefore('/'),
+                        NCShareViewModel.RemotePhoto(
+                            photo = Photo(
+                                id = photo.id,
+                                albumId = "",
+                                name = photo.name,
+                                eTag = Photo.ETAG_ARCHIVE,
+                                mimeType = photo.mime,
+                                dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(photo.dateTaken), defaultZone),
+                                lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(photo.lastModified), defaultZone),
+                                width = photo.width,
+                                height = photo.height,
+                                orientation = photo.orientation,
+                                caption = photo.size.toString(),
+                                latitude = photo.latitude,
+                                longitude = photo.longitude,
+                                altitude = photo.altitude,
+                                bearing = photo.bearing,
                             ),
-                            volume = volume,
-                            fullPath = "${fullPath}/",
-                            appName = if (fullPath.isEmpty()) volume else fullPath.substringAfterLast('/'),
-                            remoteFileId = photo.id,
-                        )
+                            remotePath = "${archiveBase}/${volume}/${fullPath}"
+                        ),
+                        volume = volume,
+                        fullPath = "${fullPath}/",
+                        appName = if (fullPath.isEmpty()) volume else fullPath.substringAfterLast('/'),
+                        remoteFileId = photo.id,
                     )
-                }
-/*
-                JSONObject(jsonString).getJSONObject("archive").let { archiveJSON ->
-                    val photos = archiveJSON.getJSONArray("photos")
-                    for (i in 0 until photos.length()) {
-                        photos.getJSONObject(i).run {
-                            volume = getString("volume")
-                            fullPath = getString("fullPath").dropLast(1)
-
-                            result.add(
-                                GalleryFragment.GalleryMedia(
-                                    GalleryFragment.GalleryMedia.IS_REMOTE,
-                                    if (fullPath.isEmpty()) volume else fullPath.substringBefore('/'),
-                                    NCShareViewModel.RemotePhoto(
-                                        photo = Photo(
-                                            id = getString("id"),
-                                            albumId = "",    //getString("albumId"),
-                                            name = getString("name"),
-                                            eTag = Photo.ETAG_ARCHIVE,  //"\"${getString("eTag")}\"",
-                                            mimeType = getString("mime"),
-                                            // Timestamps are saved in UTC timezone in archiveToJSONString(), use default timezone here to show meaningful date time to user
-                                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("dateTaken")), defaultZone),
-                                            lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(getLong("lastModified")), defaultZone),
-                                            width = getInt("width"),
-                                            height = getInt("height"),
-                                            orientation = getInt("orientation"),
-                                            caption = getLong("size").toString(),
-                                            latitude = getDouble("latitude"),
-                                            longitude = getDouble("longitude"),
-                                            altitude = getDouble("altitude"),
-                                            bearing = getDouble("bearing"),
-                                        ),
-                                        remotePath = "${archiveBase}/${volume}/${fullPath}"
-                                    ),
-                                    volume = volume,
-                                    fullPath = "${fullPath}/",
-                                    appName = if (fullPath.isEmpty()) volume else fullPath.substringAfterLast('/'),
-                                )
-                            )
-                        }
-                    }
-                }
-*/
-            //}
+                )
+            }
         } catch (e: Exception) { e.printStackTrace() }
 
         return result
