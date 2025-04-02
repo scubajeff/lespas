@@ -1,0 +1,3 @@
+* Varias correcciones en la búsqueda de imágenes, la búsqueda de ubicación en Galería y Archivo ahora funciona como se esperaba
+* Se ha optimizado la velocidad al hacer clic en la línea de la fecha en la Galería para seleccionar imágenes en toda la fecha, especialmente cuando hay más de cientos de fotos en ese día.
+* Varias mejoras y correcciones de errores

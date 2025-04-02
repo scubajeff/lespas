@@ -1,0 +1,3 @@
+* Verschiedene Korrekturen an der Bildersuche, die Ortssuche in der Galerie und im Archiv funktioniert jetzt wie erwartet
+* Optimierte Geschwindigkeit beim Anklicken der Datumszeile in der Galerie, um Bilder des gesamten Datums auszuwählen, insbesondere wenn mehr als hundert Fotos an diesem Tag vorhanden sind
+* Diverse Verbesserungen und Fehlerbehebungen

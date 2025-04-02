@@ -1,0 +1,3 @@
+* Various fixes to image search, location search in Gallery and Archive now works as expected
+* Optimised speed when clicking date line in Gallery to select images in the entire date, especially when there are more than hundreds of photos in that day
+* Various improvements and bug fixes
