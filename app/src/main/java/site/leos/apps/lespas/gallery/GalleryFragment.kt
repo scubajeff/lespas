@@ -382,32 +382,6 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                launch {
-                    // Archive toolbar icon management
-                    galleryModel.showArchive.collect { currentState ->
-                        archiveMenuItem?.let { menuItem ->
-                            when(currentState) {
-                                GalleryViewModel.REFRESHING_ARCHIVE, GalleryViewModel.REFRESHING_GALLERY -> {
-                                    menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
-                                    (menuItem.icon as? AnimatedVectorDrawable)?.start()
-                                }
-                                GalleryViewModel.ARCHIVE_ON -> {
-                                    menuItem.setIcon(R.drawable.ic_baseline_archive_24)
-                                    sp.registerOnSharedPreferenceChangeListener(archiveWorksListener)
-                                }
-                                GalleryViewModel.ARCHIVE_OFF -> {
-                                    menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
-                                    sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
             // Inform GallerySliderFragment
             childFragmentManager.findFragmentByTag(GallerySlideFragment::class.java.canonicalName)?.let {
@@ -439,6 +413,36 @@ class GalleryFragment: Fragment() {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_menu, menu)
                 archiveMenuItem = menu.findItem(R.id.option_menu_archive)
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                super.onPrepareMenu(menu)
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        launch {
+                            // Archive toolbar icon management
+                            galleryModel.showArchive.collect { currentState ->
+                                archiveMenuItem?.let { menuItem ->
+                                    when(currentState) {
+                                        GalleryViewModel.REFRESHING_ARCHIVE, GalleryViewModel.REFRESHING_GALLERY -> {
+                                            menuItem.setIcon(R.drawable.ic_baseline_archive_refreshing_animated_24)
+                                            (menuItem.icon as? AnimatedVectorDrawable)?.start()
+                                        }
+                                        GalleryViewModel.ARCHIVE_ON -> {
+                                            menuItem.setIcon(R.drawable.ic_baseline_archive_24)
+                                            sp.registerOnSharedPreferenceChangeListener(archiveWorksListener)
+                                        }
+                                        GalleryViewModel.ARCHIVE_OFF -> {
+                                            menuItem.setIcon(R.drawable.ic_baseline_archive_off_24)
+                                            sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -477,9 +481,9 @@ class GalleryFragment: Fragment() {
                     shareOutBackPressedCallback.isEnabled = true
                 }
             }
+        } ?: run {
+            if (sp.getBoolean(getString(R.string.show_archive_perf_key), true)) galleryModel.toggleArchiveShownState()
         }
-
-        if (sp.getBoolean(getString(R.string.show_archive_perf_key), true)) galleryModel.toggleArchiveShownState()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
