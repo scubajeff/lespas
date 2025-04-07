@@ -459,6 +459,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     menu.findItem(R.id.option_menu_archive).isVisible = false
                     menu.findItem(R.id.option_menu_archive_forced_refresh).isVisible = false
                     menu.findItem(R.id.option_menu_calendar_view).isVisible = false
+                    menu.findItem(R.id.option_menu_search_gallery).isVisible = false
                 }
             }
 
