@@ -104,6 +104,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
     private val backupSettingModel: BackupSettingViewModel by viewModels(ownerProducer = { requireParentFragment() })
 
     private var syncRequired = false
+    private var selectionPendingRestored = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -353,10 +354,18 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                             } else overviewItems
                         }
                     }.collect { list ->
-                        overviewAdapter.submitList(list) {
-                            galleryModel.stopArchiveLoadingIndicator()
-                            savedInstanceState?.let { selectionTracker.onRestoreInstanceState(it) }
+                        list?.let {
+                            overviewAdapter.submitList(list) {
+                                galleryModel.stopArchiveLoadingIndicator()
+                                savedInstanceState?.let {
+                                    if (selectionPendingRestored) {
+                                        selectionTracker.onRestoreInstanceState(it)
+                                        selectionPendingRestored = false
+                                    }
+                                }
+                            }
                         }
+
                         if (list?.isEmpty() == true) startPostponedEnterTransition()
                     }
                 }

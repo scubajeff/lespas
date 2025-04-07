@@ -130,6 +130,8 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     private var downloadMenuItem: MenuItem? = null
     private var uploadMenuItem: MenuItem? = null
 
+    private var selectionPendingRestored = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -433,8 +435,9 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                                 listGroupedByDate.add(media)
                             }
 
-                            if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else {
-                                mediaAdapter.submitList(listGroupedByDate) { savedInstanceState?.let { states -> selectionTracker.onRestoreInstanceState(states) }}
+                            if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack()
+                            else {
+                                mediaAdapter.submitList(listGroupedByDate) { savedInstanceState?.let { states ->  selectionTracker.onRestoreInstanceState(states) }}
                                 //updateSelectionInfo()
                             }
                         }
@@ -729,7 +732,12 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         //if (listGroupedByDate.isEmpty()) parentFragmentManager.popBackStack() else mediaAdapter.submitList(listGroupedByDate)
         if (listGroupedByDate.isNotEmpty()) mediaAdapter.submitList(listGroupedByDate) {
             galleryModel.stopArchiveLoadingIndicator()
-            savedInstanceState?.let { states -> selectionTracker.onRestoreInstanceState(states) }
+            savedInstanceState?.let { states ->
+                if (selectionPendingRestored) {
+                    selectionTracker.onRestoreInstanceState(states)
+                    selectionPendingRestored = false
+                }
+            }
         }
     }
 
