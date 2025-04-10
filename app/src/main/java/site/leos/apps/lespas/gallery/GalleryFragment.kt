@@ -655,25 +655,30 @@ class GalleryFragment: Fragment() {
                                 if (archiveMedia.isNotEmpty()) {
                                     // Deep copy to create a brand new list for combining local and archive items
                                     val combinedList = archiveMedia.map { it.copy() }.toMutableList()
-                                    // Create a map of archive items from this device for matching local medias later
-                                    val searchMap = combinedList.filter { item -> item.volume == model && item.media.photo.lastModified >= localMedia.last().media.photo.lastModified }.associateBy { item -> item.fullPath + item.media.photo.name }
 
-                                    localMedia.forEach { localItem ->
-                                        searchMap[localItem.fullPath + localItem.media.photo.name]?.let { existed ->
-                                            // If local media existed in archive list, change properties to match local item
-                                            existed.location = GalleryMedia.IS_BOTH
-                                            //existed.remoteFileId = existed.media.photo.id     // remoteFileId set when archive being refreshed in NCShareViewModel.refreshArchive()
-                                            existed.volume = localItem.volume
-                                            existed.media.photo.albumId = FROM_DEVICE_GALLERY
-                                            existed.media.photo.id = localItem.media.photo.id
-                                            existed.media.photo.eTag = Photo.ETAG_NOT_YET_UPLOADED
-                                        } ?: run {
-                                            // If local media not existed in archive list, add it's deep copy to combined list, change property 'location' to facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment
-                                            combinedList.add(localItem.copy(location = GalleryMedia.IS_LOCAL))
+                                    if (localMedia.isNotEmpty()) {
+                                        // Create a map of archive items from this device for matching local medias later
+                                        val searchMap = combinedList.filter { item -> item.volume == model && item.media.photo.lastModified >= localMedia.last().media.photo.lastModified }.associateBy { item -> item.fullPath + item.media.photo.name }
+
+                                        localMedia.forEach { localItem ->
+                                            searchMap[localItem.fullPath + localItem.media.photo.name]?.let { existed ->
+                                                // If local media existed in archive list, change properties to match local item
+                                                existed.location = GalleryMedia.IS_BOTH
+                                                //existed.remoteFileId = existed.media.photo.id     // remoteFileId set when archive being refreshed in NCShareViewModel.refreshArchive()
+                                                existed.volume = localItem.volume
+                                                existed.media.photo.albumId = FROM_DEVICE_GALLERY
+                                                existed.media.photo.id = localItem.media.photo.id
+                                                existed.media.photo.eTag = Photo.ETAG_NOT_YET_UPLOADED
+                                            } ?: run {
+                                                // If local media not existed in archive list, add it's deep copy to combined list, change property 'location' to facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment
+                                                combinedList.add(localItem.copy(location = GalleryMedia.IS_LOCAL))
+                                            }
                                         }
+
+                                        combinedList.sortedByDescending { item -> item.media.photo.lastModified }
                                     }
 
-                                    combinedList.sortedByDescending { item -> item.media.photo.lastModified }
+                                    combinedList
                                 } else {
                                     // No content in archive yet
                                     archiveEmptyToast()
