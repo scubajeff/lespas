@@ -1,0 +1,5 @@
+* Arresto anomalo corretto quando si entra nella Galleria con l'impostazione “Mostra l'archivio del server nella galleria” attivata. Grazie all'utente github @Trebacz per averci aiutato a risolvere il problema!
+* Corretto il problema dell'azione “Mostra archivio” che si blocca per sempre in alcune circostanze.
+* Corretta l'icona della barra dell'azione “Mostra archivio” che non seguiva lo stato di visualizzazione dell'archivio corrente.
+* Ripristino fisso della selezione nella Galleria durante la rotazione dello schermo
+* Vari miglioramenti e correzioni di bug

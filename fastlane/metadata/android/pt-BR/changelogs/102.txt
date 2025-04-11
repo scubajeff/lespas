@@ -1,0 +1,5 @@
+* Corrigida a falha ao entrar na Galeria com a configuração “Mostrar arquivo do servidor na galeria” ativada. Agradecemos ao usuário do github @Trebacz por ajudar a depurar isso!
+* Corrigida a ação “Show Archive” que ficava em execução para sempre em determinadas circunstâncias.
+* Correção do ícone da barra de ação “Show Archive” que não segue o estado de exibição do arquivo atual.
+* Correção da restauração da seleção na Galeria durante a rotação da tela.
+* Vários aprimoramentos e correções de bugs

@@ -1,0 +1,5 @@
+* Correction d'un crash lors de l'entrée dans la galerie avec l'option 'Afficher l'archive du serveur dans la galerie' activée. Merci à l'utilisateur de github @Trebacz pour avoir aidé à déboguer ce problème !
+* Correction de l'action « Afficher l'archive » qui s'exécute indéfiniment dans certaines circonstances.
+* Correction de l'icône de la barre d'action « Afficher l'archive » qui ne suit pas l'état d'affichage de l'archive en cours.
+* Correction de la restauration de la sélection dans la galerie lors de la rotation de l'écran
+* Diverses améliorations et corrections de bogues

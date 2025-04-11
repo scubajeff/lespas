@@ -1,0 +1,5 @@
+* Absturz beim Aufrufen der Galerie mit aktivierter Einstellung „Serverarchiv in Galerie anzeigen“ behoben. Danke an Github-Benutzer @Trebacz für die Hilfe bei der Fehlersuche!
+* Behoben: Die Aktion „Archiv anzeigen“ läuft unter bestimmten Umständen ewig.
+* Behoben: Das Symbol in der Aktionsleiste „Archiv anzeigen“ folgt nicht dem aktuellen Status der Archivanzeige.
+* Behoben: Wiederherstellung der Auswahl in der Galerie bei Bildschirmdrehung
+* Verschiedene Verbesserungen und Fehlerbehebungen

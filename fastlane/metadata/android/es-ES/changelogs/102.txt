@@ -1,0 +1,5 @@
+* Se ha corregido el error que se producía al entrar en la galería con la opción «Mostrar archivo del servidor en la galería» activada. Gracias al usuario de github @Trebacz por ayudarnos a depurarlo.
+* Corregida la acción «Mostrar archivo» que se ejecutaba eternamente bajo ciertas circunstancias.
+* Corregido el icono de la barra de acción «Mostrar archivo» que no seguía el estado actual de visualización del archivo.
+* Corregida la restauración de la selección en la Galería durante la rotación de la pantalla
+* Varias mejoras y correcciones de errores
