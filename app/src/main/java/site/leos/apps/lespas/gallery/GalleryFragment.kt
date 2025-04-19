@@ -676,9 +676,7 @@ class GalleryFragment: Fragment() {
                                         }
 
                                         combinedList.sortedByDescending { item -> item.media.photo.lastModified }
-                                    }
-
-                                    combinedList
+                                    } else combinedList
                                 } else {
                                     // No content in archive yet
                                     archiveEmptyToast()
