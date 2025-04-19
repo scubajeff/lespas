@@ -30,7 +30,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.text.Html
 import android.text.method.LinkMovementMethod
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
@@ -754,7 +753,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         internal fun getSelectionFileSize(): String {
             var size = 0L
-            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() } ?: run { Log.wtf(">>>>>>>>", "getSelectionFileSize: can't find", ) }}
+            selectionTracker.selection.forEach { selected -> currentList.find { it.media.photo.id == selected }?.let { size += it.media.photo.caption.toLong() }}
 
             return Tools.humanReadableByteCountSI(size)
         }
