@@ -635,14 +635,17 @@ class GalleryFragment: Fragment() {
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
+        private val model = Tools.getDeviceModel()
+        private var archiveSnapshotFileObserver: FileObserver
+
+        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
+        val showArchive: StateFlow<Int> = _showArchive
+
         private val _local = MutableStateFlow<List<GalleryMedia>>(mutableListOf())
         private val _medias = MutableStateFlow<List<GalleryMedia>?>(null)
         val medias: StateFlow<List<GalleryMedia>?> = _medias.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         val trash: StateFlow<List<GalleryMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<GalleryMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-        private val model = Tools.getDeviceModel()
-
-        private var archiveSnapshotFileObserver: FileObserver
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
@@ -693,6 +696,7 @@ class GalleryFragment: Fragment() {
             }
 
             // Start observing archive snapshot file, which will be updated after new gallery image been backup to archive or files been removed from archive, snapshot file is updated by SyncAdapter after those actions finished successfully
+            @Suppress("DEPRECATION")
             archiveSnapshotFileObserver = object : FileObserver("${localRoot}/${NCShareViewModel.ARCHIVE_SNAPSHOT_FILE}", CLOSE_WRITE) {
                 override fun onEvent(p0: Int, p1: String?) {
                     if (_showArchive.value == ARCHIVE_ON || _showArchive.value == REFRESHING_ARCHIVE) {
@@ -889,8 +893,6 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
-        val showArchive: StateFlow<Int> = _showArchive
         private fun isArchiveOff(): Boolean = _showArchive.value != ARCHIVE_ON
         fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
             if (forcedRefresh) _showArchive.value = ARCHIVE_OFF
