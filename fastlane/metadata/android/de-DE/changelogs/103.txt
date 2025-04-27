@@ -1,0 +1,4 @@
+* Ein Absturz, der beim Betreten der Galerie auf bestimmten Telefonen auftrat, wurde behoben. Vielen Dank an GitHub-Benutzer @muminpappa für die Meldung des Problems und die Hilfe bei der Fehlersuche.
+* Behebung eines Problems, bei dem ein lokaler Schnappschuss nicht mit dem Server-Archiv übereinstimmte, nachdem Dateien aus dem Archiv entfernt worden waren
+* Behebung eines Problems, bei dem Bilder, die noch nicht gesichert wurden, in der Galerieliste fehlten, wenn die Option „Serverarchiv anzeigen“ aktiviert war
+* Verschiedene Verbesserungen und Fehlerbehebungen

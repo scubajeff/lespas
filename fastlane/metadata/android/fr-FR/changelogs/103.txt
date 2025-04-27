@@ -1,0 +1,4 @@
+* Correction d'un crash survenant lors de l'accès à la galerie sur certains téléphones. Merci à l'utilisateur de GitHub @muminpappa pour avoir signalé le problème et aidé au processus de débogage.
+* Correction d'une erreur de correspondance entre l'instantané local et l'archive du serveur après que des fichiers aient été supprimés de l'archive.
+* Correction d'un problème où les images qui n'avaient pas encore été sauvegardées étaient absentes de la liste de la galerie lorsque l'option « Afficher l'archive du serveur » était activée.
+* Diverses améliorations et corrections de bogues

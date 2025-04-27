@@ -1,0 +1,4 @@
+* Corretto un arresto anomalo che si verificava quando si entrava nella galleria su alcuni telefoni. Si ringrazia l'utente di GitHub @muminpappa per aver segnalato il problema e per aver aiutato nel processo di debug.
+* Corretto un errore di corrispondenza tra l'istantanea locale e l'archivio del server dopo che i file erano stati rimossi dall'archivio.
+* Corretto un problema per cui le immagini di cui non era ancora stato eseguito il backup mancavano dall'elenco della galleria quando l'opzione “Mostra archivio server” era abilitata
+* Vari miglioramenti e correzioni di bug

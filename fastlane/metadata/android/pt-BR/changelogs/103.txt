@@ -1,0 +1,4 @@
+* Correção de uma falha que ocorria ao entrar na galeria em determinados telefones. Agradecemos ao usuário do GitHub @muminpappa por relatar o problema e ajudar no processo de depuração
+* Correção de uma incompatibilidade de instantâneo local com o arquivo do servidor depois que os arquivos eram removidos do arquivo.
+* Foi corrigido um problema em que as imagens que ainda não tinham sido copiadas estavam faltando na lista da galeria quando a opção “Mostrar arquivo do servidor” estava ativada.
+* Vários aprimoramentos e correções de bugs

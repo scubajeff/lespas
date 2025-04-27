@@ -1,0 +1,4 @@
+* Fixed a crash that occurred when entering the gallery on certain phones. Thanks to GitHub user @muminpappa for reporting the issue and helping with the debugging process
+* Fixed a local snapshot mismatch with the server archive after files were removed from the archive
+* Fixed an issue where pictures that had not yet been backed up were missing from the gallery list when the 'Show server archive' option was enabled
+* Various improvements and bug fixes

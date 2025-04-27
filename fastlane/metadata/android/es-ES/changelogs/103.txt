@@ -1,0 +1,4 @@
+* Corregido un fallo que se producía al entrar en la galería en algunos teléfonos. Gracias al usuario de GitHub @muminpappa por informar del problema y ayudar en el proceso de depuración.
+* Se ha corregido un desajuste de la instantánea local con el archivo del servidor después de que los archivos se eliminaran del archivo.
+* Se ha solucionado un problema por el que las imágenes de las que aún no se había realizado una copia de seguridad no aparecían en la lista de la galería cuando la opción «Mostrar archivo del servidor» estaba activada.
+* Varias mejoras y correcciones de errores
