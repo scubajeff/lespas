@@ -2027,11 +2027,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (file.exists()) {
                         Tools.jsonToArchiveList(file, archiveBase).let { oldList ->
                             file.writer().use {
-                                it.write(Tools.archiveToJSONString(
-                                    (if (snapshotDeletion.isEmpty()) oldList else oldList.filter { item -> item.remoteFileId !in snapshotDeletion }).let { subList ->
-                                        if (snapshotAddition.isEmpty()) subList else snapshotAddition.plus(subList)
-                                    }
-                                ))
+                                it.write(Tools.archiveToJSONString(snapshotAddition.plus(oldList).filter { item -> (item.fullPath + item.media.photo.name) !in snapshotDeletion }))
                             }
                         }
                     }
