@@ -42,6 +42,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
@@ -132,6 +135,8 @@ class PhotoSlideFragment : Fragment() {
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
+    private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private val snapseedFileUris = mutableListOf<Uri>()
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -206,9 +211,9 @@ class PhotoSlideFragment : Fragment() {
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            private val workerName = "${PhotoSlideFragment::class.java.canonicalName}.SNAPSEED_WORKER"
-            private var lastId = ""
             private lateinit var snapseedWorker: OneTimeWorkRequest
+            //private val workerName = "${PhotoSlideFragment::class.java.canonicalName}.SNAPSEED_WORKER"
+            private var lastId = ""
 
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
@@ -219,26 +224,33 @@ class PhotoSlideFragment : Fragment() {
                         lastId = it
 
                         snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
-                        WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 
-                        WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
-                            if (workInfo != null && workInfo[0].state == WorkInfo.State.SUCCEEDED) {
-                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                    // When replacing original with Snapseed result, refresh image cache of all size
-                                    val photoId = pAdapter.getPhotoAt(slider.currentItem).id
-                                    imageLoaderModel.invalidPhoto(photoId)
-                                    if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) {
-                                        File(Tools.getLocalRoot(requireContext()), photoId).delete()
+                        with(WorkManager.getInstance(requireContext())) {
+                            enqueueUniqueWork(SNAPSEED_WORKER_NAME, ExistingWorkPolicy.KEEP, snapseedWorker)
+
+                            getWorkInfosForUniqueWorkLiveData(SNAPSEED_WORKER_NAME).observe(viewLifecycleOwner) { workInfo ->
+                                if (workInfo != null && workInfo[0].state == WorkInfo.State.SUCCEEDED) {
+                                    if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                        // When replacing original with Snapseed result, refresh image cache of all size
+                                        val photoId = pAdapter.getPhotoAt(slider.currentItem).id
+                                        imageLoaderModel.invalidPhoto(photoId)
+                                        if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), photoId).delete() }
                                     }
+
+                                    // Removing snapseed file from MediaStore for Android 12 or above
+                                    snapseedFileUris.add(uri)
+
+                                    // remove myself from observer list
+                                    getWorkInfosForUniqueWorkLiveData(SNAPSEED_WORKER_NAME).removeObservers(viewLifecycleOwner)
                                 }
                             }
                         }
-
                         requireContext().contentResolver.unregisterContentObserver(this)
                     }
                 }
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
 
@@ -547,9 +559,13 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        try {
-            if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300)
-        } catch (_: IndexOutOfBoundsException) {}
+
+        // Pause video playing
+        try { if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300) } catch (_: IndexOutOfBoundsException) {}
+
+        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
+        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
+            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -589,6 +605,7 @@ class PhotoSlideFragment : Fragment() {
         handlerBottomControl.removeCallbacksAndMessages(null)
 
         requireContext().contentResolver.unregisterContentObserver(snapseedOutputObserver)
+
         super.onDestroy()
     }
 
@@ -694,6 +711,7 @@ class PhotoSlideFragment : Fragment() {
     }
 
     companion object {
+        private const val SNAPSEED_WORKER_NAME = "PhotoSlideFragment.SNAPSEED_WORKER"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         private const val INFO_DIALOG = "INFO_DIALOG"

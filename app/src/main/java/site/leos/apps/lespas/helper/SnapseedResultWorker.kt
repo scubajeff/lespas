@@ -17,10 +17,10 @@
 package site.leos.apps.lespas.helper
 
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
@@ -48,7 +48,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val photoDao = LespasDatabase.getDatabase(context).photoDao()
         val albumDao = LespasDatabase.getDatabase(context).albumDao()
         val actionDao = LespasDatabase.getDatabase(context).actionDao()
-        val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
+        val uri = (inputData.keyValueMap[KEY_IMAGE_URI] as String).toUri()
         val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
         val exifInterface: ExifInterface?
 
@@ -70,8 +70,8 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     delay(200)
 
                     cr.query(uri, null, null, null, null)?.use { cursor ->
-                        cursor.moveToFirst()
-                        imageSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
+                        if (cursor.moveToFirst()) imageSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
+                        else return@withContext
                     }
                 }
 
@@ -201,13 +201,17 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Remove cache copy
                     try { File(context.cacheDir, originalPhoto.name).delete() } catch (_: Exception) {}
 
-                    // Remove snapseed output if running on Android Q or lower
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try {  cr.delete(uri, null, null) } catch (_: Exception) {}
+                    // Remove snapseed output here if running on Android 10 or lower
+                    // If on Android 12, handle it in AlbumDetailFragment or PhotoSlideFragment where ActivityResultLauncher is available.
+                    // There is no way to delete the file in Android 11 without user intervention
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try { cr.delete(uri, null, null) } catch (_: Exception) {}
 
+                    //result = Result.success(workDataOf(KEY_IMAGE_URI to (inputData.keyValueMap[KEY_IMAGE_URI] as String)))
                     result = Result.success()
                 }
             }
         }
+
         return result
     }
 

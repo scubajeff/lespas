@@ -50,6 +50,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -151,6 +152,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
+    private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private val snapseedFileUris = mutableListOf<Uri>()
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private var sharedPhoto = Photo(dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
     private var shareOutType = GENERAL_SHARE
@@ -276,7 +279,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            private val workerName = "${AlbumDetailFragment::class.java.canonicalName}.SNAPSEED_WORKER"
             private var lastId = ""
             private lateinit var snapseedWork: OneTimeWorkRequest
 
@@ -294,25 +296,29 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     ).build()
 
                     with(WorkManager.getInstance(requireContext())) {
-                        enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
+                        enqueueUniqueWork(SNAPSEED_WORKER_NAME, ExistingWorkPolicy.KEEP, snapseedWork)
 
-                        getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
+                        getWorkInfosForUniqueWorkLiveData(SNAPSEED_WORKER_NAME).observe(viewLifecycleOwner) { workInfo ->
                             if (workInfo != null && workInfo[0].state == WorkInfo.State.SUCCEEDED) {
-                                // If replace original is on, remove old bitmaps from cache and take care of cover too
                                 if (sp.getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                    // If replace original is on, refresh image cache of all size
                                     imageLoaderModel.invalidPhoto(sharedPhoto.id)
-                                    if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) {
-                                        File(Tools.getLocalRoot(requireContext()), sharedPhoto.id).delete()
-                                    }
+                                    if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), sharedPhoto.id).delete() }
                                 }
+
+                                // Removing snapseed file from MediaStore for Android 12 or above
+                                snapseedFileUris.add(uri)
+
+                                // remove myself from observer list
+                                getWorkInfosForUniqueWorkLiveData(SNAPSEED_WORKER_NAME).removeObservers(viewLifecycleOwner)
                             }
                         }
                     }
-
                     requireContext().contentResolver.unregisterContentObserver(this)
                 }
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
@@ -580,13 +586,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                     putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
                                 })
                             }
-                            /*
-                                                // Copy/Move to another album is always a server job now
-                                                SHARE_TO_LESPAS -> {
-                                                    reuseUris = uris
-                                                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                                                }
-                            */
+/*
+                            // Copy/Move to another album is always a server job now
+                            SHARE_TO_LESPAS -> {
+                                reuseUris = uris
+                                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                            }
+*/
                         }
                     }
                 }.invokeOnCompletion {
@@ -1003,6 +1009,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
         if (saveSortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
+
+        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
+        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
+            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
 
         super.onStop()
     }
@@ -1431,6 +1441,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     companion object {
+        private const val SNAPSEED_WORKER_NAME = "AlbumDetailFragment.SNAPSEED_WORKER"
+
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
