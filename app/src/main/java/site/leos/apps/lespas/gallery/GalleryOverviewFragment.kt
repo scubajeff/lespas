@@ -142,29 +142,33 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                     .replace(R.id.container_child_fragment, GalleryFolderViewFragment.newInstance(folder), GalleryFolderViewFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { view, photoId, mimeType, folder ->
-                galleryModel.setCurrentPhotoId(photoId)
-
-                if (mimeType.startsWith("video")) {
-                    // Transition to surface view might crash some OEM phones, like Xiaomi
-                    parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folder), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                if (galleryModel.isPicker()) {
+                    selectionTracker.select(photoId)
                 } else {
-                    reenterTransition = MaterialElevationScale(false).apply {
-                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                        //excludeTarget(view, true)
-                    }
-                    exitTransition = MaterialElevationScale(false).apply {
-                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                        //excludeTarget(view, true)
-                        //excludeTarget(android.R.id.statusBarBackground, true)
-                        //excludeTarget(android.R.id.navigationBarBackground, true)
-                    }
+                    galleryModel.setCurrentPhotoId(photoId)
 
-                    parentFragmentManager.beginTransaction()
-                        .setReorderingAllowed(true)
-                        .addSharedElement(view, view.transitionName)
-                        .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folder), GallerySlideFragment::class.java.canonicalName)
-                        .addToBackStack(null)
-                        .commit()
+                    if (mimeType.startsWith("video")) {
+                        // Transition to surface view might crash some OEM phones, like Xiaomi
+                        parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folder), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    } else {
+                        reenterTransition = MaterialElevationScale(false).apply {
+                            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                            //excludeTarget(view, true)
+                        }
+                        exitTransition = MaterialElevationScale(false).apply {
+                            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                            //excludeTarget(view, true)
+                            //excludeTarget(android.R.id.statusBarBackground, true)
+                            //excludeTarget(android.R.id.navigationBarBackground, true)
+                        }
+
+                        parentFragmentManager.beginTransaction()
+                            .setReorderingAllowed(true)
+                            .addSharedElement(view, view.transitionName)
+                            .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folder), GallerySlideFragment::class.java.canonicalName)
+                            .addToBackStack(null)
+                            .commit()
+                    }
                 }
             },
             { remotePhoto, imageView ->
@@ -220,7 +224,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
                 override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && key.isNotEmpty()
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
-                override fun canSelectMultiple(): Boolean = true
+                override fun canSelectMultiple(): Boolean = !galleryModel.isPicker()
             }).build()
             selectionTracker.addObserver(object : SelectionTracker.SelectionObserver<String>() {
                 override fun onSelectionChanged() {
@@ -234,23 +238,27 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 }
 
                 private fun updateUI() {
-                    val selectionSize = selectionTracker.selection.size()
-                    if (selectionTracker.hasSelection() && actionMode == null) {
-                        actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
-                        actionMode?.run {
-                            title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                            subtitle = overviewAdapter.getSelectionFileSize()
-                        }
-                        selectionBackPressedCallback.isEnabled = true
-                    } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
-                        actionMode?.subtitle = ""
-                        actionMode?.finish()
-                        actionMode = null
-                        selectionBackPressedCallback.isEnabled = false
+                    if (galleryModel.isPicker()) {
+                        galleryModel.setPickedId(if (selectionTracker.hasSelection()) selectionTracker.selection.first() else "")
                     } else {
-                        actionMode?.run {
-                            title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                            subtitle = overviewAdapter.getSelectionFileSize()
+                        val selectionSize = selectionTracker.selection.size()
+                        if (selectionTracker.hasSelection() && actionMode == null) {
+                            actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryOverviewFragment)
+                            actionMode?.run {
+                                title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                                subtitle = overviewAdapter.getSelectionFileSize()
+                            }
+                            selectionBackPressedCallback.isEnabled = true
+                        } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
+                            actionMode?.subtitle = ""
+                            actionMode?.finish()
+                            actionMode = null
+                            selectionBackPressedCallback.isEnabled = false
+                        } else {
+                            actionMode?.run {
+                                title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                                subtitle = overviewAdapter.getSelectionFileSize()
+                            }
                         }
                     }
                 }
@@ -372,7 +380,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        requireActivity().addMenuProvider(object : MenuProvider {
+        if (!galleryModel.isPicker()) requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_overview_menu, menu)
                 trashMenuItem = menu.findItem(R.id.trash)

@@ -49,6 +49,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -747,7 +748,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
 */
             webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).let { archive ->
-                newETag = archive[0].eTag.apply { Log.e(">>>>>>>>", "getCameraRollArchive: ${archive[0].name} ${archive[0].isFolder}", ) }
+                newETag = archive[0].eTag
                 archive.forEach { dav ->
                     if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
                         result.add(
@@ -932,12 +933,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 p /= 2
                             }
                             ensureActive()
-                            BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(rp.photo.id)), null, BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { bmp ->
+                            BitmapFactory.decodeStream(cr.openInputStream(rp.photo.id.toUri()), null, BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { bmp ->
                                 ensureActive()
                                 if ((if (rp.photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(rp.photo.orientation.toFloat()) }, false) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream()
                                 else null
                             }
-                        } else cr.openInputStream(Uri.parse(rp.photo.id))
+                        } else cr.openInputStream(rp.photo.id.toUri())
                         else -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
                             var inSampleSize = 1
                             var p = max(rp.photo.width, rp.photo.height) / 2

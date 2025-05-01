@@ -23,6 +23,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -148,6 +149,7 @@ class MainActivity : AppCompatActivity() {
                         when(intent.action) {
                             LAUNCH_GALLERY -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment(), GalleryFragment.TAG_FROM_LAUNCHER).commit()
                             Intent.ACTION_VIEW -> intent.data?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(it), GalleryFragment.TAG_FROM_LAUNCHER).commit() }
+                            Intent.ACTION_PICK -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(Uri.EMPTY), GalleryFragment.TAG_FROM_LAUNCHER).commit()
                             else -> supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
                         }
                     }

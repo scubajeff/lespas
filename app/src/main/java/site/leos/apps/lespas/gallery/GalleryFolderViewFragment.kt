@@ -140,29 +140,33 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         mediaAdapter = MediaAdapter(
             getString(R.string.today), getString(R.string.yesterday),
             { view, photoId, mimeType ->
-                galleryModel.setCurrentPhotoId(photoId)
-
-                if (mimeType.startsWith("video")) {
-                    // Transition to surface view might crash some OEM phones, like Xiaomi
-                    parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                if (galleryModel.isPicker()) {
+                    selectionTracker.select(photoId)
                 } else {
-                    reenterTransition = MaterialElevationScale(false).apply {
-                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                        //excludeTarget(view, true)
-                    }
-                    exitTransition = MaterialElevationScale(false).apply {
-                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                        //excludeTarget(view, true)
-                        //excludeTarget(android.R.id.statusBarBackground, true)
-                        //excludeTarget(android.R.id.navigationBarBackground, true)
-                    }
+                    galleryModel.setCurrentPhotoId(photoId)
 
-                    parentFragmentManager.beginTransaction()
-                        .setReorderingAllowed(true)
-                        .addSharedElement(view, view.transitionName)
-                        .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName)
-                        .addToBackStack(null)
-                        .commit()
+                    if (mimeType.startsWith("video")) {
+                        // Transition to surface view might crash some OEM phones, like Xiaomi
+                        parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    } else {
+                        reenterTransition = MaterialElevationScale(false).apply {
+                            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                            //excludeTarget(view, true)
+                        }
+                        exitTransition = MaterialElevationScale(false).apply {
+                            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                            //excludeTarget(view, true)
+                            //excludeTarget(android.R.id.statusBarBackground, true)
+                            //excludeTarget(android.R.id.navigationBarBackground, true)
+                        }
+
+                        parentFragmentManager.beginTransaction()
+                            .setReorderingAllowed(true)
+                            .addSharedElement(view, view.transitionName)
+                            .replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(folderArgument, currentCheckedTag), GallerySlideFragment::class.java.canonicalName)
+                            .addToBackStack(null)
+                            .commit()
+                    }
                 }
             },
             { photo, imageView -> imageLoaderModel.setImagePhoto(photo, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
@@ -274,7 +278,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                 }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = !galleryModel.isPreparingShareOut() && position > 0
-                override fun canSelectMultiple(): Boolean = true
+                override fun canSelectMultiple(): Boolean = !galleryModel.isPicker()
             }).build()
             selectionTracker.addObserver(object : SelectionTracker.SelectionObserver<String>() {
                 override fun onSelectionChanged() {
@@ -288,34 +292,38 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 }
 
                 private fun updateUI() {
-                    if (selectionTracker.hasSelection() && actionMode == null) {
-                        actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
-                        selectionBackPressedCallback.isEnabled = true
-                    } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
-                        actionMode?.subtitle = ""
-                        actionMode?.finish()
-                        actionMode = null
-                        selectionBackPressedCallback.isEnabled = false
-                    }
+                    if (galleryModel.isPicker()) {
+                        galleryModel.setPickedId(if (selectionTracker.hasSelection()) selectionTracker.selection.first() else "")
+                    } else {
+                        if (selectionTracker.hasSelection() && actionMode == null) {
+                            actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(this@GalleryFolderViewFragment)
+                            selectionBackPressedCallback.isEnabled = true
+                        } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
+                            actionMode?.subtitle = ""
+                            actionMode?.finish()
+                            actionMode = null
+                            selectionBackPressedCallback.isEnabled = false
+                        }
 
-                    // Update UI
-                    actionModeTitleUpdateJob?.cancel()
-                    actionModeTitleUpdateJob = lifecycleScope.launch {
-                        selectionTracker.selection.size().let { selectionSize ->
-                            actionMode?.let {
-                                delay(100)
-                                var totalSize = 0L
-                                selectionTracker.selection.forEach { selected ->
-                                    ensureActive()
-                                    totalSize += mediaAdapter.getFileSize(selected)
+                        // Update UI
+                        actionModeTitleUpdateJob?.cancel()
+                        actionModeTitleUpdateJob = lifecycleScope.launch {
+                            selectionTracker.selection.size().let { selectionSize ->
+                                actionMode?.let {
+                                    delay(100)
+                                    var totalSize = 0L
+                                    selectionTracker.selection.forEach { selected ->
+                                        ensureActive()
+                                        totalSize += mediaAdapter.getFileSize(selected)
+                                    }
+
+                                    it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
+                                    it.subtitle = Tools.humanReadableByteCountSI(totalSize)
                                 }
 
-                                it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
-                                it.subtitle = Tools.humanReadableByteCountSI(totalSize)
+                                // Enable or disable sub folder chips base on selection mode
+                                (selectionSize <= 0).let { state -> subFolderChipGroup.forEach { it.isClickable = state } }
                             }
-
-                            // Enable or disable sub folder chips base on selection mode
-                            (selectionSize <= 0).let { state -> subFolderChipGroup.forEach { it.isClickable = state } }
                         }
                     }
                 }
@@ -448,7 +456,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        requireActivity().addMenuProvider(object : MenuProvider {
+        if (!galleryModel.isPicker()) requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.gallery_folder_menu, menu)
             }

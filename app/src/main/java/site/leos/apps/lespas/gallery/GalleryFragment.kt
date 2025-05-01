@@ -122,6 +122,7 @@ class GalleryFragment: Fragment() {
     private val handler = Handler(Looper.getMainLooper())
 
     private var archiveMenuItem: MenuItem? = null
+    private var pickedMenuItem: MenuItem? = null
 
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
 
@@ -171,15 +172,20 @@ class GalleryFragment: Fragment() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
 
                     arguments?.parcelable<Uri>(ARGUMENT_URI)?.let { uri ->
-                        getFolderFromUri(uri)?.let {
-                            galleryModel.asGallery(delayStart = false, order = "ASC")
-                            // Launched as viewer from system file manager, set list sort order to date ascending
-                            galleryModel.setCurrentPhotoId(it.second)
-                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(it.first), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
-                        } ?: run {
-                            // Can't extract folder name from Uri, launched as a single file viewer
-                            galleryModel.asSingleFileViewer(uri, requireContext())
-                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(uri.toString()), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        if (uri == Uri.EMPTY) {
+                            galleryModel.asGallery(delayStart = false, order = "DESC", isPicker = true)
+                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        } else {
+                            getFolderFromUri(uri)?.let {
+                                galleryModel.asGallery(delayStart = false, order = "ASC")
+                                // Launched as viewer from system file manager, set list sort order to date ascending
+                                galleryModel.setCurrentPhotoId(it.second)
+                                childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(it.first), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            } ?: run {
+                                // Can't extract folder name from Uri, launched as a single file viewer
+                                galleryModel.asSingleFileViewer(uri, requireContext())
+                                childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GallerySlideFragment.newInstance(uri.toString()), GallerySlideFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            }
                         }
                     } ?: run {
                         // Launcher as Gallery within our own app, set list sort order to date descending
@@ -321,41 +327,48 @@ class GalleryFragment: Fragment() {
                         if (uris.isNotEmpty()) {
                             val cr = requireActivity().contentResolver
 
-                            if (galleryModel.isUseAs()) {
-                                startActivity(Intent.createChooser(Intent().apply {
-                                    action = Intent.ACTION_ATTACH_DATA
-                                    requireContext().contentResolver.getType(uris[0])?.apply {
-                                        setDataAndType(uris[0], this)
-                                        putExtra("mimeType", this)
+                            when(galleryModel.getShareType()) {
+                                GalleryViewModel.SHARE_NORMAL -> {
+                                    val clipData = ClipData.newUri(cr, "", uris[0])
+                                    for (i in 1 until uris.size) {
+                                        if (isActive) {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                            else clipData.addItem(ClipData.Item(uris[i]))
+                                        }
                                     }
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                }, null))
-                            } else {
-                                val clipData = ClipData.newUri(cr, "", uris[0])
-                                for (i in 1 until uris.size) {
-                                    if (isActive) {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                                        else clipData.addItem(ClipData.Item(uris[i]))
-                                    }
-                                }
-                                startActivity(Intent.createChooser(Intent().apply {
-                                    if (uris.size > 1) {
-                                        action = Intent.ACTION_SEND_MULTIPLE
-                                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                                    } else {
-                                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                        action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_STREAM, uris[0])
-                                    }
-                                    type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
-                                    if (type!!.startsWith("image")) type = "image/*"
-                                    this.clipData = clipData
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
-                                }, null))
+                                    startActivity(Intent.createChooser(Intent().apply {
+                                        if (uris.size > 1) {
+                                            action = Intent.ACTION_SEND_MULTIPLE
+                                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                        } else {
+                                            // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                            action = Intent.ACTION_SEND
+                                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                                        }
+                                        type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                                        if (type!!.startsWith("image")) type = "image/*"
+                                        this.clipData = clipData
+                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
+                                    }, null))
 
-                                // IDs of photos meant to be deleted are saved in GalleryViewModel
-                                galleryModel.deleteAfterShared()
+                                    // IDs of photos meant to be deleted are saved in GalleryViewModel
+                                    galleryModel.deleteAfterShared()
+                                }
+                                GalleryViewModel.SHARE_USE_AS -> {
+                                    startActivity(Intent.createChooser(Intent().apply {
+                                        action = Intent.ACTION_ATTACH_DATA
+                                        requireContext().contentResolver.getType(uris[0])?.apply {
+                                            setDataAndType(uris[0], this)
+                                            putExtra("mimeType", this)
+                                        }
+                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    }, null))
+                                }
+                                GalleryViewModel.SHARE_AS_PICK_RESULT -> {
+                                    requireActivity().setResult(Activity.RESULT_OK, Intent().setData(uris[0]).setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                                    requireActivity().finish()
+                                }
                             }
                         }
 
@@ -411,8 +424,9 @@ class GalleryFragment: Fragment() {
 
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.gallery_menu, menu)
+                menuInflater.inflate(if (galleryModel.isPicker()) R.menu.gallery_picker_menu else R.menu.gallery_menu, menu)
                 archiveMenuItem = menu.findItem(R.id.option_menu_archive)
+                pickedMenuItem = menu.findItem(R.id.option_menu_picked)
             }
 
             override fun onPrepareMenu(menu: Menu) {
@@ -441,6 +455,8 @@ class GalleryFragment: Fragment() {
                                 }
                             }
                         }
+                        // Toggle Picked toolbar icon visibility
+                        launch { galleryModel.pickedId.collect { pickedMenuItem?.isVisible = it.isNotEmpty() }}
                     }
                 }
             }
@@ -462,6 +478,10 @@ class GalleryFragment: Fragment() {
                                 parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(noAlbum, SearchFragment.SEARCH_GALLERY), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                             }
                         }
+                        true
+                    }
+                    R.id.option_menu_picked -> {
+                        galleryModel.shareOut(listOf(galleryModel.pickedId.value), strip = true, lowResolution = false, removeAfterwards = false, shareType = GalleryViewModel.SHARE_AS_PICK_RESULT)
                         true
                     }
                     else -> false
@@ -632,6 +652,7 @@ class GalleryFragment: Fragment() {
         }
     }
     class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val archiveEmptyToast: () -> Unit, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable, private val localRoot: String): ViewModel() {
+        private var isPicker = false
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
         private var autoRemoveDone = false
@@ -640,6 +661,8 @@ class GalleryFragment: Fragment() {
 
         private val _showArchive = MutableStateFlow(ARCHIVE_OFF)
         val showArchive: StateFlow<Int> = _showArchive
+        private val _pickedId = MutableStateFlow("")
+        val pickedId: StateFlow<String> = _pickedId
 
         private val _local = MutableStateFlow<List<GalleryMedia>>(mutableListOf())
         private val _medias = MutableStateFlow<List<GalleryMedia>?>(null)
@@ -719,7 +742,8 @@ class GalleryFragment: Fragment() {
             asGallery(delayStart = true, order = defaultSortOrder)
         }
 
-        fun asGallery(delayStart: Boolean, order: String) {
+        fun asGallery(delayStart: Boolean, order: String, isPicker: Boolean = false) {
+            this.isPicker = isPicker
             defaultSortOrder = order
             loadJob = viewModelScope.launch(Dispatchers.IO) {
                 // Delay for 500ms when reload, because content observer will receive multiple notifications of change for a single file operation, like for example, creating a new file will result in 3 change notifications, including 1 NOTIFY_INSERT and 2 NOTIFY_UPDATE
@@ -893,6 +917,9 @@ class GalleryFragment: Fragment() {
             }
         }
 
+        fun isPicker() = isPicker
+        fun setPickedId(newId: String) { _pickedId.value = newId }
+
         private fun isArchiveOff(): Boolean = _showArchive.value != ARCHIVE_ON
         fun toggleArchiveShownState(forcedRefresh: Boolean = false) {
             if (forcedRefresh) _showArchive.value = ARCHIVE_OFF
@@ -1011,6 +1038,7 @@ class GalleryFragment: Fragment() {
         fun emptyTrash(photoIds: List<String>) { viewModelScope.launch { _emptyTrash.emit(photoIds) }}
 
         private var currentShareType = SHARE_NORMAL
+        fun getShareType() = currentShareType
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
         fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean, shareType: Int = SHARE_NORMAL) {
@@ -1031,7 +1059,6 @@ class GalleryFragment: Fragment() {
                 imageModel.prepareFileForShareOut(photos, strip, lowResolution)
             }
         }
-        fun isUseAs(): Boolean = currentShareType == SHARE_USE_AS
 
         private val idsDeleteAfterwards = mutableListOf<String>()
         fun deleteAfterShared() {
@@ -1101,6 +1128,7 @@ class GalleryFragment: Fragment() {
 
             const val SHARE_NORMAL = 1
             const val SHARE_USE_AS = 2
+            const val SHARE_AS_PICK_RESULT = 3
         }
     }
 
