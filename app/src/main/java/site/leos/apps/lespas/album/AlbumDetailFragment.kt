@@ -68,6 +68,7 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -83,8 +84,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -129,6 +128,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.UUID
 import kotlin.math.abs
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
@@ -153,7 +153,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
-    private val snapseedFileUris = mutableListOf<Uri>()
+    private val snapseedFileUris = mutableSetOf<Uri>()
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private var sharedPhoto = Photo(dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
     private var shareOutType = GENERAL_SHARE
@@ -280,41 +280,40 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
             private var lastId = ""
-            private lateinit var snapseedWork: OneTimeWorkRequest
 
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
 
-                // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
-                if (uri?.lastPathSegment!! != lastId) {
-                    lastId = uri.lastPathSegment!!
+                uri?.let {
+                    // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
+                    if (uri.lastPathSegment != lastId) {
+                        lastId = uri.lastPathSegment.toString()
 
-                    snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(
-                        SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(),
-                        SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id,
-                        SnapseedResultWorker.KEY_ALBUM to album.id)
-                    ).build()
+                        val workerId = UUID.randomUUID()
+                        with(WorkManager.getInstance(requireContext())) {
+                            enqueue(OneTimeWorkRequestBuilder<SnapseedResultWorker>()
+                                .setInputData(workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id))
+                                .setId(workerId)
+                                .build()
+                            )
 
-                    with(WorkManager.getInstance(requireContext())) {
-                        enqueueUniqueWork(SNAPSEED_WORKER_NAME, ExistingWorkPolicy.KEEP, snapseedWork)
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                getWorkInfoByIdFlow(workerId).flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { workInfo ->
+                                    if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                        if (sp.getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                            // If replace original is on, refresh image cache of all size
+                                            imageLoaderModel.invalidPhoto(sharedPhoto.id)
+                                            if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), sharedPhoto.id).delete() }
+                                        }
 
-                        getWorkInfosForUniqueWorkLiveData(SNAPSEED_WORKER_NAME).observe(viewLifecycleOwner) { workInfo ->
-                            if (workInfo != null && workInfo[0].state == WorkInfo.State.SUCCEEDED) {
-                                if (sp.getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                    // If replace original is on, refresh image cache of all size
-                                    imageLoaderModel.invalidPhoto(sharedPhoto.id)
-                                    if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), sharedPhoto.id).delete() }
+                                        // Removing snapseed file from MediaStore for Android 12 or above, actual removal happen during onStop()
+                                        snapseedFileUris.add(uri)
+                                    }
                                 }
-
-                                // Removing snapseed file from MediaStore for Android 12 or above
-                                snapseedFileUris.add(uri)
-
-                                // remove myself from observer list
-                                getWorkInfosForUniqueWorkLiveData(SNAPSEED_WORKER_NAME).removeObservers(viewLifecycleOwner)
                             }
                         }
+                        requireContext().contentResolver.unregisterContentObserver(this)
                     }
-                    requireContext().contentResolver.unregisterContentObserver(this)
                 }
             }
         }
@@ -1441,8 +1440,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     companion object {
-        private const val SNAPSEED_WORKER_NAME = "AlbumDetailFragment.SNAPSEED_WORKER"
-
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
