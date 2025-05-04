@@ -43,6 +43,11 @@
     <!-- For setting screen brightness when playing video -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
+    <!--  Indicates use of Android's VR-mode, available only on Android N+.  -->
+    <uses-feature android:name="android.software.vr.mode" android:required="false"/>
+    <!--  Indicates use of VR features that are available only on Daydream-ready devices.  -->
+    <uses-feature android:name="android.hardware.vr.high_performance" android:required="false"/>
+
     <queries>
         <package android:name="com.niksoftware.snapseed" />
         <intent>

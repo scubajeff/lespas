@@ -33,7 +33,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.media3.common.Player
@@ -51,7 +50,7 @@ import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
 abstract class SeamlessMediaSliderAdapter<T>(
-    context: Context,
+    private val context: Context,
     private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel?,
@@ -73,13 +72,13 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private val hideForwardMessageCallback = Runnable { forwardMessage?.isVisible = false }
     private val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
 
-    private var gestureDetector: GestureDetectorCompat? = null
+    private var gestureDetector: GestureDetector? = null
 
     private var shouldPauseVideo = true
 
     init {
         clickListener?.let { cl ->
-            gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+            gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
                 override fun onDown(e: MotionEvent): Boolean = true
                 override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                     if (currentVideoView?.isControllerFullyVisible == false) {
@@ -145,6 +144,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         with(getItemMimeType(position)) {
             return when {
                 this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
+                this == "image/panorama" -> TYPE_PANORAMA
                 this.startsWith("video/") -> TYPE_VIDEO
                 else -> TYPE_PHOTO
             }
@@ -155,6 +155,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         return when(viewType) {
             TYPE_PHOTO -> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false), displayWidth)
             TYPE_ANIMATED -> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
+            TYPE_PANORAMA -> PanoramaViewHolder(LayoutInflater.from(context).inflate(R.layout.viewpager_item_panorama, parent, false))
             else-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
         }
     }
@@ -163,6 +164,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         when(holder) {
             is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), imageLoader)
             is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), imageLoader)
+            is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), imageLoader)
             else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader)
         }
     }
@@ -291,11 +293,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val ivMedia: ImageView
-
-        init {
-            ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { clickListener?.let { setOnClickListener { it(null) } }}
-        }
+        private val ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { clickListener?.let { setOnClickListener { it(null) } }}
 
         fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
@@ -311,24 +309,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
     @SuppressLint("ClickableViewAccessibility")
     inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var videoUri: Uri = Uri.EMPTY
-        private var videoMimeType = ""
 
-        val videoView: PlayerView
-        val knobLayout: FrameLayout
-        val knobIcon: ImageView
-        val knobPosition: CircularProgressIndicator
-        val forwardMessage: TextView
-        val rewindMessage: TextView
+        val videoView = itemView.findViewById<PlayerView>(R.id.media).apply { gestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}}
+        val knobLayout = itemView.findViewById<FrameLayout>(R.id.knob)
+        val knobIcon = itemView.findViewById<ImageView>(R.id.knob_icon)
+        val knobPosition = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
+        val forwardMessage = itemView.findViewById<TextView>(R.id.fast_forward_msg)
+        val rewindMessage = itemView.findViewById<TextView>(R.id.fast_rewind_msg)
         init {
-            videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
-                gestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}
-            }
-            knobLayout = itemView.findViewById(R.id.knob)
-            knobIcon = itemView.findViewById(R.id.knob_icon)
-            knobPosition = itemView.findViewById(R.id.knob_position)
-            forwardMessage = itemView.findViewById(R.id.fast_forward_msg)
-            rewindMessage = itemView.findViewById(R.id.fast_rewind_msg)
-
             playerViewModel?.addListener(object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
@@ -339,7 +327,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
-            videoMimeType = video.mimeType
 
             videoView.apply {
                 // Need to call imageLoader here to start postponed enter transition
@@ -350,6 +337,17 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         fun play() { playerViewModel?.play() }
         fun pause() { playerViewModel?.pause(videoUri) }
+    }
+
+    inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
+
+        fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
+            ivMedia.apply {
+                imageLoader(photo, this, NCShareViewModel.TYPE_PANORAMA)
+                ViewCompat.setTransitionName(this, transitionName)
+            }
+        }
     }
 
     @Parcelize
@@ -365,5 +363,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
         private const val TYPE_PHOTO = 0
         private const val TYPE_ANIMATED = 1
         private const val TYPE_VIDEO = 2
+        private const val TYPE_PANORAMA = 3
     }
 }

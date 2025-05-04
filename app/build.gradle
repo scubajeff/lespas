@@ -131,12 +131,8 @@ dependencies {
     implementation 'com.google.android.apps.muzei:muzei-api:3.4.2'
 
     // OSMdroid and OSMbonuspack
-    implementation('org.osmdroid:osmdroid-android:6.1.20')  {
-        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
-    }
-    implementation('com.github.MKergall:osmbonuspack:6.9.0') {
-        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
-    }
+    implementation('org.osmdroid:osmdroid-android:6.1.20')  { exclude group: 'com.squareup.okhttp3', module: 'okhttp' }
+    implementation('com.github.MKergall:osmbonuspack:6.9.0') { exclude group: 'com.squareup.okhttp3', module: 'okhttp' }
 
     // Authentication through system credentials
     implementation 'androidx.biometric:biometric-ktx:1.2.0-alpha05'
@@ -146,6 +142,9 @@ dependencies {
 
     // Jackson for faster json string processing
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
+
+    // Panorama support
+    implementation fileTree(include: ['*.aar'], dir: 'libs')
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

@@ -213,6 +213,8 @@ object Tools {
                             }
                         }
 
+                        exif.getAttribute(ExifInterface.TAG_XMP)?.let { if (it.contains("xmlns:GPano=")) mMimeType = "image/panorama" }
+
                         if (saveExif) {
                             try { exif.saveAttributes() }
                             catch (e: Exception) {

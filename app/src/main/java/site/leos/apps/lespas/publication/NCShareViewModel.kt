@@ -44,6 +44,7 @@ import android.util.Log
 import android.util.LruCache
 import android.util.Size
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -59,6 +60,7 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
+import com.google.vr.sdk.widgets.pano.VrPanoramaView
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -1303,7 +1305,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 if (Tools.isPhotoFromGallery(imagePhoto)) {
                     try {
                         (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
+                            view.context.contentResolver.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
                         } else {
                             @Suppress("DEPRECATION")
                             MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
@@ -1322,7 +1324,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // For items of remote album, show loading animation for image already uploaded
         if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-            view.background = (if (viewType == TYPE_FULL) loadingDrawableLV else loadingDrawable).apply { start() }
+            view.background = (if (viewType == TYPE_FULL || viewType == TYPE_PANORAMA) loadingDrawableLV else loadingDrawable).apply { start() }
 
             // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
             if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete(false)
@@ -1357,7 +1359,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
                                         try {
-                                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / thumbnailSize, imagePhoto.photo.height / thumbnailSize), null).let { bmp ->
+                                            view.context.contentResolver.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width / thumbnailSize, imagePhoto.photo.height / thumbnailSize), null).let { bmp ->
                                                 if (imagePhoto.photo.mimeType.substringAfter('/') in Tools.RAW_FORMAT && imagePhoto.photo.orientation != 0) {
                                                     // Seems like system generated thumbnail of RAW format is not rotated
                                                     Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
@@ -1366,7 +1368,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         } catch (_: Exception) {
                                             // loadThumbnail will failed on some format like webp, hence decode it here
                                             updateCache = true
-                                            ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
+                                            ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, imagePhoto.photo.id.toUri())) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
                                         }
                                     } else {
                                         @Suppress("DEPRECATION")
@@ -1421,7 +1423,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                                 Tools.isPhotoFromGallery(imagePhoto) -> {
                                     // Photo is from local Camera roll
-                                    cr.openInputStream(Uri.parse(imagePhoto.photo.id))
+                                    cr.openInputStream(imagePhoto.photo.id.toUri())
                                 }
                                 else -> {
                                     // Photo is from local album or not being uploaded yet, e.g., in local storage
@@ -1438,8 +1440,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             }?.use { sourceStream ->
                                 when (type) {
-                                    //TYPE_FULL, TYPE_QUARTER -> {
-                                    TYPE_FULL -> {
+                                    TYPE_FULL, TYPE_PANORAMA -> {
                                         updateCache = false
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
@@ -1559,9 +1560,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         view.setTag(R.id.PHOTO_ID, "")
                     } ?: run {
                         bitmap?.let {
-                            view.setImageBitmap(it)
-                            view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && viewType == TYPE_FULL && it.hasGainmap())
-                            view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
+                            if (viewType == TYPE_PANORAMA) {
+                                try {
+                                    (view.parent as ViewGroup).findViewById<VrPanoramaView>(R.id.panorama)?.run {
+                                        loadImageFromBitmap(it, VrPanoramaView.Options().apply { inputType = VrPanoramaView.Options.TYPE_MONO })
+                                        setStereoModeButtonEnabled(false)
+                                        setInfoButtonEnabled(false)
+                                        //displayMode = VrWidgetView.DisplayMode.FULLSCREEN_MONO
+                                        setFlingingEnabled(false)
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    view.setImageBitmap(placeholderBitmap)
+                                } finally {
+                                    view.setTag(R.id.HDR_TAG, false)
+                                    view.setTag(R.id.PHOTO_ID, "")
+                                }
+                            } else {
+                                view.setImageBitmap(it)
+                                view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && viewType == TYPE_FULL && it.hasGainmap())
+                                view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
+                            }
                         } ?: run {
                             view.setImageBitmap(placeholderBitmap)
                             view.setTag(R.id.HDR_TAG, false)
@@ -1601,7 +1620,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
-                    cr.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
+                    cr.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
                 } catch (e: Exception) {
                     // Some Android Q Rom, like AEX for EMUI 9, throw ArithmeticException
                     @Suppress("DEPRECATION")
@@ -1992,6 +2011,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         //const val TYPE_QUARTER = "_quarter"
         const val TYPE_VIDEO = "_video"
         const val TYPE_IN_MAP = "_map"
+        const val TYPE_PANORAMA = "_pano"
         const val TYPE_EMPTY_ROLL_COVER = "empty"
 
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
