@@ -332,7 +332,7 @@ object Tools {
     // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
     private const val wechatPattern = "^mmexport([0-9]{13}).*"
     // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss
-    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
+    private const val timeStampPattern = ".([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
     private const val whatsappPattern = ".*-([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])-.*"
     private const val aperturePattern = "^([12][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-([01][0-9]|2[0-3])-([0-5][0-9])-([0-5][0-9])-([0-9]{3}).*"
     private const val aPattern = "([12][0-9]{3})[-_](0[1-9]|1[0-2])[-_](0[1-9]|[12][0-9]|3[01])[-_]([01][0-9]|2[0-3])[-_]([0-5][0-9])[-_]([0-5][0-9]).*"
