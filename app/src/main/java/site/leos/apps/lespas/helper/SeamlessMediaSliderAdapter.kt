@@ -340,7 +340,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
+        private val ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { clickListener?.let { setOnClickListener { it(null) } }}
 
         fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
