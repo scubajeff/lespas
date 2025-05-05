@@ -232,7 +232,10 @@ class PublicationDetailFragment: Fragment() {
             }
 
             adapter = photoListAdapter
-            photoListAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), 0.25f / defaultSpanCount))
+            photoListAdapter.setOverlayDrawable(
+                Tools.getPlayMarkDrawable(requireActivity(), 0.25f / defaultSpanCount),
+                Tools.getPanoramaMarkDrawable(requireActivity(), 0.25f / defaultSpanCount)
+            )
 
 
             // Avoid window inset overlapping
@@ -487,6 +490,7 @@ class PublicationDetailFragment: Fragment() {
         private var showName = false
         private var displayMeta = false
         private var playMark: Drawable? = null
+        private var panoramaMark: Drawable? = null
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentPhotoId = ""
@@ -510,7 +514,11 @@ class PublicationDetailFragment: Fragment() {
                             }
                         }
                     }
-                    foreground = if (Tools.isMediaPlayable(item.photo.mimeType)) playMark else null
+                    foreground = when {
+                        Tools.isMediaPlayable(item.photo.mimeType) -> playMark
+                        item.photo.mimeType == "image/panorama" -> panoramaMark
+                        else -> null
+                    }
                     setOnClickListener { clickListener(this, currentList, currentList.indexOf(item)) }
                 }
 
@@ -560,7 +568,10 @@ class PublicationDetailFragment: Fragment() {
             for (holder in mBoundViewHolders) holder.toggleMeta()
         }
 
-        fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
+        fun setOverlayDrawable(playMark: Drawable, panoramaMark: Drawable) {
+            this.playMark = playMark
+            this.panoramaMark = panoramaMark
+        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

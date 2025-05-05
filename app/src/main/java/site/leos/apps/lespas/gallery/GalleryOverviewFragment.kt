@@ -203,7 +203,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
 
-        overviewAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
+        overviewAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark(), galleryModel.getPanoramaMark())
         overviewList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = overviewAdapter
 
@@ -561,6 +561,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var panoramaMark: Drawable? = null
 
         inner class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
@@ -584,6 +585,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         foreground = when {
                             it.isSelected -> selectedMark
                             Tools.isMediaPlayable(photo.mimeType) -> playMark
+                            photo.mimeType == "image/panorama" -> panoramaMark
                             else -> null
                         }
 
@@ -644,6 +646,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         foreground = when {
                             itemView.isSelected -> selectedMark
                             Tools.isMediaPlayable(photo.mimeType) -> playMark
+                            photo.mimeType == "image/panorama" -> panoramaMark
                             else -> null
                         }
 
@@ -766,9 +769,10 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             return Tools.humanReadableByteCountSI(size)
         }
         internal fun toSpan(position: Int): Boolean = getItemViewType(position) == TYPE_HEADER || getItemViewType(position) == TYPE_FOOTNOTE
-        internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
+        internal fun setMarks(playMark: Drawable, selectedMark: Drawable, panoramaMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
+            this.panoramaMark = panoramaMark
         }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id

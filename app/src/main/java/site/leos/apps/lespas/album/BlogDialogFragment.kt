@@ -245,8 +245,11 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
             photoAdapter.setSelectionTracker(selectionTracker)
 
             resources.getInteger(R.integer.cameraroll_grid_span_count).let { defaultSpanCount ->
-                photoAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), 0.32f / defaultSpanCount))
-                photoAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / defaultSpanCount))
+                photoAdapter.setOverlayDrawable(
+                    Tools.getPlayMarkDrawable(requireActivity(), 0.32f / defaultSpanCount),
+                    Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / defaultSpanCount),
+                    Tools.getPanoramaMarkDrawable(requireActivity(), 0.32f / defaultSpanCount),
+                )
             }
         }
 
@@ -316,6 +319,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         private lateinit var selectionTracker: SelectionTracker<String>
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var panoramaMark: Drawable? = null
         private val notIncludedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -341,6 +345,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                     foreground = when {
                         isSelected -> selectedMark
                         Tools.isMediaPlayable(photo.mimeType) -> playMark
+                        photo.mimeType == "image/panorama" -> panoramaMark
                         else -> null
                     }
 
@@ -364,8 +369,11 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
 
 
         // Foreground drawable for selected state and playable media
-        fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
-        fun setSelectedMarkDrawable(newDrawable: Drawable) { selectedMark = newDrawable }
+        fun setOverlayDrawable(playMark: Drawable, selectedMark: Drawable, panoramaMark: Drawable) {
+            this.playMark = playMark
+            this.selectedMark = selectedMark
+            this.panoramaMark = panoramaMark
+        }
 
         // Photo selection
         fun setInclusionState(key: String, selected: Boolean) {

@@ -238,7 +238,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                 insets
             }
         }
-        mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark())
+        mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark(), galleryModel.getPanoramaMark())
         mediaList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
             adapter = mediaAdapter
 
@@ -775,6 +775,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var panoramaMark: Drawable? = null
         private val defaultOffset = OffsetDateTime.now().offset
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -801,6 +802,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         foreground = when {
                             it.isSelected -> selectedMark
                             Tools.isMediaPlayable(photo.mimeType) -> playMark
+                            photo.mimeType == "image/panorama" -> panoramaMark
                             else -> null
                         }
 
@@ -879,9 +881,10 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         override fun getItemViewType(position: Int): Int = if (currentList[position].location == GalleryFragment.GalleryMedia.IS_NOT_MEDIA) TYPE_DATE else TYPE_MEDIA
 
         internal fun getFileSize(selected: String): Long = currentList.find { it.media.photo.id == selected }?.media?.photo?.caption?.toLong() ?: 0L
-        internal fun setMarks(playMark: Drawable, selectedMark: Drawable) {
+        internal fun setMarks(playMark: Drawable, selectedMark: Drawable, panoramaMark: Drawable) {
             this.playMark = playMark
             this.selectedMark = selectedMark
+            this.panoramaMark = panoramaMark
         }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].media.photo.id

@@ -1200,8 +1200,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun newLayoutManger(): GridLayoutManager {
         val defaultSpanCount = resources.getInteger(if (Tools.isWideListAlbum(album.sortOrder)) R.integer.photo_grid_span_count_wide else R.integer.photo_grid_span_count)
-        mAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.24f else 0.32f) / defaultSpanCount))
-        mAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.16f else 0.25f) / defaultSpanCount))
+        mAdapter.setOverlayDrawable(
+            Tools.getPlayMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.24f else 0.32f) / defaultSpanCount),
+            Tools.getSelectedMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.16f else 0.25f) / defaultSpanCount),
+            Tools.getPanoramaMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.24f else 0.32f) / defaultSpanCount),
+        )
 
         return GridLayoutManager(context, defaultSpanCount).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -1222,6 +1225,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private var recipientText = ""
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var panoramaMark: Drawable? = null
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentCover = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)
@@ -1305,6 +1309,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         foreground = when {
                             it.isSelected -> selectedMark
                             Tools.isMediaPlayable(photo.mimeType) -> playMark
+                            photo.mimeType == "image/panorama" -> panoramaMark
                             else -> null
                         }
 
@@ -1387,8 +1392,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             notifyItemChanged(0)
         }
 
-        internal fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
-        internal fun setSelectedMarkDrawable(newDrawable: Drawable) { selectedMark = newDrawable }
+        internal fun setOverlayDrawable(playMark: Drawable, selectedMark: Drawable, panoramaMark: Drawable) {
+            this.playMark = playMark
+            this.selectedMark = selectedMark
+            this.panoramaMark = panoramaMark
+        }
 
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo? = try { currentList.last { it.id == photoId }} catch (e: NoSuchElementException) { null }

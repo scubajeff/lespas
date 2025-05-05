@@ -607,6 +607,7 @@ object Tools {
 
     fun getSelectedMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_selected_24)
     fun getPlayMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_play_mark_24)
+    fun getPanoramaMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_vrpano_24)
     private fun getScaledDrawable(context: Activity, scale: Float, resId: Int): Drawable {
         val size: Int = (scale * getDisplayDimension(context).first).toInt()
 

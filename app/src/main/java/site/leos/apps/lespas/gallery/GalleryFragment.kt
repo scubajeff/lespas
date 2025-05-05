@@ -647,11 +647,16 @@ class GalleryFragment: Fragment() {
                 { try { Toast.makeText(context, context.getString(R.string.msg_archive_empty), Toast.LENGTH_LONG).show() } catch (_: Exception) {} },
                 Tools.getPlayMarkDrawable(context, 0.32f / spanCount),
                 Tools.getSelectedMarkDrawable(context, 0.25f / spanCount),
+                Tools.getPanoramaMarkDrawable(context, 0.32f / spanCount),
                 Tools.getLocalRoot(context),
             ))!!
         }
     }
-    class GalleryViewModel(private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val archiveEmptyToast: () -> Unit, private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable, private val localRoot: String): ViewModel() {
+    class GalleryViewModel(
+        private val cr: ContentResolver, private val imageModel: NCShareViewModel, private val actionModel: ActionViewModel, private val archiveEmptyToast: () -> Unit,
+        private val playMarkDrawable: Drawable, private val selectedMarkDrawable: Drawable, private val panoramaMarkDrawable: Drawable,
+        private val localRoot: String
+    ): ViewModel() {
         private var isPicker = false
         private var defaultSortOrder = "DESC"
         private var loadJob: Job? = null
@@ -1072,6 +1077,7 @@ class GalleryFragment: Fragment() {
 
         fun getPlayMark() = playMarkDrawable
         fun getSelectedMark() = selectedMarkDrawable
+        fun getPanoramaMark() = panoramaMarkDrawable
 
         // Current display or clicked photo id, for fragment transition between GallerySlideFragment and GalleryOverviewFragment or GalleryFolderViewFragment
         private var currentPhotoId = ""
