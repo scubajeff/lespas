@@ -144,7 +144,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         with(getItemMimeType(position)) {
             return when {
                 this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
-                this == "image/panorama" -> TYPE_PANORAMA
+                this == Tools.PANORAMA_MIMETYPE -> TYPE_PANORAMA
                 this.startsWith("video/") -> TYPE_VIDEO
                 else -> TYPE_PHOTO
             }

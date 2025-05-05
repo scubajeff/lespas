@@ -345,7 +345,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                     foreground = when {
                         isSelected -> selectedMark
                         Tools.isMediaPlayable(photo.mimeType) -> playMark
-                        photo.mimeType == "image/panorama" -> panoramaMark
+                        photo.mimeType == Tools.PANORAMA_MIMETYPE -> panoramaMark
                         else -> null
                     }
 

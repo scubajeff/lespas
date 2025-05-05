@@ -516,7 +516,7 @@ class PublicationDetailFragment: Fragment() {
                     }
                     foreground = when {
                         Tools.isMediaPlayable(item.photo.mimeType) -> playMark
-                        item.photo.mimeType == "image/panorama" -> panoramaMark
+                        item.photo.mimeType == Tools.PANORAMA_MIMETYPE -> panoramaMark
                         else -> null
                     }
                     setOnClickListener { clickListener(this, currentList, currentList.indexOf(item)) }
