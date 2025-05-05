@@ -1566,6 +1566,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         loadImageFromBitmap(it, VrPanoramaView.Options().apply { inputType = VrPanoramaView.Options.TYPE_MONO })
                                         setStereoModeButtonEnabled(false)
                                         setInfoButtonEnabled(false)
+                                        setFullscreenButtonEnabled(false)
                                         //displayMode = VrWidgetView.DisplayMode.FULLSCREEN_MONO
                                         setFlingingEnabled(false)
                                     }
