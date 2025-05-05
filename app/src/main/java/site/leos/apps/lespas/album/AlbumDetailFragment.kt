@@ -432,7 +432,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         val selectionSize = selectionTracker.selection.size()
 
-                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedEnabled && !Tools.isMediaPlayable(mAdapter.getPhotoBy(selectionTracker.selection.first())!!.mimeType)
+                        // Don't show Snapseed action when selected item is playable or panorama
+                        snapseedEditAction?.isVisible =
+                            selectionSize == 1 && isSnapseedEnabled &&
+                            !(mAdapter.getPhotoBy(selectionTracker.selection.first())!!.mimeType.let { mimeType -> Tools.isMediaPlayable(mimeType) || mimeType == Tools.PANORAMA_MIMETYPE })
+
                         // Not allow to change name for not yet uploaded photo TODO make it possible
                         mediaRenameAction?.isVisible = selectionSize == 1 && mAdapter.getPhotoBy(selectionTracker.selection.first())!!.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
