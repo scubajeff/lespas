@@ -98,7 +98,7 @@ data class Album(
 
         const val SYNC_COMPLETED = 1.0f
 
-        const val SPECIAL_COVER_BASELINE = -100 // Speical cover baseline value when setting animated GIF/WEBP and general GIF as cover
+        const val SPECIAL_COVER_BASELINE = -100 // Speical cover baseline value when setting animated GIF/WEBP, general GIF, video as cover
 
         const val JOINT_ALBUM_ID = "joint"
     }

@@ -312,12 +312,15 @@ class PhotoSlideFragment : Fragment() {
 
                             // Can't delete cover
                             removeButton.isEnabled = this.id != album.cover
-                            with(!(Tools.isMediaPlayable(this.mimeType))) {
+                            with(!(Tools.isMediaPlayable(this.mimeType) || this.mimeType == Tools.PANORAMA_MIMETYPE)) {
                                 // Can't set video as avatar
                                 useAsButton.isEnabled = this
                                 // Can't Snapseed video
                                 snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
                             }
+
+                            // Can't set panorama as cover TODO make it possible
+                            coverButton.isEnabled = this.mimeType != Tools.PANORAMA_MIMETYPE
 
                             // Update caption
                             captionTextView.text = caption
