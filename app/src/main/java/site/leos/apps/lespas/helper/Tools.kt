@@ -106,6 +106,8 @@ object Tools {
     private val FORMATS_WITH_EXIF = COMMON_FORMAT + RAW_FORMAT
     //val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic", "x-dcraw", "x-sony-arw", "x-sony-sr2", "x-sony-srf", "x-adobe-dng", "x-fuji-raf", "x-canon-cr2", "x-canon-crw", "x-nikon-nef", "x-olympus-orf", "x-panasonic-raw", "x-pentax-pef", "x-sigma-x3f", "x-kodak-dcr", "x-kodak-k25", "x-kodak-kdc", "x-minolta-mrw")
     val SUPPORTED_PICTURE_FORMATS = COMMON_FORMAT + arrayOf("gif", "bmp") + RAW_FORMAT
+    const val PANORAMA_SIGNATURE = "xmlns:GPano="
+    const val PANORAMA_MIMETYPE = "image/panorama"
 
     @SuppressLint("RestrictedApi")
     fun getPhotoParams(
@@ -213,7 +215,7 @@ object Tools {
                             }
                         }
 
-                        exif.getAttribute(ExifInterface.TAG_XMP)?.let { if (it.contains("xmlns:GPano=")) mMimeType = "image/panorama" }
+                        exif.getAttribute(ExifInterface.TAG_XMP)?.let { if (it.contains(PANORAMA_SIGNATURE)) mMimeType = PANORAMA_MIMETYPE }
 
                         if (saveExif) {
                             try { exif.saveAttributes() }

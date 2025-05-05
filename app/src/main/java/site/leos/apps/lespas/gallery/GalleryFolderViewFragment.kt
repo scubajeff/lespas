@@ -802,7 +802,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                         foreground = when {
                             it.isSelected -> selectedMark
                             Tools.isMediaPlayable(photo.mimeType) -> playMark
-                            photo.mimeType == "image/panorama" -> panoramaMark
+                            photo.mimeType == Tools.PANORAMA_MIMETYPE -> panoramaMark
                             else -> null
                         }
 

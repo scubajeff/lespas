@@ -771,6 +771,7 @@ class GalleryFragment: Fragment() {
                     MediaStore.Files.FileColumns.SIZE,
                     MediaStore.Files.FileColumns.WIDTH,
                     MediaStore.Files.FileColumns.HEIGHT,
+                    MediaStore.Files.FileColumns.XMP,
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
@@ -797,6 +798,7 @@ class GalleryFragment: Fragment() {
                         val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
                         val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
                         val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
+                        val xmpColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.XMP)
                         val defaultZone = ZoneId.systemDefault()
                         var mimeType: String
                         var dateAdded: Long
@@ -818,6 +820,7 @@ class GalleryFragment: Fragment() {
                             mimeType = cursor.getString(typeColumn)
                             // Make sure image type is supported
                             if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
+                            try { cursor.getBlob(xmpColumn)?.let { if (it.decodeToString().contains(Tools.PANORAMA_SIGNATURE)) mimeType = Tools.PANORAMA_MIMETYPE }} catch (_: Exception) {}
                             if (cursor.getLong(sizeColumn) == 0L) continue@cursorLoop
 
 /*
