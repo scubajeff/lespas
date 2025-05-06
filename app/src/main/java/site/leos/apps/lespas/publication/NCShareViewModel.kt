@@ -1562,14 +1562,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         bitmap?.let {
                             if (viewType == TYPE_PANORAMA) {
                                 try {
-                                    (view.parent as ViewGroup).findViewById<VrPanoramaView>(R.id.panorama)?.run {
-                                        loadImageFromBitmap(it, VrPanoramaView.Options().apply { inputType = VrPanoramaView.Options.TYPE_MONO })
-                                        setStereoModeButtonEnabled(false)
-                                        setInfoButtonEnabled(false)
-                                        setFullscreenButtonEnabled(false)
-                                        //displayMode = VrWidgetView.DisplayMode.FULLSCREEN_MONO
-                                        setFlingingEnabled(false)
-                                    }
+                                    (view.parent as ViewGroup).findViewById<VrPanoramaView>(R.id.panorama)?.loadImageFromBitmap(it, VrPanoramaView.Options().apply { inputType = VrPanoramaView.Options.TYPE_MONO })
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                     view.setImageBitmap(placeholderBitmap)

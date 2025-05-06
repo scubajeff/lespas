@@ -43,6 +43,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.vr.sdk.widgets.pano.VrPanoramaView
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -341,6 +342,16 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { clickListener?.let { setOnClickListener { it(null) } }}
+
+        init {
+            itemView.findViewById<VrPanoramaView>(R.id.panorama).run {
+                setStereoModeButtonEnabled(false)
+                setInfoButtonEnabled(false)
+                setFullscreenButtonEnabled(false)
+                //displayMode = VrWidgetView.DisplayMode.FULLSCREEN_MONO
+                //setFlingingEnabled(false)
+            }
+        }
 
         fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
