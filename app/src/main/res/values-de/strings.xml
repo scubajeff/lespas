@@ -93,6 +93,7 @@
     <string name="auto_replay_title">Automatische Videowiedergabe</string>
     <string name="gallery_as_album_title">Galerie als Album anzeigen</string>
 
+    <string name="default_mute_title">Video standardmäßig stummschalten</string>
     <string name="edit_header">Bearbeiten</string>
     <string name="snapseed_integration_title">Snapseed-Integration</string>
     <string name="snapseed_integration_summary">Hinweis: Bitte verwenden Sie in Snapseed das JPEG-Ausgabeformat.</string>
@@ -411,4 +412,5 @@
     <string name="action_upload_to_archive">Hochladen ins Archiv</string>
     <string name="checkbox_text_remove_local_copy">Lokale Kopie in diesem Gerät</string>
     <string name="msg_media_manager_rationale_for_deletion">Um zu vermeiden, dass das System die Löschung bestätigt, müssen Sie Les Pas die Berechtigung „Medien verwalten“ erteilen.</string>
+    <string name="video_play_header">Video Abspielen</string>
 </resources>

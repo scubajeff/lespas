@@ -114,6 +114,7 @@
 
     <string name="gallery_as_album_title">Galleria visualizzata come album</string>
 
+    <string name="default_mute_title">Disattivare il video per impostazione predefinita</string>
     <string name="edit_header">Modifica</string>
     <string name="snapseed_integration_title">Integrazione con Snapseed</string>
     <string name="snapseed_integration_summary">Nota: consenti a Snapseed di usare il formato JPEG</string>
@@ -426,4 +427,5 @@
     <string name="action_upload_to_archive">Caricare nell\'archivio</string>
     <string name="checkbox_text_remove_local_copy">La copia locale in questo dispositivo</string>
     <string name="msg_media_manager_rationale_for_deletion">Per evitare la conferma dell\'eliminazione da parte del sistema, è necessario concedere a Les Pas l\'autorizzazione a gestire i media.</string>
+    <string name="video_play_header">Riproduzione video</string>
 </resources>

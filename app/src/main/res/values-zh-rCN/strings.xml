@@ -188,6 +188,7 @@
     <string name="button_text_add_to_lespas">加入相册</string>
     <string name="remove_meta_data_before_sharing_title">分享前删除图片隐私元数据</string>
     <string name="install_snapseed_dialog_msg">马上安装Snapseed修图应用吗？</string>
+    <string name="default_mute_title">默认视频静音</string>
     <string name="edit_header">图片编辑</string>
     <string name="privacy_header">隐私保护</string>
     <string name="no">不用</string>
@@ -358,4 +359,5 @@
     <string name="action_upload_to_archive">备份至服务器</string>
     <string name="checkbox_text_remove_local_copy">本设备中的文件</string>
     <string name="msg_media_manager_rationale_for_deletion">若需跳过系统的删除确认对话框，请授予 Les Pas 管理媒体权限。</string>
+    <string name="video_play_header">视频播放</string>
 </resources>

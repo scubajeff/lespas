@@ -139,8 +139,6 @@
     <string name="true_black_title">True black dark theme</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
-    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
-    <string name="auto_replay_title">Replay video automatically</string>
     <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
     <string name="default_sort_order_title">Default photo sort order for new album</string>
 
@@ -151,6 +149,12 @@
     <string name="sync_deletion_perf_key" translatable="false">SYNC_GALLERY_DELETION</string>
     <string name="sync_deletion_title">Sync gallery deletion to server archive</string>
     <string name="sync_deletion_rational">To gain more flexibility of making sync decision on every deletion, you should grant Les Pas the Manage Media permission.</string>
+
+    <string name="video_play_header">Video Playing</string>
+    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
+    <string name="default_mute_perf_key" translatable="false">DEFAULT_MUTE</string>
+    <string name="auto_replay_title">Replay video automatically</string>
+    <string name="default_mute_title">Mute video by default</string>
 
     <string name="edit_header">Edit</string>
     <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>

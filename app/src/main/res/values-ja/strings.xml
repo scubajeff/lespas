@@ -188,6 +188,7 @@
     <string name="button_text_add_to_lespas">アルバムに追加</string>
     <string name="remove_meta_data_before_sharing_title">共有前に画像のプライバシー・メタデータを削除する</string>
     <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>
+    <string name="default_mute_title">デフォルトのビデオミュート</string>
     <string name="edit_header">リタッチ</string>
     <string name="privacy_header">個人情報保護</string>
     <string name="no">いいえ</string>
@@ -359,4 +360,5 @@
     <string name="action_upload_to_archive">アーカイブへのアップロード</string>
     <string name="checkbox_text_remove_local_copy">このデバイスのローカルコピー</string>
     <string name="msg_media_manager_rationale_for_deletion">システムによる削除確認ダイアログをスキップするには、Les Pasにメディア管理権限を付与してください。</string>
+    <string name="video_play_header">ビデオ再生</string>
 </resources>

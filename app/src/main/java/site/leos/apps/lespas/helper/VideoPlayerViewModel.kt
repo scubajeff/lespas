@@ -96,8 +96,15 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             volume = 1f
         }
 
-        // Mute video sound during late night hours
-        if (!slideshowMode) with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
+        // Video not gonna be mute in slideshow mode
+        if (!slideshowMode) {
+            when {
+                // Regarding default mute setting
+                PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.default_mute_perf_key), false) -> mute()
+                // Mute video sound during late night hours
+                with(LocalDateTime.now().hour) { this >= 22 || this < 7 } -> mute()
+            }
+        }
     }
 
     fun addListener(listener: Player.Listener) { videoPlayer.addListener(listener) }

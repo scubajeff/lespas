@@ -189,6 +189,7 @@
     <string name="button_text_add_to_lespas">Añadir al álbum</string>
     <string name="remove_meta_data_before_sharing_title">Elimine los metadatos sensibles antes de compartirlos</string>
     <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
+    <string name="default_mute_title">Silenciar el vídeo por defecto</string>
     <string name="edit_header">Retacear</string>
     <string name="privacy_header">Privacidad</string>
     <string name="no">No</string>
@@ -361,4 +362,5 @@
     <string name="action_upload_to_archive">Cargar en el archivo</string>
     <string name="checkbox_text_remove_local_copy">Copia local en este dispositivo</string>
     <string name="msg_media_manager_rationale_for_deletion">Para evitar que el sistema confirme el borrado, debe conceder a Les Pas el permiso Gestionar medios.</string>
+    <string name="video_play_header">Reproducción de vídeo</string>
 </resources>

@@ -188,6 +188,7 @@
     <string name="button_text_add_to_lespas">加入相冊</string>
     <string name="remove_meta_data_before_sharing_title">分享前刪除圖片隱私後設資料</string>
     <string name="install_snapseed_dialog_msg">現在就安裝Snapseed修圖App嗎？</string>
+    <string name="default_mute_title">預設影片靜音</string>
     <string name="edit_header">圖片編輯</string>
     <string name="privacy_header">隱私保護</string>
     <string name="no">不用</string>
@@ -358,4 +359,5 @@
     <string name="action_upload_to_archive">備份至伺服器</string>
     <string name="checkbox_text_remove_local_copy">本裝置中的檔案</string>
     <string name="msg_media_manager_rationale_for_deletion">若需跳過系統的刪除確認對話方塊，請授予 Les Pas 管理媒體許可權。</string>
+    <string name="video_play_header">影片播放</string>
 </resources>
