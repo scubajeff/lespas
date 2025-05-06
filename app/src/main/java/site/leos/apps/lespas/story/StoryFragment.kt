@@ -25,9 +25,7 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.Animatable2
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -50,8 +48,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.net.toUri
 import androidx.core.transition.doOnEnd
-import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -129,7 +128,7 @@ class StoryFragment : Fragment() {
 
     private var previousTitleBarDisplayOption = 0
 
-    private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var gestureDetector: GestureDetector
     private lateinit var volumeDrawable: Drawable
     private lateinit var brightnessDrawable: Drawable
     private var displayWidth = 0
@@ -172,12 +171,12 @@ class StoryFragment : Fragment() {
             { rp ->
                 with(rp.photo) {
                     val uri = when {
-                        isPublication -> Uri.parse("${publicationPath}${rp.remotePath}/${name}")
-                        isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED -> Uri.parse("${serverFullPath}/${name}")
+                        isPublication -> "${publicationPath}${rp.remotePath}/${name}".toUri()
+                        isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED -> "${serverFullPath}/${name}".toUri()
                         else -> {
                             var fileName = "${rootPath}/${id}"
                             if (!(File(fileName).exists())) fileName = "${rootPath}/${name}"
-                            Uri.parse("file:///$fileName")
+                            "file:///$fileName".toUri()
                         }
                     }
                     SeamlessMediaSliderAdapter.VideoItem(uri, mimeType, width, height, id)
@@ -258,9 +257,10 @@ class StoryFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    if (isPublication) imageLoaderModel.publicationContentMeta.collect { if (it.isNotEmpty()) loadSlideshow(it, startAt) }
+                    // TODO include panorama in story, either by showing static picture or better auto playing it
+                    if (isPublication) imageLoaderModel.publicationContentMeta.collect { if (it.isNotEmpty()) loadSlideshow(it.filter { it.photo.mimeType != Tools.PANORAMA_MIMETYPE }, startAt) }
                     else albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
-                        Tools.sortPhotos(photos, album.sortOrder).run {
+                        Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).run {
                             val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
                             forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
                             loadSlideshow(rpList, startAt)
@@ -277,7 +277,7 @@ class StoryFragment : Fragment() {
         knobLayout = view.findViewById(R.id.knob)
         knobIcon = view.findViewById(R.id.knob_icon)
         knobPosition = view.findViewById(R.id.knob_position)
-        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
+        gestureDetector = GestureDetector(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean = animationState == STATE_STARTED
 
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
@@ -671,7 +671,7 @@ class StoryFragment : Fragment() {
 
     private fun wipeActionBar() {
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             displayOptions = 0
         }
     }
