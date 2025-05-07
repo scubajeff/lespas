@@ -1013,10 +1013,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
         if (saveSortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
 
-        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
-        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
-            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
-
         super.onStop()
     }
 
@@ -1026,6 +1022,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         requireContext().unregisterReceiver(snapseedCatcher)
+
+        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
+        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
+            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
 
         super.onDestroyView()
     }

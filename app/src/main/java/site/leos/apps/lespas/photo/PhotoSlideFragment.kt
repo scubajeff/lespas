@@ -565,10 +565,6 @@ class PhotoSlideFragment : Fragment() {
 
         // Pause video playing
         try { if (pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300) } catch (_: IndexOutOfBoundsException) {}
-
-        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
-        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
-            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -602,6 +598,10 @@ class PhotoSlideFragment : Fragment() {
             requestedOrientation = previousOrientationSetting
             supportActionBar?.show()
         }
+
+        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
+        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
+            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
 
         super.onDestroyView()
     }
