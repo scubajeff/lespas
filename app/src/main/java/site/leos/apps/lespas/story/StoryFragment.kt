@@ -149,7 +149,7 @@ class StoryFragment : Fragment() {
 
         startAt = savedInstanceState?.getInt(KEY_START_AT) ?: 0
 
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), slideshowMode = true))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), 1f, slideshowMode = true))[VideoPlayerViewModel::class.java]
         // Advance to next slide after video playback end
         playerViewModel.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {

@@ -32,6 +32,7 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.media.AudioManager
 import android.media.MediaDataSource
 import android.media.MediaMetadataRetriever
 import android.media.MediaScannerConnection
@@ -163,6 +164,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val photoRepository = PhotoRepository(application)
 
     private val videoPlayerCache: SimpleCache?
+
+    private val audioManager = application.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val savedSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+    private var sessionVolumePercentage = savedSystemVolume.toFloat() / audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    fun saveSessionVolumePercentage(newPercentage: Float) {
+        sessionVolumePercentage = newPercentage
+
+        // Restore system volume setting whenever saveSessionVolumePercentage() is called
+        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {}
+    }
+    fun getSessionVolumePercentage() = sessionVolumePercentage
 
     init {
         AccountManager.get(application).run {
@@ -1750,6 +1762,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         downloadDispatcher.close()
         mediaMetadataRetriever.release()
         videoPlayerCache?.release()
+
         super.onCleared()
     }
 

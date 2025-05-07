@@ -45,19 +45,17 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val slideshowMode: Boolean): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var window = activity.window
     private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
     private val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    private val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     private val maxSystemVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-    private var currentVolumePercentage = volume.toFloat() / maxSystemVolume
+    private var currentVolumePercentage = sessionVolumePercentage   // follow session volume setting
     private var pauseJob: Job? = null
 
     init {
-        //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
         val okHttpDSFactory = DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))
         videoPlayer = ExoPlayer.Builder(activity)
             .setMediaSourceFactory(DefaultMediaSourceFactory(if (cache != null) CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(okHttpDSFactory) else okHttpDSFactory))
@@ -92,17 +90,17 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
             // Handle audio focus
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
-            // Initial volume as maximum of current system volume, effectively no change to current volume at the very beginning, see setVolume()
-            volume = 1f
         }
 
-        // Video not gonna be mute in slideshow mode
+        // Video not gonna be set here when in slideshow mode
         if (!slideshowMode) {
             when {
                 // Regarding default mute setting
                 PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.default_mute_perf_key), false) -> mute()
                 // Mute video sound during late night hours
                 with(LocalDateTime.now().hour) { this >= 22 || this < 7 } -> mute()
+                // Otherwise, follow session volume setting
+                else -> setVolume(0f)
             }
         }
     }
@@ -110,9 +108,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     fun addListener(listener: Player.Listener) { videoPlayer.addListener(listener) }
 
     fun rewind() { videoPlayer.seekTo(0L) }
-
     fun play() { videoPlayer.play() }
-
     fun resume(view: PlayerView?, uri: Uri?) {
         // When device rotated, enable gapless playback by canceling scheduled pause job
         pauseJob?.cancel(null)
@@ -153,7 +149,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             videoPlayer.play()
         }
     }
-
     fun pause(uri: Uri?) {
         pauseJob = viewModelScope.launch {
             // Might be called multiple times, cancel previous scheduled job
@@ -166,31 +161,18 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             invokeOnCompletion { pauseJob = null }
         }
     }
-
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
-/*
-    fun setVolume(increment: Float) {
-        val currentSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 
-        // Make sure maximum volume set if auto mute in midnight activated
-        if (currentSystemVolume < maxSystemVolume && videoPlayer.volume == 0f) try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxSystemVolume,0) } catch (_: SecurityException) {}
-
-        val volume = videoPlayer.volume + increment
-        when {
-            volume < 0f  -> videoPlayer.volume = 0f
-            volume > 1f  -> {
-                if (currentSystemVolume >= maxSystemVolume ) videoPlayer.volume = 1f
-                else {
-                    // Make sure maximum volume set when adjusting volume for the first time in this session
-                    try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxSystemVolume,0) } catch (_: SecurityException) {}
-                    videoPlayer.volume = currentSystemVolume.toFloat() / maxSystemVolume + increment
-                }
-            }
-            else -> videoPlayer.volume = volume
-        }
+    private fun mute() {
+        //videoPlayer.volume = 0f
+        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0) } catch (_: SecurityException) {}
+        currentVolumePercentage = 0f
     }
-    fun getVolume(): Float = videoPlayer.volume
-*/
+    /*
+        fun unMute() { videoPlayer.volume = 1f }
+        fun toggleMuteState() { if (videoPlayer.volume == 0f) unMute() else mute() }
+        fun isMuted(): Boolean = videoPlayer.volume == 0f
+    */
     fun setVolume(increment: Float) {
         currentVolumePercentage += increment
         currentVolumePercentage = when {
@@ -202,6 +184,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
     fun getVolume(): Float = currentVolumePercentage
 
+    fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
     fun setBrightness(increment: Float) {
         brightness += increment
         if (brightness < 0f) brightness = 0f
@@ -210,17 +193,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         window.attributes = window.attributes.apply { screenBrightness = brightness }
     }
     fun getBrightness(): Float = brightness
-    fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
-    private fun mute() {
-        //videoPlayer.volume = 0f
-        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0) } catch (_: SecurityException) {}
-        currentVolumePercentage = 0f
-    }
-/*
-    fun unMute() { videoPlayer.volume = 1f }
-    fun toggleMuteState() { if (videoPlayer.volume == 0f) unMute() else mute() }
-    fun isMuted(): Boolean = videoPlayer.volume == 0f
-*/
 
 /*
     fun resetPlayer() {
@@ -235,7 +207,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Reset screen auto turn off, brightness and volume setting
         resetBrightness()
-        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0) } catch (_: SecurityException) {}
 
         super.onCleared()
     }

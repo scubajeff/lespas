@@ -108,7 +108,7 @@ class GallerySlideFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: ""
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
 
         mediaAdapter = MediaSlideAdapter(
             requireContext(),
@@ -346,6 +346,8 @@ class GallerySlideFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        imageLoaderModel.saveSessionVolumePercentage(playerViewModel.getVolume())
+
         handler.removeCallbacksAndMessages(null)
         mediaViewPager.adapter = null
 
