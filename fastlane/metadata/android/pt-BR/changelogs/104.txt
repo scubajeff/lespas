@@ -1,0 +1,5 @@
+* Suporte ao formato de foto Panorama do Google (fotoesfera)
+* Suporte à intenção ACTION_PICK do sistema Android, que pode ser usada para selecionar uma imagem de papel de parede ou escolher uma foto para um contato
+* Remove o arquivo de trabalho do Snapseed automaticamente
+* Nova configuração "Silêncio Padrão" para reprodução de vídeo
+* Diversas melhorias e correções de bugs

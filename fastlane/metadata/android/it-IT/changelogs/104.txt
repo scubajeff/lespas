@@ -1,0 +1,5 @@
+* Supporta il formato foto Google Panorama (foto sferica)
+* Supporta l'intento ACTION_PICK del sistema Android, utilizzabile per selezionare uno sfondo o una foto per un contatto
+* Rimuove automaticamente i file di lavoro di Snapseed
+* Nuova impostazione "Disattiva audio predefinita" per la riproduzione video
+* Vari miglioramenti e correzioni di bug

@@ -1,0 +1,5 @@
+* 支援 Google 全景照片 (Photo Sphere) 格式
+* 支援 Android 系統 ACTION_PICK Intent，可用於選擇桌布圖片或為聯絡人挑選照片
+* 自動移除 Snapseed 工作檔案
+* 新增影片播放“預設靜音”設定
+* 多項改進和錯誤修復

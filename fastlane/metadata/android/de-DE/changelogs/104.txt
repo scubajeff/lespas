@@ -1,0 +1,5 @@
+* Unterstützt das Google Panorama-Fotoformat (Panoramakugel)
+* Unterstützt die Android-Funktion „ACTION_PICK“ (Auswahl eines Hintergrundbilds oder eines Kontaktfotos).
+* Snapseed-Arbeitsdateien automatisch entfernen
+* Neue Standard-Stummschaltung für die Videowiedergabe
+* Diverse Verbesserungen und Fehlerbehebungen
