@@ -226,7 +226,9 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun addAction(action: Action) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(action) }}
 
     private fun removeLocalMediaFile(photo: Photo) {
-        try { File(localRootFolder, photo.id).delete() } catch (_: Exception) {}
+        // It's necessary to delete the file named after photo's name, because when not yet uploaded photo being edited by Snapseed, it's id will not match with it's name
+        try { if (File(localRootFolder, photo.id).delete()) try { File(localRootFolder, photo.name).delete() } catch (_: Exception) {} } catch (_: Exception) { try { File(localRootFolder, photo.name).delete() } catch (_: Exception) {} }
+
         // Remove video thumbnail too
         if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (_: Exception) {}
     }
