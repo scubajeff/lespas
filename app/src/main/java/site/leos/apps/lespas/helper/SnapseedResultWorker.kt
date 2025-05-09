@@ -95,20 +95,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                             return@withContext
                         }
 
-                        // Replace content of file name after photo ID too, since ImageLoaderViewModel recognize photo ID only
-                        // We can't simply change this photo ID to imageName, since that will reorder the photo list
-                        try {
-                            File(appRootFolder, imageName).inputStream().use { input ->
-                                File(appRootFolder, originalPhoto.id).outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // Quit when exception happens during file copy
-                            return@withContext
-                        }
-
                         // Update local database
                         exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                         val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(

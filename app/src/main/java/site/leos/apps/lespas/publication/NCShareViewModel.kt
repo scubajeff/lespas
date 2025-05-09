@@ -1407,8 +1407,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
                                     }
 */
-                                    // For local album, file available in device and already rotated to up-right position. Fall back to remote thumbnail if anything bad happened while decoding.
-                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize }) ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
+                                    // For local album, file available in device and already rotated to up-right position.
+                                    val option = BitmapFactory.Options().apply { inSampleSize = thumbnailSize }
+                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", option)
+                                        // Fall back to read file named after image name. After snapseeding a not yet uploaded image, it's id is not the same as it's name anymore
+                                        ?: run { BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.name}", option) }
+                                        // Fall back to remote thumbnail if anything bad happened while decoding.
+                                        ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
                                 }
                             }
                         }
