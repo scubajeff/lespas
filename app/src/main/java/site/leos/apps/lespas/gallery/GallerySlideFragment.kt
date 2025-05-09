@@ -320,7 +320,7 @@ class GallerySlideFragment : Fragment() {
                     folderArgument == GalleryFragment.TRASH_FOLDER -> galleryModel.trash.collect { setList(it) }                    // Trash view
                     folderArgument == GalleryFragment.ALL_FOLDER -> galleryModel.medias.collect { setList(it) }                     // All folder view
                     folderArgument.indexOf('/') == -1 -> galleryModel.mediasInFolder(folderArgument).collect { setList(it) }  // Single main folder view
-                    else -> galleryModel.medias.collect { setList(it?.filter { item -> item.fullPath == folderArgument }) }           // Launched as viewer in a folder
+                    else -> galleryModel.medias.collect { setList(it?.filter { item -> item.fullPath == folderArgument }) }         // Launched as viewer in a folder
                 }
             }
         }
@@ -389,20 +389,27 @@ class GallerySlideFragment : Fragment() {
     }
 
     private fun setList(localMedias: List<GalleryFragment.GalleryMedia>?) {
-        if (localMedias == null) return
-        if (localMedias.isNotEmpty()) {
-            requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
-                when {
-                    subFolder.isEmpty() -> localMedias
-                    subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
-                    folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
-                    else -> localMedias.filter { it.fullPath == subFolder }
-            }}.let { filtered ->
-                if (filtered.isEmpty()) parentFragmentManager.popBackStack()
-                else mediaAdapter.submitList(filtered) { mediaAdapter.getScrollingPosition(galleryModel.getCurrentPhotoId()).let { pos->
-                    mediaViewPager.setCurrentItem(pos, false)
-                    mediaAdapter.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.ALLOW
-                }}
+        if (!localMedias.isNullOrEmpty()) {
+            val scrollToId = galleryModel.getCurrentPhotoId().substringAfterLast('/')
+            val scrollToPosition = localMedias.indexOfFirst { it.media.photo.id.substringAfterLast('/') == scrollToId }
+
+            // Pixel camera launch Gallery with the latest shot's uri, which might not be in MediaStore yet, so we wait for the next round of collection
+            if (scrollToPosition == -1) return
+            else {
+                requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
+                    when {
+                        subFolder.isEmpty() -> localMedias
+                        subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
+                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
+                        else -> localMedias.filter { it.fullPath == subFolder }
+                    }
+                }.let { filtered ->
+                    if (filtered.isEmpty()) parentFragmentManager.popBackStack()
+                    else mediaAdapter.submitList(filtered) {
+                        mediaViewPager.setCurrentItem(scrollToPosition, false)
+                        mediaAdapter.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.ALLOW
+                    }
+                }
             }
         }
     }
@@ -447,10 +454,6 @@ class GallerySlideFragment : Fragment() {
         fun isPhotoAtLocal(position: Int): Boolean = !currentList[position].isRemote()
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media
         fun getGalleryMediaAt(position: Int): GalleryFragment.GalleryMedia = currentList[position]
-        fun getScrollingPosition(photoId: String): Int {
-            val id = photoId.substringAfterLast('/')
-            return currentList.indexOfFirst { it.media.photo.id.substringAfterLast('/') == id }     //.apply { Log.e(">>>>>>>>", "getScrollingPosition: $photoId $this", ) }
-        }
     }
 
     class SliderMediaDiffCallback : DiffUtil.ItemCallback<GalleryFragment.GalleryMedia>() {
