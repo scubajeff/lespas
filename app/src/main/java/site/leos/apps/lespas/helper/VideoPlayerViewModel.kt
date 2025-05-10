@@ -76,6 +76,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                     super.onIsPlayingChanged(isPlaying)
 
                     if (!isPlaying) saveVideoPosition(currentVideo)
+                    window.decorView.keepScreenOn = isPlaying
                 }
             })
 

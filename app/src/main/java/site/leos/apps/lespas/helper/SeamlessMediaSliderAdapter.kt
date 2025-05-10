@@ -35,7 +35,6 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
@@ -317,14 +316,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
         val knobPosition = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
         val forwardMessage = itemView.findViewById<TextView>(R.id.fast_forward_msg)
         val rewindMessage = itemView.findViewById<TextView>(R.id.fast_rewind_msg)
-        init {
-            playerViewModel?.addListener(object : Player.Listener {
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    super.onIsPlayingChanged(isPlaying)
-                    videoView.keepScreenOn = isPlaying
-                }
-            })
-        }
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
