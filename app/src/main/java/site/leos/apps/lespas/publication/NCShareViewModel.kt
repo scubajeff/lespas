@@ -45,7 +45,6 @@ import android.util.Log
 import android.util.LruCache
 import android.util.Size
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -61,7 +60,9 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
-import com.google.vr.sdk.widgets.pano.VrPanoramaView
+import com.panoramagl.PLImage
+import com.panoramagl.PLManager
+import com.panoramagl.PLSphericalPanorama
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -1302,7 +1303,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         fun onLoadComplete(fullSize: Boolean)
     }
 
-    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, animationCallback: Animatable2.AnimationCallback? = null, callBack: LoadCompleteListener? = null) {
+    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         // For full image, show a cached thumbnail version first
@@ -1579,7 +1580,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         bitmap?.let {
                             if (viewType == TYPE_PANORAMA) {
                                 try {
-                                    (view.parent as ViewGroup).findViewById<VrPanoramaView>(R.id.panorama)?.loadImageFromBitmap(it, VrPanoramaView.Options().apply { inputType = VrPanoramaView.Options.TYPE_MONO })
+                                    panorama?.run {
+                                        setImage(PLImage(it, false))
+                                        panoManager?.panorama = this
+                                        panoManager?.startSensorialRotation()
+                                    }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                     view.setImageBitmap(placeholderBitmap)

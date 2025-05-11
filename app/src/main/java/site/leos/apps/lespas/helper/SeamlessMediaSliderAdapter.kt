@@ -26,6 +26,7 @@ import android.os.Parcelable
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -42,7 +43,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.vr.sdk.widgets.pano.VrPanoramaView
+import com.panoramagl.PLManager
+import com.panoramagl.PLSphericalPanorama
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -54,12 +56,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel?,
-    private val clickListener: ((Boolean?) -> Unit)?, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
+    // StoryFragment has null clickListener and null panoLoader
+    private val clickListener: ((Boolean?) -> Unit)?, private val imageLoader: (T, ImageView?, String) -> Unit, private val panoLoader: ((T, ImageView?, PLManager, PLSphericalPanorama) -> Unit?)?, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
     private val volumeDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_volume_on_24)
     private val brightnessDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_brightness_24)
 
     private var currentVideoView: PlayerView? = null
+    private var currentPLManager: PLManager? = null
     private var knobLayout: FrameLayout? = null
     private var knobIcon: ImageView? = null
     private var knobPosition: CircularProgressIndicator? = null
@@ -72,13 +76,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private val hideForwardMessageCallback = Runnable { forwardMessage?.isVisible = false }
     private val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
 
-    private var gestureDetector: GestureDetector? = null
+    private var videoViewGestureDetector: GestureDetector? = null
+   private var panoViewOnTouchListener: View.OnTouchListener? = null
 
     private var shouldPauseVideo = true
 
     init {
         clickListener?.let { cl ->
-            gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            videoViewGestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
                 override fun onDown(e: MotionEvent): Boolean = true
                 override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                     if (currentVideoView?.isControllerFullyVisible == false) {
@@ -133,6 +138,42 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     } else return false
                 }
             })
+
+            panoViewOnTouchListener = object : View.OnTouchListener {
+                private var velocityTracker: VelocityTracker? = null
+                private var panoViewGestureDetector: GestureDetector= GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                        cl(null)
+                        return true
+                    }
+                })
+
+                @SuppressLint("ClickableViewAccessibility")
+                override fun onTouch(v: View, event: MotionEvent): Boolean {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            v.parent.requestDisallowInterceptTouchEvent(true)
+                            velocityTracker?.clear()
+                            velocityTracker = velocityTracker ?: VelocityTracker.obtain()
+                            velocityTracker?.addMovement(event)
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            velocityTracker?.run {
+                                val pointerId: Int = event.getPointerId(event.actionIndex)
+                                addMovement(event)
+                                computeCurrentVelocity(1000)
+                                if (abs(getXVelocity(pointerId)) > 8000) v.parent.requestDisallowInterceptTouchEvent(false)
+                            }
+                        }
+                        MotionEvent.ACTION_UP -> {
+                            v.parent.requestDisallowInterceptTouchEvent(false)
+                            velocityTracker?.recycle()
+                            velocityTracker = null
+                        }
+                    }
+                    return if (panoViewGestureDetector.onTouchEvent(event)) true else currentPLManager?.onTouchEvent(event) != false
+                }
+            }
         }
     }
 
@@ -155,7 +196,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         return when(viewType) {
             TYPE_PHOTO -> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false), displayWidth)
             TYPE_ANIMATED -> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
-            TYPE_PANORAMA -> PanoramaViewHolder(LayoutInflater.from(context).inflate(R.layout.viewpager_item_panorama, parent, false))
+            TYPE_PANORAMA -> PanoramaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_panorama, parent, false))
             else-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
         }
     }
@@ -164,7 +205,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         when(holder) {
             is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), imageLoader)
             is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), imageLoader)
-            is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), imageLoader)
+            is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder -> holder.bind(position, getItemTransitionName(position))
             else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader)
         }
     }
@@ -185,6 +226,20 @@ abstract class SeamlessMediaSliderAdapter<T>(
             handler.removeCallbacksAndMessages(null)
             //clickListener(false)
         }
+        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) {
+            currentPLManager = holder.plManager
+            val panorama = PLSphericalPanorama().apply {
+                camera.lookAtAndZoomFactor(5f, 0f, 0.7f, false)
+                camera.rotationSensitivity = 270f
+            }
+            panoLoader?.invoke(getItem(holder.photoPosition), holder.ivMedia, holder.plManager, panorama)
+            holder.plManager.onResume()
+            @SuppressLint("ClickableViewAccessibility")
+            holder.pvContainer.setOnTouchListener(panoViewOnTouchListener)
+
+            // Stop panorama view from flicking
+            holder.pvContainer.dispatchTouchEvent(MotionEvent.obtain(System.currentTimeMillis(), System.currentTimeMillis()+50, MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0))
+        }
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
@@ -198,17 +253,20 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 holder.rewindMessage.isVisible = false
             }
         }
+        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) {
+            holder.plManager.onPause()
+            @SuppressLint("ClickableViewAccessibility")
+            holder.pvContainer.setOnTouchListener(null)
+        }
 
         super.onViewDetachedFromWindow(holder)
     }
 
-/*
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        // Cancel loading only works for image
-        holder.itemView.findViewById<View>(R.id.media)?.let { if (it is ImageView) cancelLoader(it) }
+        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) { holder.plManager.onDestroy() }
+
         super.onViewRecycled(holder)
     }
-*/
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         //playerViewModel.resetPlayer()
@@ -310,12 +368,12 @@ abstract class SeamlessMediaSliderAdapter<T>(
     inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var videoUri: Uri = Uri.EMPTY
 
-        val videoView = itemView.findViewById<PlayerView>(R.id.media).apply { gestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}}
-        val knobLayout = itemView.findViewById<FrameLayout>(R.id.knob)
-        val knobIcon = itemView.findViewById<ImageView>(R.id.knob_icon)
-        val knobPosition = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
-        val forwardMessage = itemView.findViewById<TextView>(R.id.fast_forward_msg)
-        val rewindMessage = itemView.findViewById<TextView>(R.id.fast_rewind_msg)
+        val videoView: PlayerView = itemView.findViewById<PlayerView>(R.id.media).apply { videoViewGestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}}
+        val knobLayout: FrameLayout = itemView.findViewById<FrameLayout>(R.id.knob)
+        val knobIcon: ImageView = itemView.findViewById<ImageView>(R.id.knob_icon)
+        val knobPosition: CircularProgressIndicator = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
+        val forwardMessage: TextView = itemView.findViewById<TextView>(R.id.fast_forward_msg)
+        val rewindMessage: TextView = itemView.findViewById<TextView>(R.id.fast_rewind_msg)
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
@@ -332,23 +390,20 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { clickListener?.let { setOnClickListener { it(null) } }}
-
-        init {
-            itemView.findViewById<VrPanoramaView>(R.id.panorama).run {
-                setStereoModeButtonEnabled(false)
-                setInfoButtonEnabled(false)
-                setFullscreenButtonEnabled(false)
-                //displayMode = VrWidgetView.DisplayMode.FULLSCREEN_MONO
-                //setFlingingEnabled(false)
-            }
+        var photoPosition: Int = -1
+        val ivMedia: ImageView = itemView.findViewById<ImageView>(R.id.media)
+        val pvContainer: FrameLayout = itemView.findViewById<FrameLayout>(R.id.panorama)
+        val plManager = PLManager(context).apply {
+            setContentView(pvContainer)
+            onCreate()
+            isAcceleratedTouchScrollingEnabled = false
+            isScrollingEnabled = true
+            isInertiaEnabled = true
         }
 
-        fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
-            ivMedia.apply {
-                imageLoader(photo, this, NCShareViewModel.TYPE_PANORAMA)
-                ViewCompat.setTransitionName(this, transitionName)
-            }
+        fun bind(position: Int, transitionName: String) {
+            photoPosition = position
+            ViewCompat.setTransitionName(ivMedia, transitionName)
         }
     }
 

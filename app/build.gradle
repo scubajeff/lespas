@@ -144,7 +144,10 @@ dependencies {
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
 
     // Panorama support
-    implementation fileTree(include: ['*.aar'], dir: 'libs')
+    implementation('com.github.hannesa2:panoramagl:1.12') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+        exclude group: 'androidx.core', module: 'core-ktx'
+    }
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

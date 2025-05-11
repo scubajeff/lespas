@@ -54,6 +54,8 @@ import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
+import com.panoramagl.PLManager
+import com.panoramagl.PLSphericalPanorama
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.gallery.GalleryFragment
@@ -89,6 +91,7 @@ class ObjectSearchSlideFragment : Fragment() {
             Tools.getDisplayDimension(requireActivity()).first,
             { state -> toggleBottomControl(state) },
             { photo, imageView, type -> imageLoaderModel.setImagePhoto(photo, imageView!!, type) { startPostponedEnterTransition() }},
+            { photo, imageView, plManager, panorama -> imageLoaderModel.setImagePhoto(photo, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) { startPostponedEnterTransition() }},
             { imageView -> imageLoaderModel.cancelSetImagePhoto(imageView) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
@@ -276,8 +279,9 @@ class ObjectSearchSlideFragment : Fragment() {
         if (captionTextView.text.isEmpty()) handlerBottomControl.postDelayed(hideBottomControls, AUTO_HIDE_DELAY_MILLIS)
     }
 
-    class PhotoSlideAdapter(context: Context, displayWidth: Int, clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ) : SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), null, clickListener, imageLoader, cancelLoader) {
+    class PhotoSlideAdapter(context: Context, displayWidth: Int,
+        clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit
+    ) : SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), null, clickListener, imageLoader, panoLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = VideoItem(Uri.EMPTY, "", 0, 0, "")
         override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType

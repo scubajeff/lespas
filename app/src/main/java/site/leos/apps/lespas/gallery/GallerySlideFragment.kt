@@ -59,6 +59,8 @@ import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
+import com.panoramagl.PLManager
+import com.panoramagl.PLSphericalPanorama
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
@@ -94,7 +96,6 @@ class GallerySlideFragment : Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val galleryModel: GalleryFragment.GalleryViewModel by viewModels(ownerProducer = { requireParentFragment() }) { GalleryFragment.GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
     private lateinit var playerViewModel: VideoPlayerViewModel
-    //private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private lateinit var window: Window
 
@@ -119,6 +120,9 @@ class GallerySlideFragment : Fragment() {
             { localMedia, imageView, type ->
                 if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
                 else imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, type) { startPostponedEnterTransition() }
+            },
+            { localMedia, imageView, plManager, panorama ->
+                imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) { startPostponedEnterTransition() }
             },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT }
@@ -442,8 +446,8 @@ class GallerySlideFragment : Fragment() {
 
     class MediaSlideAdapter(
         context: Context, private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel,
-        clickListener: (Boolean?) -> Unit, imageLoader: (GalleryFragment.GalleryMedia, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<GalleryFragment.GalleryMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+        clickListener: (Boolean?) -> Unit, imageLoader: (GalleryFragment.GalleryMedia, ImageView?, String) -> Unit, panoLoader: (GalleryFragment.GalleryMedia, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<GalleryFragment.GalleryMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
         override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.GalleryMedia).media) {

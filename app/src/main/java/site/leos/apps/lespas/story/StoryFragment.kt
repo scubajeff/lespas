@@ -186,7 +186,7 @@ class StoryFragment : Fragment() {
                 // Usually slideshow triggered in slider's onPageScrollStateChanged callback. But during the initial launch, onPageScrollStateChanged won't be called, need to do it here
                 // For photos and animatables, load the full size image before starting the show; for videos, video player will handle the loading and buffering, show can be started right away
                 //if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type, animatableCallback) { fullSize -> if (needKickOff && fullSize) startFirstSlide() }
-                if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type, animatableCallback) { if (needKickOff) startFirstSlide() }
+                if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type, animationCallback = animatableCallback) { if (needKickOff) startFirstSlide() }
                 else if (needKickOff) startFirstSlide()
             },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
@@ -750,7 +750,7 @@ class StoryFragment : Fragment() {
     }
 
     private class StoryAdapter(context: Context, displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (NCShareViewModel.RemotePhoto) -> VideoItem, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, null, imageLoader, cancelLoader) {
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, null, imageLoader, null, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
