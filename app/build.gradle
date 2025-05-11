@@ -75,8 +75,9 @@ android {
 
 dependencies {
     // TensorFlow
-    implementation 'org.tensorflow:tensorflow-lite-support:0.4.2'
-    implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0'
+    implementation 'org.tensorflow:tensorflow-lite-support:0.5.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu:2.17.0'
+    implementation 'org.tensorflow:tensorflow-lite-gpu-api:2.17.0'
 
     // Core
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
@@ -93,14 +94,14 @@ dependencies {
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     // Lifecycle components
-    def lifecycleVersion = "2.8.7"
+    def lifecycleVersion = "2.9.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
 
     // Kotlin components
     implementation 'androidx.work:work-runtime-ktx:2.10.1'
-    def coroutineVersion = '1.9.0'
+    def coroutineVersion = '1.10.2'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
 
@@ -141,7 +142,7 @@ dependencies {
     implementation 'com.google.zxing:zxingorg:3.5.0'
 
     // Jackson for faster json string processing
-    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0'
 
     // Panorama support
     implementation('com.github.hannesa2:panoramagl:1.12') {
