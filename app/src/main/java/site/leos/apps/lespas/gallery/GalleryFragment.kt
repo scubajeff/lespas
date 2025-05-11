@@ -345,7 +345,7 @@ class GalleryFragment: Fragment() {
                                             action = Intent.ACTION_SEND
                                             putExtra(Intent.EXTRA_STREAM, uris[0])
                                         }
-                                        type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                                        type = if (galleryModel.isSharingPanorama()) Tools.PHOTO_SPHERE_MIMETYPE else (requireContext().contentResolver.getType(uris[0]) ?: "image/*")
                                         if (type!!.startsWith("image")) type = "image/*"
                                         this.clipData = clipData
                                         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -1049,11 +1049,14 @@ class GalleryFragment: Fragment() {
         fun getShareType() = currentShareType
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
+        private var sharingPanorama = false
+        fun isSharingPanorama() = sharingPanorama
         fun shareOut(photoIds: List<String>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean, shareType: Int = SHARE_NORMAL) {
             currentShareType = shareType
             viewModelScope.launch(Dispatchers.IO) {
                 _strippingEXIF.emit(strip)
                 setIsPreparingShareOut(true)
+                sharingPanorama = photoIds.size == 1 && shareType == SHARE_NORMAL && !strip && getPhotoById(photoIds[0])?.photo?.mimeType == Tools.PANORAMA_MIMETYPE
 
                 // Collect photos for sharing
                 val photos = mutableListOf<NCShareViewModel.RemotePhoto>()

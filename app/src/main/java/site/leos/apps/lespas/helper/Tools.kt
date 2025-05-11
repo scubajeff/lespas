@@ -107,6 +107,7 @@ object Tools {
     val SUPPORTED_PICTURE_FORMATS = arrayOf("gif", "bmp") + FORMATS_WITH_EXIF
     const val PANORAMA_SIGNATURE = "GPano:UsePanoramaViewer=\"True\""
     const val PANORAMA_MIMETYPE = "image/panorama"
+    const val PHOTO_SPHERE_MIMETYPE = "application/vnd.google.panorama360+jpg"
 
     @SuppressLint("RestrictedApi")
     fun getPhotoParams(

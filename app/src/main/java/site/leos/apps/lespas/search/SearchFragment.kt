@@ -239,7 +239,7 @@ class SearchFragment: Fragment() {
                                     action = Intent.ACTION_SEND
                                     putExtra(Intent.EXTRA_STREAM, uris[0])
                                 }
-                                type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                                type = if (searchModel.isSharingPanorama()) Tools.PHOTO_SPHERE_MIMETYPE else requireContext().contentResolver.getType(uris[0]) ?: "image/*"
                                 if (type!!.startsWith("image")) type = "image/*"
                                 this.clipData = clipData
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -688,10 +688,13 @@ class SearchFragment: Fragment() {
         private val idsDeleteAfterwards = mutableListOf<NCShareViewModel.RemotePhoto>()
         private val _strippingEXIF = MutableSharedFlow<Boolean>()
         val strippingEXIF: SharedFlow<Boolean> = _strippingEXIF
+        private var sharingPanorama = false
+        fun isSharingPanorama() = sharingPanorama
         fun shareOut(photos: List<NCShareViewModel.RemotePhoto>, strip: Boolean, lowResolution: Boolean, removeAfterwards: Boolean) {
             viewModelScope.launch(Dispatchers.IO) {
                 _strippingEXIF.emit(strip)
                 //setIsPreparingShareOut(true)
+                sharingPanorama = !strip && photos.size == 1 && photos[0].photo.mimeType == Tools.PANORAMA_MIMETYPE
 
                 // Save photo id for deletion after shared
                 if (removeAfterwards) idsDeleteAfterwards.addAll(photos)

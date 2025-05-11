@@ -681,7 +681,7 @@ class PhotoSlideFragment : Fragment() {
         }, 500)
 
         // Prepare media files for sharing
-        imageLoaderModel.prepareFileForShareOut(listOf(NCShareViewModel.RemotePhoto(pAdapter.getPhotoAt(slider.currentItem).apply { shareOutMimeType = mimeType }, if (Tools.isRemoteAlbum(album)) serverPath else "")), strip, lowResolution)
+        imageLoaderModel.prepareFileForShareOut(listOf(NCShareViewModel.RemotePhoto(pAdapter.getPhotoAt(slider.currentItem).apply { shareOutMimeType = if (mimeType == Tools.PANORAMA_MIMETYPE) Tools.PHOTO_SPHERE_MIMETYPE else mimeType }, if (Tools.isRemoteAlbum(album)) serverPath else "")), strip, lowResolution)
     }
 
     class PhotoSlideAdapter(
