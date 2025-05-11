@@ -230,7 +230,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             currentPLManager = holder.plManager
             val panorama = PLSphericalPanorama().apply {
                 camera.lookAtAndZoomFactor(5f, 0f, 0.7f, false)
-                camera.rotationSensitivity = 270f
+                camera.rotationSensitivity = 24f
             }
             panoLoader?.invoke(getItem(holder.photoPosition), holder.ivMedia, holder.plManager, panorama)
             holder.plManager.onResume()
@@ -396,7 +396,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         val plManager = PLManager(context).apply {
             setContentView(pvContainer)
             onCreate()
-            isAcceleratedTouchScrollingEnabled = false
+            isAcceleratedTouchScrollingEnabled = true
             isScrollingEnabled = true
             isInertiaEnabled = true
         }
