@@ -1,0 +1,6 @@
+* Support Photo Sphere format
+* Support AVIF format on Android 14+
+* Support Android system ACTION_PICK intent, can be used to select wallpaper picture or pick photo for contact
+* Remove Snapseed work file automatically
+* New 'Default Mute' setting for video playing
+* Various improvements and bug fixes

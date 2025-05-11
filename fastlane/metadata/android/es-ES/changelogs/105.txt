@@ -1,0 +1,6 @@
+* Compatible con el formato Photo Sphere
+* Compatible con el formato AVIF en Android 14+
+* Compatible con la función ACTION_PICK del sistema Android; permite seleccionar una imagen de fondo de pantalla o la foto de un contacto
+* Elimina automáticamente el archivo de trabajo de Snapseed
+* Nueva configuración de "Silencio predeterminado" para la reproducción de vídeo
+* Diversas mejoras y correcciones de errores

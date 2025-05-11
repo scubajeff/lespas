@@ -1,0 +1,6 @@
+* 支援 Photo Sphere 格式
+* 在 Android 14+ 上支援 AVIF 格式
+* 支持 Android 系統 ACTION_PICK Intent，可用於選擇壁紙圖片或為聯繫人挑選照片
+* 自動移除 Snapseed 工作文件
+* 新增視頻播放“默認靜音”設置
+* 多項改進和錯誤修復

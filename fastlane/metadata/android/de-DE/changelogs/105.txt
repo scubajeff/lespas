@@ -1,0 +1,6 @@
+* Unterstützt das Photo Sphere-Format
+* Unterstützt das AVIF-Format unter Android 14+
+* Unterstützt die Android-Funktion „ACTION_PICK“ (Auswahl eines Hintergrundbilds oder eines Kontaktfotos).
+* Snapseed-Arbeitsdateien automatisch entfernen
+* Neue Standard-Stummschaltung für die Videowiedergabe
+* Diverse Verbesserungen und Fehlerbehebungen

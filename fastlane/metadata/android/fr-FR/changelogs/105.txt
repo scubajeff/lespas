@@ -1,0 +1,6 @@
+* Prise en charge du format Photo Sphere
+* Prise en charge du format AVIF sur Android 14 et versions ultérieures
+* Prise en charge de l'intention ACTION_PICK du système Android, permettant de sélectionner une image de fond d'écran ou une photo pour un contact
+* Suppression automatique du fichier de travail Snapseed
+* Nouveau paramètre « Muet par défaut » pour la lecture vidéo
+* Diverses améliorations et corrections de bugs
