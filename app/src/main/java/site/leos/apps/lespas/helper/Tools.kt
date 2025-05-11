@@ -101,7 +101,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 object Tools {
-    private val COMMON_FORMAT = arrayOf("jpeg", "png", "webp", "heif", "heic")
+    private val COMMON_FORMAT = arrayOf("jpeg", "png", "webp", "heif", "heic", "panorama")
     val RAW_FORMAT = arrayOf("x-dcraw", "x-sony-arw", "x-sony-sr2", "x-sony-srf", "x-adobe-dng", "x-fuji-raf", "x-canon-cr2", "x-canon-crw", "x-nikon-nef", "x-olympus-orf", "x-panasonic-raw", "x-pentax-pef", "x-sigma-x3f", "x-kodak-dcr", "x-kodak-k25", "x-kodak-kdc", "x-minolta-mrw")
     private val FORMATS_WITH_EXIF = COMMON_FORMAT + arrayOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) "avif" else "") + RAW_FORMAT
     val SUPPORTED_PICTURE_FORMATS = arrayOf("gif", "bmp") + FORMATS_WITH_EXIF
