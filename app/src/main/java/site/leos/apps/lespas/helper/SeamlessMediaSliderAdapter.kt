@@ -162,7 +162,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                                 val pointerId: Int = event.getPointerId(event.actionIndex)
                                 addMovement(event)
                                 computeCurrentVelocity(1000)
-                                if (abs(getXVelocity(pointerId)) > 8000) v.parent.requestDisallowInterceptTouchEvent(false)
+                                if (abs(getXVelocity(pointerId)) > 6800) v.parent.requestDisallowInterceptTouchEvent(false)
                             }
                         }
                         MotionEvent.ACTION_UP -> {
@@ -230,7 +230,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             currentPLManager = holder.plManager
             val panorama = PLSphericalPanorama().apply {
                 camera.lookAtAndZoomFactor(5f, 0f, 0.7f, false)
-                camera.rotationSensitivity = 24f
+                camera.rotationSensitivity = 22f
             }
             panoLoader?.invoke(getItem(holder.photoPosition), holder.ivMedia, holder.plManager, panorama)
             holder.plManager.onResume()
