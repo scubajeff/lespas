@@ -15,18 +15,13 @@
   ~   limitations under the License.
   -->
 
-<androidx.constraintlayout.widget.ConstraintLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
-
-    <FrameLayout
-        android:id="@+id/panorama"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:elevation="2dp" />
+    android:background="@android:color/black"
+    android:id="@+id/panorama">
 
     <ImageView
         android:id="@+id/media"
@@ -36,4 +31,4 @@
         tools:src="@drawable/ic_logo"
         tools:ignore="ContentDescription" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

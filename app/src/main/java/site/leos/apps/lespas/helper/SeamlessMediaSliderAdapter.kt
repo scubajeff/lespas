@@ -212,61 +212,68 @@ abstract class SeamlessMediaSliderAdapter<T>(
     
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
         super.onViewAttachedToWindow(holder)
-        if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
-            playerViewModel?.resume(holder.videoView, holder.videoUri)
-            currentVideoView = holder.videoView
-            clickListener?.let {
-                knobLayout = holder.knobLayout
-                knobIcon = holder.knobIcon
-                knobPosition = holder.knobPosition
-                forwardMessage = holder.forwardMessage
-                rewindMessage = holder.rewindMessage
+        when (holder) {
+            is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
+                playerViewModel?.resume(holder.videoView, holder.videoUri)
+                currentVideoView = holder.videoView
+                clickListener?.let {
+                    knobLayout = holder.knobLayout
+                    knobIcon = holder.knobIcon
+                    knobPosition = holder.knobPosition
+                    forwardMessage = holder.forwardMessage
+                    rewindMessage = holder.rewindMessage
+                }
+
+                handler.removeCallbacksAndMessages(null)
+                //clickListener(false)
             }
 
-            handler.removeCallbacksAndMessages(null)
-            //clickListener(false)
-        }
-        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) {
-            currentPLManager = holder.plManager
-            val panorama = PLSphericalPanorama().apply {
-                camera.lookAtAndZoomFactor(5f, 0f, 0.7f, false)
-                camera.rotationSensitivity = 22f
-            }
-            panoLoader?.invoke(getItem(holder.photoPosition), holder.ivMedia, holder.plManager, panorama)
-            holder.plManager.onResume()
-            @SuppressLint("ClickableViewAccessibility")
-            holder.pvContainer.setOnTouchListener(panoViewOnTouchListener)
+            is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder -> {
+                currentPLManager = holder.plManager
 
-            // Stop panorama view from flicking
-            holder.pvContainer.dispatchTouchEvent(MotionEvent.obtain(System.currentTimeMillis(), System.currentTimeMillis()+50, MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0))
+                val panorama = PLSphericalPanorama().apply {
+                    camera.lookAtAndZoomFactor(5f, 0f, 0.7f, false)
+                    camera.rotationSensitivity = 22f
+                }
+                // TODO move this to init() or bind(), seems like glSurfaceView need to re-attach with texture
+                panoLoader?.invoke(getItem(holder.photoPosition), holder.ivMedia, holder.plManager, panorama)
+
+                holder.plManager.onResume()
+
+                // Stop panorama view from flicking
+                holder.pvContainer.dispatchTouchEvent(MotionEvent.obtain(System.currentTimeMillis(), System.currentTimeMillis()+50, MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0))
+            }
         }
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
-            if (shouldPauseVideo) playerViewModel?.pause(holder.videoUri)
-            playerViewModel?.resetBrightness()
-            holder.videoView.player = null
-            clickListener?.let {
-                holder.knobLayout.isVisible = false
-                holder.forwardMessage.isVisible = false
-                holder.rewindMessage.isVisible = false
+        when(holder) {
+            is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
+                if (shouldPauseVideo) playerViewModel?.pause(holder.videoUri)
+                playerViewModel?.resetBrightness()
+                holder.videoView.player = null
+                clickListener?.let {
+                    holder.knobLayout.isVisible = false
+                    holder.forwardMessage.isVisible = false
+                    holder.rewindMessage.isVisible = false
+                }
             }
-        }
-        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) {
-            holder.plManager.onPause()
-            @SuppressLint("ClickableViewAccessibility")
-            holder.pvContainer.setOnTouchListener(null)
+            is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder-> { holder.plManager.onPause() }
         }
 
         super.onViewDetachedFromWindow(holder)
     }
 
+/*
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) { holder.plManager.onDestroy() }
+        if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) {
+            holder.plManager?.onDestroy()
+            holder.plManager = null
+        }
 
         super.onViewRecycled(holder)
     }
+*/
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         //playerViewModel.resetPlayer()
@@ -274,13 +281,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
         for (i in 0 until currentList.size) {
             recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
                 holder.itemView.findViewById<View>(R.id.media)?.let { cancelLoader(it) }
+                if (holder is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder) { holder.plManager.onDestroy() }
             }
         }
 
         super.onDetachedFromRecyclerView(recyclerView)
     }
 
-    fun setDisplayWidth(width: Int) { displayWidth = width }
+    //fun setDisplayWidth(width: Int) { displayWidth = width }
     fun setPauseVideo(shouldPause: Boolean) { shouldPauseVideo = shouldPause }
 
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
@@ -392,8 +400,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var photoPosition: Int = -1
         val ivMedia: ImageView = itemView.findViewById<ImageView>(R.id.media)
-        val pvContainer: FrameLayout = itemView.findViewById<FrameLayout>(R.id.panorama)
-        val plManager = PLManager(context).apply {
+        val pvContainer: FrameLayout = itemView.findViewById<FrameLayout>(R.id.panorama).apply { setOnTouchListener(panoViewOnTouchListener) }
+        var plManager = PLManager(context).apply {
             setContentView(pvContainer)
             onCreate()
             isAcceleratedTouchScrollingEnabled = true
