@@ -16,6 +16,7 @@
   -->
 
 <resources>
+    <dimen name="tv_padding">48dp</dimen>
     <dimen name="extra_padding">24dp</dimen>
     <dimen name="big_padding">16dp</dimen>
     <dimen name="small_padding">8dp</dimen>

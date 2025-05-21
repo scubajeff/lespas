@@ -425,4 +425,6 @@
     <string name="checkbox_text_remove_local_copy">Cópia local neste dispositivo</string>
     <string name="msg_media_manager_rationale_for_deletion">Para evitar a confirmação da exclusão pelo sistema, é necessário conceder a Les Pas a permissão Manage Media (Gerenciar mídia).</string>
     <string name="video_play_header">Reprodução de vídeo</string>
+    <string name="title_tv_my_albums">Meus álbuns</string>
+    <string name="title_tv_shared_with_me">Compartilhado Recebido</string>
 </resources>

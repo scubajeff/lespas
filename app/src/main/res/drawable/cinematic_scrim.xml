@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="960dp"
+    android:height="540dp"
+    android:viewportWidth="960"
+    android:viewportHeight="540">
+    <path
+        android:pathData="M0,0h960v540h-960z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="720"
+                android:centerY="-160"
+                android:gradientRadius="960"
+                android:type="radial">
+                <item android:offset="0.12" android:color="#00000000"/>
+                <item android:offset="0.25" android:color="#1A000000"/>
+                <item android:offset="0.68" android:color="#FF000000"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

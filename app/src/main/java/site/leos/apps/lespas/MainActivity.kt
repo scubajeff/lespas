@@ -19,10 +19,12 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.app.UiModeManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -64,21 +66,26 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
+import site.leos.apps.lespas.tv.TVMainFragment
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var sp: SharedPreferences
-    private lateinit var toolbar: MaterialToolbar
+    private var toolbar: MaterialToolbar? = null
 
     private lateinit var accounts: Array<Account>
 
     private var prefBackupNeeded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
+        val isTV = (getSystemService(UI_MODE_SERVICE) as UiModeManager).currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+
+        //Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
+        Tools.applyTheme(this, if (isTV) R.style.Theme_LesPas_TV else R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
+
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(if (isTV) R.layout.activity_main_tv else R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
@@ -91,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                 // Should apply horizontal padding, so that action mode would work in 3-button navigation mode
                 val displayCutoutInset = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
                 val systemBarInset = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-                toolbar.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
+                toolbar?.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
                 windowInsets
             }
             WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -150,7 +157,7 @@ class MainActivity : AppCompatActivity() {
                             LAUNCH_GALLERY -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment(), GalleryFragment.TAG_FROM_LAUNCHER).commit()
                             Intent.ACTION_VIEW -> intent.data?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(it), GalleryFragment.TAG_FROM_LAUNCHER).commit() }
                             Intent.ACTION_PICK -> supportFragmentManager.beginTransaction().add(R.id.container_root, GalleryFragment.newInstance(Uri.EMPTY), GalleryFragment.TAG_FROM_LAUNCHER).commit()
-                            else -> supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+                            else -> supportFragmentManager.beginTransaction().add(R.id.container_root, if (isTV) TVMainFragment() else AlbumFragment.newInstance()).commit()
                         }
                     }
                 }

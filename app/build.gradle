@@ -150,6 +150,10 @@ dependencies {
         exclude group: 'androidx.core', module: 'core-ktx'
     }
 
+    // Android TV theming support
+    implementation 'androidx.leanback:leanback:1.2.0'
+    implementation 'androidx.palette:palette-ktx:1.0.0'
+
     // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'

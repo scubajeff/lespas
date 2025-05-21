@@ -371,6 +371,7 @@ object Tools {
         } catch (e: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
+    fun isMediaAnimated(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp")
 
     fun hasExif(mimeType: String): Boolean = mimeType.substringAfter("image/", "") in FORMATS_WITH_EXIF
 

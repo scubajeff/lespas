@@ -58,6 +58,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.panoramagl.PLImage
@@ -1302,8 +1303,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun interface LoadCompleteListener {
         fun onLoadComplete(fullSize: Boolean)
     }
+    fun interface GetPaletteListener {
+        fun onGetPaletteComplete(palette: Palette?)
+    }
 
-    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null, callBack: LoadCompleteListener? = null) {
+    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null,
+        paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         // For full image, show a cached thumbnail version first
@@ -1604,8 +1609,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
 
+                    // Get bitmap palette if needed
+                    paletteCallBack?.run {
+                        bitmap?.let { bmp ->
+                            Palette.from(bmp).generate { paletteCallBack.onGetPaletteComplete(it) }
+                        } ?: paletteCallBack.onGetPaletteComplete(null)
+                    }
+
                     // Stop loading indicator
                     view.setBackgroundResource(0)
+
                     callBack?.onLoadComplete(true)
                 }
             }
@@ -1630,6 +1643,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // Replacing previous job
         replacePrevious(jobKey, job)
     }
+
+    fun getBitmapFromImageCache(key: String): Bitmap? = imageCache.get(key)
 
     private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
         return if (Tools.isPhotoFromGallery(imagePhoto)) {

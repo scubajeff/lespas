@@ -363,4 +363,6 @@
     <string name="checkbox_text_remove_local_copy">Copia local en este dispositivo</string>
     <string name="msg_media_manager_rationale_for_deletion">Para evitar que el sistema confirme el borrado, debe conceder a Les Pas el permiso Gestionar medios.</string>
     <string name="video_play_header">Reproducción de vídeo</string>
+    <string name="title_tv_my_albums">Mis álbumes</string>
+    <string name="title_tv_shared_with_me">Compartido Recibido</string>
 </resources>
