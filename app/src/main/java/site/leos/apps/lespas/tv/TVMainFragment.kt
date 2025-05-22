@@ -17,6 +17,7 @@
 package site.leos.apps.lespas.tv
 
 import android.accounts.AccountManager
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.ContentResolver
 import android.graphics.BlendMode
@@ -46,8 +47,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.transition.Fade
-import androidx.transition.TransitionManager
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -71,7 +70,6 @@ class TVMainFragment: Fragment() {
     private lateinit var categoryScrollView: NoAutoScrollScrollView
     private var deltaToBottom = 0
 
-    //private lateinit var containerView: ConstraintLayout
     private lateinit var featureImageView: AppCompatImageView
     private lateinit var cinematicScrimView: View
 
@@ -83,6 +81,8 @@ class TVMainFragment: Fragment() {
     private var primaryTextColor: Int = 0
     private lateinit var remoteBasePath: String
     private lateinit var window: Window
+    private var fadeInPoster = AnimatorSet()
+    private lateinit var fadeOutTitle: ObjectAnimator
 
     private val imageLoaderViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
@@ -135,7 +135,7 @@ class TVMainFragment: Fragment() {
                             ),
                             name, String.format("%s  -  %s", startDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)), endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
                         )
-                    } //else containerView.background.setTintList(null)
+                    }
                 }
             },
             { view -> imageLoaderViewModel.cancelSetImagePhoto(view)}
@@ -170,7 +170,7 @@ class TVMainFragment: Fragment() {
                                 shared.sharePath, shared.cover.coverBaseline
                             ), shared.albumName, shared.shareByLabel
                         )
-                    } //else containerView.background.setTintList(null)
+                    }
                 }
             },
             { view -> imageLoaderViewModel.cancelSetImagePhoto(view)}
@@ -194,7 +194,6 @@ class TVMainFragment: Fragment() {
         albumSubTitleView = view.findViewById<TextView>(R.id.subtitle)
         sharedWithMeTitleView = view.findViewById<TextView>(R.id.title_share_with_me)
 
-        //containerView = view.findViewById<ConstraintLayout>(R.id.container)
         cinematicScrimView = view.findViewById<View>(R.id.cinematic_scrim)
         featureImageView = view.findViewById<AppCompatImageView>(R.id.feature_image)
 
@@ -203,7 +202,10 @@ class TVMainFragment: Fragment() {
         categoryScrollView = view.findViewById<NoAutoScrollScrollView>(R.id.scroller).apply {
             doOnLayout { deltaToBottom = categoryScrollView.getChildAt(0).height - categoryScrollView.height }
         }
-        
+
+        fadeInPoster.playTogether(ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.3f, 1.0f).setDuration(300), ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.3f, 1.0f).setDuration(300))
+        fadeOutTitle = ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 1.0f, 0.0f).setDuration(50)
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { albumsModel.allAlbumsByEndDate.collect {
@@ -222,35 +224,29 @@ class TVMainFragment: Fragment() {
         }
     }
 
-    private fun getDarkerColor(color: Int, factor: Float): Int = Color.argb(
-        0xFF,
+    private fun getDarkerColor(color: Int, factor: Float): Int = Color.argb(0xFF,
         255.coerceAtMost((Color.red(color) * factor).roundToInt()),
         255.coerceAtMost((Color.green(color) * factor).roundToInt()),
         255.coerceAtMost((Color.blue(color) * factor).roundToInt()),
     )
 
     private fun changePoster(rp: NCShareViewModel.RemotePhoto, title: String, subTitle: String) {
-        TransitionManager.beginDelayedTransition(titleContainerView, Fade().apply { duration = 200 })
-        titleContainerView.visibility = View.INVISIBLE
+        fadeOutTitle.start()
 
         imageLoaderViewModel.setImagePhoto(
-            rp, featureImageView, NCShareViewModel.TYPE_FULL,
+            rp, featureImageView, NCShareViewModel.TYPE_TV_FULL,
             paletteCallBack = { palette ->
                 (palette?.getMutedColor(0xFF000000.toInt()) ?: 0xFF000000).toInt().let { color -> getDarkerColor(color, 0.16f).let { tint ->
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) cinematicScrimView.background.setTint(tint)
                     else cinematicScrimView.background.colorFilter = BlendModeColorFilter(tint, BlendMode.SRC_ATOP)
-                    //containerView.background = tint.toDrawable()
                 }}
                 (palette?.getLightVibrantColor(primaryTextColor) ?: primaryTextColor).toInt().let { color ->
-                    TransitionManager.beginDelayedTransition(titleContainerView, Fade().apply { duration = 200 })
-                    titleContainerView.visibility = View.VISIBLE
-
                     albumTitleView.text = title
                     albumTitleView.setTextColor(color)
                     albumSubTitleView.text = subTitle
                 }
             }
-        )
+        ) { fadeInPoster.start() }
     }
 
     private fun scrollCategoryArea(y: Int) {

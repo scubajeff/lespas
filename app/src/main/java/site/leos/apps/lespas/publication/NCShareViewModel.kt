@@ -1311,37 +1311,45 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
-        // For full image, show a cached thumbnail version first
-        if (viewType == TYPE_FULL) {
-            imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                // Show cached low resolution bitmap first before loading full size bitmap
-                view.setImageBitmap(it)
-                view.setTag(R.id.HDR_TAG, false)
-                callBack?.onLoadComplete(false)
-            } ?: run {
-                // For camera roll items, load thumbnail if cache missed
-                if (Tools.isPhotoFromGallery(imagePhoto)) {
-                    try {
-                        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            view.context.contentResolver.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                                if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
-                                else this
+        when(viewType) {
+            // Set a low resolution version first for TYPE_FULL image
+            TYPE_FULL -> {
+                imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                    // Load low resolution image from cache of TYPE_GRID version
+                    view.setImageBitmap(it)
+                    view.setTag(R.id.HDR_TAG, false)
+                    callBack?.onLoadComplete(false)
+                } ?: run {
+                    // For camera roll items, load thumbnail if cache missed
+                    if (Tools.isPhotoFromGallery(imagePhoto)) {
+                        try {
+                            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                view.context.contentResolver.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
+                            } else {
+                                @Suppress("DEPRECATION")
+                                MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
+                                    if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
+                                    else this
+                                }
+                            })?.let {
+                                view.setImageBitmap(it)
+                                view.setTag(R.id.HDR_TAG, false)
+                                callBack?.onLoadComplete(false)
                             }
-                        })?.let {
-                            view.setImageBitmap(it)
-                            view.setTag(R.id.HDR_TAG, false)
-                            callBack?.onLoadComplete(false)
-                        }
-                    } catch (_: Exception) {}
-                } else view.setImageDrawable(null)
+                        } catch (_: Exception) {}
+                    }
+                    // If no low resolution version found, clear the image to reveal the loading sign in the background
+                    else view.setImageDrawable(null)
+                }
             }
-        } else view.setImageDrawable(null)
+            // For TV full image, stay with the old image
+            TYPE_TV_FULL -> {}
+            // For other types, clear the image to reveal the loading sign in the background
+            else -> { view.setImageDrawable(null) }
+        }
 
-        // For items of remote album, show loading animation for image already uploaded
-        if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+        // Except for TV, show loading animation for remote image which has been already uploaded
+        if (viewType != TYPE_TV_FULL && imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
             view.background = (if (viewType == TYPE_FULL || viewType == TYPE_PANORAMA) loadingDrawableLV else loadingDrawable).apply { start() }
 
             // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
@@ -1463,7 +1471,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             }?.use { sourceStream ->
                                 when (type) {
-                                    TYPE_FULL, TYPE_PANORAMA -> {
+                                    TYPE_FULL, TYPE_PANORAMA, TYPE_TV_FULL -> {
                                         updateCache = false
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
@@ -1599,7 +1607,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             } else {
                                 view.setImageBitmap(it)
-                                view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && viewType == TYPE_FULL && it.hasGainmap())
+                                view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (viewType == TYPE_FULL || viewType == TYPE_TV_FULL) && it.hasGainmap())
                                 view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
                             }
                         } ?: run {
@@ -2044,6 +2052,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val TYPE_VIDEO = "_video"
         const val TYPE_IN_MAP = "_map"
         const val TYPE_PANORAMA = "_pano"
+        const val TYPE_TV_FULL = "_tv"
         const val TYPE_EMPTY_ROLL_COVER = "empty"
 
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
