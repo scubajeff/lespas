@@ -393,6 +393,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
+        fun playOrPause() { playerViewModel?.playOrPause() }
         fun play() { playerViewModel?.play() }
         fun pause() { playerViewModel?.pause(videoUri) }
     }

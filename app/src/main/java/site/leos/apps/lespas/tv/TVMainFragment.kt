@@ -27,6 +27,7 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -40,6 +41,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.leanback.widget.BaseGridView
 import androidx.leanback.widget.HorizontalGridView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -98,7 +100,7 @@ class TVMainFragment: Fragment() {
         primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
 
         myAlbumsAdapter = AlbumGridAdapter(
-            { album, view -> },
+            { album -> parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(album, null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit() },
             { album, view ->
                 album.run {
                     imageLoaderViewModel.setImagePhoto(NCShareViewModel.RemotePhoto(
@@ -193,8 +195,38 @@ class TVMainFragment: Fragment() {
         cinematicScrimView = view.findViewById<View>(R.id.cinematic_scrim)
         featureImageView = view.findViewById<AppCompatImageView>(R.id.feature_image)
 
-        myAlbumsView = view.findViewById<HorizontalGridView>(R.id.my_albums).apply { adapter = myAlbumsAdapter }
-        sharedWithView = view.findViewById<HorizontalGridView>(R.id.shared_with_me).apply { adapter = sharedWithAdapter }
+        myAlbumsView = view.findViewById<HorizontalGridView>(R.id.my_albums).apply {
+            adapter = myAlbumsAdapter
+
+            onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
+                override fun onUnhandledKey(event: KeyEvent): Boolean {
+                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_NUMPAD_ENTER)) {
+                        myAlbumsView.findContainingViewHolder(myAlbumsView.focusedChild)?.bindingAdapterPosition?.let { position ->
+                            parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(myAlbumsAdapter.currentList[position], null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        }
+                        return true
+                    }
+
+                    return false
+                }
+            }
+        }
+        sharedWithView = view.findViewById<HorizontalGridView>(R.id.shared_with_me).apply {
+            adapter = sharedWithAdapter
+
+            onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
+                override fun onUnhandledKey(event: KeyEvent): Boolean {
+                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_NUMPAD_ENTER)) {
+                        sharedWithView.findContainingViewHolder(sharedWithView.focusedChild)?.bindingAdapterPosition?.let { position ->
+                            parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(null, sharedWithAdapter.currentList[position]), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        }
+                        return true
+                    }
+
+                    return false
+                }
+            }
+        }
         categoryScrollView = view.findViewById<NoAutoScrollScrollView>(R.id.scroller).apply {
             doOnLayout { deltaToBottom = categoryScrollView.getChildAt(0).height - categoryScrollView.height }
         }
@@ -204,12 +236,7 @@ class TVMainFragment: Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { albumsModel.allAlbumsByEndDate.collect {
-                    myAlbumsAdapter.submitList(it) {
-                        myAlbumsView.requestFocus()
-                        myAlbumsView.dispatchSetSelected(true)
-                    }
-                }}
+                launch { albumsModel.allAlbumsByEndDate.collect { myAlbumsAdapter.submitList(it) }}
                 launch { imageLoaderViewModel.shareWithMe.collect {
                     sharedWithAdapter.submitList(it) {
                         sharedWithMeTitleView.isEnabled = true
@@ -257,10 +284,10 @@ class TVMainFragment: Fragment() {
 
     private fun zoomCoverView(zoomIn: Boolean, view: View) { view.startAnimation(AnimationUtils.loadAnimation(requireContext(), if (zoomIn) R.anim.tv_cover_zoom_in else R.anim.tv_cover_zoom_out)) }
 
-    class AlbumGridAdapter(private val clickListener: (Album, ImageView) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val onFocusListener: (Int, Boolean, View) -> Unit, private val cancelLoader: (View) -> Unit
+    class AlbumGridAdapter(private val clickListener: (Album) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val onFocusListener: (Int, Boolean, View) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Album, AlbumGridAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            val ivCover: AppCompatImageView = itemView.findViewById<AppCompatImageView>(R.id.coverart).apply { setOnClickListener { clickListener(currentList[bindingAdapterPosition], this) } }
+            val ivCover: AppCompatImageView = itemView.findViewById<AppCompatImageView>(R.id.coverart).apply { setOnClickListener { clickListener(currentList[bindingAdapterPosition]) } }
 
             init {
                 itemView.findViewById<FocusTrackingConstraintLayout>(R.id.container).apply { setOnFocusChangedListener { focused -> onFocusListener(bindingAdapterPosition, focused, this) }}

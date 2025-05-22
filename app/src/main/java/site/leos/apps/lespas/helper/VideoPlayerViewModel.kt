@@ -162,6 +162,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             invokeOnCompletion { pauseJob = null }
         }
     }
+    fun playOrPause() { if (videoPlayer.isPlaying) videoPlayer.pause() else videoPlayer.play() }
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
 
     private fun mute() {
