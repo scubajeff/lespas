@@ -30,7 +30,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.view.animation.AnimationUtils
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
@@ -78,7 +77,6 @@ class TVMainFragment: Fragment() {
     private lateinit var albumSubTitleView: TextView
     private lateinit var sharedWithMeTitleView: TextView
 
-    private lateinit var window: Window
     private lateinit var remoteBasePath: String
     private var primaryTextColor: Int = 0
     private var fadeInPoster = AnimatorSet()
@@ -96,7 +94,6 @@ class TVMainFragment: Fragment() {
         })
         imageLoaderViewModel.refresh()
 
-        this.window = requireActivity().window
         remoteBasePath = Tools.getRemoteHome(requireContext())
         primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
 
@@ -180,7 +177,7 @@ class TVMainFragment: Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         (activity as AppCompatActivity).supportActionBar?.hide()
-        Tools.setImmersive(window, true)
+        Tools.setImmersive(requireActivity().window, true)
 
         return inflater.inflate(R.layout.fragment_tv_main, container, false)
     }

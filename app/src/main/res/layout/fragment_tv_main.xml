@@ -105,7 +105,6 @@
                 android:clipToPadding="false"
                 android:nextFocusDown="@id/shared_with_me"
                 android:nextFocusUp="@id/my_albums"
-                android:descendantFocusability="afterDescendants"
                 android:contentDescription="@string/title_tv_my_albums"
                 tools:listitem="@layout/recyclerview_item_album_tv" />
 
