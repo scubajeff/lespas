@@ -78,9 +78,9 @@ class TVMainFragment: Fragment() {
     private lateinit var albumSubTitleView: TextView
     private lateinit var sharedWithMeTitleView: TextView
 
-    private var primaryTextColor: Int = 0
-    private lateinit var remoteBasePath: String
     private lateinit var window: Window
+    private lateinit var remoteBasePath: String
+    private var primaryTextColor: Int = 0
     private var fadeInPoster = AnimatorSet()
     private lateinit var fadeOutTitle: ObjectAnimator
 
@@ -90,14 +90,15 @@ class TVMainFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        remoteBasePath = Tools.getRemoteHome(requireContext())
-        this.window = requireActivity().window
-
         ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
             putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
             putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
         })
         imageLoaderViewModel.refresh()
+
+        this.window = requireActivity().window
+        remoteBasePath = Tools.getRemoteHome(requireContext())
+        primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
 
         myAlbumsAdapter = AlbumGridAdapter(
             { album, view -> },
@@ -175,8 +176,6 @@ class TVMainFragment: Fragment() {
             },
             { view -> imageLoaderViewModel.cancelSetImagePhoto(view)}
         )
-
-        primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
