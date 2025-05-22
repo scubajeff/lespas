@@ -34,6 +34,7 @@
         app:hide_on_touch="false"
         android:animateLayoutChanges="true"
         app:animation_enabled="false"
+        android:focusable="false"
         app:controller_layout_id="@layout/exoplayer_control_view" />
 
     <FrameLayout
