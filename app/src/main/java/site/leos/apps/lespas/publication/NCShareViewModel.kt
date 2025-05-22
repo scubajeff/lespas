@@ -1492,11 +1492,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             }
                                             else -> {
                                                 val option = BitmapFactory.Options().apply {
-                                                    // Shrink large photo, allocationByteCount could not exceed 100,000,000 bytes
-                                                    inSampleSize = ((imagePhoto.photo.width * imagePhoto.photo.height) / 25000000).let { size -> if (size > 0) size * 2 else 1 }
-                                                    //if (type == TYPE_QUARTER) inSampleSize *= 2
-                                                    // TODO Cautious when meta is not available yet, prevent crash when viewing large photo shot by other devices, such as some Huawei
-                                                    if (imagePhoto.photo.width == 0) inSampleSize = 2
+                                                    if (viewType != TYPE_PANORAMA) {
+                                                        // Shrink large photo, allocationByteCount could not exceed 100,000,000 bytes
+                                                        inSampleSize = ((imagePhoto.photo.width * imagePhoto.photo.height) / 25000000).let { size -> if (size > 0) size * 2 else 1 }
+                                                        //if (type == TYPE_QUARTER) inSampleSize *= 2
+                                                        // TODO Cautious when meta is not available yet, prevent crash when viewing large photo shot by other devices, such as some Huawei
+                                                        if (imagePhoto.photo.width == 0) inSampleSize = 2
+                                                    }
                                                 }
 
                                                 ensureActive()
