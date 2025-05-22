@@ -19,12 +19,11 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
-import android.app.UiModeManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.res.Configuration
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -79,7 +78,7 @@ class MainActivity : AppCompatActivity() {
     private var prefBackupNeeded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val isTV = (getSystemService(UI_MODE_SERVICE) as UiModeManager).currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+        val isTV = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
         //Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
         Tools.applyTheme(this, if (isTV) R.style.Theme_LesPas_TV else R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
