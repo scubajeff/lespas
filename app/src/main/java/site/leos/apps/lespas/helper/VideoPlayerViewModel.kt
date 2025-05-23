@@ -19,6 +19,7 @@ package site.leos.apps.lespas.helper
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.provider.Settings
@@ -93,8 +94,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
         }
 
-        // Video not gonna be set here when in slideshow mode
-        if (!slideshowMode) {
+        // Volume not gonna be set here when in slideshow mode or on TV
+        if (!slideshowMode && !activity.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
             when {
                 // Regarding default mute setting
                 PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.default_mute_perf_key), false) -> mute()
