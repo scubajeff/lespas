@@ -14,13 +14,12 @@
   ~   limitations under the License.
   -->
 
-<androidx.recyclerview.widget.RecyclerView
+<androidx.viewpager2.widget.ViewPager2
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/slider"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
     tools:listitem="@layout/viewpager_item_photo" >
 
-</androidx.recyclerview.widget.RecyclerView>
+</androidx.viewpager2.widget.ViewPager2>

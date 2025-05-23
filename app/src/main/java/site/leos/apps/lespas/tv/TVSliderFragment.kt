@@ -33,9 +33,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.PagerSnapHelper
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.panoramagl.PLManager
 import com.panoramagl.PLSphericalPanorama
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +53,7 @@ import site.leos.apps.lespas.publication.RemoteMediaFragment.PhotoDiffCallback
 
 class TVSliderFragment: Fragment() {
     private lateinit var mediaAdapter: RemoteMediaAdapter
-    private lateinit var slider: RecyclerView
+    private lateinit var slider: ViewPager2
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -93,12 +93,10 @@ class TVSliderFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        slider = view.findViewById<RecyclerView>(R.id.slider).apply {
-            layoutManager = GridLayoutManager(context, 1).apply { orientation = RecyclerView.HORIZONTAL }
+        slider = view.findViewById<ViewPager2>(R.id.slider).apply {
             adapter = mediaAdapter
             requestFocus()
         }
-        PagerSnapHelper().apply { attachToRecyclerView(slider) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -126,7 +124,7 @@ class TVSliderFragment: Fragment() {
             super.onAttachedToRecyclerView(recyclerView)
 
             recyclerView.setOnKeyListener(object : View.OnKeyListener {
-                val lm = recyclerView.layoutManager as GridLayoutManager
+                val lm = recyclerView.layoutManager as LinearLayoutManager
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
                     if (event?.action == KeyEvent.ACTION_DOWN) {
                         when(keyCode) {
@@ -135,6 +133,7 @@ class TVSliderFragment: Fragment() {
                                 return true
                             }
                             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> {
+
                                 recyclerView.findViewHolderForLayoutPosition(lm.findFirstVisibleItemPosition())?.let { viewHolder ->
                                     if (viewHolder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) { viewHolder.playOrPause() }
                                     return true
