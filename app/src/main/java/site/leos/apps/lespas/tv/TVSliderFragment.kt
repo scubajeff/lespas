@@ -98,12 +98,10 @@ class TVSliderFragment: Fragment() {
                     albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
                         val serverPath = if (album.isRemote()) "${Tools.getRemoteHome(requireContext())}/${album.name}" else ""
 
-                        mediaAdapter.submitList(photos.map { NCShareViewModel.RemotePhoto(it, serverPath) })
+                        mediaAdapter.submitList(Tools.sortPhotos(photos, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) })
                     }
                 }}
-                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch {
-                    imageLoaderModel.publicationContentMeta.collect { mediaAdapter.submitList(it) }
-                }}
+                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect { mediaAdapter.submitList(it) }}}
             }
         }
     }
