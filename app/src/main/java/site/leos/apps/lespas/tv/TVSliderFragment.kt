@@ -96,6 +96,7 @@ class TVSliderFragment: Fragment() {
         slider = view.findViewById<RecyclerView>(R.id.slider).apply {
             layoutManager = GridLayoutManager(context, 1).apply { orientation = RecyclerView.HORIZONTAL }
             adapter = mediaAdapter
+            requestFocus()
         }
         PagerSnapHelper().apply { attachToRecyclerView(slider) }
 
