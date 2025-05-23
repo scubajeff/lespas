@@ -106,7 +106,8 @@ class TVSliderFragment: Fragment() {
                     albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
                         val serverPath = if (album.isRemote()) "${Tools.getRemoteHome(requireContext())}/${album.name}" else ""
 
-                        mediaAdapter.submitList(Tools.sortPhotos(photos, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) })
+                        // Panorama photo need focus to play with, filter them now
+                        mediaAdapter.submitList(Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) })
                     }
                 }}
                 requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect { mediaAdapter.submitList(it) }}}
