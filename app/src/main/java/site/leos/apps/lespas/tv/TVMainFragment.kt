@@ -231,7 +231,7 @@ class TVMainFragment: Fragment() {
             doOnLayout { deltaToBottom = categoryScrollView.getChildAt(0).height - categoryScrollView.height }
         }
 
-        fadeInPoster.playTogether(ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.3f, 1.0f).setDuration(300), ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.3f, 1.0f).setDuration(300))
+        fadeInPoster.playTogether(ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.5f, 1.0f).setDuration(300), ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.5f, 1.0f).setDuration(300))
         fadeOutTitle = ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 1.0f, 0.0f).setDuration(50)
 
         viewLifecycleOwner.lifecycleScope.launch {
