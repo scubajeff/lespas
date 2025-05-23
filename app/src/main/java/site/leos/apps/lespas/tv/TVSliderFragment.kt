@@ -25,8 +25,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -73,7 +75,12 @@ class TVSliderFragment: Fragment() {
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         )
 
-        requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { shared -> lifecycleScope.launch(Dispatchers.IO) { imageLoaderModel.getRemotePhotoList(shared, true) }}
+        var isShared = false
+        requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { shared ->
+            lifecycleScope.launch(Dispatchers.IO) { imageLoaderModel.getRemotePhotoList(shared, true) }
+            isShared = true
+        }
+        setFragmentResult(RESULT_REQUEST_KEY, bundleOf(KEY_SHARED to isShared))
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -141,8 +148,10 @@ class TVSliderFragment: Fragment() {
     }
 
     companion object {
+        const val RESULT_REQUEST_KEY = "RESULT_REQUEST_KEY"
+
         private const val KEY_ALBUM = "KEY_ALBUM"
-        private const val KEY_SHARED = "KEY_SHARED"
+        const val KEY_SHARED = "KEY_SHARED"
 
         @JvmStatic
         fun newInstance(album: Album?, shared: NCShareViewModel.ShareWithMe?) = TVSliderFragment().apply {

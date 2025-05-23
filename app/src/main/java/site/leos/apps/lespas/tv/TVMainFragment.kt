@@ -142,7 +142,7 @@ class TVMainFragment: Fragment() {
         )
 
         sharedWithAdapter = SharedGridAdapter(
-            { shared -> },
+            { shared -> parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(null, shared), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit() },
             { shared, view ->
                 imageLoaderViewModel.setImagePhoto(NCShareViewModel.RemotePhoto(
                     Photo(
@@ -236,14 +236,18 @@ class TVMainFragment: Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { albumsModel.allAlbumsByEndDate.collect { myAlbumsAdapter.submitList(it) }}
-                launch { imageLoaderViewModel.shareWithMe.collect {
-                    sharedWithAdapter.submitList(it) {
+                launch { albumsModel.allAlbumsByEndDate.collect { albums -> myAlbumsAdapter.submitList(albums) }}
+                launch { imageLoaderViewModel.shareWithMe.collect { shares ->
+                    sharedWithAdapter.submitList(shares) {
                         sharedWithMeTitleView.isEnabled = true
                         sharedWithView.visibility = View.VISIBLE
                     }
                 }}
             }
+        }
+
+        parentFragmentManager.setFragmentResultListener(TVSliderFragment.RESULT_REQUEST_KEY, viewLifecycleOwner) { _, result ->
+            if (result.getBoolean(TVSliderFragment.KEY_SHARED)) sharedWithView.requestFocus()
         }
     }
 
