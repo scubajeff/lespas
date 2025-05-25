@@ -263,7 +263,7 @@ class TVMainFragment: Fragment() {
         imageLoaderViewModel.setImagePhoto(
             rp, featureImageView, NCShareViewModel.TYPE_TV_FULL,
             paletteCallBack = { palette ->
-                (palette?.getMutedColor(0xFF000000.toInt()) ?: 0xFF000000).toInt().let { color -> getDarkerColor(color, 0.16f).let { tint ->
+                (palette?.getMutedColor(0xFF000000.toInt()) ?: 0xFF000000).toInt().let { color -> getDarkerColor(color, 0.1f).let { tint ->
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) cinematicScrimView.background.setTint(tint)
                     else cinematicScrimView.background.colorFilter = BlendModeColorFilter(tint, BlendMode.SRC_ATOP)
                 }}
