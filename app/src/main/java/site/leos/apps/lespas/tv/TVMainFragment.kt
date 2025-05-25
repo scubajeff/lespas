@@ -200,7 +200,7 @@ class TVMainFragment: Fragment() {
 
             onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
                 override fun onUnhandledKey(event: KeyEvent): Boolean {
-                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_NUMPAD_ENTER)) {
+                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
                         myAlbumsView.findContainingViewHolder(myAlbumsView.focusedChild)?.bindingAdapterPosition?.let { position ->
                             parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(myAlbumsAdapter.currentList[position], null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }
@@ -216,7 +216,7 @@ class TVMainFragment: Fragment() {
 
             onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
                 override fun onUnhandledKey(event: KeyEvent): Boolean {
-                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_NUMPAD_ENTER)) {
+                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
                         sharedWithView.findContainingViewHolder(sharedWithView.focusedChild)?.bindingAdapterPosition?.let { position ->
                             parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(null, sharedWithAdapter.currentList[position]), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }

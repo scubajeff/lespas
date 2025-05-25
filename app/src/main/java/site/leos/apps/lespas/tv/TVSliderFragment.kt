@@ -132,8 +132,7 @@ class TVSliderFragment: Fragment() {
                                 recyclerView.smoothScrollToPosition((lm.findFirstVisibleItemPosition() + if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1).coerceIn(0, recyclerView.adapter!!.itemCount))
                                 return true
                             }
-                            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> {
-
+                            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
                                 recyclerView.findViewHolderForLayoutPosition(lm.findFirstVisibleItemPosition())?.let { viewHolder ->
                                     if (viewHolder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) { viewHolder.playOrPause() }
                                     return true
