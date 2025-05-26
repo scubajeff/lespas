@@ -148,6 +148,7 @@ class TVSliderFragment: Fragment() {
         override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
             super.onAttachedToRecyclerView(recyclerView)
 
+            recyclerView.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
             recyclerView.setOnKeyListener(object : View.OnKeyListener {
                 val lm = recyclerView.layoutManager as LinearLayoutManager
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
