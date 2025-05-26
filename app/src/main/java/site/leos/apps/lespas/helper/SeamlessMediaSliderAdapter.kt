@@ -34,6 +34,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
@@ -217,6 +218,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         when (holder) {
             is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
                 playerViewModel?.resume(holder.videoView, holder.videoUri)
+                holder.pauseStateTV.isVisible = false
                 currentVideoView = holder.videoView
                 clickListener?.let {
                     knobLayout = holder.knobLayout
@@ -387,6 +389,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         val knobPosition: CircularProgressIndicator = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
         val forwardMessage: TextView = itemView.findViewById<TextView>(R.id.fast_forward_msg)
         val rewindMessage: TextView = itemView.findViewById<TextView>(R.id.fast_rewind_msg)
+        val pauseStateTV: AppCompatImageView = itemView.findViewById<AppCompatImageView>(R.id.pause_state)
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
@@ -400,7 +403,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         fun playStory() { playerViewModel?.play() }
         fun pauseStory() { playerViewModel?.pause(videoUri) }
-        fun playOrPauseOnTV() { playerViewModel?.playOrPause() }
+        fun playOrPauseOnTV() {
+            playerViewModel?.playOrPause()
+            pauseStateTV.isVisible = playerViewModel?.isPlaying() == false
+        }
     }
 
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
