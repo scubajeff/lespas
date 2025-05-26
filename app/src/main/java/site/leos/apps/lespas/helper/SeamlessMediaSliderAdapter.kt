@@ -393,9 +393,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
-        fun playOrPause() { playerViewModel?.playOrPause() }
-        fun play() { playerViewModel?.play() }
-        fun pause() { playerViewModel?.pause(videoUri) }
+        fun playStory() { playerViewModel?.play() }
+        fun pauseStory() { playerViewModel?.pause(videoUri) }
+        fun playOrPauseOnTV() { playerViewModel?.playOrPause() }
     }
 
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

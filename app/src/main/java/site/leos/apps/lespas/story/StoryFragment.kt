@@ -492,7 +492,7 @@ class StoryFragment : Fragment() {
                         stop()
                     }
                 }
-                is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> pause()
+                is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> pauseStory()
             }
         }
 
@@ -629,7 +629,7 @@ class StoryFragment : Fragment() {
 
                     is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
                         // For video item, auto advance to next slide is handled by player's listener
-                        play()
+                        playStory()
                     }
                 }
             }
