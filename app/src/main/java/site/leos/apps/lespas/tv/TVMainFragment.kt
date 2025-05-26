@@ -200,14 +200,12 @@ class TVMainFragment: Fragment() {
 
             onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
                 override fun onUnhandledKey(event: KeyEvent): Boolean {
-                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
+                    return if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
                         myAlbumsView.findContainingViewHolder(myAlbumsView.focusedChild)?.bindingAdapterPosition?.let { position ->
                             parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(myAlbumsAdapter.currentList[position], null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }
-                        return true
-                    }
-
-                    return false
+                        true
+                    } else false
                 }
             }
         }
@@ -216,14 +214,12 @@ class TVMainFragment: Fragment() {
 
             onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
                 override fun onUnhandledKey(event: KeyEvent): Boolean {
-                    if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
+                    return if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
                         sharedWithView.findContainingViewHolder(sharedWithView.focusedChild)?.bindingAdapterPosition?.let { position ->
                             parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(null, sharedWithAdapter.currentList[position]), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }
-                        return true
-                    }
-
-                    return false
+                        true
+                    } else false
                 }
             }
         }
@@ -251,11 +247,15 @@ class TVMainFragment: Fragment() {
         }
     }
 
-    private fun getDarkerColor(color: Int, factor: Float): Int = Color.argb(0xFF,
-        255.coerceAtMost((Color.red(color) * factor).roundToInt()),
-        255.coerceAtMost((Color.green(color) * factor).roundToInt()),
-        255.coerceAtMost((Color.blue(color) * factor).roundToInt()),
-    )
+    private fun getDarkerColor(color: Int): Int =
+        0.1f.let { factor ->
+            Color.argb(
+                0xFF,
+                255.coerceAtMost((Color.red(color) * factor).roundToInt()),
+                255.coerceAtMost((Color.green(color) * factor).roundToInt()),
+                255.coerceAtMost((Color.blue(color) * factor).roundToInt()),
+            )
+        }
 
     private fun changePoster(rp: NCShareViewModel.RemotePhoto, title: String, subTitle: String) {
         fadeOutTitle.start()
@@ -263,7 +263,7 @@ class TVMainFragment: Fragment() {
         imageLoaderViewModel.setImagePhoto(
             rp, featureImageView, NCShareViewModel.TYPE_TV_FULL,
             paletteCallBack = { palette ->
-                (palette?.getMutedColor(0xFF000000.toInt()) ?: 0xFF000000).toInt().let { color -> getDarkerColor(color, 0.1f).let { tint ->
+                (palette?.getMutedColor(0xFF000000.toInt()) ?: 0xFF000000).toInt().let { color -> getDarkerColor(color).let { tint ->
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) cinematicScrimView.background.setTint(tint)
                     else cinematicScrimView.background.colorFilter = BlendModeColorFilter(tint, BlendMode.SRC_ATOP)
                 }}
