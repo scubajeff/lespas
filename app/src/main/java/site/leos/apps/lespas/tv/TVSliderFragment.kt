@@ -128,8 +128,8 @@ class TVSliderFragment: Fragment() {
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
                     if (event?.action == KeyEvent.ACTION_DOWN) {
                         when(keyCode) {
-                            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                recyclerView.smoothScrollToPosition((lm.findFirstVisibleItemPosition() + if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1).coerceIn(0, recyclerView.adapter!!.itemCount))
+                            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
+                                recyclerView.smoothScrollToPosition((lm.findFirstVisibleItemPosition() + if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) -1 else 1).coerceIn(0, recyclerView.adapter!!.itemCount))
                                 return true
                             }
                             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
@@ -144,6 +144,11 @@ class TVSliderFragment: Fragment() {
                     return false
                 }
             })
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            recyclerView.setOnKeyListener(null)
+            super.onDetachedFromRecyclerView(recyclerView)
         }
     }
 
