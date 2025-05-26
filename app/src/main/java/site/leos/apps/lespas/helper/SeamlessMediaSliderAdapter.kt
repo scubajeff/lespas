@@ -18,6 +18,7 @@ package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
 import android.os.Build
@@ -77,9 +78,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
 
     private var videoViewGestureDetector: GestureDetector? = null
-   private var panoViewOnTouchListener: View.OnTouchListener? = null
+    private var panoViewOnTouchListener: View.OnTouchListener? = null
 
     private var shouldPauseVideo = true
+    private val isTV = context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
     init {
         clickListener?.let { cl ->
@@ -376,7 +378,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
     inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var videoUri: Uri = Uri.EMPTY
 
-        val videoView: PlayerView = itemView.findViewById<PlayerView>(R.id.media).apply { videoViewGestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}}
+        val videoView: PlayerView = itemView.findViewById<PlayerView>(R.id.media).apply {
+            if (isTV) controllerAutoShow = false
+            else videoViewGestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}
+        }
         val knobLayout: FrameLayout = itemView.findViewById<FrameLayout>(R.id.knob)
         val knobIcon: ImageView = itemView.findViewById<ImageView>(R.id.knob_icon)
         val knobPosition: CircularProgressIndicator = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
