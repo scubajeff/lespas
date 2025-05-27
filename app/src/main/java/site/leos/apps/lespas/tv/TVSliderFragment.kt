@@ -152,7 +152,7 @@ class TVSliderFragment: Fragment() {
             recyclerView.setOnKeyListener(object : View.OnKeyListener {
                 val lm = recyclerView.layoutManager as LinearLayoutManager
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
-                    if (event?.action == KeyEvent.ACTION_DOWN) {
+                    if (event?.action == KeyEvent.ACTION_UP) {
                         when(keyCode) {
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
                                 scrollListener(if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) 1f else -1f)
