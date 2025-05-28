@@ -36,9 +36,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.doOnLayout
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.leanback.widget.BaseGridView
@@ -227,8 +229,11 @@ class TVMainFragment: Fragment() {
             doOnLayout { deltaToBottom = categoryScrollView.getChildAt(0).height - categoryScrollView.height }
         }
 
-        fadeInPoster.playTogether(ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.5f, 1.0f).setDuration(300), ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.5f, 1.0f).setDuration(300))
-        fadeOutTitle = ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 1.0f, 0.0f).setDuration(50)
+        fadeInPoster.playTogether(
+            ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.5f, 1.0f).setDuration(400),
+            ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.0f, 1.0f).setDuration(200).apply { doOnEnd { titleContainerView.isVisible = true }}
+        )
+        fadeOutTitle = ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 1.0f, 0.0f).setDuration(100).apply { doOnEnd { titleContainerView.isVisible = false } }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -271,9 +276,10 @@ class TVMainFragment: Fragment() {
                     albumTitleView.text = title
                     albumTitleView.setTextColor(if (ColorUtils.calculateContrast(color, 0xFF000000.toInt()) < 10 ) ContextCompat.getColor(requireContext(), R.color.lespas_white) else color)
                     albumSubTitleView.text = subTitle
+                    fadeInPoster.start()
                 }
             }
-        ) { fadeInPoster.start() }
+        )
     }
 
     private fun scrollCategoryArea(y: Int) {
