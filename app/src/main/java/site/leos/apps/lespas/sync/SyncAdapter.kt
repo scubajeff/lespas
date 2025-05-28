@@ -26,6 +26,7 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.Context
 import android.content.SyncResult
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -122,22 +123,21 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
 
         try {
+            val isNotTV = !application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
             prepare(account)
-            while (true) {
+            while (true && isNotTV) {
                 val actions = actionRepository.getAllPendingActions()
                 if (actions.isEmpty()) break
                 syncLocalChanges(actions)
             }
             syncRemoteChanges()
-            updateMeta()
-/*
-            if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) backup(dcimBase)
-            if (sp.getBoolean(application.getString(R.string.pictures_backup_pref_key), false)) backup(picturesBase)
-*/
-            backupGallery()
-            updateArchiveSnapshot()
-            if (prefBackupNeeded) backupPreference()
+            if (isNotTV) {
+                updateMeta()
+                backupGallery()
+                updateArchiveSnapshot()
+                if (prefBackupNeeded) backupPreference()
+            }
 
             // Clear status counters
             syncResult.stats.clear()
@@ -1126,7 +1126,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Skip newly created hidden album on server, do not sync changes of it until it's un-hidden
                     //if (hidden) return@forEach
 
-                    // No hit on local, a new album from server, (make sure the 'cover' property is set to Album.NO_COVER, denotes a new album which will NOT be included in album list)
+                    // No hit on local, a new album from server
                     // Default album attribute set to "Remote" for any album not created by this device
                     changedAlbums.add(
                         Album(
