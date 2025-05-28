@@ -269,7 +269,7 @@ class TVMainFragment: Fragment() {
                 }}
                 (palette?.getLightVibrantColor(primaryTextColor) ?: primaryTextColor).toInt().let { color ->
                     albumTitleView.text = title
-                    albumTitleView.setTextColor(if (ColorUtils.calculateContrast(color, 0xFF000000.toInt()) < 10 ) ContextCompat.getColor(requireContext(), R.color.color_on_primary) else color)
+                    albumTitleView.setTextColor(if (ColorUtils.calculateContrast(color, 0xFF000000.toInt()) < 10 ) ContextCompat.getColor(requireContext(), R.color.lespas_white) else color)
                     albumSubTitleView.text = subTitle
                 }
             }
