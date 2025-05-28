@@ -23,8 +23,6 @@ import android.content.ContentResolver
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
 import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
@@ -38,6 +36,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -269,7 +269,7 @@ class TVMainFragment: Fragment() {
                 }}
                 (palette?.getLightVibrantColor(primaryTextColor) ?: primaryTextColor).toInt().let { color ->
                     albumTitleView.text = title
-                    albumTitleView.setTextColor(color)
+                    albumTitleView.setTextColor(if (ColorUtils.calculateContrast(color, 0xFF000000.toInt()) < 10 ) ContextCompat.getColor(requireContext(), R.color.color_on_primary) else color)
                     albumSubTitleView.text = subTitle
                 }
             }
