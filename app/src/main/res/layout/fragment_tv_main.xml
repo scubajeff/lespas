@@ -106,6 +106,7 @@
                 android:nextFocusDown="@id/shared_with_me"
                 android:nextFocusUp="@id/my_albums"
                 android:contentDescription="@string/title_tv_my_albums"
+                android:focusedByDefault="true"
                 tools:listitem="@layout/recyclerview_item_album_tv" />
 
             <TextView
