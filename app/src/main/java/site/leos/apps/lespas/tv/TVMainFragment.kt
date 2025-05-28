@@ -46,12 +46,12 @@ import androidx.leanback.widget.HorizontalGridView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.album.AlbumFragment.AlbumDiffCallback
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -296,23 +296,20 @@ class TVMainFragment: Fragment() {
             init {
                 itemView.findViewById<FocusTrackingConstraintLayout>(R.id.container).apply { setOnFocusChangedListener { focused -> onFocusListener(bindingAdapterPosition, focused, this) }}
             }
-
-            fun bind(album: Album) {
-                imageLoader(album, ivCover)
-                // Don't look good on TV
-                //if (album.syncProgress < 1.0f) ivCover.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) }) else ivCover.clearColorFilter()
-            }
         }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder = AlbumViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album_tv, parent, false))
-
-        override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
-            holder.bind(currentList[position])
-        }
+        override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) { imageLoader(getItem(position), holder.ivCover) }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) { recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> cancelLoader((holder as AlbumViewHolder).ivCover) }}
             super.onDetachedFromRecyclerView(recyclerView)
         }
+    }
+
+    class AlbumDiffCallback: DiffUtil.ItemCallback<Album>() {
+        override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.coverFileName == newItem.coverFileName && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate
     }
 
     class SharedGridAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val onFocusListener: (Int, Boolean, View) -> Unit, private val cancelLoader: (View) -> Unit
@@ -323,17 +320,10 @@ class TVMainFragment: Fragment() {
             init {
                 itemView.findViewById<FocusTrackingConstraintLayout>(R.id.container).apply { setOnFocusChangedListener { focused -> onFocusListener(bindingAdapterPosition, focused, this) }}
             }
-
-            fun bind(item: NCShareViewModel.ShareWithMe) {
-                imageLoader(item, ivCover)
-            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SharedItemViewHolder = SharedItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album_tv, parent, false))
-
-        override fun onBindViewHolder(holder: SharedItemViewHolder, position: Int) {
-            holder.bind(getItem(position))
-        }
+        override fun onBindViewHolder(holder: SharedItemViewHolder, position: Int) { imageLoader(getItem(position), holder.ivCover) }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) { recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> cancelLoader((holder as SharedItemViewHolder).ivCover) }}
