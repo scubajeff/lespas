@@ -84,8 +84,11 @@ class MainActivity : AppCompatActivity() {
         Tools.applyTheme(this, if (isTV) R.style.Theme_LesPas_TV else R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
 
         super.onCreate(savedInstanceState)
-        setContentView(if (isTV) R.layout.activity_main_tv else R.layout.activity_main)
-        setSupportActionBar(findViewById(R.id.toolbar))
+        if (isTV) setContentView(R.layout.activity_main_tv)
+        else {
+            setContentView(R.layout.activity_main)
+            setSupportActionBar(findViewById(R.id.toolbar))
+        }
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))

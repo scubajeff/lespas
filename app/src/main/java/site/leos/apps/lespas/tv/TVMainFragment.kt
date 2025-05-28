@@ -299,7 +299,8 @@ class TVMainFragment: Fragment() {
 
             fun bind(album: Album) {
                 imageLoader(album, ivCover)
-                if (album.syncProgress < 1.0f) ivCover.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) }) else ivCover.clearColorFilter()
+                // Don't look good on TV
+                //if (album.syncProgress < 1.0f) ivCover.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) }) else ivCover.clearColorFilter()
             }
         }
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder = AlbumViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album_tv, parent, false))

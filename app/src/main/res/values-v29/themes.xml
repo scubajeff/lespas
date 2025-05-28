@@ -113,6 +113,7 @@
 
         <item name="colorPrimary">@color/color_primary</item>
         <item name="colorPrimaryVariant">@color/color_primary_variant</item>
+        <item name="colorSurface">@color/color_surface</item>
         <item name="android:textColorPrimary">@color/primary_text</item>
         <item name="android:textColorPrimaryInverse">@color/primary_text_inverse</item>
     </style>
