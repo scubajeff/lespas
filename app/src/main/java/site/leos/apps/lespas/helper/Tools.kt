@@ -345,12 +345,12 @@ object Tools {
             if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.of("Z")) }
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
-                if (matcher.matches()) {
+                if (matcher.find()) {
                     LocalDateTime.parse(
                         matcher.run {
                             var millisecond = try { group(7) } catch (_: Exception) { "000" }
                             if (millisecond.isNullOrEmpty()) millisecond = "000"
-                            "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${millisecond}".also { Log.e(">>>>>>>>", "Tools-parseDateFromFileName: $this",) }
+                            "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${millisecond}"
                         },
                         DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss SSS")
                     )
