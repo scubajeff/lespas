@@ -1135,7 +1135,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             eTag = remoteAlbum.eTag,
                             lastModified = remoteAlbum.modified,
                             // Default album attribute set to "Remote" for any album not created by this device, and "Excluded" in album list since cover is not available yet
-                            shareId = Album.REMOTE_ALBUM or Album.EXCLUDED_ALBUM,
+                            shareId = Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
                             sortOrder = sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC)
                     )
                     //Log.e(TAG, "no hit, creating changedAlbum ${remoteAlbum.name}")
@@ -1183,12 +1183,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Create changePhotos list
                 //Log.e(TAG, "syncing remote album ${changedAlbum.name}")
                 val remotePhotoList = webDav.list("${lespasBase}/${changedAlbum.name}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
-                Log.e(">>>>>>>>", "SyncAdapter-syncRemoteChanges: ${Tools.SUPPORTED_PICTURE_FORMATS}", )
                 remotePhotoList.forEach { remotePhoto ->
                     when {
                         // Media files with supported format which are not hidden
                         (remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) && !remotePhoto.name.startsWith('.') -> {
-                            Log.e(">>>>>>>>", "SyncAdapter-syncRemoteChanges: found media file ${remotePhoto.name}", )
                             remotePhotoId = remotePhoto.fileId
 
                             // Collect remote photos ids for detection of server deletion
@@ -1233,8 +1231,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     // content meta update already set by Action.ACTION_ADD_FILES_ON_SERVER
                                 } else {
                                     // A new photo created on server, or an existing photo updated on server, or album attribute changed back to local, or on first sync with server
-                                    //Log.e(TAG, "creating changePhoto ${remotePhoto.name}")
                                     changedPhotos.add(Photo(id = remotePhotoId, albumId = changedAlbum.id, name = remotePhoto.name, eTag = remotePhoto.eTag, mimeType = remotePhoto.contentType, dateTaken = LocalDateTime.now(), lastModified = remotePhoto.modified, caption = remotePhoto.caption))
+                                    //changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
+                                    //Log.e(TAG, "creating changePhoto ${remotePhoto.name}")
                                 }
                             } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
                                 // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual file again from server
@@ -1286,7 +1285,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (changedPhotos.size <= 0) continue
 
                     // New album from server, try downloading album meta file. If this album was created directly on server rather than from another client, there wil be no cover at all
-                    downloadAlbumMeta(changedAlbum)?.run {
+                    downloadAlbumMeta(changedAlbum)?.apply {
                         changedAlbum.cover = cover
                         changedAlbum.coverBaseline = coverBaseline
                         changedAlbum.coverWidth = coverWidth
@@ -1353,7 +1352,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Quick sync for "Remote" albums
                 //*******************************
                 if (isRemoteAlbum && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
-                    Log.e(">>>>>>>>", "SyncAdapter-syncRemoteChanges: quick syncing ${changedAlbum.name} ${changedAlbum.lastModified} $contentModifiedTime ${changedPhotos[1]}", )
+                    //Log.e(TAG, "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
                         //Log.e(TAG, "content meta is latest, start quick syncing meta for album ${changedAlbum.name}")
@@ -1444,12 +1443,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         // There are updates done on server, quit quick sync
                         contentMetaUpdatedNeeded.add(changedAlbum.name)
                     }
-                }
-                
-                if (changedPhotos.isEmpty()) {
-                    Log.e(">>>>>>>>", "SyncAdapter-syncRemoteChanges: ${changedAlbum.name} finished quick sync", )
-                } else {
-                    changedPhotos.forEach { Log.e(">>>>>>>>", "SyncAdapter-syncRemoteChanges: ${it.name}", ) }
                 }
 
                 //*****************************************************************
