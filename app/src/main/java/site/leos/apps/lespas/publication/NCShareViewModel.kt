@@ -21,6 +21,7 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -170,6 +171,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val audioManager = application.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val savedSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     private var sessionVolumePercentage = savedSystemVolume.toFloat() / audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+
+    private val isNotTV = application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
     fun saveSessionVolumePercentage(newPercentage: Float) {
         sessionVolumePercentage = newPercentage
 
@@ -212,11 +216,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            _sharees.value = refreshSharees()
-            _shareByMe.value = refreshShareByMe()
-            refreshShareWithMe()
-            refreshUser()
-            fetchBlog()
+            if (isNotTV) {
+                _sharees.value = refreshSharees()
+                _shareByMe.value = refreshShareByMe()
+                refreshShareWithMe()
+                refreshUser()
+                fetchBlog()
+            } else refreshShareWithMe()
         }
     }
 
