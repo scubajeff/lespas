@@ -1,0 +1,3 @@
+* Fixed Panorama item screen going blank when scrolling back to it from several pages away
+* Fixed graphic file format detection in various situations on Android 12 or below
+* Various improvements and bug fixes

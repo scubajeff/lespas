@@ -1,0 +1,3 @@
+* Behoben: Der Bildschirm mit den Panorama-Elementen bleibt leer, wenn man von mehreren Seiten aus zurückblättert.
+* Behobene Erkennung von Grafikdateiformaten in verschiedenen Situationen auf Android 12 oder niedriger
+* Verschiedene Verbesserungen und Fehlerbehebungen

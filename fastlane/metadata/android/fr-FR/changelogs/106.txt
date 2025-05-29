@@ -1,0 +1,3 @@
+* Correction de l'écran de l'élément Panorama qui devient vide lorsque l'on revient dessus après avoir parcouru plusieurs pages.
+* Correction de la détection du format de fichier graphique dans diverses situations sur Android 12 ou moins.
+* Diverses améliorations et corrections de bugs

@@ -1,0 +1,3 @@
+* Risoluzione del problema della schermata dell'elemento Panorama che diventa vuota quando vi si torna da diverse pagine di distanza.
+* Rilevamento fisso del formato del file grafico in varie situazioni su Android 12 o inferiore
+* Vari miglioramenti e correzioni di bug
