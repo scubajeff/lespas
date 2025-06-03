@@ -85,6 +85,7 @@ import okhttp3.FormBody
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.closeQuietly
+import okhttp3.internal.headersContentLength
 import okio.BufferedSource
 import okio.IOException
 import okio.buffer
@@ -813,20 +814,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(remotePhoto: RemotePhoto): ExifInterface? {
+    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface?, Long> {
         var response: Response? = null
-        var result: ExifInterface? = null
+        var exif: ExifInterface? = null
+        var size = 0L
 
         if (Tools.hasExif(remotePhoto.photo.mimeType)) try {
             response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", false)
-            result = try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null }
+            exif = try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null }
+            size = response.headersContentLength()
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
             response?.close()
         }
 
-        return result
+        return exif to size
     }
 
     fun getMediaSize(remotePhoto: RemotePhoto): Long {
@@ -1510,7 +1513,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     ensureActive()
                                                     if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.width == 0) {
                                                         // This is a early backup of camera roll which do not has meta info yet
-                                                        getMediaExif(imagePhoto)?.let { exif -> imagePhoto.photo.orientation = exif.rotationDegrees }
+                                                        getMediaExif(imagePhoto).first?.let { exif -> imagePhoto.photo.orientation = exif.rotationDegrees }
                                                     }
                                                     // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
                                                     // Hence, picture with original orientation must be allowed in local album

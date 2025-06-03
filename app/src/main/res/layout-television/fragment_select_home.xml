@@ -86,6 +86,8 @@
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="@integer/folder_grid_span_count"
         android:focusedByDefault="true"
+        android:nextFocusUp="@id/ok_button"
+        android:nextFocusDown="@id/ok_button"
         android:visibility="gone"
         tools:visibility="visible"
         tools:listitem="@layout/recyclerview_item_folder" />
