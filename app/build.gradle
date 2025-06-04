@@ -83,7 +83,7 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation 'androidx.core:core-ktx:1.16.0'
     implementation 'androidx.activity:activity-ktx:1.10.1'
-    implementation 'androidx.fragment:fragment-ktx:1.8.6'
+    implementation 'androidx.fragment:fragment-ktx:1.8.7'
 
     // Room components
     def roomVersion = "2.7.1"
@@ -110,13 +110,13 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
-    implementation 'androidx.recyclerview:recyclerview-selection:1.1.0'
+    implementation 'androidx.recyclerview:recyclerview-selection:1.2.0'
     implementation 'androidx.viewpager2:viewpager2:1.1.0'
     implementation 'androidx.preference:preference-ktx:1.1.1'
     implementation 'androidx.exifinterface:exifinterface:1.4.1'
 
     // Media3
-    def media3_version = "1.6.1"
+    def media3_version = "1.7.1"
     implementation "androidx.media3:media3-exoplayer:$media3_version"
     implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
     implementation "androidx.media3:media3-ui:$media3_version"
