@@ -139,7 +139,7 @@ class RemoteMediaFragment: Fragment() {
         }
 
         previousOrientationSetting = requireActivity().requestedOrientation
-        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
+        autoRotate = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
 
         this.window = requireActivity().window
     }

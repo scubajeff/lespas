@@ -60,7 +60,7 @@ class ShareOutDialogFragment : LesPasDialogFragment(R.layout.fragment_share_out_
 
         stripExif = view.findViewById(R.id.strip_options)
         useLowResolution = view.findViewById(R.id.resolution_options)
-        PreferenceManager.getDefaultSharedPreferences(context).run {
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).run {
             stripExif.check(if (getBoolean(getString(R.string.remove_meta_data_before_sharing_pref_key), true)) R.id.strip_on else R.id.strip_off)
             useLowResolution.check(if (getBoolean(getString(R.string.use_low_resolution_to_share_pref_key), true)) R.id.thumbnail else R.id.original_picture)
             stripExif.isEnabled = requireArguments().getBoolean(SHOW_STRIP_OPTION, false)

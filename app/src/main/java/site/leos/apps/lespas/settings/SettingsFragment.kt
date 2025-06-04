@@ -197,7 +197,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         //syncPreference = findPreference(getString(R.string.sync_pref_key))
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
-            if (sharedPreferences.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values)) == getString(R.string.theme_light_values)) {
+            if (sharedPreferences?.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values)) == getString(R.string.theme_light_values)) {
                 // Disable true black theme switch if fixed light theme selected
                 isEnabled = false
                 isChecked = false
@@ -207,7 +207,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         findPreference<Preference>(getString(R.string.transfer_pref_key))?.let {
             it.isVisible = volume.size > 1
             if (it.isVisible) {
-                val inInternal = it.sharedPreferences.getBoolean(KEY_STORAGE_LOCATION, true)
+                val inInternal = it.sharedPreferences!!.getBoolean(KEY_STORAGE_LOCATION, true)
                 it.title = getString(if (inInternal) R.string.transfer_to_external else R.string.transfer_to_internal)
 //                savedInstanceState ?: run {
                 lifecycleScope.launch(Dispatchers.IO) {
@@ -217,7 +217,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                             it.isEnabled = false
                             it.summary = getString(R.string.external_storage_not_writable)
                         } else {
-                            it.isEnabled = isEnoughSpace(it.sharedPreferences)
+                            it.isEnabled = isEnoughSpace(it.sharedPreferences!!)
                             if (!it.isEnabled) it.summary = getString(R.string.not_enough_space_message, Tools.humanReadableByteCountSI(totalSize), getString(if (inInternal) R.string.external_storage else R.string.internal_storage))
                         }
                     }
@@ -251,7 +251,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 */
 
         findPreference<Preference>(getString(R.string.cache_size_pref_key))?.run {
-            summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
+            summary = getString(R.string.cache_size_summary, sharedPreferences!!.getInt(CACHE_SIZE, 800))
         }
 
         // Toggle some switches off when Storage Access permission is not granted
@@ -367,7 +367,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
         if (isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
 
-        preferenceScreen.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+        preferenceScreen.sharedPreferences?.registerOnSharedPreferenceChangeListener(this)
 
 /*
         // Get list of sub folder of 'Pictures'
@@ -389,7 +389,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     }
 
     override fun onPause() {
-        preferenceScreen.sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+        preferenceScreen.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(this)
         super.onPause()
     }
 
@@ -422,7 +422,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         super.onDestroyView()
     }
 
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean =
+    override fun onPreferenceTreeClick(preference: Preference): Boolean =
         when (preference?.key) {
 /*
             getString(R.string.sync_pref_key) -> {
@@ -582,7 +582,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 */
 
     private fun installSnapseedIfNeeded() {
-        if (preferenceManager.sharedPreferences.getBoolean(getString(R.string.snapseed_pref_key), false) && isSnapseedNotInstalled) {
+        if (preferenceManager.sharedPreferences?.getBoolean(getString(R.string.snapseed_pref_key), false) == true && isSnapseedNotInstalled) {
             // Prompt user to install Snapseed
             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
                 ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), individualKey = INSTALL_SNAPSEED_DIALOG, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)

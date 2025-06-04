@@ -57,7 +57,7 @@ import kotlin.random.Random
 class LesPasArtProvider: MuzeiArtProvider() {
     override fun onLoadRequested(initial: Boolean) {
         val skipLateNightUpdate =
-            if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(LesPasArtProviderSettingActivity.KEY_SKIP_LATE_NIGHT_UPDATE, false)) {
+            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(LesPasArtProviderSettingActivity.KEY_SKIP_LATE_NIGHT_UPDATE, false)) {
                 LocalDateTime.now().hour in 0..5
             }
             else false

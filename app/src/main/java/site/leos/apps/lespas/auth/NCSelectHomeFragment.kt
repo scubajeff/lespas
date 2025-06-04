@@ -283,7 +283,7 @@ class NCSelectHomeFragment: Fragment() {
         }
         setTouchable(false)
 
-        val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
+        val editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
 
         editor.putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
         editor.putBoolean(SettingsFragment.NEW_HOME_SETTING, true)
