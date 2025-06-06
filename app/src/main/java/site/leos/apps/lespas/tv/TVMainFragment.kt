@@ -72,6 +72,7 @@ class TVMainFragment: Fragment() {
     private lateinit var sharedWithView: HorizontalGridView
     private lateinit var categoryScrollView: NoAutoScrollScrollView
     private var deltaToBottom = 0
+    private var smoothScrollSharedWithView = true
 
     private lateinit var featureImageView: AppCompatImageView
     private lateinit var cinematicScrimView: View
@@ -159,7 +160,11 @@ class TVMainFragment: Fragment() {
                 if (position >= 0) sharedWithAdapter.currentList[position].let { shared ->
                     zoomCoverView(focused, view)
                     if (focused) {
-                        scrollCategoryArea(deltaToBottom)
+                        if (smoothScrollSharedWithView) scrollCategoryArea(deltaToBottom)
+                        else {
+                            categoryScrollView.scrollBy(0, deltaToBottom)
+                            smoothScrollSharedWithView = true
+                        }
 
                         imageLoaderViewModel.cancelSetImagePhoto(featureImageView)
                         changePoster(
@@ -248,7 +253,10 @@ class TVMainFragment: Fragment() {
         }
 
         parentFragmentManager.setFragmentResultListener(TVSliderFragment.RESULT_REQUEST_KEY, viewLifecycleOwner) { _, result ->
-            if (result.getBoolean(TVSliderFragment.KEY_SHARED)) sharedWithView.requestFocus()
+            if (result.getBoolean(TVSliderFragment.KEY_SHARED)) {
+                smoothScrollSharedWithView = false
+                sharedWithView.requestFocus()
+            }
         }
     }
 
