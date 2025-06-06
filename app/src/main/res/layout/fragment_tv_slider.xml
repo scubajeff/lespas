@@ -47,6 +47,24 @@
             android:layout_marginBottom="@dimen/big_padding"
             android:stretchColumns="2">
 
+            <TableRow android:id="@+id/caption_row"
+            android:visibility="gone"
+            tools:visibility="visible">
+                <TextView
+                    android:text="@string/button_text_caption"
+                    style="@style/Theme.LesPas.TV.Table.Text.Label"/>
+                <TextView
+                    android:id="@+id/caption"
+                    android:padding="@dimen/tiny_padding"
+                    android:maxLines="5"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:focusable="true"
+                    android:focusedByDefault="true"
+                    android:focusableInTouchMode="true"
+                    tools:text="Caption\nCaption\nCaption\nCaption\nCaption\nCaptioin"
+                    tools:ignore="UnusedAttribute" />
+            </TableRow>
             <TableRow>
                 <TextView
                     android:text="@string/file_name"

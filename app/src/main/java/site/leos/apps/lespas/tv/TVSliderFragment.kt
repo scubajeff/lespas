@@ -48,6 +48,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Slide
+import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.panoramagl.PLManager
@@ -90,6 +91,8 @@ import kotlin.math.roundToInt
 class TVSliderFragment: Fragment() {
     private lateinit var mediaAdapter: RemoteMediaAdapter
     private lateinit var slider: ViewPager2
+    private lateinit var trCaption: TableRow
+    private lateinit var tvCaption: TextView
     private lateinit var mapView: MapView
     private lateinit var tvLocality: TextView
 
@@ -191,6 +194,8 @@ class TVSliderFragment: Fragment() {
             adapter = mediaAdapter
             requestFocus()
         }
+        tvCaption = view.findViewById<TextView>(R.id.caption)
+        trCaption = view.findViewById<TableRow>(R.id.caption_row)
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -220,27 +225,39 @@ class TVSliderFragment: Fragment() {
 
     fun toggleMeta(rPhoto: NCShareViewModel.RemotePhoto, off: Boolean) {
         if (off) {
-            TransitionManager.beginDelayedTransition(metaPage, Slide(Gravity.END).apply { duration = 200 })
             metaDisplayThread.cancel(null)
-            
+
+            TransitionManager.beginDelayedTransition(metaPage, Slide(Gravity.END).apply {
+                duration = 200
+                addListener(object : Transition.TransitionListener {
+                    override fun onTransitionCancel(transition: Transition) {}
+                    override fun onTransitionPause(transition: Transition) {}
+                    override fun onTransitionResume(transition: Transition) {}
+                    override fun onTransitionStart(transition: Transition) {}
+                    override fun onTransitionEnd(transition: Transition) {
+                        tvCaption.text = ""
+                        trCaption.isVisible = false
+
+                        tvName.text = ""
+                        tvDate.text = ""
+                        tvSize.text = ""
+                        tvMfg.text = ""
+                        tvModel.text = ""
+                        tvParam.text = ""
+                        tvArtist.text = ""
+                        tvLocality.text = ""
+
+                        trSize.isVisible = false
+                        trMfg.isVisible = false
+                        trModel.isVisible = false
+                        trParam.isVisible = false
+                        trArtist.isVisible = false
+                        mapView.isVisible = false
+                        tvLocality.isVisible = false
+                    }
+                })
+            })
             metaPage.isVisible = false
-
-            tvName.text = ""
-            tvDate.text = ""
-            tvSize.text = ""
-            tvMfg.text = ""
-            tvModel.text = ""
-            tvParam.text = ""
-            tvArtist.text = ""
-            tvLocality.text = ""
-
-            trSize.isVisible = false
-            trMfg.isVisible = false
-            trModel.isVisible = false
-            trParam.isVisible = false
-            trArtist.isVisible = false
-            mapView.isVisible = false
-            tvLocality.isVisible = false
         } else {
             TransitionManager.beginDelayedTransition(metaPage, Slide(Gravity.END).apply { duration = 200 })
             metaPage.isVisible = true
@@ -280,6 +297,10 @@ class TVSliderFragment: Fragment() {
 
                 withContext(Dispatchers.Main) {
                     pm.photo?.run {
+                        if (caption.isNotEmpty()) {
+                            tvCaption.text = caption
+                            trCaption.isVisible = true
+                        }
                         tvName.text = rPhoto.photo.name
                         tvDate.text = String.format("%s %s", rPhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), rPhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
 
