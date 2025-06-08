@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
   ~
   ~   Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,7 +108,8 @@
                 android:nextFocusUp="@id/my_albums"
                 android:contentDescription="@string/title_tv_my_albums"
                 android:focusedByDefault="true"
-                tools:listitem="@layout/recyclerview_item_album_tv" />
+                tools:listitem="@layout/recyclerview_item_album_tv"
+                tools:ignore="UnusedAttribute" />
 
             <TextView
                 android:id="@+id/title_share_with_me"

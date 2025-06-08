@@ -203,6 +203,8 @@ class TVMainFragment: Fragment() {
         featureImageView = view.findViewById<AppCompatImageView>(R.id.feature_image)
 
         myAlbumsView = view.findViewById<HorizontalGridView>(R.id.my_albums).apply {
+            windowAlignmentOffsetPercent = 14f
+
             adapter = myAlbumsAdapter
 
             onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
@@ -217,6 +219,8 @@ class TVMainFragment: Fragment() {
             }
         }
         sharedWithView = view.findViewById<HorizontalGridView>(R.id.shared_with_me).apply {
+            windowAlignmentOffsetPercent = 14f
+
             adapter = sharedWithAdapter
 
             onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
