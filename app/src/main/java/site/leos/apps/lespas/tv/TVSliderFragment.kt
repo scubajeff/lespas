@@ -16,8 +16,11 @@
 
 package site.leos.apps.lespas.tv
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.ColorMatrixColorFilter
+import android.icu.text.BreakIterator
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -33,6 +36,8 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.animation.doOnCancel
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -54,8 +59,10 @@ import androidx.viewpager2.widget.ViewPager2
 import com.panoramagl.PLManager
 import com.panoramagl.PLSphericalPanorama
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -89,10 +96,13 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 class TVSliderFragment: Fragment() {
-    private lateinit var mediaAdapter: RemoteMediaAdapter
+    private lateinit var mediaAdapter: MediaAdapter
     private lateinit var slider: ViewPager2
-    private lateinit var trCaption: TableRow
+
+    private lateinit var captionPage: ConstraintLayout
     private lateinit var tvCaption: TextView
+    private lateinit var captionHint: ImageView
+
     private lateinit var mapView: MapView
     private lateinit var tvLocality: TextView
 
@@ -116,23 +126,28 @@ class TVSliderFragment: Fragment() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val metaDisplayThread = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+    private var captionAnimationJob: Job? = null
+    private val wordIterator: BreakIterator = BreakIterator.getWordInstance(Locale.getDefault())
+    private var captionHintingAnimation = AnimatorSet()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
 
-        mediaAdapter= RemoteMediaAdapter(
+        mediaAdapter= MediaAdapter(
             requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             imageLoaderModel.getResourceRoot(),
             playerViewModel,
-            { state -> },
+            null,
             { media, imageView, type -> if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_FULL) },
             { media, imageView, plManager, panorama -> imageLoaderModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
             { delta ->
                 if (!metaPage.isVisible) {
+                    hideCaptionPage()
+                    // Use fake drag to move back and forth
                     slider.beginFakeDrag()
                     slider.fakeDragBy(delta * slider.width)
                     slider.endFakeDrag()
@@ -190,12 +205,22 @@ class TVSliderFragment: Fragment() {
         }
         tvLocality = view.findViewById<TextView>(R.id.locality)
 
+        captionPage = view.findViewById<ConstraintLayout>(R.id.caption_page)
+        tvCaption = view.findViewById<TextView>(R.id.caption)
+        captionHint = view.findViewById<ImageView>(R.id.caption_hint)
+
         slider = view.findViewById<ViewPager2>(R.id.slider).apply {
             adapter = mediaAdapter
             requestFocus()
+
+            registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+
+                    mediaAdapter.getPhotoAt(position).caption.let { if (it.isNotEmpty()) { startShowingCaption(it) }}
+                }
+            })
         }
-        tvCaption = view.findViewById<TextView>(R.id.caption)
-        trCaption = view.findViewById<TableRow>(R.id.caption_row)
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -210,6 +235,8 @@ class TVSliderFragment: Fragment() {
                 requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect { mediaAdapter.submitList(it) }}}
             }
         }
+
+        setupCaptionHintingAnimation()
     }
 
     override fun onResume() {
@@ -221,6 +248,58 @@ class TVSliderFragment: Fragment() {
         try { if (mediaAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300) } catch (_: IndexOutOfBoundsException) {}
 
         super.onStop()
+    }
+
+    fun setupCaptionHintingAnimation() {
+        captionHintingAnimation.playSequentially(
+            ObjectAnimator.ofFloat(captionHint, View.ALPHA, 0.0f, 1.0f).setDuration(650),
+            ObjectAnimator.ofFloat(captionHint, View.ALPHA, 1.0f, 0.0f).setDuration(650),
+            ObjectAnimator.ofFloat(captionHint, View.ALPHA, 0.0f, 1.0f).setDuration(650),
+            ObjectAnimator.ofFloat(captionHint, View.ALPHA, 1.0f, 0.0f).setDuration(650),
+            ObjectAnimator.ofFloat(captionHint, View.ALPHA, 0.0f, 1.0f).setDuration(650),
+            ObjectAnimator.ofFloat(captionHint, View.ALPHA, 1.0f, 0.0f).setDuration(650),
+        )
+        captionHintingAnimation.doOnCancel { captionHint.isVisible = false }
+        captionHintingAnimation.doOnEnd { showCaption(mediaAdapter.getPhotoAt(slider.currentItem).caption) }
+    }
+
+    fun startShowingCaption(caption: String) {
+        captionHint.isVisible = true
+        captionHintingAnimation.start()
+
+        wordIterator.setText(caption)
+    }
+
+    fun showCaption(caption: String) {
+        captionAnimationJob = viewLifecycleOwner.lifecycleScope.launch {
+            captionHint.isVisible = false
+
+            tvCaption.text = ""
+            TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.START).setDuration(500))
+            captionPage.isVisible = true
+
+            delay(500)
+            var i = wordIterator.next()
+            while(i != BreakIterator.DONE) {
+                ensureActive()
+                tvCaption.text = caption.subSequence(0, i)
+                i = wordIterator.next()
+                delay(100)
+            }
+        }
+    }
+
+    fun hideCaptionPage() {
+        captionHintingAnimation.cancel()
+
+        if (captionPage.isVisible) {
+            captionAnimationJob?.run {
+                cancel()
+                captionAnimationJob = null
+            }
+            TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.BOTTOM).setDuration(150))
+            captionPage.isVisible = false
+        }
     }
 
     fun toggleMeta(rPhoto: NCShareViewModel.RemotePhoto, off: Boolean) {
@@ -235,9 +314,6 @@ class TVSliderFragment: Fragment() {
                     override fun onTransitionResume(transition: Transition) {}
                     override fun onTransitionStart(transition: Transition) {}
                     override fun onTransitionEnd(transition: Transition) {
-                        tvCaption.text = ""
-                        trCaption.isVisible = false
-
                         tvName.text = ""
                         tvDate.text = ""
                         tvSize.text = ""
@@ -297,10 +373,6 @@ class TVSliderFragment: Fragment() {
 
                 withContext(Dispatchers.Main) {
                     pm.photo?.run {
-                        if (caption.isNotEmpty()) {
-                            tvCaption.text = caption
-                            trCaption.isVisible = true
-                        }
                         tvName.text = rPhoto.photo.name
                         tvDate.text = String.format("%s %s", rPhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), rPhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
 
@@ -401,14 +473,13 @@ class TVSliderFragment: Fragment() {
                         }
                     }
                 }
-
             } catch (_: Exception) {}
         }
     }
 
-    class RemoteMediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
-        clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
-        private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit
+    class MediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
+       clickListener: ((Boolean?) -> Unit)?, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
+       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
 
