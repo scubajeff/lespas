@@ -363,6 +363,8 @@ class TVSliderFragment: Fragment() {
         } else {
             TransitionManager.beginDelayedTransition(metaPage, Slide(Gravity.END).apply { duration = 200 })
             metaPage.isVisible = true
+            tvName.text = rPhoto.photo.name
+            tvDate.text = String.format("%s %s", rPhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), rPhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
 
             viewLifecycleOwner.lifecycleScope.launch(metaDisplayThread) {
                 val pm = PhotoMeta(rPhoto.photo)
@@ -399,9 +401,6 @@ class TVSliderFragment: Fragment() {
 
                 withContext(Dispatchers.Main) {
                     pm.photo?.run {
-                        tvName.text = rPhoto.photo.name
-                        tvDate.text = String.format("%s %s", rPhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), rPhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
-
                         // Size row
                         val pWidth: Int
                         val pHeight: Int
