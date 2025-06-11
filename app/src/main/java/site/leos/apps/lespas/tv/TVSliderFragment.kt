@@ -76,6 +76,7 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
+import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.MetaDataDialogFragment.PhotoMeta
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
 import site.leos.apps.lespas.helper.Tools
@@ -86,6 +87,9 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.RemoteMediaFragment.PhotoDiffCallback
+import site.leos.apps.lespas.story.BGMViewModel
+import site.leos.apps.lespas.story.BGMViewModelFactory
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -123,6 +127,7 @@ class TVSliderFragment: Fragment() {
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var playerViewModel: VideoPlayerViewModel
+    private lateinit var bgmModel: BGMViewModel
 
     private val handler = Handler(Looper.getMainLooper())
     private val metaDisplayThread = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
@@ -157,11 +162,19 @@ class TVSliderFragment: Fragment() {
         )
 
         var isShared = false
+        var sharedPath = ""
         requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { shared ->
+             sharedPath = shared.sharePath
             lifecycleScope.launch(Dispatchers.IO) { imageLoaderModel.getRemotePhotoList(shared, true) }
             isShared = true
         }
         setFragmentResult(RESULT_REQUEST_KEY, bundleOf(KEY_SHARED to isShared))
+        bgmModel = ViewModelProvider(
+            this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(),
+                if (isShared) "${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}"
+                else "file://${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+            )
+        )[BGMViewModel::class.java]
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -217,7 +230,12 @@ class TVSliderFragment: Fragment() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
 
-                    mediaAdapter.getPhotoAt(position).caption.let { if (it.isNotEmpty()) { startShowingCaption(it) }}
+                    if (mediaAdapter.isSlideVideo(position)) {
+                        bgmModel.fadeOutBGM()
+                    } else {
+                        bgmModel.fadeInBGM()
+                        mediaAdapter.getCaption(position).let { if (it.isNotEmpty()) { startShowingCaption(it) }}
+                    }
                 }
             })
         }
@@ -229,7 +247,7 @@ class TVSliderFragment: Fragment() {
                         val serverPath = if (album.isRemote()) "${Tools.getRemoteHome(requireContext())}/${album.name}" else ""
 
                         // Panorama photo need focus to play with, filter them now
-                        mediaAdapter.submitList(Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) })
+                        mediaAdapter.submitList(Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) }) { bgmModel.fadeInBGM() }
                     }
                 }}
                 requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect { mediaAdapter.submitList(it) }}}
@@ -246,6 +264,7 @@ class TVSliderFragment: Fragment() {
 
     override fun onStop() {
         try { if (mediaAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300) } catch (_: IndexOutOfBoundsException) {}
+        bgmModel.fadeOutBGM()
 
         super.onStop()
     }
@@ -268,7 +287,7 @@ class TVSliderFragment: Fragment() {
             ObjectAnimator.ofFloat(captionHint, View.ALPHA, 1.0f, 0.0f).setDuration(650),
         )
         captionHintingAnimation.doOnCancel { captionHint.isVisible = false }
-        captionHintingAnimation.doOnEnd { showCaption(mediaAdapter.getPhotoAt(slider.currentItem).caption) }
+        captionHintingAnimation.doOnEnd { showCaption(mediaAdapter.getCaption(slider.currentItem)) }
     }
 
     fun startShowingCaption(caption: String) {
@@ -311,7 +330,7 @@ class TVSliderFragment: Fragment() {
     }
 
     fun toggleCaption(state: Boolean) {
-        mediaAdapter.getPhotoAt(slider.currentItem).caption.let { caption ->
+        mediaAdapter.getCaption(slider.currentItem).let { caption ->
             if (caption.isNotEmpty()) {
                 if (state) {
                     captionHintingAnimation.cancel()
@@ -507,6 +526,8 @@ class TVSliderFragment: Fragment() {
        private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
+        fun isSlideVideo(position: Int): Boolean = try { currentList[position].photo.mimeType.startsWith("video") } catch (_: Exception) { false }
+        fun getCaption(position: Int): String = currentList[position].photo.caption
 
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id

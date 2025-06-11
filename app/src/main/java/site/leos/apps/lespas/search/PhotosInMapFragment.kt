@@ -154,8 +154,10 @@ class PhotosInMapFragment: Fragment() {
             lifecycleScope.launch(Dispatchers.IO) {
                 var bgmFile = ""
                 if (eTag == Photo.ETAG_FAKE) {
+                    // It's a publication shared to me
                     if (imageLoaderModel.isExisted(bgmId)) bgmFile = bgmId
                 } else {
+                    // My own album
                     if (File("$localPath/${id}${BGMDialogFragment.BGM_FILE_SUFFIX}").exists()) bgmFile = "file://${Tools.getLocalRoot(requireContext())}/${id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
                 }
                 if (bgmFile.isNotEmpty()) withContext(Dispatchers.Main) {
