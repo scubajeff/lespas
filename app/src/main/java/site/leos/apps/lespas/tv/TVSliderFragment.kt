@@ -140,7 +140,7 @@ class TVSliderFragment: Fragment() {
             Tools.getDisplayDimension(requireActivity()).first,
             imageLoaderModel.getResourceRoot(),
             playerViewModel,
-            null,
+            { on -> toggleCaption(on == true) },
             { media, imageView, type -> if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_FULL) },
             { media, imageView, plManager, panorama -> imageLoaderModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
@@ -250,6 +250,14 @@ class TVSliderFragment: Fragment() {
         super.onStop()
     }
 
+    override fun onDestroy() {
+        captionHintingAnimation.cancel()
+        captionAnimationJob?.cancel()
+        metaDisplayThread.cancel()
+        handler.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
     fun setupCaptionHintingAnimation() {
         captionHintingAnimation.playSequentially(
             ObjectAnimator.ofFloat(captionHint, View.ALPHA, 0.0f, 1.0f).setDuration(650),
@@ -275,7 +283,7 @@ class TVSliderFragment: Fragment() {
             captionHint.isVisible = false
 
             tvCaption.text = ""
-            TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.START).setDuration(500))
+            TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.START).setDuration(800))
             captionPage.isVisible = true
 
             delay(500)
@@ -284,7 +292,7 @@ class TVSliderFragment: Fragment() {
                 ensureActive()
                 tvCaption.text = caption.subSequence(0, i)
                 i = wordIterator.next()
-                delay(100)
+                delay(80)
             }
         }
     }
@@ -299,6 +307,24 @@ class TVSliderFragment: Fragment() {
             }
             TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.BOTTOM).setDuration(150))
             captionPage.isVisible = false
+        }
+    }
+
+    fun toggleCaption(state: Boolean) {
+        mediaAdapter.getPhotoAt(slider.currentItem).caption.let { caption ->
+            if (caption.isNotEmpty()) {
+                if (state) {
+                    captionHintingAnimation.cancel()
+                    captionAnimationJob?.cancel()
+                    captionAnimationJob = null
+
+                    tvCaption.text = caption
+                    if (captionPage.isVisible == false) {
+                        TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.BOTTOM).setDuration(500))
+                        captionPage.isVisible = true
+                    }
+                } else hideCaptionPage()
+            }
         }
     }
 
@@ -478,7 +504,7 @@ class TVSliderFragment: Fragment() {
     }
 
     class MediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
-       clickListener: ((Boolean?) -> Unit)?, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
+       private val clickListener: ((Boolean?) -> Unit), imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
        private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
@@ -500,12 +526,20 @@ class TVSliderFragment: Fragment() {
                                 scrollListener(if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) 1f else -1f)
                                 return true
                             }
-                            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_DPAD_UP -> {
+                            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
                                 recyclerView.findViewHolderForLayoutPosition(lm.findFirstVisibleItemPosition())?.let { viewHolder ->
                                     if (viewHolder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) { viewHolder.playOrPauseOnTV() }
                                     iListener(getItem(viewHolder.bindingAdapterPosition))
                                     return true
                                 }
+                            }
+                            KeyEvent.KEYCODE_DPAD_UP -> {
+                                clickListener(true)
+                                return true
+                            }
+                            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                clickListener(false)
+                                return true
                             }
                         }
                     }
