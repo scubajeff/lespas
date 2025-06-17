@@ -179,9 +179,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         sessionVolumePercentage = newPercentage
 
         // Restore system volume setting whenever saveSessionVolumePercentage() is called
-        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {}
+        //try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {}
     }
     fun getSessionVolumePercentage() = sessionVolumePercentage
+    fun getSavedSystemVolume() = savedSystemVolume
 
     init {
         AccountManager.get(application).run {

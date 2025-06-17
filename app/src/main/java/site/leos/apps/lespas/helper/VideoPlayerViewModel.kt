@@ -46,7 +46,7 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val savedSystemVolume: Int, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var window = activity.window
@@ -119,6 +119,9 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         // Hide controller view by default
         view?.hideController()
 
+        // Restore session volume
+        setVolume(0f)
+
         if (view != null && uri != null) {
             if (view.context is Activity) window = (view.context as Activity).window
             else if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
@@ -159,7 +162,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
             // Only pause if current playing video is the same as the argument. When swiping between two video items, onViewAttachedToWindow in SeamlessMediaSliderAdapter will call pause with last item's uri
             // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
-            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) videoPlayer.pause()
+            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) {
+                videoPlayer.pause()
+                if (!slideshowMode) resetSystemVolume()
+            }
         }.apply {
             invokeOnCompletion { pauseJob = null }
         }
@@ -187,6 +193,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (currentVolumePercentage * maxSystemVolume).toInt(), 0) } catch (_: SecurityException) {}
     }
     fun getVolume(): Float = currentVolumePercentage
+    fun resetSystemVolume() { try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {} }
 
     fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
     fun setBrightness(increment: Float) {

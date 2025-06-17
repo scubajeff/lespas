@@ -89,7 +89,7 @@ class RemoteMediaFragment: Fragment() {
 
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), shareModel.getCallFactory(), shareModel.getPlayerCache(), shareModel.getSessionVolumePercentage()) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), shareModel.getCallFactory(), shareModel.getPlayerCache(), shareModel.getSavedSystemVolume(), shareModel.getSessionVolumePercentage()) }
 
     private var autoRotate = false
     private var previousOrientationSetting = 0

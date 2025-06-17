@@ -159,7 +159,7 @@ class PhotoSlideFragment : Fragment() {
         serverPath = "${Tools.getRemoteHome(requireContext())}/${album.name}"
         serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
         // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSavedSystemVolume(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
         //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
