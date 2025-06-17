@@ -239,8 +239,8 @@ class TVMainFragment: Fragment() {
         }
 
         fadeInPoster.playTogether(
-            ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.5f, 1.0f).setDuration(400),
-            ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.0f, 1.0f).setDuration(200).apply { doOnEnd { titleContainerView.isVisible = true }}
+            //ObjectAnimator.ofFloat(featureImageView, View.ALPHA, 0.6f, 1.0f).setDuration(400),
+            ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 0.0f, 1.0f).setDuration(150).apply { doOnEnd { titleContainerView.isVisible = true }}
         )
         fadeOutTitle = ObjectAnimator.ofFloat(titleContainerView, View.ALPHA, 1.0f, 0.0f).setDuration(100).apply { doOnEnd { titleContainerView.isVisible = false } }
 
