@@ -218,6 +218,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Reset screen auto turn off, brightness and volume setting
         resetBrightness()
+        resetSystemVolume()
 
         super.onCleared()
     }
