@@ -254,8 +254,12 @@ class TVSliderFragment: Fragment() {
                             }
                             true
                         }
+                        KeyEvent.KEYCODE_DPAD_UP -> {
+                            changeDate(true)
+                            true
+                        }
                         KeyEvent.KEYCODE_DPAD_DOWN -> {
-                            hideFastScroller()
+                            changeDate(false)
                             true
                         }
                         else -> false
@@ -325,7 +329,7 @@ class TVSliderFragment: Fragment() {
         super.onDestroy()
     }
 
-    fun setupCaptionHintingAnimation() {
+    private fun setupCaptionHintingAnimation() {
         captionHintingAnimation.playSequentially(
             ObjectAnimator.ofFloat(captionHint, View.ALPHA, 0.0f, 1.0f).setDuration(650),
             ObjectAnimator.ofFloat(captionHint, View.ALPHA, 1.0f, 0.0f).setDuration(650),
@@ -338,14 +342,14 @@ class TVSliderFragment: Fragment() {
         captionHintingAnimation.doOnEnd { showCaption(mediaAdapter.getCaption(slider.currentItem)) }
     }
 
-    fun startShowingCaption(caption: String) {
+    private fun startShowingCaption(caption: String) {
         captionHint.isVisible = true
         captionHintingAnimation.start()
 
         wordIterator.setText(caption)
     }
 
-    fun showCaption(caption: String) {
+    private fun showCaption(caption: String) {
         captionAnimationJob = viewLifecycleOwner.lifecycleScope.launch {
             captionHint.isVisible = false
 
@@ -364,7 +368,7 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    fun hideCaptionPage() {
+    private fun hideCaptionPage() {
         captionHintingAnimation.cancel()
 
         if (captionPage.isVisible) {
@@ -377,7 +381,7 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    fun hideFastScroller() {
+    private fun hideFastScroller() {
         if (fastScroller.isVisible) {
             TransitionManager.beginDelayedTransition(fastScroller, Slide(Gravity.BOTTOM).setDuration(500))
             fastScroller.isVisible = false
@@ -385,7 +389,8 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    fun showFastScroller() {
+    private fun showFastScroller() {
+        captionHintingAnimation.cancel()
         mediaAdapter.getPhotoAt(slider.currentItem).let { currentPhoto ->
             fastScrollAdapter.currentList.indexOfFirst { it.photo.id == currentPhoto.id }.let { pos ->
                 TransitionManager.beginDelayedTransition(fastScroller, Slide(Gravity.BOTTOM).setDuration(500))
@@ -396,7 +401,12 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    fun toggleCaption(state: Boolean) {
+    private fun changeDate(forward: Boolean) {
+        fastScroller.focusedChild?.let { fastScroller.findContainingViewHolder(it)?.bindingAdapterPosition?.let { pos -> fastScroller.smoothScrollToPosition(mediaAdapter.findAdjacentDate(pos, forward)) } }
+    }
+
+    private fun toggleCaption(state: Boolean) {
+        // Activate fast scroller when user press Down key while caption page is not visible
         if (!state && !captionPage.isVisible) showFastScroller()
         else mediaAdapter.getCaption(slider.currentItem).let { caption ->
             if (caption.isNotEmpty()) {
@@ -415,7 +425,7 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    fun toggleMeta(rPhoto: NCShareViewModel.RemotePhoto, off: Boolean) {
+    private fun toggleMeta(rPhoto: NCShareViewModel.RemotePhoto, off: Boolean) {
         if (off) {
             metaDisplayThread.cancel(null)
 
@@ -525,7 +535,7 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    fun showMap(photo: Photo) {
+    private fun showMap(photo: Photo) {
         viewLifecycleOwner.lifecycleScope.launch(metaDisplayThread) {
             try {
                 with(mapView) {
@@ -596,6 +606,30 @@ class TVSliderFragment: Fragment() {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
         fun isSlideVideo(position: Int): Boolean = try { currentList[position].photo.mimeType.startsWith("video") } catch (_: Exception) { false }
         fun getCaption(position: Int): String = currentList[position].photo.caption
+        fun findAdjacentDate(current: Int, forward: Boolean): Int {
+            val currentDate = currentList[current].photo.dateTaken.toLocalDate()
+            var i = current
+            while(i in 0 until currentList.size) {
+                if (currentList[i].photo.dateTaken.toLocalDate() != currentDate) break
+                if (forward) i++ else i--
+            }
+            if (i < 0) i = 0
+            if (i >= currentList.size) i = currentList.size - 1
+
+            // Move to the 1st picture in this date if moving backward
+            if (!forward) {
+                val newDate = currentList[i].photo.dateTaken.toLocalDate()
+                while(i in 0 until currentList.size) {
+                    if (currentList[i].photo.dateTaken.toLocalDate() != newDate) break
+                    i--
+                }
+                i++
+                if (i < 0) i = 0
+                if (i >= currentList.size) i = currentList.size - 1
+            }
+
+            return i
+        }
 
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id

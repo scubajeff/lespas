@@ -47,7 +47,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:padding="@dimen/big_padding"
         android:elevation="1dp"
-        android:background="#E3202020"
+        android:background="@color/bottom_bar_background"
         android:visibility="gone"
         tools:visibility="visible">
 
