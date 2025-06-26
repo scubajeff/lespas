@@ -191,8 +191,12 @@ class TVSliderFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                if (metaPage.isVisible) toggleMeta(NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)), true)
-                else parentFragmentManager.popBackStack()
+                when {
+                    metaPage.isVisible -> toggleMeta(NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)), true)
+                    captionPage.isVisible -> hideCaptionPage()
+                    fastScroller.isVisible -> hideFastScroller()
+                    else -> parentFragmentManager.popBackStack()
+                }
             }
         }.apply { isEnabled = true })
     }
@@ -250,7 +254,7 @@ class TVSliderFragment: Fragment() {
                             }
                             true
                         }
-                        KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_ESCAPE -> {
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
                             hideFastScroller()
                             true
                         }
