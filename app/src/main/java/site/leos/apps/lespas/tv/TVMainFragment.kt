@@ -103,7 +103,6 @@ class TVMainFragment: Fragment() {
         primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
 
         myAlbumsAdapter = AlbumGridAdapter(
-            { album -> parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(album, null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit() },
             { album, view ->
                 album.run {
                     imageLoaderViewModel.setImagePhoto(NCShareViewModel.RemotePhoto(
@@ -194,44 +193,40 @@ class TVMainFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        titleContainerView = view.findViewById<LinearLayout>(R.id.title_container)
-        albumTitleView = view.findViewById<TextView>(R.id.title)
-        albumSubTitleView = view.findViewById<TextView>(R.id.subtitle)
-        sharedWithMeTitleView = view.findViewById<TextView>(R.id.title_share_with_me)
+        titleContainerView = view.findViewById(R.id.title_container)
+        albumTitleView = view.findViewById(R.id.title)
+        albumSubTitleView = view.findViewById(R.id.subtitle)
+        sharedWithMeTitleView = view.findViewById(R.id.title_share_with_me)
 
-        cinematicScrimView = view.findViewById<View>(R.id.cinematic_scrim)
-        featureImageView = view.findViewById<AppCompatImageView>(R.id.feature_image)
+        cinematicScrimView = view.findViewById(R.id.cinematic_scrim)
+        featureImageView = view.findViewById(R.id.feature_image)
 
         myAlbumsView = view.findViewById<HorizontalGridView>(R.id.my_albums).apply {
             windowAlignmentOffsetPercent = 14f
-
+            itemAnimator = null
             adapter = myAlbumsAdapter
 
-            onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
-                override fun onUnhandledKey(event: KeyEvent): Boolean {
-                    return if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
-                        myAlbumsView.findContainingViewHolder(myAlbumsView.focusedChild)?.bindingAdapterPosition?.let { position ->
-                            parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(myAlbumsAdapter.currentList[position], null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
-                        }
-                        true
-                    } else false
-                }
+            onUnhandledKeyListener = BaseGridView.OnUnhandledKeyListener { event ->
+                if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
+                    myAlbumsView.findContainingViewHolder(myAlbumsView.focusedChild)?.bindingAdapterPosition?.let { position ->
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(myAlbumsAdapter.currentList[position], null), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    }
+                    true
+                } else false
             }
         }
         sharedWithView = view.findViewById<HorizontalGridView>(R.id.shared_with_me).apply {
             windowAlignmentOffsetPercent = 14f
-
+            itemAnimator = null
             adapter = sharedWithAdapter
 
-            onUnhandledKeyListener = object : BaseGridView.OnUnhandledKeyListener {
-                override fun onUnhandledKey(event: KeyEvent): Boolean {
-                    return if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
-                        sharedWithView.findContainingViewHolder(sharedWithView.focusedChild)?.bindingAdapterPosition?.let { position ->
-                            parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(null, sharedWithAdapter.currentList[position]), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
-                        }
-                        true
-                    } else false
-                }
+            onUnhandledKeyListener = BaseGridView.OnUnhandledKeyListener { event ->
+                if (event.action == KeyEvent.ACTION_UP && event.keyCode in arrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A)) {
+                    sharedWithView.findContainingViewHolder(sharedWithView.focusedChild)?.bindingAdapterPosition?.let { position ->
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, TVSliderFragment.newInstance(null, sharedWithAdapter.currentList[position]), TVSliderFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    }
+                    true
+                } else false
             }
         }
         categoryScrollView = view.findViewById<NoAutoScrollScrollView>(R.id.scroller).apply {
@@ -284,7 +279,7 @@ class TVMainFragment: Fragment() {
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) cinematicScrimView.background.setTint(tint)
                     else cinematicScrimView.background.colorFilter = BlendModeColorFilter(tint, BlendMode.SRC_ATOP)
                 }}
-                (palette?.getLightVibrantColor(primaryTextColor) ?: primaryTextColor).toInt().let { color ->
+                (palette?.getLightVibrantColor(primaryTextColor) ?: primaryTextColor).let { color ->
                     albumTitleView.text = title
                     albumTitleView.setTextColor(if (ColorUtils.calculateContrast(color, 0xFF000000.toInt()) < 10 ) ContextCompat.getColor(requireContext(), R.color.lespas_white) else color)
                     albumSubTitleView.text = subTitle
@@ -306,10 +301,10 @@ class TVMainFragment: Fragment() {
 
     private fun zoomCoverView(zoomIn: Boolean, view: View) { view.startAnimation(AnimationUtils.loadAnimation(requireContext(), if (zoomIn) R.anim.tv_cover_zoom_in else R.anim.tv_cover_zoom_out)) }
 
-    class AlbumGridAdapter(private val clickListener: (Album) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val onFocusListener: (Int, Boolean, View) -> Unit, private val cancelLoader: (View) -> Unit
+    class AlbumGridAdapter(private val imageLoader: (Album, ImageView) -> Unit, private val onFocusListener: (Int, Boolean, View) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Album, AlbumGridAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            val ivCover: AppCompatImageView = itemView.findViewById<AppCompatImageView>(R.id.coverart).apply { setOnClickListener { clickListener(currentList[bindingAdapterPosition]) } }
+            val ivCover: AppCompatImageView = itemView.findViewById(R.id.coverart)
 
             init {
                 itemView.findViewById<FocusTrackingConstraintLayout>(R.id.container).apply { setOnFocusChangedListener { focused -> onFocusListener(bindingAdapterPosition, focused, this) }}

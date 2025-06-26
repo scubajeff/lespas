@@ -35,6 +35,7 @@ import android.widget.TableRow
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnCancel
 import androidx.core.animation.doOnEnd
@@ -46,11 +47,15 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResult
+import androidx.leanback.widget.BaseGridView
+import androidx.leanback.widget.HorizontalGridView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Slide
 import androidx.transition.Transition
@@ -86,7 +91,6 @@ import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.publication.RemoteMediaFragment.PhotoDiffCallback
 import site.leos.apps.lespas.story.BGMViewModel
 import site.leos.apps.lespas.story.BGMViewModelFactory
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -106,6 +110,9 @@ class TVSliderFragment: Fragment() {
     private lateinit var captionPage: ConstraintLayout
     private lateinit var tvCaption: TextView
     private lateinit var captionHint: ImageView
+
+    private lateinit var fastScroller: HorizontalGridView
+    private lateinit var fastScrollAdapter: MediaFastScrollAdapter
 
     private lateinit var mapView: MapView
     private lateinit var tvLocality: TextView
@@ -140,12 +147,12 @@ class TVSliderFragment: Fragment() {
 
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSavedSystemVolume(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
 
-        mediaAdapter= MediaAdapter(
+        mediaAdapter = MediaAdapter(
             requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             imageLoaderModel.getResourceRoot(),
             playerViewModel,
-            { on -> toggleCaption(on == true) },
+            { on -> },
             { media, imageView, type -> if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_FULL) },
             { media, imageView, plManager, panorama -> imageLoaderModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
@@ -159,6 +166,12 @@ class TVSliderFragment: Fragment() {
                 }
             },
             { media -> toggleMeta(media, metaPage.isVisible) },
+            { state -> toggleCaption(state) },
+        )
+
+        fastScrollAdapter = MediaFastScrollAdapter(
+            { remotePhoto, view -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID)},
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         )
 
         var isShared = false
@@ -194,19 +207,19 @@ class TVSliderFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        metaPage = view.findViewById<ConstraintLayout>(R.id.info_page)
-        tvName = view.findViewById<TextView>(R.id.info_filename)
-        tvDate = view.findViewById<TextView>(R.id.info_shotat)
-        tvSize = view.findViewById<TextView>(R.id.info_size)
-        tvMfg = view.findViewById<TextView>(R.id.info_camera_mfg)
-        tvModel = view.findViewById<TextView>(R.id.info_camera_model)
-        tvParam = view.findViewById<TextView>(R.id.info_parameter)
-        tvArtist = view.findViewById<TextView>(R.id.info_artist)
-        trSize = view.findViewById<TableRow>(R.id.size_row)
-        trMfg = view.findViewById<TableRow>(R.id.mfg_row)
-        trModel = view.findViewById<TableRow>(R.id.model_row)
-        trParam = view.findViewById<TableRow>(R.id.param_row)
-        trArtist = view.findViewById<TableRow>(R.id.artist_row)
+        metaPage = view.findViewById(R.id.info_page)
+        tvName = view.findViewById(R.id.info_filename)
+        tvDate = view.findViewById(R.id.info_shotat)
+        tvSize = view.findViewById(R.id.info_size)
+        tvMfg = view.findViewById(R.id.info_camera_mfg)
+        tvModel = view.findViewById(R.id.info_camera_model)
+        tvParam = view.findViewById(R.id.info_parameter)
+        tvArtist = view.findViewById(R.id.info_artist)
+        trSize = view.findViewById(R.id.size_row)
+        trMfg = view.findViewById(R.id.mfg_row)
+        trModel = view.findViewById(R.id.model_row)
+        trParam = view.findViewById(R.id.param_row)
+        trArtist = view.findViewById(R.id.artist_row)
 
         mapView = view.findViewById<MapView>(R.id.map).apply {
             setMultiTouchControls(false)
@@ -216,11 +229,36 @@ class TVSliderFragment: Fragment() {
             overlays.add(CopyrightOverlay(requireContext()))
             org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         }
-        tvLocality = view.findViewById<TextView>(R.id.locality)
+        tvLocality = view.findViewById(R.id.locality)
 
-        captionPage = view.findViewById<ConstraintLayout>(R.id.caption_page)
-        tvCaption = view.findViewById<TextView>(R.id.caption)
-        captionHint = view.findViewById<ImageView>(R.id.caption_hint)
+        captionPage = view.findViewById(R.id.caption_page)
+        tvCaption = view.findViewById(R.id.caption)
+        captionHint = view.findViewById(R.id.caption_hint)
+
+        fastScroller = view.findViewById<HorizontalGridView>(R.id.fast_scroller).apply {
+            windowAlignmentOffsetPercent = 8f
+            itemAnimator = null
+            adapter = fastScrollAdapter
+
+            onUnhandledKeyListener = BaseGridView.OnUnhandledKeyListener { event ->
+                if (event.action == KeyEvent.ACTION_UP) {
+                    when(event.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
+                            fastScroller.findContainingViewHolder(fastScroller.focusedChild)?.bindingAdapterPosition?.let { pos ->
+                                slider.setCurrentItem(pos, false)
+                                hideFastScroller()
+                            }
+                            true
+                        }
+                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                            hideFastScroller()
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            }
+        }
 
         slider = view.findViewById<ViewPager2>(R.id.slider).apply {
             adapter = mediaAdapter
@@ -247,10 +285,16 @@ class TVSliderFragment: Fragment() {
                         val serverPath = if (album.isRemote()) "${Tools.getRemoteHome(requireContext())}/${album.name}" else ""
 
                         // Panorama photo need focus to play with, filter them now
-                        mediaAdapter.submitList(Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) }) { bgmModel.fadeInBGM() }
+                        Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) }.run {
+                            mediaAdapter.submitList(this) { bgmModel.fadeInBGM() }
+                            fastScrollAdapter.submitList(this)
+                        }
                     }
                 }}
-                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect { mediaAdapter.submitList(it) }}}
+                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect {
+                    mediaAdapter.submitList(it)
+                    fastScrollAdapter.submitList(it)
+                }}}
             }
         }
 
@@ -329,8 +373,28 @@ class TVSliderFragment: Fragment() {
         }
     }
 
+    fun hideFastScroller() {
+        if (fastScroller.isVisible) {
+            TransitionManager.beginDelayedTransition(fastScroller, Slide(Gravity.BOTTOM).setDuration(500))
+            fastScroller.isVisible = false
+            slider.requestFocus()
+        }
+    }
+
+    fun showFastScroller() {
+        mediaAdapter.getPhotoAt(slider.currentItem).let { currentPhoto ->
+            fastScrollAdapter.currentList.indexOfFirst { it.photo.id == currentPhoto.id }.let { pos ->
+                TransitionManager.beginDelayedTransition(fastScroller, Slide(Gravity.BOTTOM).setDuration(500))
+                fastScroller.isVisible = true
+                if (pos >= 0) fastScroller.smoothScrollToPosition(pos)
+                fastScroller.requestFocus()
+            }
+        }
+    }
+
     fun toggleCaption(state: Boolean) {
-        mediaAdapter.getCaption(slider.currentItem).let { caption ->
+        if (!state && !captionPage.isVisible) showFastScroller()
+        else mediaAdapter.getCaption(slider.currentItem).let { caption ->
             if (caption.isNotEmpty()) {
                 if (state) {
                     captionHintingAnimation.cancel()
@@ -338,7 +402,7 @@ class TVSliderFragment: Fragment() {
                     captionAnimationJob = null
 
                     tvCaption.text = caption
-                    if (captionPage.isVisible == false) {
+                    if (!captionPage.isVisible) {
                         TransitionManager.beginDelayedTransition(captionPage, Slide(Gravity.BOTTOM).setDuration(500))
                         captionPage.isVisible = true
                     }
@@ -522,8 +586,8 @@ class TVSliderFragment: Fragment() {
     }
 
     class MediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
-       private val clickListener: ((Boolean?) -> Unit), imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
-       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit
+       clickListener: ((Boolean?) -> Unit), imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
+       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit, private val cListener: (Boolean) -> Unit,
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
         fun isSlideVideo(position: Int): Boolean = try { currentList[position].photo.mimeType.startsWith("video") } catch (_: Exception) { false }
@@ -537,6 +601,7 @@ class TVSliderFragment: Fragment() {
             super.onAttachedToRecyclerView(recyclerView)
 
             recyclerView.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+            recyclerView.itemAnimator = null
             recyclerView.setOnKeyListener(object : View.OnKeyListener {
                 val lm = recyclerView.layoutManager as LinearLayoutManager
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
@@ -554,11 +619,11 @@ class TVSliderFragment: Fragment() {
                                 }
                             }
                             KeyEvent.KEYCODE_DPAD_UP -> {
-                                clickListener(true)
+                                cListener(true)
                                 return true
                             }
                             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                clickListener(false)
+                                cListener(false)
                                 return true
                             }
                         }
@@ -573,6 +638,26 @@ class TVSliderFragment: Fragment() {
             recyclerView.setOnKeyListener(null)
             super.onDetachedFromRecyclerView(recyclerView)
         }
+    }
+
+    class MediaFastScrollAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    ): ListAdapter<NCShareViewModel.RemotePhoto, MediaFastScrollAdapter.MediaViewHolder>(PhotoDiffCallback()) {
+        inner class  MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            val ivMedia: AppCompatImageView = itemView.findViewById(R.id.photo)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder = MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_tv_slider_fast_scroller, parent, false))
+        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) { imageLoader(getItem(position), holder.ivMedia) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            recyclerView.setOnKeyListener(null)
+            for (i in 0 until currentList.size) { recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> cancelLoader((holder as MediaViewHolder).ivMedia) }}
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
+    }
+
+    class PhotoDiffCallback(): DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
 
     companion object {
