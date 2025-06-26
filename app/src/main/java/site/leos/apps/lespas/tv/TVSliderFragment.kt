@@ -250,7 +250,7 @@ class TVSliderFragment: Fragment() {
                             }
                             true
                         }
-                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_ESCAPE -> {
                             hideFastScroller()
                             true
                         }
