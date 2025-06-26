@@ -86,7 +86,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.8.8'
 
     // Room components
-    def roomVersion = "2.7.1"
+    def roomVersion = "2.7.2"
     implementation "androidx.room:room-runtime:$roomVersion"
     annotationProcessor "androidx.room:room-compiler:$roomVersion"
     ksp "androidx.room:room-compiler:$roomVersion"
@@ -100,7 +100,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
 
     // Kotlin components
-    implementation 'androidx.work:work-runtime-ktx:2.10.1'
+    implementation 'androidx.work:work-runtime-ktx:2.10.2'
     def coroutineVersion = '1.10.2'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
@@ -142,7 +142,7 @@ dependencies {
     implementation 'com.google.zxing:zxingorg:3.5.0'
 
     // Jackson for faster json string processing
-    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
 
     // Panorama support
     implementation('com.github.hannesa2:panoramagl:1.12') {
