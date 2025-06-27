@@ -141,6 +141,7 @@ class TVSliderFragment: Fragment() {
     private var captionAnimationJob: Job? = null
     private val wordIterator: BreakIterator = BreakIterator.getWordInstance(Locale.getDefault())
     private var captionHintingAnimation = AnimatorSet()
+    private var isSortedByDate = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -289,6 +290,7 @@ class TVSliderFragment: Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 requireArguments().parcelable<Album>(KEY_ALBUM)?.let { album -> launch {
+                    isSortedByDate = album.sortOrder in Album.BY_DATE_TAKEN_ASC..Album.BY_DATE_MODIFIED_DESC || album.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..Album.BY_DATE_MODIFIED_DESC_WIDE
                     albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
                         val serverPath = if (album.isRemote()) "${Tools.getRemoteHome(requireContext())}/${album.name}" else ""
 
@@ -299,10 +301,13 @@ class TVSliderFragment: Fragment() {
                         }
                     }
                 }}
-                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch { imageLoaderModel.publicationContentMeta.collect {
-                    mediaAdapter.submitList(it)
-                    fastScrollAdapter.submitList(it)
-                }}}
+                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch {
+                    isSortedByDate = it.sortOrder in Album.BY_DATE_TAKEN_ASC..Album.BY_DATE_MODIFIED_DESC || it.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..Album.BY_DATE_MODIFIED_DESC_WIDE
+                    imageLoaderModel.publicationContentMeta.collect {
+                        mediaAdapter.submitList(it)
+                        fastScrollAdapter.submitList(it)
+                    }
+                }}
             }
         }
 
@@ -402,7 +407,9 @@ class TVSliderFragment: Fragment() {
     }
 
     private fun changeDate(forward: Boolean) {
-        fastScroller.focusedChild?.let { fastScroller.findContainingViewHolder(it)?.bindingAdapterPosition?.let { pos -> fastScroller.smoothScrollToPosition(mediaAdapter.findAdjacentDate(pos, forward)) } }
+        if (isSortedByDate) fastScroller.focusedChild?.let { currentFocused ->
+            fastScroller.findContainingViewHolder(currentFocused)?.bindingAdapterPosition?.let { pos -> fastScroller.smoothScrollToPosition(mediaAdapter.findAdjacentDate(pos, forward)) }
+        }
     }
 
     private fun toggleCaption(state: Boolean) {
