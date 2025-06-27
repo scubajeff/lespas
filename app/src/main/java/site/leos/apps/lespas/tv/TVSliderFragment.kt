@@ -112,7 +112,7 @@ class TVSliderFragment: Fragment() {
     private lateinit var captionHint: ImageView
 
     private lateinit var fastScroller: HorizontalGridView
-    private lateinit var fastScrollAdapter: MediaFastScrollAdapter
+    private lateinit var fastScrollAdapter: FastScrollAdapter
 
     private lateinit var mapView: MapView
     private lateinit var tvLocality: TextView
@@ -170,7 +170,7 @@ class TVSliderFragment: Fragment() {
             { state -> toggleCaption(state) },
         )
 
-        fastScrollAdapter = MediaFastScrollAdapter(
+        fastScrollAdapter = FastScrollAdapter(
             { remotePhoto, view -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID)},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         )
@@ -685,14 +685,20 @@ class TVSliderFragment: Fragment() {
         }
     }
 
-    class MediaFastScrollAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
-    ): ListAdapter<NCShareViewModel.RemotePhoto, MediaFastScrollAdapter.MediaViewHolder>(PhotoDiffCallback()) {
+    class FastScrollAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    ): ListAdapter<NCShareViewModel.RemotePhoto, FastScrollAdapter.MediaViewHolder>(PhotoDiffCallback()) {
         inner class  MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             val ivMedia: AppCompatImageView = itemView.findViewById(R.id.photo)
+            val ivPlayMark: AppCompatImageView = itemView.findViewById(R.id.play_mark)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder = MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_tv_slider_fast_scroller, parent, false))
-        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) { imageLoader(getItem(position), holder.ivMedia) }
+        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
+            getItem(position).let { remotePhoto ->
+                imageLoader(remotePhoto, holder.ivMedia)
+                holder.ivPlayMark.isVisible = Tools.isMediaPlayable(remotePhoto.photo.mimeType)
+            }
+        }
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             recyclerView.setOnKeyListener(null)
             for (i in 0 until currentList.size) { recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> cancelLoader((holder as MediaViewHolder).ivMedia) }}
