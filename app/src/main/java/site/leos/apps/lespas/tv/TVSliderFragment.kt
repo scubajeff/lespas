@@ -301,11 +301,11 @@ class TVSliderFragment: Fragment() {
                         }
                     }
                 }}
-                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { launch {
-                    isSortedByDate = it.sortOrder in Album.BY_DATE_TAKEN_ASC..Album.BY_DATE_MODIFIED_DESC || it.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..Album.BY_DATE_MODIFIED_DESC_WIDE
-                    imageLoaderModel.publicationContentMeta.collect {
-                        mediaAdapter.submitList(it)
-                        fastScrollAdapter.submitList(it)
+                requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { shared -> launch {
+                    isSortedByDate = shared.sortOrder in Album.BY_DATE_TAKEN_ASC..Album.BY_DATE_MODIFIED_DESC || shared.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..Album.BY_DATE_MODIFIED_DESC_WIDE
+                    imageLoaderModel.publicationContentMeta.collect { photos ->
+                        mediaAdapter.submitList(photos)
+                        fastScrollAdapter.submitList(photos)
                     }
                 }}
             }
