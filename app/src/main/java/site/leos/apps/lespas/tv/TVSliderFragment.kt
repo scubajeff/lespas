@@ -94,6 +94,7 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.story.BGMViewModel
 import site.leos.apps.lespas.story.BGMViewModelFactory
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -134,7 +135,7 @@ class TVSliderFragment: Fragment() {
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var playerViewModel: VideoPlayerViewModel
-    private lateinit var bgmModel: BGMViewModel
+    private var bgmModel: BGMViewModel? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private val metaDisplayThread = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
@@ -183,12 +184,6 @@ class TVSliderFragment: Fragment() {
             isShared = true
         }
         setFragmentResult(RESULT_REQUEST_KEY, bundleOf(KEY_SHARED to isShared))
-        bgmModel = ViewModelProvider(
-            this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(),
-                if (isShared) "${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}"
-                else "file://${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-            )
-        )[BGMViewModel::class.java]
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -200,6 +195,22 @@ class TVSliderFragment: Fragment() {
                 }
             }
         }.apply { isEnabled = true })
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            (if (isShared) imageLoaderModel.isExisted("${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}")
+            else File("${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}").exists()).let { exist ->
+                if (exist) withContext(Dispatchers.Main) {
+                    bgmModel = ViewModelProvider(
+                        this@TVSliderFragment,
+                        BGMViewModelFactory(
+                            requireActivity(), imageLoaderModel.getCallFactory(),
+                            if (isShared) "${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}"
+                            else "file://${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                            )
+                    )[BGMViewModel::class.java]
+                }
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -278,9 +289,9 @@ class TVSliderFragment: Fragment() {
                     super.onPageSelected(position)
 
                     if (mediaAdapter.isSlideVideo(position)) {
-                        bgmModel.fadeOutBGM()
+                        bgmModel?.fadeOutBGM()
                     } else {
-                        bgmModel.fadeInBGM()
+                        bgmModel?.fadeInBGM()
                         mediaAdapter.getCaption(position).let { if (it.isNotEmpty()) { startShowingCaption(it) }}
                     }
                 }
@@ -296,7 +307,7 @@ class TVSliderFragment: Fragment() {
 
                         // Panorama photo need focus to play with, filter them now
                         Tools.sortPhotos(photos.filter { it.mimeType != Tools.PANORAMA_MIMETYPE }, album.sortOrder).map { NCShareViewModel.RemotePhoto(it, serverPath) }.run {
-                            mediaAdapter.submitList(this) { bgmModel.fadeInBGM() }
+                            mediaAdapter.submitList(this) { bgmModel?.fadeInBGM() }
                             fastScrollAdapter.submitList(this)
                         }
                     }
@@ -304,7 +315,7 @@ class TVSliderFragment: Fragment() {
                 requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { shared -> launch {
                     isSortedByDate = shared.sortOrder in Album.BY_DATE_TAKEN_ASC..Album.BY_DATE_MODIFIED_DESC || shared.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..Album.BY_DATE_MODIFIED_DESC_WIDE
                     imageLoaderModel.publicationContentMeta.collect { photos ->
-                        mediaAdapter.submitList(photos) { bgmModel.fadeInBGM() }
+                        mediaAdapter.submitList(photos) { bgmModel?.fadeInBGM() }
                         fastScrollAdapter.submitList(photos)
                     }
                 }}
@@ -321,7 +332,7 @@ class TVSliderFragment: Fragment() {
 
     override fun onStop() {
         try { if (mediaAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) handler.postDelayed({ playerViewModel.pause(Uri.EMPTY) }, 300) } catch (_: IndexOutOfBoundsException) {}
-        bgmModel.fadeOutBGM()
+        bgmModel?.fadeOutBGM()
 
         super.onStop()
     }
