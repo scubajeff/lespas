@@ -94,7 +94,6 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.story.BGMViewModel
 import site.leos.apps.lespas.story.BGMViewModelFactory
 import site.leos.apps.lespas.sync.SyncAdapter
-import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -184,8 +183,12 @@ class TVSliderFragment: Fragment() {
             isShared = true
         }
         setFragmentResult(RESULT_REQUEST_KEY, bundleOf(KEY_SHARED to isShared))
-        bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), null))[BGMViewModel::class.java]
-
+        bgmModel = ViewModelProvider(
+            this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(),
+                if (isShared) "${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}"
+                else "file://${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+            )
+        )[BGMViewModel::class.java]
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -197,18 +200,6 @@ class TVSliderFragment: Fragment() {
                 }
             }
         }.apply { isEnabled = true })
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            (if (isShared) imageLoaderModel.isExisted("${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}")
-            else File("${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}").exists()).let { exist ->
-                if (exist) withContext(Dispatchers.Main) { bgmModel.playMedia(
-                    if (isShared) "${imageLoaderModel.getResourceRoot()}${sharedPath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}"
-                    else "file://${Tools.getLocalRoot(requireContext())}/${requireArguments().parcelable<Album>(KEY_ALBUM)!!.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-
-                )}
-            }
-        }
-
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
