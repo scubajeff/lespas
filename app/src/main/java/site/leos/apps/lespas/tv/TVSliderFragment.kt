@@ -313,7 +313,7 @@ class TVSliderFragment: Fragment() {
                 requireArguments().parcelable<NCShareViewModel.ShareWithMe>(KEY_SHARED)?.let { shared -> launch {
                     isSortedByDate = shared.sortOrder in Album.BY_DATE_TAKEN_ASC..Album.BY_DATE_MODIFIED_DESC || shared.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..Album.BY_DATE_MODIFIED_DESC_WIDE
                     imageLoaderModel.publicationContentMeta.collect { photos ->
-                        mediaAdapter.submitList(photos)
+                        mediaAdapter.submitList(photos) { bgmModel.fadeInBGM() }
                         fastScrollAdapter.submitList(photos)
                     }
                 }}
