@@ -255,7 +255,7 @@ class TVMainFragment: Fragment() {
             if (result.getBoolean(TVSliderFragment.KEY_SHARED)) {
                 smoothScrollSharedWithView = false
                 sharedWithView.requestFocus()
-            }
+            } else myAlbumsView.requestFocus()
         }
     }
 
