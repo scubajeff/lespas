@@ -21,6 +21,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import okhttp3.OkHttpClient
 
-class BGMViewModelFactory(private val context: Context, private val callFactory: OkHttpClient, private val bgmFile: String): ViewModelProvider.NewInstanceFactory() {
+class BGMViewModelFactory(private val context: Context, private val callFactory: OkHttpClient, private val bgmFile: String?): ViewModelProvider.NewInstanceFactory() {
     override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(BGMViewModel(context, callFactory, bgmFile))!!
 }
