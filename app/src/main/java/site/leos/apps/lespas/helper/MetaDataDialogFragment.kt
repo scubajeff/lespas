@@ -304,13 +304,20 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         if (Tools.isPhotoFromGallery(rPhoto)) {
                             // Media from device gallery
                             pm.size = rPhoto.photo.caption.toLong()
+
+                            // The meta retriever used by media store is much stronger than the one provided by ExifInterface
+                            pm.photo?.width = rPhoto.photo.width
+                            pm.photo?.height = rPhoto.photo.height
+
                             val pUri = rPhoto.photo.id.toUri()
                             if (Tools.hasExif(rPhoto.photo.mimeType)) {
                                 exif = try {
-                                    (context.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri))
-                                } catch (_: SecurityException) {
+                                    context.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri)
+                                } catch (e: SecurityException) {
+                                    e.printStackTrace()
                                     context.contentResolver.openInputStream(pUri)
-                                } catch (_: UnsupportedOperationException) {
+                                } catch (e: UnsupportedOperationException) {
+                                    e.printStackTrace()
                                     context.contentResolver.openInputStream(pUri)
                                 }?.use { try { ExifInterface(it) } catch (_: OutOfMemoryError) { null }}
                             } else {
@@ -367,13 +374,13 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                         pm.date = Tools.getImageTakenDate(this)
 
-                        pm.photo?.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
-                        pm.photo?.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
+                        if (pm.photo?.width == 0) pm.photo.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
+                        if (pm.photo?.height == 0) pm.photo.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
                     }
 
                     _photoMeta.emit(pm)
 
-                } catch (_: Exception) {}
+                } catch (e: Exception) { e.printStackTrace() }
             }
         }
     }
