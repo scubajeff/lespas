@@ -266,11 +266,11 @@ class TVSliderFragment: Fragment() {
                             }
                             true
                         }
-                        KeyEvent.KEYCODE_DPAD_UP -> {
+                        KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_PAGE_UP -> {
                             changeDate(true)
                             true
                         }
-                        KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> {
                             changeDate(false)
                             true
                         }
