@@ -1268,7 +1268,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 */
                         album.startDate.atZone(ZoneId.of("Z")).toInstant(),
                         album.endDate.atZone(ZoneId.of("Z")).toInstant()
-                    ).toDays().toInt()
+                    ).toDays()
                     tvDuration.text = when (days) {
                         in 0..21 -> resources.getString(R.string.duration_days, days + 1)
                         in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)

@@ -126,7 +126,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val isNotTV = !application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
             prepare(account)
-            while (true && isNotTV) {
+            while (isNotTV) {
                 val actions = actionRepository.getAllPendingActions()
                 if (actions.isEmpty()) break
                 syncLocalChanges(actions)
