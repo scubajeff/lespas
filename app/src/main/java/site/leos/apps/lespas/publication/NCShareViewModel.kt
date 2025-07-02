@@ -173,7 +173,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val savedSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     private var sessionVolumePercentage = savedSystemVolume.toFloat() / audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
 
-    private val isNotTV = application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+    private val isTV = application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
     fun saveSessionVolumePercentage(newPercentage: Float) {
         sessionVolumePercentage = newPercentage
@@ -218,13 +218,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            if (isNotTV) {
+            if (isTV) refreshShareWithMe()
+            else {
                 _sharees.value = refreshSharees()
                 _shareByMe.value = refreshShareByMe()
                 refreshShareWithMe()
                 refreshUser()
                 fetchBlog()
-            } else refreshShareWithMe()
+            }
         }
     }
 
@@ -435,14 +436,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 return result
             } catch (e: UnknownHostException) {
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: SocketTimeoutException) {
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: Exception) {
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
                 e.printStackTrace()
                 break
             }
