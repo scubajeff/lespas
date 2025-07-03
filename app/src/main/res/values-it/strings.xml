@@ -428,4 +428,6 @@
     <string name="checkbox_text_remove_local_copy">La copia locale in questo dispositivo</string>
     <string name="msg_media_manager_rationale_for_deletion">Per evitare la conferma dell\'eliminazione da parte del sistema, è necessario concedere a Les Pas l\'autorizzazione a gestire i media.</string>
     <string name="video_play_header">Riproduzione video</string>
+    <string name="title_tv_my_albums">I miei album</string>
+    <string name="title_tv_shared_with_me">Ricevuta condivisa</string>
 </resources>

@@ -21,6 +21,7 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -58,6 +59,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import com.panoramagl.PLImage
@@ -83,6 +85,7 @@ import okhttp3.FormBody
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.closeQuietly
+import okhttp3.internal.headersContentLength
 import okio.BufferedSource
 import okio.IOException
 import okio.buffer
@@ -169,13 +172,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val audioManager = application.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val savedSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     private var sessionVolumePercentage = savedSystemVolume.toFloat() / audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+
+    private val isTV = application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
     fun saveSessionVolumePercentage(newPercentage: Float) {
         sessionVolumePercentage = newPercentage
 
         // Restore system volume setting whenever saveSessionVolumePercentage() is called
-        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {}
+        //try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {}
     }
     fun getSessionVolumePercentage() = sessionVolumePercentage
+    fun getSavedSystemVolume() = savedSystemVolume
 
     init {
         AccountManager.get(application).run {
@@ -211,11 +218,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            _sharees.value = refreshSharees()
-            _shareByMe.value = refreshShareByMe()
-            refreshShareWithMe()
-            refreshUser()
-            fetchBlog()
+            if (isTV) refreshShareWithMe()
+            else {
+                _sharees.value = refreshSharees()
+                _shareByMe.value = refreshShareByMe()
+                refreshShareWithMe()
+                refreshUser()
+                fetchBlog()
+            }
         }
     }
 
@@ -426,14 +436,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 return result
             } catch (e: UnknownHostException) {
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: SocketTimeoutException) {
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: Exception) {
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
                 e.printStackTrace()
                 break
             }
@@ -806,20 +819,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(remotePhoto: RemotePhoto): ExifInterface? {
+    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface?, Long> {
         var response: Response? = null
-        var result: ExifInterface? = null
+        var exif: ExifInterface? = null
+        var size = 0L
 
         if (Tools.hasExif(remotePhoto.photo.mimeType)) try {
             response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", false)
-            result = try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null }
+            exif = try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null }
+            size = response.headersContentLength()
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
             response?.close()
         }
 
-        return result
+        return exif to size
     }
 
     fun getMediaSize(remotePhoto: RemotePhoto): Long {
@@ -1302,41 +1317,53 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun interface LoadCompleteListener {
         fun onLoadComplete(fullSize: Boolean)
     }
+    fun interface GetPaletteListener {
+        fun onGetPaletteComplete(palette: Palette?)
+    }
 
-    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null, callBack: LoadCompleteListener? = null) {
+    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null,
+        paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
-        // For full image, show a cached thumbnail version first
-        if (viewType == TYPE_FULL) {
-            imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                // Show cached low resolution bitmap first before loading full size bitmap
-                view.setImageBitmap(it)
-                view.setTag(R.id.HDR_TAG, false)
-                callBack?.onLoadComplete(false)
-            } ?: run {
-                // For camera roll items, load thumbnail if cache missed
-                if (Tools.isPhotoFromGallery(imagePhoto)) {
-                    try {
-                        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            view.context.contentResolver.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                                if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
-                                else this
+        when(viewType) {
+            // Set a low resolution version first for TYPE_FULL image
+            TYPE_FULL -> {
+                imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                    // Load low resolution image from cache of TYPE_GRID version
+                    view.setImageBitmap(it)
+                    view.setTag(R.id.HDR_TAG, false)
+                    callBack?.onLoadComplete(false)
+                } ?: run {
+                    // For camera roll items, load thumbnail if cache missed
+                    if (Tools.isPhotoFromGallery(imagePhoto)) {
+                        try {
+                            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                view.context.contentResolver.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
+                            } else {
+                                @Suppress("DEPRECATION")
+                                MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
+                                    if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
+                                    else this
+                                }
+                            })?.let {
+                                view.setImageBitmap(it)
+                                view.setTag(R.id.HDR_TAG, false)
+                                callBack?.onLoadComplete(false)
                             }
-                        })?.let {
-                            view.setImageBitmap(it)
-                            view.setTag(R.id.HDR_TAG, false)
-                            callBack?.onLoadComplete(false)
-                        }
-                    } catch (_: Exception) {}
-                } else view.setImageDrawable(null)
+                        } catch (_: Exception) {}
+                    }
+                    // If no low resolution version found, clear the image to reveal the loading sign in the background
+                    else view.setImageDrawable(null)
+                }
             }
-        } else view.setImageDrawable(null)
+            // For TV full image, stay with the old image
+            TYPE_TV_FULL -> {}
+            // For other types, clear the image to reveal the loading sign in the background
+            else -> { view.setImageDrawable(null) }
+        }
 
-        // For items of remote album, show loading animation for image already uploaded
-        if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+        // Except for TV, show loading animation for remote image which has been already uploaded
+        if (viewType != TYPE_TV_FULL && imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
             view.background = (if (viewType == TYPE_FULL || viewType == TYPE_PANORAMA) loadingDrawableLV else loadingDrawable).apply { start() }
 
             // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
@@ -1458,7 +1485,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             }?.use { sourceStream ->
                                 when (type) {
-                                    TYPE_FULL, TYPE_PANORAMA -> {
+                                    TYPE_FULL, TYPE_PANORAMA, TYPE_TV_FULL -> {
                                         updateCache = false
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
@@ -1491,7 +1518,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     ensureActive()
                                                     if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.width == 0) {
                                                         // This is a early backup of camera roll which do not has meta info yet
-                                                        getMediaExif(imagePhoto)?.let { exif -> imagePhoto.photo.orientation = exif.rotationDegrees }
+                                                        getMediaExif(imagePhoto).first?.let { exif -> imagePhoto.photo.orientation = exif.rotationDegrees }
                                                     }
                                                     // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
                                                     // Hence, picture with original orientation must be allowed in local album
@@ -1594,7 +1621,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             } else {
                                 view.setImageBitmap(it)
-                                view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && viewType == TYPE_FULL && it.hasGainmap())
+                                view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (viewType == TYPE_FULL || viewType == TYPE_TV_FULL) && it.hasGainmap())
                                 view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
                             }
                         } ?: run {
@@ -1604,8 +1631,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
 
+                    // Get bitmap palette if needed
+                    paletteCallBack?.run {
+                        bitmap?.let { bmp ->
+                            Palette.from(bmp).generate { paletteCallBack.onGetPaletteComplete(it) }
+                        } ?: paletteCallBack.onGetPaletteComplete(null)
+                    }
+
                     // Stop loading indicator
                     view.setBackgroundResource(0)
+
                     callBack?.onLoadComplete(true)
                 }
             }
@@ -1630,6 +1665,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // Replacing previous job
         replacePrevious(jobKey, job)
     }
+
+    fun getBitmapFromImageCache(key: String): Bitmap? = imageCache.get(key)
 
     private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
         return if (Tools.isPhotoFromGallery(imagePhoto)) {
@@ -2029,6 +2066,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val TYPE_VIDEO = "_video"
         const val TYPE_IN_MAP = "_map"
         const val TYPE_PANORAMA = "_pano"
+        const val TYPE_TV_FULL = "_tv"
         const val TYPE_EMPTY_ROLL_COVER = "empty"
 
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size

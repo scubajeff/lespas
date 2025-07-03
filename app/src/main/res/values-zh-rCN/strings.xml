@@ -360,4 +360,6 @@
     <string name="checkbox_text_remove_local_copy">本设备中的文件</string>
     <string name="msg_media_manager_rationale_for_deletion">若需跳过系统的删除确认对话框，请授予 Les Pas 管理媒体权限。</string>
     <string name="video_play_header">视频播放</string>
+    <string name="title_tv_my_albums">我的相册</string>
+    <string name="title_tv_shared_with_me">亲友分享</string>
 </resources>

@@ -19,6 +19,7 @@ package site.leos.apps.lespas.helper
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.provider.Settings
@@ -45,7 +46,7 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val savedSystemVolume: Int, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var window = activity.window
@@ -93,8 +94,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
         }
 
-        // Video not gonna be set here when in slideshow mode
-        if (!slideshowMode) {
+        // Volume not gonna be set here when in slideshow mode or on TV
+        if (!slideshowMode && !activity.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
             when {
                 // Regarding default mute setting
                 PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.default_mute_perf_key), false) -> mute()
@@ -108,6 +109,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
     fun addListener(listener: Player.Listener) { videoPlayer.addListener(listener) }
 
+    fun isPlaying() = videoPlayer.isPlaying
     fun rewind() { videoPlayer.seekTo(0L) }
     fun play() { videoPlayer.play() }
     fun resume(view: PlayerView?, uri: Uri?) {
@@ -116,6 +118,9 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Hide controller view by default
         view?.hideController()
+
+        // Restore session volume
+        setVolume(0f)
 
         if (view != null && uri != null) {
             if (view.context is Activity) window = (view.context as Activity).window
@@ -157,11 +162,15 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
             // Only pause if current playing video is the same as the argument. When swiping between two video items, onViewAttachedToWindow in SeamlessMediaSliderAdapter will call pause with last item's uri
             // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
-            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) videoPlayer.pause()
+            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) {
+                videoPlayer.pause()
+                if (!slideshowMode) resetSystemVolume()
+            }
         }.apply {
             invokeOnCompletion { pauseJob = null }
         }
     }
+    fun playOrPause() { if (videoPlayer.isPlaying) videoPlayer.pause() else videoPlayer.play() }
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
 
     private fun mute() {
@@ -184,6 +193,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (currentVolumePercentage * maxSystemVolume).toInt(), 0) } catch (_: SecurityException) {}
     }
     fun getVolume(): Float = currentVolumePercentage
+    fun resetSystemVolume() { try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedSystemVolume, 0) } catch (_: SecurityException) {} }
 
     fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
     fun setBrightness(increment: Float) {
@@ -208,6 +218,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Reset screen auto turn off, brightness and volume setting
         resetBrightness()
+        resetSystemVolume()
 
         super.onCleared()
     }

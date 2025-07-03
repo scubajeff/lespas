@@ -1,0 +1,3 @@
+* Prise en charge initiale d'Android TV
+* Traduction en russe ajoutée grâce à l'utilisateur de Github @yurtpage
+* Diverses améliorations et corrections de bugs

@@ -64,7 +64,6 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
@@ -91,8 +90,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //requireArguments().getParcelable<Photo>(KEY_MEDIA)?.let { photo = NCShareViewModel.RemotePhoto(it, "") }
-        //requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let { photo = it }
         requireArguments().parcelable<Photo>(KEY_MEDIA)?.let { remotePhoto = NCShareViewModel.RemotePhoto(it, "") }
         requireArguments().parcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let { remotePhoto = it }
         exifModel = ViewModelProvider(this, ExifModelFactory(requireActivity(), remotePhoto))[ExifModel::class.java]
@@ -201,7 +198,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     isFlingEnabled = false
                     overlays.add(CopyrightOverlay(requireContext()))
 
-
                     // Enable map panning inside Scrollview
                     setOnTouchListener { v, event ->
                         when (event.action) {
@@ -223,7 +219,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     this.overlays.add(it)
                 }
 
-                overlays
                 if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
                     overlayManager.tilesOverlay.setColorFilter(
                         ColorMatrixColorFilter(
@@ -267,7 +262,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     // TODO robust way to detect if media is from publications
                     if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
                         GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latitude, longitude, 1)
-                    } catch (e: IOException) { null }?.let { result ->
+                    } catch (_: IOException) { null }?.let { result ->
                         if (result.isNotEmpty()) {
                             result[0]?.let { address ->
                                 if (address.countryName != null) {
@@ -309,13 +304,20 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         if (Tools.isPhotoFromGallery(rPhoto)) {
                             // Media from device gallery
                             pm.size = rPhoto.photo.caption.toLong()
+
+                            // The meta retriever used by media store is much stronger than the one provided by ExifInterface
+                            pm.photo?.width = rPhoto.photo.width
+                            pm.photo?.height = rPhoto.photo.height
+
                             val pUri = rPhoto.photo.id.toUri()
                             if (Tools.hasExif(rPhoto.photo.mimeType)) {
                                 exif = try {
-                                    (context.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri))
+                                    context.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri)
                                 } catch (e: SecurityException) {
+                                    e.printStackTrace()
                                     context.contentResolver.openInputStream(pUri)
                                 } catch (e: UnsupportedOperationException) {
+                                    e.printStackTrace()
                                     context.contentResolver.openInputStream(pUri)
                                 }?.use { try { ExifInterface(it) } catch (_: OutOfMemoryError) { null }}
                             } else {
@@ -343,8 +345,14 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                     } else {
                         (ViewModelProvider(context))[NCShareViewModel::class.java].run {
-                            exif = getMediaExif(rPhoto)
-                            pm.size = if (Tools.isPhotoFromArchive(rPhoto)) try { rPhoto.photo.caption.toLong() } catch (_: NumberFormatException) { 0L } else getMediaSize(rPhoto)
+                            getMediaExif(rPhoto).let { result ->
+                                exif = result.first
+                                pm.size = when {
+                                    Tools.isPhotoFromArchive(rPhoto) -> try { rPhoto.photo.caption.toLong() } catch (_: NumberFormatException) { 0L }
+                                    result.second > 0 -> result.second
+                                    else -> getMediaSize(rPhoto)
+                                }
+                            }
                         }
                     }
 
@@ -366,18 +374,18 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                         pm.date = Tools.getImageTakenDate(this)
 
-                        pm.photo?.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
-                        pm.photo?.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
+                        if (pm.photo?.width == 0) pm.photo.width = getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
+                        if (pm.photo?.height == 0) pm.photo.height = getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
                     }
 
                     _photoMeta.emit(pm)
 
-                } catch (_: Exception) {}
+                } catch (e: Exception) { e.printStackTrace() }
             }
         }
     }
 
-    private data class PhotoMeta(
+    data class PhotoMeta(
         val photo: Photo? = null,
         var size: Long = 0L,
         var mfg: String = "",

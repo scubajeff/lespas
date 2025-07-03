@@ -106,4 +106,18 @@
         android:visibility="gone"
         tools:visibility="visible"
         tools:ignore="RtlHardcoded" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/pause_state"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_margin="@dimen/tv_padding"
+        android:src="@drawable/ic_baseline_pause_24"
+        app:tint="@color/lespas_white"
+        android:background="@drawable/play_button_background"
+        android:visibility="invisible"
+        tools:visibility="visible" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

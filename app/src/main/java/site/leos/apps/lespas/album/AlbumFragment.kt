@@ -787,7 +787,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentAlbum = Album(lastModified = LocalDateTime.MIN)
             private var withThese = mutableListOf<NCShareViewModel.Recipient>()
-            private val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
+            val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
             private val pbSync = itemView.findViewById<ContentLoadingProgressBar>(R.id.sync_progress)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
@@ -875,7 +875,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
             val view = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent,false)
             view.findViewById<TextView>(R.id.title)?.apply {
                 compoundDrawablePadding = 16
@@ -884,16 +884,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             return AlbumViewHolder(view)
         }
 
-        override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
+        override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
             holder.bindViewItems(currentList[position])
         }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-            for (i in 0 until currentList.size) {
-                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
-                    holder.itemView.findViewById<View>(R.id.coverart)?.let { cancelLoader(it) }
-                }
-            }
+            for (i in 0 until currentList.size) { recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> cancelLoader((holder as AlbumViewHolder).ivCover) }}
             super.onDetachedFromRecyclerView(recyclerView)
         }
 

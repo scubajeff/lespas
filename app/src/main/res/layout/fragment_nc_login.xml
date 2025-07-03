@@ -80,7 +80,7 @@
         app:expandedHintEnabled="false"
         app:prefixText="https://">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/host"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/extra_padding">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        style="@style/TextAppearance.Leanback.Title"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:textAlignment="center"
+        android:textStyle="bold"
+        android:autoSizeTextType="uniform"
+        android:text="@string/pick_home"
+        tools:ignore="UnusedAttribute" />
+
+    <TextView
+        android:id="@+id/note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        android:paddingBottom="@dimen/extra_padding"
+        android:paddingHorizontal="@dimen/small_padding"
+        style="@style/TextAppearance.Leanback.Row.Header.Description"
+        android:textAlignment="center"
+        android:text="@string/pick_home_note" />
+
+    <TextView
+        android:id="@+id/home_folder_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/note"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="@dimen/small_padding"
+        style="@style/TextAppearance.Leanback.Row.Header"
+        android:lines="1"
+        android:ellipsize="middle"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="12sp"
+        tools:text="/Pictures"
+        tools:ignore="UnusedAttribute" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/ok_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginBottom="@dimen/extra_padding"
+        style="@style/TextAppearance.Leanback.DetailsActionButton"
+        android:text="@string/button_text_set_as_home"
+        android:tooltipText="@string/button_text_set_as_home"
+        tools:ignore="UnusedAttribute" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/folder_grid"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/home_folder_label"
+        app:layout_constraintBottom_toTopOf="@id/ok_button"
+        android:layout_marginTop="@dimen/big_padding"
+        android:layout_marginBottom="@dimen/extra_padding"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="@integer/folder_grid_span_count"
+        android:focusedByDefault="true"
+        android:nextFocusUp="@id/ok_button"
+        android:nextFocusDown="@id/ok_button"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:listitem="@layout/recyclerview_item_folder" />
+
+    <ProgressBar
+        android:id="@+id/waiting_sign"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/home_folder_label"
+        android:indeterminateTint="@android:color/darker_gray"
+        android:layout_marginTop="@dimen/big_padding"
+        android:indeterminate="true"
+        android:visibility="invisible"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

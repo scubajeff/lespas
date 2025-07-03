@@ -503,4 +503,7 @@
         <item quantity="other">, %1$d years ago today</item>
     </plurals>
 
+    <!-- TV Main Fragment -->
+    <string name="title_tv_my_albums">My Albums</string>
+    <string name="title_tv_shared_with_me">Shares Received</string>
 </resources>

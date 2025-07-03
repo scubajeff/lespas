@@ -22,6 +22,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
@@ -42,6 +43,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
@@ -60,7 +62,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
 import com.google.android.material.progressindicator.IndeterminateDrawable
-import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -103,9 +104,9 @@ import javax.net.ssl.X509TrustManager
 
 class NCLoginFragment: Fragment() {
     private lateinit var inputArea: TextInputLayout
-    private lateinit var hostEditText: TextInputEditText
+    private lateinit var hostEditText: AppCompatEditText
 
-    private var doAnimation = true
+    private var isNotTV = true
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<Array<String>>
 
@@ -122,19 +123,7 @@ class NCLoginFragment: Fragment() {
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            Handler(Looper.getMainLooper()).post {
-                // Restart activity
-                requireActivity().apply {
-                    val myIntent = intent.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION) }
-                    @Suppress("DEPRECATION")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(AppCompatActivity.OVERRIDE_TRANSITION_CLOSE, 0, 0) else overridePendingTransition(0, 0)
-                    finish()
-
-                    @Suppress("DEPRECATION")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(AppCompatActivity.OVERRIDE_TRANSITION_OPEN, 0, 0) else overridePendingTransition(0, 0)
-                    startActivity(myIntent)
-                }
-            }
+            restartApp()
         }
 
         scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -156,10 +145,12 @@ class NCLoginFragment: Fragment() {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, pingJobBackPressedCallback)
+
+        isNotTV = !requireActivity().packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(if (savedInstanceState == null && doAnimation) R.layout.fragment_nc_login_motion else R.layout.fragment_nc_login, container, false)
+        inflater.inflate(if (savedInstanceState == null && isNotTV) R.layout.fragment_nc_login_motion else R.layout.fragment_nc_login, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -175,16 +166,18 @@ class NCLoginFragment: Fragment() {
             start()
         }
 
-        inputArea = view.findViewById<TextInputLayout>(R.id.input_area).apply {
+        if (isNotTV) inputArea = view.findViewById<TextInputLayout>(R.id.input_area).apply {
             findViewById<TextView>(com.google.android.material.R.id.textinput_prefix_text).setOnClickListener {
                 authenticateModel.toggleUseHttps()
                 inputArea.prefixText = if (authenticateModel.getCredential().https) "https://" else "http://"
             }
         }
-        hostEditText = view.findViewById<TextInputEditText>(R.id.host).apply {
+        hostEditText = view.findViewById<AppCompatEditText>(R.id.host).apply {
             setOnEditorActionListener { _, actionId, keyEvent ->
                 if (actionId == EditorInfo.IME_ACTION_GO || keyEvent.keyCode == KeyEvent.KEYCODE_ENTER) {
-                    checkServer((if (authenticateModel.getCredential().https) "https://" else "http://") + text.toString().trim())
+                    var uriString = text.toString()
+                    if (!uriString.contains("://")) uriString = (if (authenticateModel.getCredential().https) "https://" else "http://") + uriString
+                    checkServer(uriString.trim())
                     true
                 } else false
             }
@@ -252,9 +245,11 @@ class NCLoginFragment: Fragment() {
         parentFragmentManager.setFragmentResultListener(NCAuthenticationFragment.KEY_AUTHENTICATION_REQUEST, viewLifecycleOwner) { _, result ->
             result.getBoolean(NCAuthenticationFragment.KEY_AUTHENTICATION_RESULT).let { success ->
                 if (success) {
-                    // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
-                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                    storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
+                    if (isNotTV) {
+                        // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
+                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                        storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
+                    } else restartApp()
                 } else showError(NETWORK_ERROR)
             }
         }
@@ -269,7 +264,7 @@ class NCLoginFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        //requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
 
         scannerAvailable = scanIntent.resolveActivity(requireActivity().packageManager) != null
         parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG_INSTALL_SCANNER)?.let {
@@ -287,9 +282,20 @@ class NCLoginFragment: Fragment() {
         }
     }
 
-    override fun onDestroyView() {
-        doAnimation = false
-        super.onDestroyView()
+    private fun restartApp() {
+        Handler(Looper.getMainLooper()).post {
+            // Restart activity
+            requireActivity().apply {
+                val myIntent = intent.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION) }
+                @Suppress("DEPRECATION")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(AppCompatActivity.OVERRIDE_TRANSITION_CLOSE, 0, 0) else overridePendingTransition(0, 0)
+                finish()
+
+                @Suppress("DEPRECATION")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(AppCompatActivity.OVERRIDE_TRANSITION_OPEN, 0, 0) else overridePendingTransition(0, 0)
+                startActivity(myIntent)
+            }
+        }
     }
 
     private fun disableInputWhilePinging() {
@@ -299,7 +305,7 @@ class NCLoginFragment: Fragment() {
     }
 
     private fun setEndIconMode(mode: Int) {
-        when(mode) {
+        if (isNotTV) when(mode) {
             ICON_MODE_ERROR -> {
                 inputArea.endIconMode = TextInputLayout.END_ICON_NONE
                 inputArea.endIconDrawable = null
@@ -333,6 +339,8 @@ class NCLoginFragment: Fragment() {
                 inputArea.endIconDrawable = authenticateModel.getLoadingIndicatorDrawable()
                 inputArea.setEndIconOnClickListener {  }
             }
+        } else {
+            hostEditText.requestFocus()
         }
     }
 

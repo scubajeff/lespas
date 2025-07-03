@@ -1,3 +1,8 @@
+## Version 2.10.0
+* Initial support for Android TV
+* ru translation added thanks to Github user @yurtpage
+* Various improvements and bug fixes
+
 ## Version 2.9.10
 * Updated Snapseed integration to cope with behaviour changes in latest Snapseed
 * Updated German translation from Github user @dave7895

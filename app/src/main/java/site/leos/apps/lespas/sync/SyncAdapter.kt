@@ -26,6 +26,7 @@ import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.Context
 import android.content.SyncResult
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -122,22 +123,21 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
 
         try {
+            val isNotTV = !application.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
             prepare(account)
-            while (true) {
+            while (isNotTV) {
                 val actions = actionRepository.getAllPendingActions()
                 if (actions.isEmpty()) break
                 syncLocalChanges(actions)
             }
             syncRemoteChanges()
-            updateMeta()
-/*
-            if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) backup(dcimBase)
-            if (sp.getBoolean(application.getString(R.string.pictures_backup_pref_key), false)) backup(picturesBase)
-*/
-            backupGallery()
-            updateArchiveSnapshot()
-            if (prefBackupNeeded) backupPreference()
+            if (isNotTV) {
+                updateMeta()
+                backupGallery()
+                updateArchiveSnapshot()
+                if (prefBackupNeeded) backupPreference()
+            }
 
             // Clear status counters
             syncResult.stats.clear()
@@ -1126,7 +1126,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Skip newly created hidden album on server, do not sync changes of it until it's un-hidden
                     //if (hidden) return@forEach
 
-                    // No hit on local, a new album from server, (make sure the 'cover' property is set to Album.NO_COVER, denotes a new album which will NOT be included in album list)
+                    // No hit on local, a new album from server
                     // Default album attribute set to "Remote" for any album not created by this device
                     changedAlbums.add(
                         Album(
@@ -1359,13 +1359,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         // If content meta file modified time is not earlier than album folder modified time, there is no modification to this album done on server, safe to use content meta
                         val photoMeta = mutableListOf<Photo>()
                         var pId: String
+                        var caption: String
 
                         try {
                             webDav.getStream("$lespasBase/${changedAlbum.name}/${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
                                 val lespasJson = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas")
                                 val version = try {
                                     lespasJson.getInt("version")
-                                } catch (e: JSONException) {
+                                } catch (_: JSONException) {
                                     1
                                 }
                                 when {
@@ -1387,23 +1388,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         contentMetaUpdatedNeeded.add(changedAlbum.name)
                                                         return@use
                                                     }
-                                                    photoMeta.add(
-                                                        Photo(
-                                                            id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
-                                                            eTag = it.eTag,
-                                                            dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"), true)} catch (e: Exception) { LocalDateTime.now() }, lastModified = it.lastModified,
-                                                            width = getInt("width"), height = getInt("height"),
-                                                            caption = getString("caption"),
-                                                            orientation = getInt("orientation"),
-                                                            latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
-/*
-                                                        id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
-                                                        eTag = it.eTag,
-                                                        dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
-                                                        width = getInt("width"), height = getInt("height"),
-*/
-                                                        )
-                                                    )
+                                                    getString("mime").let { mimeType ->
+                                                        // TODO Safety check on media mimetype is here to avoid adding wrong file into album due to a bug introduced when adding AVIF format support in version 2.9.16
+                                                        if (mimeType.startsWith("video/", true) || mimeType.startsWith("image/", true)) {
+                                                            // Caption text might not be escaped in previous release, like '\n', catch it here so that the whole process can finish
+                                                            caption = try { getString("caption") } catch (_: JSONException) { "" }
+
+                                                            photoMeta.add(
+                                                                Photo(
+                                                                    id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = mimeType,
+                                                                    eTag = it.eTag,
+                                                                    dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"), true) } catch (_: Exception) { LocalDateTime.now() },
+                                                                    lastModified = it.lastModified,
+                                                                    width = getInt("width"), height = getInt("height"),
+                                                                    caption = Tools.jsonStringToStringEscape(caption),
+                                                                    orientation = getInt("orientation"),
+                                                                    latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
+                                                                )
+                                                            )
+                                                        }
+                                                    }
 
                                                     //Log.e(TAG, "quick syncing new photo ${getString("name")} from server")
 
@@ -1435,7 +1439,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // If content meta file is not available, quit quick sync
                             if (e.statusCode == 404 || e.statusCode == 409) contentMetaUpdatedNeeded.add(changedAlbum.name)
                             else throw e
-                        } catch (e: JSONException) {
+                        } catch (_: JSONException) {
                             // JSON parsing error, quit quick sync
                             contentMetaUpdatedNeeded.add(changedAlbum.name)
                         }

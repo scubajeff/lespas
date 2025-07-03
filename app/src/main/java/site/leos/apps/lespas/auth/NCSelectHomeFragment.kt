@@ -19,6 +19,7 @@ package site.leos.apps.lespas.auth
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
@@ -35,6 +36,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
@@ -66,6 +68,7 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var folderTextView: TextView
     private lateinit var selectButton: MaterialButton
     private lateinit var createButton: MaterialButton
+    private lateinit var selectButtonTV: AppCompatButton
     private lateinit var waitingSign: ProgressBar
     private var grayOutColor = 0
 
@@ -82,6 +85,8 @@ class NCSelectHomeFragment: Fragment() {
     private var currentList = mutableListOf<String>()
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
+
+    private var isTV = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,16 +110,20 @@ class NCSelectHomeFragment: Fragment() {
             )
         }
 
-        folderAdapter = FolderAdapter()
-        { name ->
-            if (selectButton.isEnabled) {
-                var newFolder = ""
-                if (name != PARENT_FOLDER) newFolder = "${selectedFolder}/${name}"
-                else if (selectedFolder.isNotEmpty()) newFolder = selectedFolder.substringBeforeLast("/")
+        isTV = requireContext().packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
-                fetchFolder(newFolder)
+        folderAdapter = FolderAdapter(
+            isTV,
+            { name ->
+                if (if (isTV) selectButtonTV.isEnabled else selectButton.isEnabled) {
+                    var newFolder = ""
+                    if (name != PARENT_FOLDER) newFolder = "${selectedFolder}/${name}"
+                    else if (selectedFolder.isNotEmpty()) newFolder = selectedFolder.substringBeforeLast("/")
+
+                    fetchFolder(newFolder)
+                }
             }
-        }.apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -151,44 +160,48 @@ class NCSelectHomeFragment: Fragment() {
         folderTextView = view.findViewById<TextView>(R.id.home_folder_label).apply { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.title).run { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.note).run { setTextColor(serverTheme.textColor) }
-        selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply {
-            setTextColor(buttonTextColor)
-            strokeColor = buttonTextColor
-            backgroundTintList = buttonBackgroundColor
-            setOnClickListener { returnResult() }
-        }
-        createButton = view.findViewById<MaterialButton>(R.id.create_button).apply {
-            strokeColor = buttonTextColor
-            iconTint = buttonTextColor
-            backgroundTintList = buttonBackgroundColor
-            setOnClickListener {
-                if (parentFragmentManager.findFragmentByTag(NEW_FOLDER_DIALOG) == null) RenameDialogFragment.newInstance("", arrayListOf(), RenameDialogFragment.REQUEST_TYPE_NEW).show(parentFragmentManager, NEW_FOLDER_DIALOG)
-            }
-        }
         waitingSign = view.findViewById(R.id.waiting_sign)
-
-        parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle ->
-            bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { folderName ->
-                createButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
-                    @Suppress("DEPRECATION")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(grayOutColor, BlendMode.SRC_IN) else setColorFilter(grayOutColor, android.graphics.PorterDuff.Mode.SRC_IN)
+        if (isTV) {
+            selectButtonTV = view.findViewById<AppCompatButton>(R.id.ok_button).apply { setOnClickListener { returnResult() } }
+        } else {
+            selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply {
+                setTextColor(buttonTextColor)
+                strokeColor = buttonTextColor
+                backgroundTintList = buttonBackgroundColor
+                setOnClickListener { returnResult() }
+            }
+            createButton = view.findViewById<MaterialButton>(R.id.create_button).apply {
+                strokeColor = buttonTextColor
+                iconTint = buttonTextColor
+                backgroundTintList = buttonBackgroundColor
+                setOnClickListener {
+                    if (parentFragmentManager.findFragmentByTag(NEW_FOLDER_DIALOG) == null) RenameDialogFragment.newInstance("", arrayListOf(), RenameDialogFragment.REQUEST_TYPE_NEW).show(parentFragmentManager, NEW_FOLDER_DIALOG)
                 }
-                setTouchable(false)
+            }
 
-                var success = false
-                newFolderJob = lifecycleScope.launch(Dispatchers.IO) {
-                    try { success = webDav.createFolder("${resourceRoot}/${selectedFolder}/$folderName").isNotEmpty() } catch (_: Exception) {}
+            parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle ->
+                bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { folderName ->
+                    createButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
+                        @Suppress("DEPRECATION")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(grayOutColor, BlendMode.SRC_IN) else setColorFilter(grayOutColor, android.graphics.PorterDuff.Mode.SRC_IN)
+                    }
+                    setTouchable(false)
 
-                    withContext(Dispatchers.Main) {
-                        if (success) fetchFolder("${selectedFolder}/${folderName}")
-                        setTouchable(true)
-                        createButton.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_add_24)
-                        createButton.iconTint = buttonTextColor
+                    var success = false
+                    newFolderJob = lifecycleScope.launch(Dispatchers.IO) {
+                        try { success = webDav.createFolder("${resourceRoot}/${selectedFolder}/$folderName").isNotEmpty() } catch (_: Exception) {}
+
+                        withContext(Dispatchers.Main) {
+                            if (success) fetchFolder("${selectedFolder}/${folderName}")
+                            setTouchable(true)
+                            createButton.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_add_24)
+                            createButton.iconTint = buttonTextColor
+                        }
                     }
                 }
             }
         }
-        
+
         folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply {
             adapter = folderAdapter
             setBackgroundColor(serverTheme.color)
@@ -213,8 +226,12 @@ class NCSelectHomeFragment: Fragment() {
     }
 
     private fun setTouchable(touchable: Boolean) {
-        selectButton.isEnabled = touchable
-        createButton.isEnabled = touchable
+        if (isTV) {
+            selectButtonTV.isEnabled = touchable
+        } else {
+            selectButton.isEnabled = touchable
+            createButton.isEnabled = touchable
+        }
         folderList.isEnabled = touchable
     }
 
@@ -229,7 +246,7 @@ class NCSelectHomeFragment: Fragment() {
             waitingSign.isVisible = true
         }
 
-        fetchJob = lifecycleScope.launch(Dispatchers.IO) {
+        fetchJob = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val nameList = mutableListOf<String>()
             try {
                 webDav.list("${resourceRoot}/${target}", OkHttpWebDav.FOLDER_CONTENT_DEPTH, forceNetwork = false).drop(1).forEach {
@@ -240,7 +257,7 @@ class NCSelectHomeFragment: Fragment() {
             } catch (_: Exception) {}
 
             withContext(Dispatchers.Main) {
-                folderAdapter.clearList()
+                //folderAdapter.clearList()
                 folderAdapter.submitList(nameList) {
                     TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
                     folderList.isVisible = true
@@ -248,6 +265,7 @@ class NCSelectHomeFragment: Fragment() {
                 }
                 selectedFolder = target
                 setTouchable(true)
+                if (isTV) folderList.requestFocus()
             }
         }
     }
@@ -255,13 +273,17 @@ class NCSelectHomeFragment: Fragment() {
     @SuppressLint("ApplySharedPref")
     private fun returnResult() {
         // Show progress indicator and disable user input
-        selectButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
-            @Suppress("DEPRECATION")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(grayOutColor, BlendMode.SRC_IN) else setColorFilter(grayOutColor, android.graphics.PorterDuff.Mode.SRC_IN)
+        if (isTV) {
+            waitingSign.isVisible = true
+        } else {
+            selectButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
+                @Suppress("DEPRECATION")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(grayOutColor, BlendMode.SRC_IN) else setColorFilter(grayOutColor, android.graphics.PorterDuff.Mode.SRC_IN)
+            }
         }
         setTouchable(false)
 
-        val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
+        val editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit()
 
         editor.putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
         editor.putBoolean(SettingsFragment.NEW_HOME_SETTING, true)
@@ -347,7 +369,7 @@ class NCSelectHomeFragment: Fragment() {
         }
     }
 
-    class FolderAdapter(val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
+    class FolderAdapter(private val isTV: Boolean, val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val tvName: TextView = itemView.findViewById<TextView>(R.id.name).apply { setOnClickListener { clickListener(this.text.toString()) }}
 
@@ -358,7 +380,13 @@ class NCSelectHomeFragment: Fragment() {
                 }
             }
         }
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_folder, parent, false))
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
+            ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_folder, parent, false).apply {
+                if (isTV) {
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                }
+            })
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(currentList[position]) }
 
         @SuppressLint("NotifyDataSetChanged")

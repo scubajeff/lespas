@@ -345,12 +345,12 @@ object Tools {
             if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.of("Z")) }
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
-                if (matcher.matches()) {
+                if (matcher.find()) {
                     LocalDateTime.parse(
                         matcher.run {
                             var millisecond = try { group(7) } catch (_: Exception) { "000" }
                             if (millisecond.isNullOrEmpty()) millisecond = "000"
-                            "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${millisecond}".also { Log.e(">>>>>>>>", "Tools-parseDateFromFileName: $this",) }
+                            "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${millisecond}"
                         },
                         DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss SSS")
                     )
@@ -371,6 +371,7 @@ object Tools {
         } catch (e: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
+    fun isMediaAnimated(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp")
 
     fun hasExif(mimeType: String): Boolean = mimeType.substringAfter("image/", "") in FORMATS_WITH_EXIF
 
@@ -710,14 +711,15 @@ object Tools {
 
     fun readContentMeta(inputStream: InputStream, sharePath: String, sortOrder: Int = Album.BY_DATE_TAKEN_DESC, useUTC: Boolean = false): List<NCShareViewModel.RemotePhoto> {
         val result = mutableListOf<NCShareViewModel.RemotePhoto>()
+        var caption: String
 
         val lespasJson = try {
             JSONObject(inputStream.reader().readText()).getJSONObject("lespas")
-        } catch (e: JSONException) { return result }
+        } catch (_: JSONException) { return result }
 
         val version = try {
             lespasJson.getInt("version")
-        } catch (e: JSONException) {
+        } catch (_: JSONException) {
             1
         }
 
@@ -725,7 +727,7 @@ object Tools {
         val photos = lespasJson.getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
-                mDate = try { epochToLocalDateTime(getLong("stime"), useUTC) } catch (e: DateTimeException) { LocalDateTime.now() }
+                mDate = try { epochToLocalDateTime(getLong("stime"), useUTC) } catch (_: DateTimeException) { LocalDateTime.now() }
                 when {
                     // TODO make sure later version json file downward compatible
                     version >= 2 -> {
@@ -733,18 +735,26 @@ object Tools {
                             // Version checking, trigger exception
                             getInt("orientation")
 
-                            result.add(
-                                NCShareViewModel.RemotePhoto(
-                                    Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
-                                        // Version 2 additions
-                                        orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
-                                        // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
-                                        eTag = Photo.ETAG_FAKE
-                                    ), sharePath
-                                )
-                            )
-                        } catch (e: JSONException) {
+                            // Caption text might not be escaped in previous release, like '\n', catch it here so that the whole process can finish
+                            caption = try { getString("caption") } catch (_: JSONException) { "" }
+
+                            getString("mime").let { mimeType ->
+                                // TODO Safety check on media mimetype is here to avoid adding wrong file into album due to a bug introduced when adding AVIF format support in version 2.9.16
+                                if (mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true)) {
+                                    result.add(
+                                        NCShareViewModel.RemotePhoto(
+                                            Photo(
+                                                id = getString("id"), name = getString("name"), mimeType = mimeType, width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
+                                                // Version 2 additions
+                                                orientation = getInt("orientation"), caption = jsonStringToStringEscape(caption), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
+                                                // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
+                                                eTag = Photo.ETAG_FAKE
+                                            ), sharePath
+                                        )
+                                    )
+                                }
+                            }
+                        } catch (_: JSONException) {
                             try {
                                 result.add(
                                     NCShareViewModel.RemotePhoto(
@@ -807,20 +817,22 @@ object Tools {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
                 //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, stringTOJSONStringEscape(caption), latitude, longitude, altitude, bearing)
             }
         }
 
         return content.dropLast(1) + "]}}"
     }
 
+    fun stringTOJSONStringEscape(source: String): String = source.replace("\"", "\\\"").replace("\n", "\\n")
+    fun jsonStringToStringEscape(source: String): String = source.replace("\\\"", "\"").replace("\\n", "\n")
     fun metasToJSONString(photoMeta: List<PhotoMeta>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
 
         photoMeta.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height)
             //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption.replace("\"", "\\\""), it.latitude, it.longitude, it.altitude, it.bearing)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption.replace("\"", "\\\""), it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, stringTOJSONStringEscape(it.caption), it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         return content.dropLast(1) + "]}}"

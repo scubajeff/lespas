@@ -360,4 +360,6 @@
     <string name="checkbox_text_remove_local_copy">本裝置中的檔案</string>
     <string name="msg_media_manager_rationale_for_deletion">若需跳過系統的刪除確認對話方塊，請授予 Les Pas 管理媒體許可權。</string>
     <string name="video_play_header">影片播放</string>
+    <string name="title_tv_my_albums">我的相簿</string>
+    <string name="title_tv_shared_with_me">親友分享</string>
 </resources>

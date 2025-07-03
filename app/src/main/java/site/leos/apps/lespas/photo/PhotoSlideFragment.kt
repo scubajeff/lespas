@@ -159,7 +159,7 @@ class PhotoSlideFragment : Fragment() {
         serverPath = "${Tools.getRemoteHome(requireContext())}/${album.name}"
         serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
         // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSavedSystemVolume(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
         //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
@@ -204,7 +204,7 @@ class PhotoSlideFragment : Fragment() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                    if (PreferenceManager.getDefaultSharedPreferences(context!!).getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
                             unregisterContentObserver(snapseedOutputObserver)
                             registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, snapseedOutputObserver)

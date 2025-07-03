@@ -18,7 +18,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-parcelize'
-    id 'com.google.devtools.ksp' version '2.0.21-1.0.28'
+    id 'com.google.devtools.ksp' version '2.2.0-2.0.2'
 }
 
 android {
@@ -28,8 +28,8 @@ android {
     defaultConfig {
         minSdk 25
         targetSdk 35
-        versionCode 106
-        versionName '2.9.17'
+        versionCode 107
+        versionName '2.10.0'
         multiDexEnabled true
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -83,10 +83,10 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation 'androidx.core:core-ktx:1.16.0'
     implementation 'androidx.activity:activity-ktx:1.10.1'
-    implementation 'androidx.fragment:fragment-ktx:1.8.6'
+    implementation 'androidx.fragment:fragment-ktx:1.8.8'
 
     // Room components
-    def roomVersion = "2.7.1"
+    def roomVersion = "2.7.2"
     implementation "androidx.room:room-runtime:$roomVersion"
     annotationProcessor "androidx.room:room-compiler:$roomVersion"
     ksp "androidx.room:room-compiler:$roomVersion"
@@ -94,13 +94,13 @@ dependencies {
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     // Lifecycle components
-    def lifecycleVersion = "2.9.0"
+    def lifecycleVersion = "2.9.1"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
 
     // Kotlin components
-    implementation 'androidx.work:work-runtime-ktx:2.10.1'
+    implementation 'androidx.work:work-runtime-ktx:2.10.2'
     def coroutineVersion = '1.10.2'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
@@ -110,13 +110,13 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
-    implementation 'androidx.recyclerview:recyclerview-selection:1.1.0'
+    implementation 'androidx.recyclerview:recyclerview-selection:1.2.0'
     implementation 'androidx.viewpager2:viewpager2:1.1.0'
-    implementation 'androidx.preference:preference-ktx:1.1.1'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.exifinterface:exifinterface:1.4.1'
 
     // Media3
-    def media3_version = "1.6.1"
+    def media3_version = "1.7.1"
     implementation "androidx.media3:media3-exoplayer:$media3_version"
     implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
     implementation "androidx.media3:media3-ui:$media3_version"
@@ -142,13 +142,17 @@ dependencies {
     implementation 'com.google.zxing:zxingorg:3.5.0'
 
     // Jackson for faster json string processing
-    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
 
     // Panorama support
     implementation('com.github.hannesa2:panoramagl:1.12') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
         exclude group: 'androidx.core', module: 'core-ktx'
     }
+
+    // Android TV theming support
+    implementation 'androidx.leanback:leanback:1.2.0'
+    implementation 'androidx.palette:palette-ktx:1.0.0'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

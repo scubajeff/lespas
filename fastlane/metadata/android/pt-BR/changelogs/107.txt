@@ -1,0 +1,3 @@
+* Suporte inicial para Android TV
+* Tradução para ru adicionada graças ao usuário do Github @yurtpage
+* Vários aprimoramentos e correções de bugs

@@ -413,4 +413,6 @@
     <string name="checkbox_text_remove_local_copy">Lokale Kopie in diesem Gerät</string>
     <string name="msg_media_manager_rationale_for_deletion">Um zu vermeiden, dass das System die Löschung bestätigt, müssen Sie Les Pas die Berechtigung „Medien verwalten“ erteilen.</string>
     <string name="video_play_header">Video Abspielen</string>
+    <string name="title_tv_my_albums">Meine Alben</string>
+    <string name="title_tv_shared_with_me">Geteilt Empfangen</string>
 </resources>

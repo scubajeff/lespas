@@ -361,4 +361,6 @@
     <string name="checkbox_text_remove_local_copy">このデバイスのローカルコピー</string>
     <string name="msg_media_manager_rationale_for_deletion">システムによる削除確認ダイアログをスキップするには、Les Pasにメディア管理権限を付与してください。</string>
     <string name="video_play_header">ビデオ再生</string>
+    <string name="title_tv_my_albums">私のアルバム</string>
+    <string name="title_tv_shared_with_me">友人や家族との共有</string>
 </resources>

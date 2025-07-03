@@ -103,6 +103,21 @@
         <item name="android:colorControlHighlight">?primaryTextWhite</item>
     </style>
 
+    <style name="Theme.LesPas.TV" parent="Theme.AppCompat.Leanback">
+        <item name="android:windowAllowReturnTransitionOverlap">true</item>
+        <item name="android:windowAllowEnterTransitionOverlap">true</item>
+
+        <item name="fontFamily">@font/archer_bold</item>
+        <item name="primaryTextWhite">@color/color_text_light</item>
+        <item name="primaryTextBlack">@color/color_text_dark</item>
+
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryVariant">@color/color_primary_variant</item>
+        <item name="colorSurface">@color/color_surface</item>
+        <item name="android:textColorPrimary">@color/primary_text</item>
+        <item name="android:textColorPrimaryInverse">@color/primary_text_inverse</item>
+    </style>
+
     <!-- Normal Theme for ShareReceiverActivity -->
     <style name="Theme.LesPas.Transparent" parent="Theme.LesPas">
         <item name="android:windowIsTranslucent">true</item>
