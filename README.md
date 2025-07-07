@@ -1,8 +1,8 @@
 ![Feature graphic](fastlane//metadata/android/en-US/images/featureGraphic.png)
 
 ## A private photo album that saves and shares your precious moments
-<a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='50'></a>
-<a href='https://github.com/scubajeff/lespas/releases/'><img alt='Get it on Github' src='https://ultrasonic.github.io/assets/img/get-it-on-github.png' height='50'></a>
+<a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height="50"></a>
+<a href='https://github.com/scubajeff/lespas/releases/'><img alt='Get it on Github' src='https://ultrasonic.github.io/assets/img/get-it-on-github.png' height="50"></a>
 
 ***Google Play latest developer policy requires the hand-in of the developer's home address. As an open-source, free app developer, I strongly disagree with this. That's why I have terminated my developer account, and the update to Les Pas will no longer be available from Google Play.***
 
