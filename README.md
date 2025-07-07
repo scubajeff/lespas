@@ -97,7 +97,7 @@ This project is built using the following open-source software:
 - <a href=https://github.com/osmdroid/osmdroid>osmdroid</a>
 - <a href=https://www.tensorflow.org>TensorFlow</a>
 - <a href=https://www.openstreetmap.org>OpenStreetMap</a>
-- <a href=https://github.com/hannesa2/panoramagl</a>
+- <a href=https://github.com/hannesa2/panoramagl>Panoramagl</a>
 
 <a id="faq"></a>
 ## Faq
