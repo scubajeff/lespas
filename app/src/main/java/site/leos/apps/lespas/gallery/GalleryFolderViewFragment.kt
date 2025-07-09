@@ -186,7 +186,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
                 galleryModel.getCurrentPhotoId().let { photoId ->
-                    galleryModel.setCurrentPhotoId("")
                     if (photoId.isNotEmpty() && names?.isNotEmpty() == true) mediaList.findViewHolderForAdapterPosition(mediaAdapter.getPhotoPosition(photoId))?.let { viewHolder ->
                         sharedElements?.put(names[0], viewHolder.itemView.findViewById(R.id.photo))
                     }
