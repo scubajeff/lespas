@@ -145,7 +145,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
 
     // Panorama support
-    implementation('com.github.hannesa2:panoramagl:1.12') {
+    implementation('com.github.hannesa2:panoramagl:1.13') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
         exclude group: 'androidx.core', module: 'core-ktx'
     }
