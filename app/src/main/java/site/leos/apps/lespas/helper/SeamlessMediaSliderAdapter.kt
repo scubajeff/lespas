@@ -384,12 +384,12 @@ abstract class SeamlessMediaSliderAdapter<T>(
             if (isTV) controllerAutoShow = false
             else videoViewGestureDetector?.let { gd -> setOnTouchListener { _, event -> gd.onTouchEvent(event) }}
         }
-        val knobLayout: FrameLayout = itemView.findViewById<FrameLayout>(R.id.knob)
-        val knobIcon: ImageView = itemView.findViewById<ImageView>(R.id.knob_icon)
-        val knobPosition: CircularProgressIndicator = itemView.findViewById<CircularProgressIndicator>(R.id.knob_position)
-        val forwardMessage: TextView = itemView.findViewById<TextView>(R.id.fast_forward_msg)
-        val rewindMessage: TextView = itemView.findViewById<TextView>(R.id.fast_rewind_msg)
-        val pauseStateTV: AppCompatImageView = itemView.findViewById<AppCompatImageView>(R.id.pause_state)
+        val knobLayout: FrameLayout = itemView.findViewById(R.id.knob)
+        val knobIcon: ImageView = itemView.findViewById(R.id.knob_icon)
+        val knobPosition: CircularProgressIndicator = itemView.findViewById(R.id.knob_position)
+        val forwardMessage: TextView = itemView.findViewById(R.id.fast_forward_msg)
+        val rewindMessage: TextView = itemView.findViewById(R.id.fast_rewind_msg)
+        val pauseStateTV: AppCompatImageView = itemView.findViewById(R.id.pause_state)
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
@@ -411,7 +411,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     inner class PanoramaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var photoPosition: Int = -1
-        val ivMedia: ImageView = itemView.findViewById<ImageView>(R.id.media)
+        val ivMedia: ImageView = itemView.findViewById(R.id.media)
         val pvContainer: FrameLayout = itemView.findViewById<FrameLayout>(R.id.panorama).apply { setOnTouchListener(panoViewOnTouchListener) }
         var plManager = PLManager(context).apply {
             setContentView(pvContainer)

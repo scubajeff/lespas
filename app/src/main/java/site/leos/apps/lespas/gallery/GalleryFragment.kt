@@ -572,7 +572,7 @@ class GalleryFragment: Fragment() {
             }
         }
 
-        return id?.let { Pair("${relativePath}/", id!!) }
+        return id?.let { Pair("${relativePath}/", id) }
     }
 
     private fun getFolderFromUri(uri: Uri): Pair<String, String>? {
@@ -596,7 +596,7 @@ class GalleryFragment: Fragment() {
                         if (cursor.moveToFirst()) filename = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME))
                     }
 
-                    filename?.let { getDocumentId(contentResolver, externalStorageUri, pathColumn, "Download", filename!!) }
+                    filename?.let { getDocumentId(contentResolver, externalStorageUri, pathColumn, "Download", filename) }
                 }
                 "com.android.providers.media.documents" -> {
                     var folderName: String? = null
@@ -611,7 +611,7 @@ class GalleryFragment: Fragment() {
                         if (cursor.moveToFirst()) folderName = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
                     }
 
-                    folderName?.let { Pair(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName!! else "${folderName!!.substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/')}/", id) }
+                    folderName?.let { Pair(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName else "${folderName.substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/')}/", id) }
                 }
                 "media" -> {
                     val projection = arrayOf(
@@ -909,7 +909,7 @@ class GalleryFragment: Fragment() {
 
             var metadataRetriever: MediaMetadataRetriever? = null
             var exifInterface: ExifInterface? = null
-            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null } catch (e: RuntimeException) { null }
+            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (_: SecurityException) { null } catch (_: RuntimeException) { null }
             else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.use { ExifInterface(it) }} catch (_: Exception) {} catch (_: OutOfMemoryError) {}
             val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr).copy(
                 id = uri.toString(),                // fileUri shared in as photo's id in Camera Roll album

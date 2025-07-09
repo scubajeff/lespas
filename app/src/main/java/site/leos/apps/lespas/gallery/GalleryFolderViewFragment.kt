@@ -203,7 +203,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
         chipForAll = view.findViewById(R.id.chip_for_all)
         currentCheckedTag = galleryModel.getCurrentSubFolder()
-        subFolderChipGroup = view.findViewById<ChipGroup?>(R.id.sub_chips).apply {
+        subFolderChipGroup = view.findViewById<ChipGroup>(R.id.sub_chips).apply {
             if (folderArgument == GalleryFragment.TRASH_FOLDER) isVisible = false
 
             // Avoid window inset overlapping
@@ -238,7 +238,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
         }
         mediaAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark(), galleryModel.getPanoramaMark())
-        mediaList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
+        mediaList = view.findViewById<RecyclerView>(R.id.gallery_list).apply {
             adapter = mediaAdapter
 
             itemAnimator = null     // Disable recyclerview item animation to avoid ANR in AdapterHelper.findPositionOffset() when DiffResult applying at the moment that the list is scrolling
@@ -657,9 +657,6 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
         actionMode = null
-    }
-
-    private fun updateSelectionInfo()  {
     }
 
     @SuppressLint("InflateParams")

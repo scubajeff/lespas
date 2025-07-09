@@ -204,7 +204,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
 
         overviewAdapter.setMarks(galleryModel.getPlayMark(), galleryModel.getSelectedMark(), galleryModel.getPanoramaMark())
-        overviewList = view.findViewById<RecyclerView?>(R.id.gallery_list).apply {
+        overviewList = view.findViewById<RecyclerView>(R.id.gallery_list).apply {
             adapter = overviewAdapter
 
             itemAnimator = null     // Disable recyclerview item animation to avoid ANR in AdapterHelper.findPositionOffset() when DiffResult applying at the moment that the list is scrolling
@@ -715,7 +715,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
                 is MediaViewHolder -> holder.bind(currentList[position])
-                is OverviewAdapter.OverflowHolder -> holder.bind(currentList[position], getCount(currentList[position].folder))
+                is OverflowHolder -> holder.bind(currentList[position], getCount(currentList[position].folder))
                 is HeaderViewHolder -> holder.bind(currentList[position])
                 else -> (holder as FootNoteViewHolder).bind()
             }
@@ -725,7 +725,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             if (payloads.isEmpty()) onBindViewHolder(holder, position)
             else when(holder) {
                 is MediaViewHolder -> if (payloads[0] == DIFF_PAYLOAD_LOCATION_CHANGED) holder.bindLocationIndicator(currentList[position]) else holder.bind(currentList[position])
-                is OverviewAdapter.OverflowHolder -> if (payloads[0] == DIFF_PAYLOAD_LOCATION_CHANGED) holder.bindLocationIndicator(currentList[position], getCount(currentList[position].folder)) else holder.bind(currentList[position], getCount(currentList[position].folder))
+                is OverflowHolder -> if (payloads[0] == DIFF_PAYLOAD_LOCATION_CHANGED) holder.bindLocationIndicator(currentList[position], getCount(currentList[position].folder)) else holder.bind(currentList[position], getCount(currentList[position].folder))
                 is HeaderViewHolder -> if (payloads[0] == DIFF_PAYLOAD_BACKUP_STATE_CHANGED) holder.bindBackupState(currentList[position]) else holder.bind(currentList[position])
                 else -> (holder as FootNoteViewHolder).bind()
             }
