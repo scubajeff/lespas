@@ -94,7 +94,7 @@ dependencies {
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     // Lifecycle components
-    def lifecycleVersion = "2.9.1"
+    def lifecycleVersion = "2.9.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
@@ -142,7 +142,7 @@ dependencies {
     implementation 'com.google.zxing:zxingorg:3.5.0'
 
     // Jackson for faster json string processing
-    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.1'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.19.2'
 
     // Panorama support
     implementation('com.github.hannesa2:panoramagl:1.13') {
