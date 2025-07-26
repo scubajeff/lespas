@@ -42,6 +42,8 @@ import android.os.Bundle
 import android.os.SystemClock.sleep
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import okhttp3.FormBody
@@ -249,7 +251,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
-            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, application.getString(R.string.nc_userdata_certificate)), "${localBaseFolder}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
+            webDav = OkHttpWebDav(
+                userName,
+                token,
+                baseUrl,
+                getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
+                getUserData(account, application.getString(R.string.nc_userdata_certificate)),
+                "${localBaseFolder}/cache",
+                "LesPas_${application.getString(R.string.lespas_version)}",
+                PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
+            )
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -533,7 +544,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         try { updateLogFile.delete() } catch (_: Exception) {}
                     }
-                    catch(e: FileNotFoundException) {
+                    catch(_: FileNotFoundException) {
                         // If somehow update log file is missing, like when all photos added already existed in Joint Album, abandon this action
                     }
                 }
@@ -651,11 +662,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
                         webDav.createFolder("${lespasBase}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
                         webDav.createFolder("${lespasBase}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }
-                        PreferenceManager.getDefaultSharedPreferences(application).edit().run {
+                        PreferenceManager.getDefaultSharedPreferences(application).edit {
                             // Save blog site id for later use, like removing it
                             putString(SettingsFragment.PICO_BLOG_ID, blog.id)
                             putString(SettingsFragment.PICO_BLOG_FOLDER, blog.path)
-                            apply()
                         }
                     }
                 }
@@ -1009,7 +1019,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 bitmap?.let { bmp ->
                     //Log.e(">>>>>>>>", "    updateAsset: image bitmap ready ${photo.name}")
                     if (photo.orientation != 0) bitmap = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
-                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, tempFile.outputStream())
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, tempFile.outputStream())
 
                     val targetFile = "${lespasBase}/${BLOG_ASSETS_FOLDER}/${albumId}/${if (isCover) photo.name.substringBeforeLast('.') else photo.name}"
                     webDav.upload(tempFile, targetFile, Photo.DEFAULT_MIMETYPE, application)    //.apply { Log.e(">>>>>>>>", "    prepareAsset: ${photo.name} asset created.") }
@@ -1033,7 +1043,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return result
     }
 
-    private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
+    private fun logChangeToFile(meta: String, newFileId: String, fileName: String) {
         val metaFromAction = meta.split('|')
         val logFile = File(localBaseFolder, "${metaFromAction[0]}${CHANGE_LOG_FILENAME_SUFFIX}")
 
@@ -1042,7 +1052,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "", useUTC = true)) }
                 else logFile.createNewFile()
 
-                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong(), true) } catch (e: Exception) { LocalDateTime.now() }
+                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong(), true) } catch (_: Exception) { LocalDateTime.now() }
                 add(
                     NCShareViewModel.RemotePhoto(
                         Photo(
@@ -1061,7 +1071,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     file.close()
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Log replay is now base on best effort, don't halt the sync process
         }
     }
@@ -1279,7 +1289,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     reportActionStatus(Action.ACTION_CREATE_ALBUM_FROM_SERVER, changedAlbum.name, " ", " ", " ", System.currentTimeMillis())
 
                     // Safety check, if this new album is empty, process next album
-                    if (changedPhotos.size <= 0) continue
+                    if (changedPhotos.isEmpty()) continue
 
                     // New album from server, try downloading album meta file. If this album was created directly on server rather than from another client, there wil be no cover at all
                     downloadAlbumMeta(changedAlbum)?.apply {
@@ -1378,7 +1388,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                 changedPhotos.find { p -> p.id == pId }?.let {
                                                     try {
                                                         getInt("orientation")
-                                                    } catch (e: JSONException) {
+                                                    } catch (_: JSONException) {
                                                         // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
                                                         // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
                                                         //Log.e(TAG, "client lower than 2.5.0 updated content meta, quit quick sync")
@@ -1464,7 +1474,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             exifInterface = null
                         } else {
                             webDav.getStream("$lespasBase/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
-                                exifInterface = try { ExifInterface(it) } catch (e: Exception) { null } catch (_: OutOfMemoryError) { null }
+                                exifInterface = try { ExifInterface(it) } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                             }
                         }
                     } else {
@@ -1750,7 +1760,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${it.lastBackup})"   // DATE_ADDED is in second
 
             (if (fileUri.isEmpty()) cr.query(contentUri, projection.apply { add(MediaStore.Files.FileColumns.MEDIA_TYPE) }.toTypedArray(), selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC")
-            else cr.query(Uri.parse(fileUri), projection.toTypedArray(), null, null, null))?.use { cursor ->
+            else cr.query(fileUri.toUri(), projection.toTypedArray(), null, null, null))?.use { cursor ->
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                 val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -1808,7 +1818,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 400 -> sleep(2000)
                                 else -> throw e
                             }
-                        } catch (e: StreamResetException) {
+                        } catch (_: StreamResetException) {
                             createSubFoldersRecursively(subFolder, relativePath)
                         } catch (e: EOFException) {
                             // Under some unknown situation StreamResetException might be suppressed by EOFException
@@ -2047,9 +2057,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         try {
             webDav.list("${lespasBase}${ARCHIVE_BASE}", OkHttpWebDav.JUST_FOLDER_DEPTH, forceNetwork = true).let { davs ->
                 if (davs.isNotEmpty()) {
-                    sp.edit().run {
+                    sp.edit {
                         putString(LATEST_ARCHIVE_FOLDER_ETAG, davs[0].eTag)
-                        apply()
                     }
                 }
             }
@@ -2070,7 +2079,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Store meta info in meta data holder
                     val meta = JSONObject(content).getJSONObject("lespas")
-                    val version = try { meta.getInt("version") } catch (e: JSONException) { 1 }
+                    val version = try { meta.getInt("version") } catch (_: JSONException) { 1 }
                     result = meta.getJSONObject("cover").run {
                         when {
                             // TODO Make sure later version of album meta file downward compatible
@@ -2105,26 +2114,23 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val keyBackupStatus = application.getString(R.string.backup_status_pref_key)
 
     private fun reportStage(stageId: Int) {
-        sp.edit().run {
+        sp.edit(commit = true) {
             putString(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, stageId, System.currentTimeMillis()))
-            commit()
         }
     }
 
     private fun reportActionStatus(id: Int, s1: String, s2: String, s3: String, s4: String, timestamp: Long) {
-        sp.edit().run {
+        sp.edit(commit = true) {
             putString(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, id, s1, s2, s3, s4, timestamp))
-            commit()
         }
     }
 
     private fun reportBackupStatus(name: String, size: Long, position: Int, total: Int) {
-        sp.edit().run {
+        sp.edit(commit = true) {
             System.currentTimeMillis().let { timestamp ->
                 putString(keyBackupStatus, String.format(Locale.ROOT, SYNC_STATUS_BACKUP_MESSAGE_FORMAT, name, Tools.humanReadableByteCountSI(size), position + 1, total, timestamp))
                 putString(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, Action.ACTION_BACKUP_FILE, name, " ", " ", " ", timestamp))
             }
-            commit()
         }
     }
 
