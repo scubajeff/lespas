@@ -299,7 +299,7 @@ object Tools {
                 // If metadata tells a funky date, reset it. extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE) return 1904/01/01 as default if it can't find "creation_time" tag in the video file
                 if (videoDate?.year == 1904) videoDate = null
                 // Try adjust date according to timezone derived from longitude, although it's not always correct, especially for countries observe only one timezone adjustment, like China
-                if (videoDate != null && latLong[1] != Photo.NO_GPS_DATA) videoDate = videoDate?.plusHours((latLong[1]/15).toLong())
+                if (videoDate != null && latLong[1] != Photo.NO_GPS_DATA) videoDate = videoDate.plusHours((latLong[1]/15).toLong())
             } catch (e: Exception) { e.printStackTrace() }
         }
         // Eventually user can always use changing name function to manually adjust media's creation date information
@@ -331,44 +331,44 @@ object Tools {
                 // Save it as it's, e.g., in UTC timezone
                 LocalDateTime.ofInstant(toInstant(ZoneOffset.UTC), ZoneId.of("Z"))
             }
-        } catch (e: Exception) { null }
+        } catch (_: Exception) { null }
 
     // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
-    private const val wechatPattern = "^mmexport([0-9]{13}).*"
+    private const val PATTERN_WECHAT = "^mmexport([0-9]{13}).*"
     // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss, with optional millisecond
-    private const val timeStampPattern = ".?([12][0-9]{3})[-_]?(0[1-9]|1[0-2])[-_]?(0[1-9]|[12][0-9]|3[01])[-_]?([01][0-9]|2[0-3])[-_]?([0-5][0-9])[-_]?([0-5][0-9])[-_]?([0-9]{3})?.*"
-    private const val whatsappPattern = ".*-([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])-.*"
+    private const val PATTERN_TIMESTAMP = ".?([12][0-9]{3})[-_]?(0[1-9]|1[0-2])[-_]?(0[1-9]|[12][0-9]|3[01])[-_]?([01][0-9]|2[0-3])[-_]?([0-5][0-9])[-_]?([0-5][0-9])[-_]?([0-9]{3})?.*"
+    private const val PATTERN_WHATSAPP = ".*-([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])-.*"
     fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
-            var matcher = Pattern.compile(wechatPattern).matcher(fileName)
+            var matcher = Pattern.compile(PATTERN_WECHAT).matcher(fileName)
             //if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.systemDefault()) }
             if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.of("Z")) }
             else {
-                matcher = Pattern.compile(timeStampPattern).matcher(fileName)
+                matcher = Pattern.compile(PATTERN_TIMESTAMP).matcher(fileName)
                 if (matcher.find()) {
                     LocalDateTime.parse(
                         matcher.run {
                             var millisecond = try { group(7) } catch (_: Exception) { "000" }
                             if (millisecond.isNullOrEmpty()) millisecond = "000"
-                            "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} ${millisecond}"
+                            "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)} $millisecond"
                         },
                         DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss SSS")
                     )
                 }
                 else {
-                    matcher = Pattern.compile(whatsappPattern).matcher(fileName)
+                    matcher = Pattern.compile(PATTERN_WHATSAPP).matcher(fileName)
                     if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} 00:00:00" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
                     else null
                 }
             }
-        } catch (e: Exception) { null }
+        } catch (_: Exception) { null }
     }
 
     fun epochToLocalDateTime(epoch: Long, useUTC: Boolean = false): LocalDateTime =
         try {
             // Always display time in current timezone
             LocalDateTime.ofInstant(if (epoch > 9999999999) Instant.ofEpochMilli(epoch) else Instant.ofEpochSecond(epoch), if (useUTC) ZoneId.of("Z") else ZoneId.systemDefault())
-        } catch (e: DateTimeException) { LocalDateTime.now() }
+        } catch (_: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
     fun isMediaAnimated(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp")
