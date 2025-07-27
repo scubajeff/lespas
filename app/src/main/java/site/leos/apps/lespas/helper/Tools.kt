@@ -327,6 +327,8 @@ object Tools {
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(it), exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC"))
             } ?: run {
                 exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC")) }
+            } ?: run {
+                exif.dateTime?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), exif.getAttribute(ExifInterface.TAG_OFFSET_TIME)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC")) }
             })?.run {
                 // Save it as it's, e.g., in UTC timezone
                 LocalDateTime.ofInstant(toInstant(ZoneOffset.UTC), ZoneId.of("Z"))
