@@ -476,6 +476,7 @@
 
     <!-- Media3 Player -->
     <string name="msg_player_skip">5 seconds</string>
+    <string name="button_text_motion_play">Motion Photo Play</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

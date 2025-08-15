@@ -649,9 +649,10 @@ class TVSliderFragment: Fragment() {
             return i
         }
 
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
-        override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
-        override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position)) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
+        override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
+        override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
+        override fun isMotionPhoto(position: Int): Boolean = false
 
         override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
             super.onAttachedToRecyclerView(recyclerView)

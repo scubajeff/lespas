@@ -754,6 +754,7 @@ class StoryFragment : Fragment() {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
+        override fun isMotionPhoto(position: Int): Boolean = false
 
         fun setPhotos(photos: List<NCShareViewModel.RemotePhoto>, callback: () -> Unit) { submitList(photos.toMutableList()) { callback() }}
 

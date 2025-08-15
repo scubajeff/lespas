@@ -108,6 +108,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
 
     fun addListener(listener: Player.Listener) { videoPlayer.addListener(listener) }
+    fun removeListener(listener: Player.Listener) { videoPlayer.removeListener(listener) }
 
     fun isPlaying() = videoPlayer.isPlaying
     fun rewind() { videoPlayer.seekTo(0L) }

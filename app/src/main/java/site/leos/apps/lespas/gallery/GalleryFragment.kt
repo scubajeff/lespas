@@ -813,6 +813,8 @@ class GalleryFragment: Fragment() {
                         }
 
                         cursorLoop@ while (cursor.moveToNext()) {
+                            var isMotionPhoto = false
+
                             ensureActive()
                             //if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
 
@@ -820,7 +822,10 @@ class GalleryFragment: Fragment() {
                             mimeType = cursor.getString(typeColumn)
                             // Make sure image type is supported
                             if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
-                            try { cursor.getBlob(xmpColumn)?.let { if (it.decodeToString().contains(Tools.PANORAMA_SIGNATURE)) mimeType = Tools.PANORAMA_MIMETYPE }} catch (_: Exception) {}
+                            try { cursor.getBlob(xmpColumn)?.decodeToString()?.let {
+                                if (it.contains(Tools.PANORAMA_SIGNATURE)) mimeType = Tools.PANORAMA_MIMETYPE
+                                if (it.contains(Tools.MOTION_PHOTO_SIGNATURE)) { isMotionPhoto = true }
+                            }} catch (_: Exception) {}
                             if (cursor.getLong(sizeColumn) == 0L) continue@cursorLoop
 
 /*
@@ -867,6 +872,7 @@ class GalleryFragment: Fragment() {
                                             mimeType = mimeType,
                                             caption = cursor.getString(sizeColumn),               // Saving photo size value in caption property as String to avoid integer overflow
                                             orientation = cursor.getInt(orientationColumn),       // Saving photo orientation value in orientation property, keep original orientation, other fragments will handle the rotation, TODO video length?
+                                            shareId = if (isMotionPhoto) Photo.MOTION_PHOTO else Photo.DEFAULT_PHOTO_FLAG
                                         ),
                                         remotePath = "",    // Local media
                                         coverBaseLine = 0,  // Backup is disable by default

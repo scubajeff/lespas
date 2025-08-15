@@ -450,10 +450,11 @@ class GallerySlideFragment : Fragment() {
     ): SeamlessMediaSliderAdapter<GalleryFragment.GalleryMedia>(context, displayWidth, SliderMediaDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         override fun getItemTransitionName(position: Int): String = getItem(position).media.photo.id
         override fun getItemMimeType(position: Int): String = getItem(position).media.photo.mimeType
-        override fun getVideoItem(position: Int): VideoItem = with((getItem(position) as GalleryFragment.GalleryMedia).media) {
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position).media) {
             if (Tools.isPhotoFromGallery(photo)) VideoItem(photo.id.toUri(), photo.mimeType, photo.width, photo.height, photo.id.substringAfterLast('/'))
             else VideoItem("${basePath}/${remotePath}/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id)
         }
+        override fun isMotionPhoto(position: Int): Boolean = Tools.isMotionPhoto(getItem(position).media.photo.shareId)
 
         fun isPhotoAtLocal(position: Int): Boolean = !currentList[position].isRemote()
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position].media

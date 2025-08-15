@@ -106,6 +106,7 @@ object Tools {
     private val FORMATS_WITH_EXIF = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) COMMON_FORMAT + arrayOf("avif") + RAW_FORMAT else COMMON_FORMAT + RAW_FORMAT
     val SUPPORTED_PICTURE_FORMATS = arrayOf("gif", "bmp") + FORMATS_WITH_EXIF
     const val PANORAMA_SIGNATURE = "GPano:UsePanoramaViewer=\"True\""
+    const val MOTION_PHOTO_SIGNATURE = "GCamera:MotionPhoto=\"1\""
     const val PANORAMA_MIMETYPE = "image/panorama"
     const val PHOTO_SPHERE_MIMETYPE = "application/vnd.google.panorama360+jpg"
 
@@ -127,6 +128,7 @@ object Tools {
         val isLocalFileExist = localPath.isNotEmpty()
         var dateTaken: LocalDateTime = LocalDateTime.now()
         val lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis()), ZoneId.systemDefault())
+        var isMotionPhoto = false
         //val lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis()), ZoneId.of("Z"))
 
         if (mimeType.startsWith("video/", true)) {
@@ -215,7 +217,10 @@ object Tools {
                             }
                         }
 
-                        exif.getAttribute(ExifInterface.TAG_XMP)?.let { if (it.contains(PANORAMA_SIGNATURE)) mMimeType = PANORAMA_MIMETYPE }
+                        exif.getAttribute(ExifInterface.TAG_XMP)?.let {
+                            if (it.contains(PANORAMA_SIGNATURE)) mMimeType = PANORAMA_MIMETYPE
+                            if (it.contains(MOTION_PHOTO_SIGNATURE)) isMotionPhoto = true
+                        }
 
                         if (saveExif) {
                             try { exif.saveAttributes() }
@@ -266,7 +271,8 @@ object Tools {
             width = width, height = height,
             caption = caption,
             latitude = latlong[0], longitude = latlong[1], altitude = altitude, bearing = bearing,
-            orientation = if (keepOriginalOrientation) orientation else 0
+            orientation = if (keepOriginalOrientation) orientation else 0,
+            shareId = if (isMotionPhoto) Photo.MOTION_PHOTO else Photo.DEFAULT_PHOTO_FLAG
         )
     }
 
@@ -1052,6 +1058,7 @@ object Tools {
     fun isPhotoFromGallery(rPhoto: NCShareViewModel.RemotePhoto) = rPhoto.photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY
     fun isPhotoFromGallery(photo: Photo) = photo.albumId == GalleryFragment.FROM_DEVICE_GALLERY
     fun isPhotoFromArchive(rPhoto: NCShareViewModel.RemotePhoto) = rPhoto.photo.albumId == GalleryFragment.FROM_ARCHIVE
+    fun isMotionPhoto(flag: Int) = isBitSet(flag, Photo.MOTION_PHOTO)
 
     inline fun <reified T : Parcelable> Bundle.parcelable(key: String): T? = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelable(key, T::class.java)

@@ -283,8 +283,9 @@ class ObjectSearchSlideFragment : Fragment() {
         clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit
     ) : SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), null, clickListener, imageLoader, panoLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = VideoItem(Uri.EMPTY, "", 0, 0, "")
-        override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
-        override fun getItemMimeType(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
+        override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
+        override fun getItemMimeType(position: Int): String  = getItem(position).photo.mimeType
+        override fun isMotionPhoto(position: Int): Boolean = Tools.isMotionPhoto(getItem(position).photo.shareId)
 
         fun getPhotoAt(position: Int): NCShareViewModel.RemotePhoto = currentList[position]
     }

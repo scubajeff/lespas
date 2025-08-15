@@ -692,6 +692,7 @@ class PhotoSlideFragment : Fragment() {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = getItem(position).id
         override fun getItemMimeType(position: Int): String = getItem(position).mimeType
+        override fun isMotionPhoto(position: Int): Boolean = Tools.isMotionPhoto(getItem(position).shareId)
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
             val photos = Tools.sortPhotos(collection, sortOrder)

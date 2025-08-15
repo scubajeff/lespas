@@ -399,13 +399,14 @@ class RemoteMediaFragment: Fragment() {
     class RemoteMediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
          clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
-        override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
-        override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
-        fun getCaption(position: Int): String = try { currentList[position].photo.caption } catch (_: Exception) { "" }
-        fun isLandscape(position: Int): Boolean = try { currentList[position].photo.width >= currentList[position].photo.height } catch (_: Exception) { false }
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position)) { VideoItem("$basePath$remotePath/${photo.name}".toUri(), photo.mimeType, photo.width, photo.height, photo.id) }
+        override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
+        override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
+        override fun isMotionPhoto(position: Int): Boolean = Tools.isMotionPhoto(getItem(position).photo.shareId)
 
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
+        fun getCaption(position: Int): String = try { getItem(position).photo.caption } catch (_: Exception) { "" }
+        fun isLandscape(position: Int): Boolean = try { getItem(position).photo.width >= getItem(position).photo.height } catch (_: Exception) { false }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

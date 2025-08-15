@@ -38,6 +38,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
@@ -183,6 +184,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     abstract fun getVideoItem(position: Int): VideoItem
     abstract fun getItemTransitionName(position: Int): String
     abstract fun getItemMimeType(position: Int): String
+    abstract fun isMotionPhoto(position: Int): Boolean
 
     override fun getItemViewType(position: Int): Int {
         with(getItemMimeType(position)) {
@@ -297,6 +299,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
         private val ivMedia: PhotoView
+        private val ivMotionPhotoPlayButton: AppCompatImageView
+        private val pvMotionPhotoPlayerView: PlayerView
         private var baseWidth = 0f
         private var currentWidth = 0
         private var edgeDetected = 0
@@ -341,6 +345,30 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     }
                 }
             }
+
+            pvMotionPhotoPlayerView = itemView.findViewById(R.id.motion_photo_playerview)
+            ivMotionPhotoPlayButton = itemView.findViewById<AppCompatImageView>(R.id.motion_photo_play_button).apply {
+                setOnClickListener {
+                    playerViewModel?.run {
+                        addListener( object : Player.Listener {
+                            override fun onPlaybackStateChanged(playbackState: Int) {
+                                super.onPlaybackStateChanged(playbackState)
+
+                                when(playbackState) {
+                                    Player.STATE_READY -> pvMotionPhotoPlayerView.isVisible = true
+                                    Player.STATE_ENDED -> {
+                                        pvMotionPhotoPlayerView.isVisible = false
+                                        playerViewModel.rewind()
+                                        playerViewModel.removeListener(this)
+                                    }
+                                }
+                            }
+                        })
+
+                        resume(pvMotionPhotoPlayerView, getVideoItem(bindingAdapterPosition).uri)
+                    }
+                }
+            }
         }
 
         fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
@@ -348,6 +376,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
             }
+            ivMotionPhotoPlayButton.isVisible = isMotionPhoto(bindingAdapterPosition)
         }
 
         fun getPhotoView() = ivMedia
