@@ -55,6 +55,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private val maxSystemVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     private var currentVolumePercentage = sessionVolumePercentage   // follow session volume setting
     private var pauseJob: Job? = null
+    private var isNotTV = true
 
     init {
         val okHttpDSFactory = DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))
@@ -95,7 +96,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
 
         // Volume not gonna be set here when in slideshow mode or on TV
-        if (!slideshowMode && !activity.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
+        isNotTV = !activity.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        if (!slideshowMode && isNotTV) {
             when {
                 // Regarding default mute setting
                 PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.default_mute_perf_key), false) -> mute()
@@ -165,7 +167,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
             if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) {
                 videoPlayer.pause()
-                if (!slideshowMode) resetSystemVolume()
+                if (!slideshowMode && isNotTV) resetSystemVolume()
             }
         }.apply {
             invokeOnCompletion { pauseJob = null }
