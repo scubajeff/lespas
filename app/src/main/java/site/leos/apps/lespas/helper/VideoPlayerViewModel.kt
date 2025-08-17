@@ -93,6 +93,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
             // Handle audio focus
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
+
+            isScrubbingModeEnabled = true
         }
 
         // Volume not gonna be set here when in slideshow mode or on TV
