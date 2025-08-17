@@ -1855,6 +1855,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         photo.altitude = Photo.NO_GPS_DATA
                                         photo.bearing = Photo.NO_GPS_DATA
                                     }
+                                    exif.getAttribute(ExifInterface.TAG_XMP)?.let {
+                                        photo.shareId = when {
+                                            it.contains(Tools.PANORAMA_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_PANORAMA
+                                            it.contains(Tools.MOTION_PHOTO_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_MOTION
+                                            else -> OkHttpWebDav.LESPAS_EXTRA_TYPE_NORMAL
+                                        }
+                                    }
                                 }
                             }
                         } catch (_: Exception) {} catch (_: OutOfMemoryError) {}
@@ -1878,6 +1885,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + photo.orientation + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + photo.width + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + photo.height + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
+                                    (
+                                        if (photo.shareId == OkHttpWebDav.LESPAS_EXTRA_TYPE_NORMAL) ""
+                                        else "<oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>" + photo.shareId + "</oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>"
+
+                                    )+
                                     if (photo.latitude == Photo.GPS_DATA_UNKNOWN) ""
                                     else
                                         "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + photo.latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
