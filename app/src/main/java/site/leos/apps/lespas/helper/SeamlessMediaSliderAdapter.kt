@@ -44,6 +44,8 @@ import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Fade
+import androidx.transition.TransitionManager
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.panoramagl.PLManager
@@ -211,7 +213,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), imageLoader)
             is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), imageLoader)
             is SeamlessMediaSliderAdapter<*>.PanoramaViewHolder -> holder.bind(position, getItemTransitionName(position))
-            else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader)
+            else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader, isMotionPhoto(position))
         }
     }
     
@@ -297,13 +299,15 @@ abstract class SeamlessMediaSliderAdapter<T>(
     //fun setDisplayWidth(width: Int) { displayWidth = width }
     fun setPauseVideo(shouldPause: Boolean) { shouldPauseVideo = shouldPause }
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
-        private val ivMedia: PhotoView
+        val ivMedia: PhotoView
         private val ivMotionPhotoPlayButton: AppCompatImageView
         private val pvMotionPhotoPlayerView: PlayerView
         private var baseWidth = 0f
         private var currentWidth = 0
         private var edgeDetected = 0
+        private var isMotionPhoto = false
 
         init {
             ivMedia = itemView.findViewById<PhotoView>(R.id.media).apply {
@@ -330,6 +334,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     // Keep swiping on edge will enable viewpager2 swipe again
                     edgeDetected = 0
                     setOnMatrixChangeListener {
+                        // Hide Motion Play button when user is zooming the picture
+                        if (isMotionPhoto) ivMotionPhotoPlayButton.isVisible = currentWidth <= displayWidth
+                        
                         if (currentWidth > displayWidth) {
                             when {
                                 it.right.toInt() <= displayWidth -> edgeDetected++
@@ -346,7 +353,17 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 }
             }
 
-            pvMotionPhotoPlayerView = itemView.findViewById(R.id.motion_photo_playerview)
+            pvMotionPhotoPlayerView = itemView.findViewById<PlayerView>(R.id.motion_photo_playerview).apply {
+                setOnTouchListener { v, event ->
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> v.parent.requestDisallowInterceptTouchEvent(true)
+                        MotionEvent.ACTION_UP -> v.parent.requestDisallowInterceptTouchEvent(false)
+                    }
+
+                    v.isVisible
+                }
+            }
+            
             ivMotionPhotoPlayButton = itemView.findViewById<AppCompatImageView>(R.id.motion_photo_play_button).apply {
                 setOnClickListener {
                     playerViewModel?.run {
@@ -355,9 +372,17 @@ abstract class SeamlessMediaSliderAdapter<T>(
                                 super.onPlaybackStateChanged(playbackState)
 
                                 when(playbackState) {
-                                    Player.STATE_READY -> pvMotionPhotoPlayerView.isVisible = true
+                                    Player.STATE_READY -> {
+                                        TransitionManager.beginDelayedTransition(ivMotionPhotoPlayButton.parent as ViewGroup, Fade().apply { duration = 200 })
+                                        pvMotionPhotoPlayerView.isVisible = true
+                                        ivMotionPhotoPlayButton.isVisible = false
+                                        ivMedia.isVisible = false
+                                    }
                                     Player.STATE_ENDED -> {
+                                        TransitionManager.beginDelayedTransition(pvMotionPhotoPlayerView.parent as ViewGroup, Fade().apply { duration = 300 })
                                         pvMotionPhotoPlayerView.isVisible = false
+                                        ivMedia.isVisible = true
+                                        ivMotionPhotoPlayButton.isVisible = true
                                         playerViewModel.rewind()
                                         playerViewModel.removeListener(this)
                                     }
@@ -368,15 +393,17 @@ abstract class SeamlessMediaSliderAdapter<T>(
                         resume(pvMotionPhotoPlayerView, getVideoItem(bindingAdapterPosition).uri)
                     }
                 }
+
+                isVisible = isMotionPhoto
             }
         }
 
-        fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit, isMotionPhoto: Boolean) {
             ivMedia.apply {
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
             }
-            ivMotionPhotoPlayButton.isVisible = isMotionPhoto(bindingAdapterPosition)
+            this.isMotionPhoto = isMotionPhoto
         }
 
         fun getPhotoView() = ivMedia
