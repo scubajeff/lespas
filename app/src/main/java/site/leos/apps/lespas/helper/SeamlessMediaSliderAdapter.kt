@@ -374,8 +374,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
                                 when(playbackState) {
                                     Player.STATE_READY -> {
                                         TransitionManager.beginDelayedTransition(ivMotionPhotoPlayButton.parent as ViewGroup, Fade().apply { duration = 200 })
-                                        pvMotionPhotoPlayerView.isVisible = true
                                         ivMotionPhotoPlayButton.isVisible = false
+                                        pvMotionPhotoPlayerView.isVisible = true
                                         ivMedia.isVisible = false
                                     }
                                     Player.STATE_ENDED -> {
