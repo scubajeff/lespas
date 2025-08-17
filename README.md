@@ -27,8 +27,8 @@ Features:
     * Support GPX importing, so that you can easily add GPS location data to pictures shot on your digital camera
     * Support Nextcloud's external storage
     * Beautiful theme inspired by the works of Wes Anderson
-    * Support standard media format plus Panorama Photo Sphere, RAW and HDR photos
-    * Supports Android TV for big-screen viewing pleasure
+    * Support standard media format plus Panorama Photo Sphere, RAW and HDR photos, Google Motion Photo
+    * Run on Android TV for big-screen viewing pleasure
 - ***Sharing***
     * Share albums and album slideshow with other Nextcloud users, groups and circles
     * Unique 'Joint Album' feature, which you and other Nextcloud users can edit together
