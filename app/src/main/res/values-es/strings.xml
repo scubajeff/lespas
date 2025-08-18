@@ -121,6 +121,7 @@
     <string name="accept_certificate">Confía en ello.</string>
     <string name="certificate_error">Error en el certificado del sitio.</string>
     <string name="item_search">Buscar</string>
+    <string name="button_text_motion_play">Reproducción de fotos en movimiento</string>
     <string name="object_unknown">DESCONOCIDO</string>
     <string name="object_animal">Animal</string>
     <string name="object_plant">Planta</string>

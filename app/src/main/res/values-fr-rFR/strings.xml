@@ -276,6 +276,7 @@
     <string name="option_menu_mute">Mettre en sourdine</string>
     <!-- Image Recognition -->
     <!-- Object label -->
+    <string name="button_text_motion_play">Lecture de photos animées</string>
     <string name="object_unknown">INCONNU</string>
     <string name="object_animal">Animal</string>
     <string name="object_plant">Plante</string>

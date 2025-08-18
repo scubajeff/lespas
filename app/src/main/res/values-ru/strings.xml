@@ -353,6 +353,7 @@
     <string name="suffix_gpx_offset">Допустимая разница в минутах</string>
     <string name="hint_gpx_export_file_location">Файл будет сохранён в папке «Скачанное».</string>
     <string name="msg_player_skip">5 секунд</string>
+    <string name="button_text_motion_play">Воспроизведение движущихся фотографий</string>
     <string name="object_unknown">НЕИЗВЕСТНО</string>
     <string name="object_plant">Растение</string>
     <string name="object_food">Еда</string>

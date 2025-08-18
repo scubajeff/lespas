@@ -120,6 +120,7 @@
     <string name="accept_certificate">信任</string>
     <string name="certificate_error">安全證書驗證失敗。</string>
     <string name="item_search">搜索</string>
+    <string name="button_text_motion_play">播放動態照片</string>
     <string name="object_unknown">未知</string>
     <string name="object_animal">動物</string>
     <string name="object_plant">花草樹木</string>

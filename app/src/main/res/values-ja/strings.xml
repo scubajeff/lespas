@@ -155,6 +155,7 @@
     <string name="need_albums">まずはアルバムを作成してください。</string>
     <string name="title_in_album">アルバム内の %1$s</string>
     <string name="title_in_gallery">ギャラリーの %1$s</string>
+    <string name="button_text_motion_play">モーション写真再生</string>
     <string name="object_unknown">未知</string>
     <string name="object_animal">動物</string>
     <string name="object_plant">花や植物や木</string>

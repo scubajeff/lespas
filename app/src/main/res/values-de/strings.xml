@@ -233,6 +233,7 @@
 
     <!-- Image Recognition -->
     <!-- Object label -->
+    <string name="button_text_motion_play">Bewegtbildwiedergabe</string>
     <string name="object_unknown">UNBEKANNT</string>
     <string name="object_animal">Tier</string>
     <string name="object_plant">Pflanze</string>

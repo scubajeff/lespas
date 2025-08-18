@@ -278,6 +278,7 @@
 
     <!-- Image Recognition -->
     <!-- Object label -->
+    <string name="button_text_motion_play">Reprodução de fotos em movimento</string>
     <string name="object_unknown">DESCONHECIDO</string>
     <string name="object_animal">Animal</string>
     <string name="object_plant">Planta</string>

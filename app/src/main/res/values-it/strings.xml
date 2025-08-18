@@ -295,6 +295,7 @@
 
     <!-- Image Recognition -->
     <!-- Object label -->
+    <string name="button_text_motion_play">Riproduzione foto in movimento</string>
     <string name="object_unknown">SCONOSCIUTO</string>
     <string name="object_animal">Animali</string>
     <string name="object_plant">Piante</string>
