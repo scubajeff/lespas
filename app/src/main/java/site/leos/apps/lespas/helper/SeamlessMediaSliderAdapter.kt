@@ -158,7 +158,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 override fun onTouch(v: View, event: MotionEvent): Boolean {
                     when (event.action) {
                         MotionEvent.ACTION_DOWN -> {
-                            v.parent.requestDisallowInterceptTouchEvent(true)
+                            v.parent?.requestDisallowInterceptTouchEvent(true)
                             velocityTracker?.clear()
                             velocityTracker = velocityTracker ?: VelocityTracker.obtain()
                             velocityTracker?.addMovement(event)
@@ -168,11 +168,11 @@ abstract class SeamlessMediaSliderAdapter<T>(
                                 val pointerId: Int = event.getPointerId(event.actionIndex)
                                 addMovement(event)
                                 computeCurrentVelocity(1000)
-                                if (abs(getXVelocity(pointerId)) > 6800) v.parent.requestDisallowInterceptTouchEvent(false)
+                                if (abs(getXVelocity(pointerId)) > 6800) v.parent?.requestDisallowInterceptTouchEvent(false)
                             }
                         }
                         MotionEvent.ACTION_UP -> {
-                            v.parent.requestDisallowInterceptTouchEvent(false)
+                            v.parent?.requestDisallowInterceptTouchEvent(false)
                             velocityTracker?.recycle()
                             velocityTracker = null
                         }
@@ -356,8 +356,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
             pvMotionPhotoPlayerView = itemView.findViewById<PlayerView>(R.id.motion_photo_playerview).apply {
                 setOnTouchListener { v, event ->
                     when (event.action) {
-                        MotionEvent.ACTION_DOWN -> v.parent.requestDisallowInterceptTouchEvent(true)
-                        MotionEvent.ACTION_UP -> v.parent.requestDisallowInterceptTouchEvent(false)
+                        MotionEvent.ACTION_DOWN -> v.parent?.requestDisallowInterceptTouchEvent(true)
+                        MotionEvent.ACTION_UP -> v.parent?.requestDisallowInterceptTouchEvent(false)
                     }
 
                     v.isVisible
