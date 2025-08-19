@@ -257,7 +257,7 @@ class RemoteMediaFragment: Fragment() {
                 result.parcelableArrayList<NCShareViewModel.RemotePhoto>(DestinationDialogFragment.KEY_REMOTE_PHOTOS)?.get(0)?.let { remotePhoto ->
                     val actionModel = ViewModelProvider(requireActivity())[ActionViewModel::class.java]
                     val actions = mutableListOf<Action>()
-                    val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
+                    val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}|${photo.shareId}" }
                     if (targetAlbum.id == Album.JOINT_ALBUM_ID) {
                         targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
                             actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,

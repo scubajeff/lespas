@@ -756,7 +756,9 @@ object Tools {
                                                 // Version 2 additions
                                                 orientation = getInt("orientation"), caption = jsonStringToStringEscape(caption), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
                                                 // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
-                                                eTag = Photo.ETAG_FAKE
+                                                eTag = Photo.ETAG_FAKE,
+                                                // Added in content meta format version 3
+                                                shareId = getInt("extraType"),
                                             ), sharePath
                                         )
                                     )
@@ -825,7 +827,8 @@ object Tools {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
                 //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, stringTOJSONStringEscape(caption), latitude, longitude, altitude, bearing)
+                //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, stringTOJSONStringEscape(caption), latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V3, id, name, dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), mimeType, width, height, orientation, stringTOJSONStringEscape(caption), latitude, longitude, altitude, bearing, shareId)
             }
         }
 
@@ -840,7 +843,8 @@ object Tools {
         photoMeta.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height)
             //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption.replace("\"", "\\\""), it.latitude, it.longitude, it.altitude, it.bearing)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, stringTOJSONStringEscape(it.caption), it.latitude, it.longitude, it.altitude, it.bearing)
+            //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, stringTOJSONStringEscape(it.caption), it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V3, it.id, it.name, it.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, stringTOJSONStringEscape(it.caption), it.latitude, it.longitude, it.altitude, it.bearing, it.shareId)
         }
 
         return content.dropLast(1) + "]}}"

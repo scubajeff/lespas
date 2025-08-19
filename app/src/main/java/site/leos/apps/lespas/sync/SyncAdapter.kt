@@ -424,14 +424,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Property fileId holds string "joint album's id|dateTaken epoch milli second|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // Property fileId holds string "joint album's id|dateTaken epoch milli second|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing|shareId"
                     // Property fileName holds media file name
                     // Media file should locate in app's file folder
                     // Joint Album's content meta file will be downloaded in app's file folder, later Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META will pick it up there and send it to server
 
                     val localFile = File(localBaseFolder, action.fileName)
                     if (localFile.exists()) {
-                        val normalMimeType = when(action.folderId){
+                        val normalMimeType = when(action.folderId) {
                             "image/agif" -> "image/gif"
                             "image/awebp" -> "image/webp"
                             else -> action.folderId
@@ -452,7 +452,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
                     // folderId is source folder path, starts from lespasBase, archiveBase or share_to_me base
                     // folderName is target folder path, starts from lespasBase or share_to_me base
-                    // fileId holds string "target album's id(only valid for Joint Album)|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // fileId holds string "target album's id(only valid for Joint Album)|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing|shareId"
                     // fileName is a string "file name|ture or false, whether it's joint album|ture or false, whether it's remote album|remote file uid.
 
                     //Log.e(">>>>>>>>", "syncLocalChanges: ${action.fileName} ${action.folderId} ${action.folderName}")
@@ -473,7 +473,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
 
                                 if (targetIsJointAlbum) {
-                                    // If target is in joint album, try best effort group patching
+                                    // If target is in joint album, try best effort batch patching
                                     logChangeToFile(action.fileId, newId, fileName)
                                 }
                                 else {
@@ -1062,6 +1062,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             mimeType = metaFromAction[2],
                             orientation = metaFromAction[5].toInt(), caption = metaFromAction[6],
                             latitude = metaFromAction[7].toDouble(), longitude = metaFromAction[8].toDouble(), altitude = metaFromAction[9].toDouble(), bearing = metaFromAction[10].toDouble(),
+                            // Added in content meta format v3
+                            shareId = if (metaFromAction.size > 11) metaFromAction[11].toInt() else Photo.DEFAULT_PHOTO_FLAG,
                         ), "", 0
                     )
                 )
@@ -1390,7 +1392,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         getInt("orientation")
                                                     } catch (_: JSONException) {
                                                         // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
-                                                        // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
+                                                        // We should quit quick sync, fall back to normal sync to that additional meta data can be retrieved
                                                         //Log.e(TAG, "client lower than 2.5.0 updated content meta, quit quick sync")
                                                         contentMetaUpdatedNeeded.add(changedAlbum.name)
                                                         return@use
@@ -1411,6 +1413,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                                     caption = Tools.jsonStringToStringEscape(caption),
                                                                     orientation = getInt("orientation"),
                                                                     latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
+                                                                    // Added in content meta format version 3
+                                                                    shareId = if (version >= 3 && Tools.isMotionPhoto(getInt("extraType"))) Photo.MOTION_PHOTO else Photo.DEFAULT_PHOTO_FLAG,
                                                                 )
                                                             )
                                                         }
@@ -2106,8 +2110,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
         // Catch exception here so that sync can go on if anything bad happen in this function, album meta file will be recreated if the current one is broken or missing
         catch (e: OkHttpWebDavException) { Log.e("$TAG OkHttpWebDavException: ${e.statusCode}", e.stackTraceString) }
-        catch (e: FileNotFoundException) { Log.e("$TAG FileNotFoundException: meta file not exist", e.stackTraceToString())}
-        catch (e: JSONException) { Log.e("$TAG JSONException: error parsing meta information", e.stackTraceToString())}
+        catch (e: FileNotFoundException) { Log.e("$TAG FileNotFoundException: meta file not exist", e.stackTraceToString()) }
+        catch (e: JSONException) { Log.e("$TAG JSONException: error parsing meta information", e.stackTraceToString()) }
         catch (e: Exception) { e.printStackTrace() }
 
         return result
@@ -2167,8 +2171,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val ALBUM_META_JSON_V2 = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d,\"mimetype\":\"%s\",\"orientation\":%d},\"sort\":%d,\"version\":2}}"
         //const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
         const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"
+        const val PHOTO_META_JSON_V3 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"extraType\":%d},"
         // Future update of additional fields to content meta file should be added to header, leave photo list at the very last, so that individual photo meta can be added at the end
-        const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
+        const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":3,\"photos\":["
 
         private const val CHANGE_LOG_FILENAME_SUFFIX = "-changelog"
 

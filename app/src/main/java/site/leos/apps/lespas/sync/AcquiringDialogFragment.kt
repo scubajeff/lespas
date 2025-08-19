@@ -192,6 +192,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 var fileId = ""
                 var mimeType = ""
                 var meta: Photo
+                var metaString = ""
 
                 val appRootFolder = Tools.getLocalRoot(application)
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
@@ -301,6 +302,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
 
 
+                        metaString = "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}|${meta.shareId}"
                         if (album.isJoint()) {
                             if (sourceIsRemote) {
                                 actions.add(
@@ -308,7 +310,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                     null, remoteAction,
                                         uri.path?.substringBeforeLast('/') ?: "",
                                         remoteTargetFolder,
-                                        "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                        metaString,
                                         "${fileId}|${album.isJoint()}|${album.isRemote()}|${meta.id}",
                                         System.currentTimeMillis(), 1
                                     )
@@ -320,7 +322,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                         null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM,
                                         meta.mimeType,
                                         remoteTargetFolder,
-                                        "${album.eTag}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                        metaString,
                                         fileId,
                                         System.currentTimeMillis(), 1
                                     )
@@ -338,7 +340,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             if (sourceIsRemote) {
                                 //Log.e(">>>>>>>>", "${uri.path?.substringBeforeLast('/')}    ${uri.lastPathSegment}",)
                                 //Log.e(">>>>>>>>", "$meta", )
-                                actions.add(Action(null, remoteAction, uri.path?.substringBeforeLast('/') ?: "", remoteTargetFolder, "${album.id}|${meta.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}", "${fileId}|${album.isJoint()}|${album.isRemote()}", System.currentTimeMillis(), 1))
+                                actions.add(Action(null, remoteAction, uri.path?.substringBeforeLast('/') ?: "", remoteTargetFolder, metaString, "${fileId}|${album.isJoint()}|${album.isRemote()}", System.currentTimeMillis(), 1))
                             }
                             else {
                                 // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table, also pass flags shareId in retry property

@@ -762,7 +762,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             }
 
                             // The metaString is for joint album only, but set it here anyway to differentiate from cases when ACTION_MOVE_ON_SERVER or ACTION_COPY_ON_SERVER is called by server archive management
-                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
+                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}|${photo.shareId}"
 
                             // Prepare copy or move actions
                             if (photo.id == album.cover) {

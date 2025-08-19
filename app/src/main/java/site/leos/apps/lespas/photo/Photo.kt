@@ -81,7 +81,7 @@ data class Photo(
 data class PhotoETag(val id: String, val eTag: String)
 data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
-data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int, val orientation: Int, val caption: String, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double)
+data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int, val orientation: Int, val caption: String, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double, val shareId: Int)
 data class MuzeiPhoto(val id: String, val name: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int, val orientation: Int, val eTag: String, val locality: String)
 // Photo extras which don't go with the physical image file like EXIF
 data class PhotoExtras(val id: String, val caption: String, val locality: String, val country: String, val countryCode: String, val classificationId: String)
@@ -172,7 +172,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT eTag FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun getETag(photoId: String): String
 
-    @Query("SELECT id, name, dateTaken, mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
+    @Query("SELECT id, name, dateTaken, mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing, shareId FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
 /*
