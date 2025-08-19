@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -372,11 +373,15 @@ abstract class SeamlessMediaSliderAdapter<T>(
                                 super.onPlaybackStateChanged(playbackState)
 
                                 when(playbackState) {
+                                    Player.STATE_BUFFERING -> {
+                                        (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).start()
+                                    }
                                     Player.STATE_READY -> {
                                         TransitionManager.beginDelayedTransition(ivMotionPhotoPlayButton.parent as ViewGroup, Fade().apply { duration = 200 })
                                         ivMotionPhotoPlayButton.isVisible = false
                                         pvMotionPhotoPlayerView.isVisible = true
                                         ivMedia.isVisible = false
+                                        (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).reset()
                                     }
                                     Player.STATE_ENDED -> {
                                         TransitionManager.beginDelayedTransition(pvMotionPhotoPlayerView.parent as ViewGroup, Fade().apply { duration = 300 })

@@ -41,7 +41,7 @@ Don't use ConstrainLayout asa the first element, will break slideshow, see comme
         android:layout_marginTop="48dp"
         android:layout_marginRight="@dimen/big_padding"
         android:padding="8dp"
-        android:src="@drawable/ic_baseline_motion_play_24"
+        android:src="@drawable/ic_baseline_motion_play_animated_24"
         android:contentDescription="@string/button_text_motion_play"
         tools:ignore="RtlHardcoded" />
 
