@@ -399,6 +399,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                         when(playbackState) {
                             Player.STATE_BUFFERING -> {
                                 (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).start()
+                                pvMotionPhotoPlayerView.isVisible = false
                             }
                             Player.STATE_READY -> {
                                 TransitionManager.beginDelayedTransition(ivMotionPhotoPlayButton.parent as ViewGroup, Fade().apply { duration = 200 })
@@ -409,7 +410,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
                             }
                             Player.STATE_ENDED -> {
                                 TransitionManager.beginDelayedTransition(pvMotionPhotoPlayerView.parent as ViewGroup, Fade().apply { duration = 300 })
-                                pvMotionPhotoPlayerView.isVisible = false
                                 ivMedia.isVisible = true
                                 ivMotionPhotoPlayButton.isVisible = true
                                 playerViewModel.rewind()
