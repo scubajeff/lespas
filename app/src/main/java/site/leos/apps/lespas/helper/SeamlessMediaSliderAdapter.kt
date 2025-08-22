@@ -321,7 +321,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     setOnPhotoTapListener { _, _, _ -> touchHandler(this) }
                     setOnOutsidePhotoTapListener { touchHandler(this) }
                     setOnLongClickListener { view ->
-                        touchHandler(view as PhotoView)
+                        if (ivMotionPhotoPlayButton.isVisible) playMotionPhoto() else touchHandler(view as PhotoView)
                         true
                     }
 
@@ -336,7 +336,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     edgeDetected = 0
                     setOnMatrixChangeListener {
                         // Hide Motion Play button when user is zooming the picture
-                        if (isMotionPhoto) ivMotionPhotoPlayButton.isVisible = currentWidth <= displayWidth
+                        if (isMotionPhoto) ivMotionPhotoPlayButton.isVisible = currentWidth <= displayWidth + 10
                         
                         if (currentWidth > displayWidth) {
                             when {
@@ -366,40 +366,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
             
             ivMotionPhotoPlayButton = itemView.findViewById<AppCompatImageView>(R.id.motion_photo_play_button).apply {
-                setOnClickListener {
-                    playerViewModel?.run {
-                        addListener( object : Player.Listener {
-                            override fun onPlaybackStateChanged(playbackState: Int) {
-                                super.onPlaybackStateChanged(playbackState)
-
-                                when(playbackState) {
-                                    Player.STATE_BUFFERING -> {
-                                        (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).start()
-                                    }
-                                    Player.STATE_READY -> {
-                                        TransitionManager.beginDelayedTransition(ivMotionPhotoPlayButton.parent as ViewGroup, Fade().apply { duration = 200 })
-                                        ivMotionPhotoPlayButton.isVisible = false
-                                        pvMotionPhotoPlayerView.isVisible = true
-                                        ivMedia.isVisible = false
-                                        (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).reset()
-                                    }
-                                    Player.STATE_ENDED -> {
-                                        TransitionManager.beginDelayedTransition(pvMotionPhotoPlayerView.parent as ViewGroup, Fade().apply { duration = 300 })
-                                        pvMotionPhotoPlayerView.isVisible = false
-                                        ivMedia.isVisible = true
-                                        ivMotionPhotoPlayButton.isVisible = true
-                                        playerViewModel.rewind()
-                                        playerViewModel.removeListener(this)
-                                    }
-                                }
-                            }
-                        })
-
-                        resume(pvMotionPhotoPlayerView, getVideoItem(bindingAdapterPosition).uri)
-                    }
-                }
-
                 isVisible = isMotionPhoto
+                setOnClickListener { if (isVisible) playMotionPhoto() }
             }
         }
 
@@ -419,6 +387,39 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 setAllowParentInterceptOnEdge(true)
                 currentWidth = baseWidth.toInt()
                 clickListener?.let { it(null) }
+            }
+        }
+
+        private fun playMotionPhoto() {
+            playerViewModel?.run {
+                addListener( object : Player.Listener {
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        super.onPlaybackStateChanged(playbackState)
+
+                        when(playbackState) {
+                            Player.STATE_BUFFERING -> {
+                                (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).start()
+                            }
+                            Player.STATE_READY -> {
+                                TransitionManager.beginDelayedTransition(ivMotionPhotoPlayButton.parent as ViewGroup, Fade().apply { duration = 200 })
+                                ivMotionPhotoPlayButton.isVisible = false
+                                pvMotionPhotoPlayerView.isVisible = true
+                                ivMedia.isVisible = false
+                                (ivMotionPhotoPlayButton.drawable as AnimatedVectorDrawable).reset()
+                            }
+                            Player.STATE_ENDED -> {
+                                TransitionManager.beginDelayedTransition(pvMotionPhotoPlayerView.parent as ViewGroup, Fade().apply { duration = 300 })
+                                pvMotionPhotoPlayerView.isVisible = false
+                                ivMedia.isVisible = true
+                                ivMotionPhotoPlayButton.isVisible = true
+                                playerViewModel.rewind()
+                                playerViewModel.removeListener(this)
+                            }
+                        }
+                    }
+                })
+
+                resume(pvMotionPhotoPlayerView, getVideoItem(bindingAdapterPosition).uri)
             }
         }
     }
