@@ -178,7 +178,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
     private fun mute() {
         //videoPlayer.volume = 0f
-        try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0) } catch (_: SecurityException) {}
+        //try { audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0) } catch (_: SecurityException) {}
+        // Actual volume adjustment in setVolume()
         currentVolumePercentage = 0f
     }
     /*
