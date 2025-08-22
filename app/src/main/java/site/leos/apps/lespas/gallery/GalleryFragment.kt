@@ -771,7 +771,6 @@ class GalleryFragment: Fragment() {
                     MediaStore.Files.FileColumns.SIZE,
                     MediaStore.Files.FileColumns.WIDTH,
                     MediaStore.Files.FileColumns.HEIGHT,
-                    MediaStore.Files.FileColumns.XMP,
                     "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 )
                 val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
@@ -780,7 +779,7 @@ class GalleryFragment: Fragment() {
                 val sortOrder = "${MediaStore.Files.FileColumns.DATE_ADDED} $order"
                 val queryBundle = Bundle()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    projection = projection.plus(arrayOf(MediaStore.Files.FileColumns.VOLUME_NAME, MediaStore.Files.FileColumns.IS_TRASHED))
+                    projection = projection.plus(arrayOf(MediaStore.Files.FileColumns.VOLUME_NAME, MediaStore.Files.FileColumns.IS_TRASHED, MediaStore.Files.FileColumns.XMP))
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
                     queryBundle.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, sortOrder)
                     queryBundle.putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
@@ -798,18 +797,19 @@ class GalleryFragment: Fragment() {
                         val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
                         val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
                         val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
-                        val xmpColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.XMP)
                         val defaultZone = ZoneId.systemDefault()
                         var mimeType: String
                         var dateAdded: Long
                         var dateTaken: Long
                         var relativePath: String
 
-                        var volumeColumn = 0
-                        var isTrashColumn = 0
+                        var volumeColumn = -1
+                        var isTrashColumn = -1
+                        var xmpColumn = -1
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
                             isTrashColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.IS_TRASHED)
+                            xmpColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.XMP)
                         }
 
                         cursorLoop@ while (cursor.moveToNext()) {
@@ -822,10 +822,11 @@ class GalleryFragment: Fragment() {
                             mimeType = cursor.getString(typeColumn)
                             // Make sure image type is supported
                             if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
-                            try { cursor.getBlob(xmpColumn)?.decodeToString()?.let {
+                            // MediaStore.Files.FileColumns.XMP only available since API 30
+                            if (xmpColumn != -1) cursor.getBlob(xmpColumn)?.decodeToString()?.let {
                                 if (it.contains(Tools.PANORAMA_SIGNATURE)) mimeType = Tools.PANORAMA_MIMETYPE
                                 if (it.contains(Tools.MOTION_PHOTO_SIGNATURE)) { isMotionPhoto = true }
-                            }} catch (_: Exception) {}
+                            }
                             if (cursor.getLong(sizeColumn) == 0L) continue@cursorLoop
 
 /*
@@ -851,14 +852,14 @@ class GalleryFragment: Fragment() {
                                         ensureActive()
                                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/agif"
                                     }
-                                } catch (_: Exception) { }
+                                } catch (e: Exception) { e.printStackTrace() }
                             }
 
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
                             localMedias.add(
                                 GalleryMedia(
                                     GalleryMedia.IS_IN_GALLERY,
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
+                                    if (isTrashColumn != -1 && cursor.getInt(isTrashColumn) == 1) TRASH_FOLDER else relativePath.substringBefore('/'),
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
                                             id = ContentUris.withAppendedId(if (mimeType.startsWith("image")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
@@ -877,14 +878,14 @@ class GalleryFragment: Fragment() {
                                         remotePath = "",    // Local media
                                         coverBaseLine = 0,  // Backup is disable by default
                                     ),
-                                    cursor.getString(volumeColumn),
+                                    if (volumeColumn != -1) cursor.getString(volumeColumn) else "",
                                     relativePath,
                                     relativePath.dropLast(1).substringAfterLast('/'),
                                 )
                             )
                         }
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) { e.printStackTrace() }
 
                 // List is now sorted when querying the content store
                 //ensureActive()
