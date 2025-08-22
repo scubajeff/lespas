@@ -414,6 +414,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                                 ivMotionPhotoPlayButton.isVisible = true
                                 playerViewModel.rewind()
                                 playerViewModel.removeListener(this)
+                                pvMotionPhotoPlayerView.player = null
                             }
                         }
                     }
