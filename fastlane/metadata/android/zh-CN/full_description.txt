@@ -13,8 +13,7 @@ Les Pas， 一款免费、开源、简洁高效而又不失绚丽的相册应用
   * 支持GPX导入，这样您就可以轻松地将GPS位置数据添加到由数码相机拍摄的照片上
   * 支持Nextcloud的外部存储
   * 主题灵感来自Wes Anderson的电影作品
-  * 支持标准媒体格式以及RAW和HDR照片
-
+支持
 共享
   * 与其他Nextcloud用户、组和圈子分享相册以及相册幻灯片
   * 独特的 "合作相册 "分享功能，您和其他Nextcloud用户可以一起修改
@@ -40,3 +39,4 @@ Les Pas， 一款免费、开源、简洁高效而又不失绚丽的相册应用
 - Android Open Source Project https://source.android.com
 - TensorFlow https://www.tensorflow.org
 - OpenStreetMap https://www.openstreetmap.org
+- Panorama Library https://github.com/hannesa2/panoramagl

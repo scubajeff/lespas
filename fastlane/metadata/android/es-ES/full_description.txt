@@ -13,7 +13,8 @@ Gestión, sincronización y archivo
   * Soporta la importación de GPX, para que pueda añadir fácilmente los datos de localización GPS a las fotos tomadas con su cámara digital.
   * Soporta almacenamiento externo Nextcloud
   * Hermoso tema inspirado en las obras de Wes Anderson
-  * Admite el formato multimedia estándar, además de fotos RAW y HDR
+  * Compatible con formatos multimedia estándar, además de RAW, fotos HDR, fotos esféricas panorámicas y fotos en movimiento
+  * Compatible con Android TV para disfrutar de la experiencia en pantalla grande
 
 Compartir
   * Comparte álbumes y presentaciones de diapositivas con otros usuarios, grupos y círculos de Nextcloud.
@@ -40,3 +41,4 @@ Este proyecto se construye utilizando el siguiente software de código abierto:
 - Android Open Source Project https://source.android.com
 - TensorFlow https://www.tensorflow.org
 - OpenStreetMap https://www.openstreetmap.org
+- Panorama Library https://github.com/hannesa2/panoramagl

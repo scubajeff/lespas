@@ -13,7 +13,8 @@ Les Pas」は、無料のオープンソースで、シンプルで効率的、�
   * デジタルカメラで撮影した写真にGPSの位置情報を簡単に追加できるGPXインポートをサポートしています。
   * Nextcloudの外部ストレージをサポート
   * ウェス・アンダーソンの作品にインスパイアされた美しいテーマです
-  * 標準的なメディアフォーマットだけでなく、RAWやHDR写真もサポートします
+  * 標準メディアフォーマットに加え、RAWフォーマット、HDR写真、パノラマフォトスフィア、モーションフォトに対応
+  * Android TVで動作し、大画面で快適に視聴できます
 
 共有機能
   * 他のNextcloudユーザー、グループ、サークルとアルバムやアルバムのスライドショーを共有することができます。
@@ -40,3 +41,4 @@ Les Pas」は、無料のオープンソースで、シンプルで効率的、�
 - Android Open Source Project https://source.android.com
 - TensorFlow https://www.tensorflow.org
 - OpenStreetMap https://www.openstreetmap.org
+- Panorama Library https://github.com/hannesa2/panoramagl
