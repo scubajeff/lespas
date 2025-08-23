@@ -685,7 +685,7 @@ class GalleryFragment: Fragment() {
                             archiveMedia?.let {
                                 if (archiveMedia.isNotEmpty()) {
                                     // Deep copy to create a brand new list for combining local and archive items
-                                    val combinedList = archiveMedia.map { it.copy() }.toMutableList()
+                                    val combinedList = archiveMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }.toMutableList()
 
                                     if (localMedia.isNotEmpty()) {
                                         // Create a map of archive items from this device for matching local medias later
@@ -702,7 +702,7 @@ class GalleryFragment: Fragment() {
                                                 existed.media.photo.eTag = Photo.ETAG_NOT_YET_UPLOADED
                                             } ?: run {
                                                 // If local media not existed in archive list, add it's deep copy to combined list, change property 'location' to facilitate list adapter diff detection in GalleryOverviewFragment, GalleryFolderViewFragment
-                                                combinedList.add(localItem.copy(location = GalleryMedia.IS_LOCAL))
+                                                combinedList.add(localItem.copy(location = GalleryMedia.IS_LOCAL, media = localItem.media.copy(photo = localItem.media.photo.copy())))
                                             }
                                         }
 
@@ -711,14 +711,15 @@ class GalleryFragment: Fragment() {
                                 } else {
                                     // No content in archive yet
                                     archiveEmptyToast()
-                                    localMedia.map { it.copy() }.toList()
+                                    //localMedia.map { it.copy() }.toList()
+                                    localMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
                                 }
                             } ?: run {
                                 // Archive refreshing job in NCShareViewModel emit NULL list when the job is running
                                 _showArchive.value = REFRESHING_ARCHIVE
-                                localMedia
+                                localMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
                             }
-                        } else localMedia
+                        } else localMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
                     }.collect { result -> _medias.emit(result) }
                 }
             }

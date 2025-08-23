@@ -50,6 +50,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.content.edit
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
@@ -436,17 +437,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 return result
             } catch (e: UnknownHostException) {
-                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}")
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: SocketTimeoutException) {
-                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}")
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: Exception) {
-                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}", )
+                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}")
                 e.printStackTrace()
                 break
             }
@@ -677,27 +678,25 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
                         volume = dav.name.substringAfter('/').substringBefore('/')
                         path = dav.name.substringAfter('/').substringAfter('/').substringBeforeLast('/', "")
-                        result.add(
-                            GalleryFragment.GalleryMedia(
-                                GalleryFragment.GalleryMedia.IS_REMOTE,
-                                folder = if (path.isEmpty()) volume else path.substringBefore('/'),     // first segment of file path
-                                media = RemotePhoto(
-                                    Photo(
-                                        id = dav.fileId, albumId = GalleryFragment.FROM_ARCHIVE, name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
-                                        dateTaken = dav.dateTaken, lastModified = dav.modified,
-                                        width = dav.width, height = dav.height, orientation = dav.orientation,
-                                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
-                                        shareId = dav.shareId,
-                                        caption = dav.size.toString()       // Store file size in property caption, TODO setup dedicated property for size
-                                    ),
-                                    remotePath = archiveBase + dav.name.substringBeforeLast('/')
+                        result.add(GalleryFragment.GalleryMedia(
+                            location = GalleryFragment.GalleryMedia.IS_REMOTE,
+                            folder = if (path.isEmpty()) volume else path.substringBefore('/'),     // first segment of file path
+                            media = RemotePhoto(
+                                Photo(
+                                    id = dav.fileId, albumId = GalleryFragment.FROM_ARCHIVE, name = dav.name.substringAfterLast('/'), eTag = Photo.ETAG_ARCHIVE, mimeType = dav.contentType,
+                                    dateTaken = dav.dateTaken, lastModified = dav.modified,
+                                    width = dav.width, height = dav.height, orientation = dav.orientation,
+                                    latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
+                                    shareId = dav.shareId,
+                                    caption = dav.size.toString()       // Store file size in property caption, TODO setup dedicated property for size
                                 ),
-                                volume = volume,        // volume name of archive item is device model name
-                                fullPath = "$path/",
-                                appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),     // last segment of file path
-                                remoteFileId = dav.fileId,
-                            )
-                        )
+                                remotePath = archiveBase + dav.name.substringBeforeLast('/')
+                            ),
+                            volume = volume,        // volume name of archive item is device model name
+                            fullPath = "$path/",
+                            appName = if (path.isEmpty()) volume else path.substringAfterLast('/'),     // last segment of file path
+                            remoteFileId = dav.fileId,
+                        ))
                     } else {
                         // Get archive folder latest eTag
                         if (dav.isFolder && dav.name.isEmpty()) newETag = dav.eTag
@@ -707,7 +706,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 result.sortByDescending { it.media.photo.lastModified }
                 ensureActive()
                 _archive.emit(result)
-                saveArchiveSnapshot(result, newETag)
+                saveArchiveSnapshot(result.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }.toList(), newETag)
             } catch (e: Exception) {
                 // Anything bad happen, like snapshot file damaged, server not available, signal upstream with endless archive refreshing
                 e.printStackTrace()
@@ -730,9 +729,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun saveArchiveSnapshot(archiveList: List<GalleryFragment.GalleryMedia>, newETag: String) {
         File(localFileFolder, ARCHIVE_SNAPSHOT_FILE).writer().use { it.write(Tools.archiveToJSONString(archiveList)) }
 
-        sp.edit().run {
+        sp.edit {
             putString(SyncAdapter.LATEST_ARCHIVE_FOLDER_ETAG, newETag)
-            apply()
         }
     }
 
@@ -752,30 +750,29 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 */
 
+/*
     fun getCameraRollArchive(): List<Photo> {
         val newETag: String
         val result = mutableListOf<Photo>()
         try {
-/*
-            webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
-                if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
-                    result.add(Photo(
-                        id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
-                        dateTaken = dav.dateTaken, lastModified = dav.modified,
-                        width = dav.width, height = dav.height, orientation = dav.orientation,
-                        // Store file size in property shareId
-                        shareId = dav.size.toInt(),
-                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing
-                    ))
-                }
-            }
-            result.sortByDescending { it.dateTaken }
-
-            // Save a snapshot
-            File(localFileFolder, SNAPSHOT_FILENAME).writer().use {
-                it.write(Tools.photosToMetaJSONString(result))
-            }
-*/
+//            webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+//                if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
+//                    result.add(Photo(
+//                        id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
+//                        dateTaken = dav.dateTaken, lastModified = dav.modified,
+//                        width = dav.width, height = dav.height, orientation = dav.orientation,
+//                        // Store file size in property shareId
+//                        shareId = dav.size.toInt(),
+//                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing
+//                    ))
+//                }
+//            }
+//            result.sortByDescending { it.dateTaken }
+//
+//            // Save a snapshot
+//            File(localFileFolder, SNAPSHOT_FILENAME).writer().use {
+//                it.write(Tools.photosToMetaJSONString(result))
+//            }
             webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).let { archive ->
                 newETag = archive[0].eTag
                 archive.forEach { dav ->
@@ -799,6 +796,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         return result
     }
+*/
 
     suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean) {
         var doRefresh = false

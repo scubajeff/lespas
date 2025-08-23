@@ -321,7 +321,7 @@ class SearchFragment: Fragment() {
                 }
                 launch {
                     combine(localGallery, archiveModel.archive) { local, archiveMedia ->
-                        val combinedList = local.map { it.copy(remotePath = "") }.toMutableList()
+                        val combinedList = local.map { it.copy(remotePath = "", photo = it.photo.copy()) }.toMutableList()
 
                         ensureActive()
                         archiveMedia?.let {
@@ -332,10 +332,10 @@ class SearchFragment: Fragment() {
                                 ensureActive()
                                 archiveMedia.filter { it.media.photo.mimeType.startsWith("image/") }.partition { it.media.photo.lastModified >= if (local.isEmpty()) LocalDateTime.now() else local.last().photo.lastModified }.let {
                                     ensureActive()
-                                    combinedList.addAll(it.first.filter { item -> searchMap[item.fullPath + item.media.photo.name] == null }.map { item ->  item.media })   // Add all archive media which date falls in device Gallery date range and does not exit in device
+                                    combinedList.addAll(it.first.filter { item -> searchMap[item.fullPath + item.media.photo.name] == null }.map { item ->  item.media.copy(photo = item.media.photo.copy()) })   // Add all archive media which date falls in device Gallery date range and does not exit in device
 
                                     ensureActive()
-                                    combinedList.addAll(it.second.map { item -> item.media })   // Add all archive media which date is earlier than the oldest date of device Gallery
+                                    combinedList.addAll(it.second.map { item -> item.media.copy(photo = item.media.photo.copy()) })   // Add all archive media which date is earlier than the oldest date of device Gallery
                                 }
 
                                 ensureActive()
