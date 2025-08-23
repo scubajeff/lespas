@@ -687,7 +687,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         dateTaken = dav.dateTaken, lastModified = dav.modified,
                                         width = dav.width, height = dav.height, orientation = dav.orientation,
                                         latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
-                                        shareId = if (dav.isMotionPhoto) Photo.MOTION_PHOTO else Photo.DEFAULT_PHOTO_FLAG,
+                                        shareId = dav.shareId,
                                         caption = dav.size.toString()       // Store file size in property caption, TODO setup dedicated property for size
                                     ),
                                     remotePath = archiveBase + dav.name.substringBeforeLast('/')

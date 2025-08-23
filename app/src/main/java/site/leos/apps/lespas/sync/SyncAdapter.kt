@@ -1861,9 +1861,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     }
                                     exif.getAttribute(ExifInterface.TAG_XMP)?.let { xmp ->
                                         photo.shareId = when {
-                                            xmp.contains(Tools.PANORAMA_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_PANORAMA
-                                            xmp.contains(Tools.MOTION_PHOTO_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_MOTION
-                                            else -> OkHttpWebDav.LESPAS_EXTRA_TYPE_NORMAL
+                                            xmp.contains(Tools.PANORAMA_SIGNATURE) -> {
+                                                // Both fields are needed
+                                                // Other software won't play nicely with our customized mime type image/panorama, so we need LESPAS_EXTRA_TYPE property to mark photo sphere
+                                                photo.mimeType = Tools.PANORAMA_MIMETYPE
+                                                Photo.PANORAMA_PHOTO
+                                            }
+                                            xmp.contains(Tools.MOTION_PHOTO_SIGNATURE) -> Photo.MOTION_PHOTO
+                                            else -> Photo.DEFAULT_PHOTO_FLAG
                                         }
                                     }
                                 }
@@ -1889,16 +1894,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + photo.orientation + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + photo.width + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + photo.height + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
-                                    (
-                                        if (photo.shareId == OkHttpWebDav.LESPAS_EXTRA_TYPE_NORMAL) ""
-                                        else "<oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>" + photo.shareId + "</oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>"
-                                    )+
-                                    if (photo.latitude == Photo.GPS_DATA_UNKNOWN) ""
-                                    else
-                                        "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + photo.latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
-                                                "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + photo.longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
-                                                "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + photo.altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
-                                                "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + photo.bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>"
+                                    "<oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>" + photo.shareId + "</oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>" +
+                                    "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + photo.latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
+                                    "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + photo.longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
+                                    "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + photo.altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
+                                    "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + photo.bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>"
                         )
                     } catch (_: Exception) {}
 
@@ -1909,6 +1909,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Use system default zone for time display, sorting and grouping by date in Gallery list
                     photo.dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(cTimeStamp), ZoneId.systemDefault())
                     photo.lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(mTimeStamp * 1000), ZoneId.systemDefault())
+
                     snapshotAddition.find { item -> item.remoteFileId == photo.id } ?: run {
                         snapshotAddition.add(0,
                             GalleryFragment.GalleryMedia(

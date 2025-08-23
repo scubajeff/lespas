@@ -67,6 +67,7 @@ data class Photo(
         const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices
         const val NEED_REFRESH = 1 shl 1        // Need to refresh photo's preview from server
         const val EXCLUDE_FROM_BLOG = 1 shl 2   // Exclude from blog post, TODO should this be saved in content-meta?
+        const val PANORAMA_PHOTO = 1 shl 6      // Panorama Photo Sphere
         const val MOTION_PHOTO = 1 shl 7        // Motion Photo
 
         // Some default values

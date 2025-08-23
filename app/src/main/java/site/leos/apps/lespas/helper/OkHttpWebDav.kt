@@ -365,14 +365,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     LESPAS_LONGITUDE -> res.longitude = try { text.toDouble() } catch (_: NumberFormatException) { Photo.NO_GPS_DATA }
                                     LESPAS_ALTITUDE -> res.altitude = try { text.toDouble() } catch (_: NumberFormatException) { Photo.NO_GPS_DATA }
                                     LESPAS_BEARING -> res.bearing = try { text.toDouble() } catch (_: NumberFormatException) { Photo.NO_GPS_DATA }
-                                    LESPAS_EXTRA_TYPE -> try {
-                                        text.toInt().let { type ->
-                                            when(type) {
-                                                LESPAS_EXTRA_TYPE_PANORAMA -> res.contentType = Tools.PANORAMA_MIMETYPE
-                                                LESPAS_EXTRA_TYPE_MOTION -> res.isMotionPhoto = true
-                                            }
-                                        }
-                                    } catch (_: NumberFormatException) {}
+                                    LESPAS_EXTRA_TYPE -> res.shareId = try { text.toInt() } catch (_: NumberFormatException) { Photo.DEFAULT_PHOTO_FLAG }
                                     NC_IMAGE_RESOLUTION, NC_IMAGE_RESOLUTION_28 -> if (res.width == 0 && res.height == 0) {
                                         // Fall back to Nextcloud exposed metadata of image resolution
                                         Pattern.quote("{\"width\":(.*),\"height\":(.*)}").toRegex().matchEntire(text)?.destructured?.let { (width, height) ->
@@ -391,6 +384,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                         text = ""
                                         // Making sure dateTaken property has meaningful value, since the self-patched WebDAV property is not always available. lastModified is better than nothing choice
                                         if (res.dateTaken == LocalDateTime.MIN) res.dateTaken = res.modified
+                                        if (res.shareId == Photo.PANORAMA_PHOTO) { res.contentType = Tools.PANORAMA_MIMETYPE }
                                         result.add(res)
                                     }
                                 }
@@ -703,7 +697,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         var altitude: Double = Photo.GPS_DATA_UNKNOWN,
         var bearing: Double = Photo.GPS_DATA_UNKNOWN,
         var caption: String = "",
-        var isMotionPhoto: Boolean = false,
+        var shareId: Int = Photo.DEFAULT_PHOTO_FLAG,
     ): Parcelable
 
     companion object {
@@ -755,10 +749,6 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         const val LESPAS_BEARING = "pictureBearing"
         const val LESPAS_CAPTION = "pictureCaption"
         const val LESPAS_EXTRA_TYPE = "pictureExtraType"
-
-        const val LESPAS_EXTRA_TYPE_NORMAL = 0
-        const val LESPAS_EXTRA_TYPE_PANORAMA = 1
-        const val LESPAS_EXTRA_TYPE_MOTION = 2
 
         private const val XML_HEADER = "<?xml version=\"1.0\"?>"
         //private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\" xmlns:nc=\"$NC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
