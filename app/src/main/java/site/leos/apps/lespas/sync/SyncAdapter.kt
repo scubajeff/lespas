@@ -1859,10 +1859,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         photo.altitude = Photo.NO_GPS_DATA
                                         photo.bearing = Photo.NO_GPS_DATA
                                     }
-                                    exif.getAttribute(ExifInterface.TAG_XMP)?.let {
+                                    exif.getAttribute(ExifInterface.TAG_XMP)?.let { xmp ->
                                         photo.shareId = when {
-                                            it.contains(Tools.PANORAMA_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_PANORAMA
-                                            it.contains(Tools.MOTION_PHOTO_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_MOTION
+                                            xmp.contains(Tools.PANORAMA_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_PANORAMA
+                                            xmp.contains(Tools.MOTION_PHOTO_SIGNATURE) -> OkHttpWebDav.LESPAS_EXTRA_TYPE_MOTION
                                             else -> OkHttpWebDav.LESPAS_EXTRA_TYPE_NORMAL
                                         }
                                     }
@@ -1892,7 +1892,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     (
                                         if (photo.shareId == OkHttpWebDav.LESPAS_EXTRA_TYPE_NORMAL) ""
                                         else "<oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>" + photo.shareId + "</oc:${OkHttpWebDav.LESPAS_EXTRA_TYPE}>"
-
                                     )+
                                     if (photo.latitude == Photo.GPS_DATA_UNKNOWN) ""
                                     else
