@@ -852,17 +852,22 @@ object Tools {
 
     fun archiveToJSONString(archiveList: List<GalleryFragment.GalleryMedia>): String {
         val defaultOffset = OffsetDateTime.now().offset
-        var content = "{\"archive\":{\"version\":1,\"photos\":["
+        var content = "{\"archive\":{\"version\":2,\"photos\":["
         archiveList.forEach { localMedia ->
             with(localMedia.media.photo) {
                 content += String.format(
                     Locale.ROOT,
-                    "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"volume\":\"%s\",\"fullPath\":\"%s\"},",
+                    // Version 1
+                    // "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"volume\":\"%s\",\"fullPath\":\"%s\"},",
+                    // Version 2, property "extraType" added
+                    "{\"id\":\"%s\",\"name\":\"%s\",\"dateTaken\":%d,\"lastModified\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"size\":%d,\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f,\"volume\":\"%s\",\"fullPath\":\"%s\",\"extraType\":%d},",
                     id, name,
                     // When retrieving date from device Gallery in GalleryFragment's asGallery(), local default timezone was used, have to use it here too so that the result timestamp is the same as retrieved from photo's EXIF
                     dateTaken.toInstant(defaultOffset).toEpochMilli(), lastModified.toInstant(defaultOffset).toEpochMilli(),
                     mimeType, width, height, orientation, caption.toLong(), latitude, longitude, altitude, bearing,
                     localMedia.volume, localMedia.fullPath,
+                    // added in Version 2
+                    shareId,
                 )
             }
         }
@@ -902,6 +907,8 @@ object Tools {
                                 longitude = photo.longitude,
                                 altitude = photo.altitude,
                                 bearing = photo.bearing,
+                                // Added in Version 2 of snapshot file
+                                shareId = if (isMotionPhoto(photo.extraType)) Photo.MOTION_PHOTO else Photo.DEFAULT_PHOTO_FLAG
                             ),
                             remotePath = "${archiveBase}/${volume}/${fullPath}"
                         ),

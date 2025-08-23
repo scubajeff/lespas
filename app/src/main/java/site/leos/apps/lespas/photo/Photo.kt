@@ -88,7 +88,7 @@ data class PhotoExtras(val id: String, val caption: String, val locality: String
 data class PhotoSidecar(val id: String, var dateTaken: LocalDateTime, val shareId: Int, val caption: String, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double, val locality: String, val country: String, val countryCode: String): java.io.Serializable
 
 // Gallery archive local snapshot
-data class SnapshotPhoto(val id: String, val name: String, val dateTaken: Long, val lastModified: Long, val mime: String, val width: Int, val height: Int, val orientation: Int, val size: Long, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double, val volume: String, val fullPath: String)
+data class SnapshotPhoto(val id: String, val name: String, val dateTaken: Long, val lastModified: Long, val mime: String, val width: Int, val height: Int, val orientation: Int, val size: Long, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double, val volume: String, val fullPath: String, val extraType: Int)
 data class SnapshotContent(val version: Int, val photos: List<SnapshotPhoto>)
 data class SnapshotFile(val archive: SnapshotContent)
 
