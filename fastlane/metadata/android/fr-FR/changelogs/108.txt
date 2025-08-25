@@ -1,0 +1,6 @@
+* Prise en charge de Google Motion Photo
+* Correction d'un bug lié à la lecture de la date de prise de vue des anciennes photos dont les métadonnées EXIF étaient incomplètes
+* Correction d'un bug lié à l'affichage d'une galerie vide sur les téléphones fonctionnant sous Android 11 ou une version antérieure
+* Correction de divers bugs liés à la gestion des archives dus à un fichier instantané d'archive local corrompu
+* Correction d'un bug lié à la mise en sourdine accidentelle du volume du système
+* Diverses améliorations et corrections de bugs

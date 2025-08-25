@@ -1,0 +1,6 @@
+* Compatible con Google Motion Photo
+* Se ha corregido un error al leer la fecha de captura de fotos antiguas con metadatos EXIF incompletos
+* Se ha corregido un error que mostraba la galería vacía en teléfonos con Android 11 o versiones anteriores
+* Se han corregido varios errores de gestión de archivos debido a la corrupción del archivo de instantáneas locales
+* Se ha corregido el silenciamiento accidental del volumen del sistema
+* Varias mejoras y correcciones de errores

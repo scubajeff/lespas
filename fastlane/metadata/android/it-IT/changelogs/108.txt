@@ -1,0 +1,6 @@
+* Supporto per Google Motion Photo
+* Risolto bug relativo alla lettura della data di scatto delle foto vecchie con metadati EXIF incompleti
+* Risolto bug relativo alla visualizzazione della Galleria vuota sui telefoni con sistema operativo Android 11 o versioni precedenti
+* Risolti vari bug relativi alla gestione dell'archivio dovuti a file di snapshot dell'archivio locale danneggiati
+* Risolto bug relativo all'audio del sistema che veniva accidentalmente disattivato
+* Vari miglioramenti e correzioni di bug

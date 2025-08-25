@@ -1,0 +1,6 @@
+* Suporte para Google Motion Photo
+* Corrigido bug na leitura da data de captura de fotos antigas com metadados EXIF incompletos
+* Corrigido bug que mostrava a Galeria vazia em telefones com Android 11 ou versões anteriores
+* Corrigidos vários bugs no gerenciamento de arquivos devido a arquivos de snapshot corrompidos no arquivo local
+* Corrigido o volume do sistema sendo silenciado acidentalmente
+* Várias melhorias e correções de bugs

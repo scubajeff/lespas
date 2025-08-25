@@ -1,3 +1,11 @@
+## Version 2.10.1
+* Support Google Motion Photo
+* Fixed bug of reading photo taken date for old photos with incomplete EXIF meta data
+* Fixed bug of showing empty Gallery for phone running on Android 11 or below
+* Fixed various bugs of Archive management due to corrupted local archive snapshot file
+* Fixed system volume being muted accidentally
+* Various improvements and bug fixes
+
 ## Version 2.10.0
 * Initial support for Android TV
 * ru translation added thanks to Github user @yurtpage
