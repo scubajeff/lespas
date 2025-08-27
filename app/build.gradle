@@ -75,9 +75,11 @@ android {
 
 dependencies {
     // TensorFlow
-    implementation 'org.tensorflow:tensorflow-lite-support:0.5.0'
-    implementation 'org.tensorflow:tensorflow-lite-gpu:2.17.0'
-    implementation 'org.tensorflow:tensorflow-lite-gpu-api:2.17.0'
+    def liteRTVersion = "1.4.0"
+    implementation "com.google.ai.edge.litert:litert-support:$liteRTVersion"
+    implementation "com.google.ai.edge.litert:litert:$liteRTVersion"
+    implementation "com.google.ai.edge.litert:litert-gpu:$liteRTVersion"
+    implementation "com.google.ai.edge.litert:litert-metadata:$liteRTVersion"
 
     // Core
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
