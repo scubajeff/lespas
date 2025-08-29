@@ -53,8 +53,9 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintBottom_toTopOf="@id/divider"
-            android:lines="1"
-            android:ellipsize="marquee"
+            android:lines="2"
+            android:ellipsize="end"
+            android:gravity="bottom|center_horizontal"
             style="@style/TextAppearance.MaterialComponents.Headline5"
             android:textColor="?primaryTextWhite"
             android:shadowDx="1"
@@ -95,7 +96,7 @@
             android:shadowDy="1"
             android:shadowRadius="1"
             android:shadowColor="@color/dark_gray_overlay_background"
-            tools:text="duration" />
+            tools:text="Duration" />
 
         <TextView
             android:id="@+id/total"
@@ -110,7 +111,7 @@
             android:shadowDy="1"
             android:shadowRadius="1"
             android:shadowColor="@color/dark_gray_overlay_background"
-            tools:text="total" />
+            tools:text="Total" />
 
         <TextView
             android:id="@+id/recipients"
