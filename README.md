@@ -16,19 +16,18 @@ Although it use Nextcloud as storage backend, you don't have to install any Next
 Features:
 - ***Managing, Syncing and Archiving***
     * Organize your media files in albums
-    * Easy media importing by simply sharing files to Les Pas
+    * Support standard media format plus Panorama Photo Sphere, RAW and HDR photos, Google Motion Photo
     * Manage media files in your phone's gallery and auto backup to server, each media folder in your phone has its own backup setting
-    * Integrate with [Snapseed](https://play.google.com/store/apps/details?id=com.niksoftware.snapseed) for photo editing
-    * Support adding caption to photo
     * Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
     * Support Remote Album, which have all its media files stored in Nextcloud server only, freeing up Phone's storage
+    * Run on Android TV for big-screen viewing pleasure
+    * Integrate with [Snapseed](https://play.google.com/store/apps/details?id=com.niksoftware.snapseed) for photo editing
+    * Support adding caption to photo
     * Search for photos by objects with AI
     * Search photos by location
     * Support GPX importing, so that you can easily add GPS location data to pictures shot on your digital camera
     * Support Nextcloud's external storage
     * Beautiful theme inspired by the works of Wes Anderson
-    * Support standard media format plus Panorama Photo Sphere, RAW and HDR photos, Google Motion Photo
-    * Run on Android TV for big-screen viewing pleasure
 - ***Sharing***
     * Share albums and album slideshow with other Nextcloud users, groups and circles
     * Unique 'Joint Album' feature, which you and other Nextcloud users can edit together
