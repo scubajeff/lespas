@@ -77,6 +77,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.transition.Fade
+import androidx.transition.TransitionManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -91,6 +92,7 @@ import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.LesPasFastScroller
 import site.leos.apps.lespas.helper.LesPasGetMediaContract
+import site.leos.apps.lespas.helper.RenameDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.Tools.parcelableArrayList
@@ -119,6 +121,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var selectionTracker: SelectionTracker<String>
     private lateinit var lastSelection: MutableSet<String>
     private val uris = arrayListOf<Uri>()
+    private var renameAlbum = Album(lastModified = LocalDateTime.MIN)
 
     private val publishViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
@@ -362,7 +365,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
 
-                    androidx.transition.TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 300 })
+                    TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 300 })
                     fab.isVisible = newState == RecyclerView.SCROLL_STATE_IDLE
                 }
             })
@@ -424,6 +427,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             //bundle.getParcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
             bundle.parcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
                 if (this.isNotEmpty()) actionModel.unhideAlbums(this)
+            }
+        }
+
+        parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle ->
+            bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName ->
+                when (bundle.getInt(RenameDialogFragment.REQUEST_TYPE)) {
+                    RenameDialogFragment.REQUEST_TYPE_ALBUM -> {
+                        val sharedByMe = mAdapter.getAlbumRecipients(renameAlbum.id)
+                        (sharedByMe?.with?.isNotEmpty() == true).let { isShared ->
+                            actionModel.renameAlbum(renameAlbum.id, renameAlbum.name, newName, isShared)
+
+                            // Nextcloud server won't propagate folder name changes to shares for a reason, see https://github.com/nextcloud/server/issues/2063
+                            // In our case, I think it's a better UX to do it because name is a key aspect of album, so...
+                            // TODO What if sharedByMe is not available when working offline
+                            if (isShared) publishViewModel.renameShare(sharedByMe!!, newName)
+                        }
+                    }
+                }
             }
         }
 
@@ -643,6 +664,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
+        menu?.findItem(R.id.rename)?.isEnabled = selectionTracker.selection.size() == 1
+
         return true
     }
 
@@ -695,6 +718,22 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
             R.id.rescan -> {
                 if (parentFragmentManager.findFragmentByTag(RESCAN_DIALOG) == null) MetaRescanDialogFragment.newInstance(selectionTracker.selection.toList()).show(parentFragmentManager, RESCAN_DIALOG)
+                selectionTracker.clearSelection()
+                true
+            }
+            R.id.rename -> {
+                mAdapter.getItemBySelectionKey(selectionTracker.selection.first())?.let { album ->
+                    renameAlbum = album
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        albumsModel.getAllAlbumName().also {
+                            val names = mutableListOf<String>()
+                            // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
+                            // name check should include hidden ones
+                            it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
+                            if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) RenameDialogFragment.newInstance(album.name, names, RenameDialogFragment.REQUEST_TYPE_ALBUM).show(parentFragmentManager, RENAME_DIALOG)
+                        }
+                    }
+                }
                 selectionTracker.clearSelection()
                 true
             }
@@ -910,7 +949,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun getItemBySelectionKey(key: String): Album? = currentList.find { it.id == key }
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         private fun getAlbumId(position: Int): String = currentList[position].id
-        private fun getPosition(key: String): Int = currentList.indexOfFirst { it.id == key}
+        private fun getPosition(key: String): Int = currentList.indexOfFirst { it.id == key }
+        internal fun getAlbumRecipients(id: String): NCShareViewModel.ShareByMe? = recipients.find { it.fileId == id }
 
         class AlbumKeyProvider(private val adapter: AlbumListAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getAlbumId(position)
@@ -1016,6 +1056,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         const val TAG_DESTINATION_DIALOG = "ALBUM_FRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val RESCAN_DIALOG = "RESCAN_DIALOG"
+        private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val ALBUM_REQUEST_KEY = "ALBUM_REQUEST_KEY"
         private const val CONFIRM_DELETE_REQUEST = "CONFIRM_DELETE_REQUEST"
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"

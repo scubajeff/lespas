@@ -31,6 +31,10 @@
         android:title="@string/action_rescan"
         android:icon="@drawable/ic_baseline_reload_24"
         app:showAsAction="never" />
+    <item android:id="@+id/rename"
+        android:title="@string/item_rename"
+        android:icon="@drawable/ic_baseline_rename_24"
+        app:showAsAction="never" />
     <item android:id="@+id/hide"
         android:title="@string/action_hide"
         android:icon="@drawable/ic_baseline_hide_24"
