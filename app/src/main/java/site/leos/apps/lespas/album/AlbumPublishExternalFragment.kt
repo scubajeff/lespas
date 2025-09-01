@@ -76,7 +76,7 @@ class AlbumPublishExternalFragment: Fragment() {
             setOnFocusChangeListener { v, hasFocus -> if (!hasFocus) hideSoftKeyboard(v) }
         }
 
-        publicationTypeToggleGroup = view.findViewById<MaterialButtonToggleGroup?>(R.id.publication_type).apply {
+        publicationTypeToggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.publication_type).apply {
             setOnTouchListener { v, _ ->
                 if (v.id == R.id.publication_type) hideSoftKeyboard(v)
                 false
@@ -128,7 +128,7 @@ class AlbumPublishExternalFragment: Fragment() {
             }
         }
 
-        shareLinkButton = view.findViewById<MaterialButton?>(R.id.share_button).apply {
+        shareLinkButton = view.findViewById<MaterialButton>(R.id.share_button).apply {
             setOnClickListener {
                 hideSoftKeyboard(it)
                 startActivity(Intent.createChooser(Intent().apply {
