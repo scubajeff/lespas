@@ -38,7 +38,7 @@ import site.leos.apps.lespas.helper.Tools.parcelableArray
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.time.OffsetDateTime
-import java.util.*
+import java.util.Locale
 
 class GPXExportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_export_dialog) {
     private lateinit var filenameLayout: TextInputLayout
@@ -93,6 +93,8 @@ class GPXExportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_export
 
     private fun exportGPXThenDismiss(filename: String) {
         // TODO might need to put this in long running job
+        this.isCancelable = false
+
         try {
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename + fileSuffix).outputStream().use {
                 it.write(

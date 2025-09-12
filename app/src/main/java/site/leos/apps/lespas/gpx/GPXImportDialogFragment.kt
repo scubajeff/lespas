@@ -33,12 +33,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -65,7 +72,8 @@ import site.leos.apps.lespas.sync.ActionRepository
 import java.io.File
 import java.time.Instant
 import java.time.ZoneOffset
-import java.util.*
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.abs
 
 class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import_dialog) {
@@ -125,6 +133,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                     overwriteCheckBox.isEnabled = false
                     dstCheckBox.isEnabled = false
                     offsetEditText.isEnabled = false
+                    this@GPXImportDialogFragment.isCancelable = false
 
                     taggingViewModel.run(requireActivity().application, requireArguments().parcelable(ALBUM)!!, requireArguments().parcelableArray<Photo>(PHOTOS)!!.toList(), trackPoints, overwriteCheckBox.isChecked, if (dstCheckBox.isChecked) 3600000L else 0L, offsetEditText.text.toString().toInt() * 60000L, ViewModelProvider(requireActivity())[NCShareViewModel::class.java])
                 } else dismiss()
