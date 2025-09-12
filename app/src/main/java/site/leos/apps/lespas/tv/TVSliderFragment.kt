@@ -406,7 +406,8 @@ class TVSliderFragment: Fragment() {
     }
 
     private fun showFastScroller() {
-        captionHintingAnimation.cancel()
+        //captionHintingAnimation.cancel()
+        hideCaptionPage()
         mediaAdapter.getPhotoAt(slider.currentItem).let { currentPhoto ->
             fastScrollAdapter.currentList.indexOfFirst { it.photo.id == currentPhoto.id }.let { pos ->
                 TransitionManager.beginDelayedTransition(fastScroller, Slide(Gravity.BOTTOM).setDuration(500))
