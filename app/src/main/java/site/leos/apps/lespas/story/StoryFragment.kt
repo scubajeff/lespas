@@ -136,6 +136,8 @@ class StoryFragment : Fragment() {
     private lateinit var knobIcon: ImageView
     private lateinit var knobPosition: CircularProgressIndicator
 
+    private val isAndroid15 = Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -232,7 +234,16 @@ class StoryFragment : Fragment() {
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
                     if (animationState == STATE_STARTED) captionTextView.text = pAdapter.getCaption(slider.currentItem)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
-                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean? == true) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
+                        if (this is PhotoView) {
+                            if (getTag(R.id.HDR_TAG) as Boolean? == true) {
+                                window.colorMode = ActivityInfo.COLOR_MODE_HDR
+                                if (isAndroid15) window.desiredHdrHeadroom = 5f
+                            }
+                            else {
+                                window.colorMode = ActivityInfo.COLOR_MODE_DEFAULT
+                                if (isAndroid15) window.desiredHdrHeadroom = 0f
+                            }
+                        } else if (isAndroid15) window.desiredHdrHeadroom = 0f
                     }
                 }
             }
@@ -425,6 +436,8 @@ class StoryFragment : Fragment() {
         slider.adapter = null
 
         Tools.setImmersive(window, false)
+        if (isAndroid15) window.desiredHdrHeadroom = 0f
+
         (requireActivity() as AppCompatActivity).supportActionBar?.show()
 
         super.onDestroyView()

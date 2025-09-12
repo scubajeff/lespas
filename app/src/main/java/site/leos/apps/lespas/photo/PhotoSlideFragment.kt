@@ -149,6 +149,8 @@ class PhotoSlideFragment : Fragment() {
 
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
 
+    private val isAndroid15 = Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -303,7 +305,16 @@ class PhotoSlideFragment : Fragment() {
                     super.onPageScrollStateChanged(state)
                     if (state == ViewPager2.SCROLL_STATE_SETTLING) handlerBottomControl.post(hideBottomControls)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && state == ViewPager2.SCROLL_STATE_IDLE) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply {
-                        window.colorMode = if (this is PhotoView && getTag(R.id.HDR_TAG) as Boolean? == true) ActivityInfo.COLOR_MODE_HDR else ActivityInfo.COLOR_MODE_DEFAULT
+                        if (this is PhotoView) {
+                            if (getTag(R.id.HDR_TAG) as Boolean? == true) {
+                                window.colorMode = ActivityInfo.COLOR_MODE_HDR
+                                if (isAndroid15) window.desiredHdrHeadroom = 5f
+                            }
+                            else {
+                                window.colorMode = ActivityInfo.COLOR_MODE_DEFAULT
+                                if (isAndroid15) window.desiredHdrHeadroom = 0f
+                            }
+                        } else if (isAndroid15) window.desiredHdrHeadroom = 0f
                     }
                 }
 
@@ -599,6 +610,8 @@ class PhotoSlideFragment : Fragment() {
             window.decorView.setOnSystemUiVisibilityChangeListener(null)
         }
         Tools.setImmersive(window, false)
+        if (isAndroid15) window.desiredHdrHeadroom = 0f
+
         (requireActivity() as AppCompatActivity).apply {
             requestedOrientation = previousOrientationSetting
             supportActionBar?.show()
