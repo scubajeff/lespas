@@ -12,14 +12,6 @@
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
- *
- *   This code is converted Kotlin version of TimezoneMapper.java,
- *   which is
- *   written by Tim Cooper: tim@edval.com.au
- *   The original java code is available under the MIT licence at
- *
- *       https://opensource.org/licenses/MIT
- * 
  */
 package site.leos.apps.lespas.gpx
 
@@ -316,7 +308,7 @@ object TimezoneMapper {
         "Asia/Tokyo",
         "Asia/Tomsk",
         "Asia/Ulaanbaatar",
-        "Asia/Urumqi",
+        "Asia/Shanghai",
         "Asia/Ust-Nera",
         "Asia/Vientiane",
         "Asia/Vladivostok",
