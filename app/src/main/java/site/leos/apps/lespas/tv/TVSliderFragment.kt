@@ -169,6 +169,7 @@ class TVSliderFragment: Fragment() {
             },
             { media -> toggleMeta(media, metaPage.isVisible) },
             { state -> toggleCaption(state) },
+            { showFastScroller() },
         )
 
         fastScrollAdapter = FastScrollAdapter(
@@ -252,6 +253,7 @@ class TVSliderFragment: Fragment() {
         captionHint = view.findViewById(R.id.caption_hint)
 
         fastScroller = view.findViewById<HorizontalGridView>(R.id.fast_scroller).apply {
+            var gainFocus = false
             windowAlignmentOffsetPercent = 8f
             itemAnimator = null
             adapter = fastScrollAdapter
@@ -278,6 +280,21 @@ class TVSliderFragment: Fragment() {
                     }
                 } else false
             }
+
+            // When fast scroller appears, ignore the long keypress which is still firing
+            onFocusChangeListener = View.OnFocusChangeListener { view, focused -> if (focused) gainFocus = true }
+            setOnKeyInterceptListener(object : BaseGridView.OnKeyInterceptListener {
+                override fun onInterceptKeyEvent(event: KeyEvent): Boolean {
+                    if (gainFocus) {
+                        if (event.action == KeyEvent.ACTION_UP) {
+                            gainFocus = false
+                            return true
+                        }
+                    }
+
+                    return gainFocus
+                }
+            })
         }
 
         slider = view.findViewById<ViewPager2>(R.id.slider).apply {
@@ -426,8 +443,9 @@ class TVSliderFragment: Fragment() {
 
     private fun toggleCaption(state: Boolean) {
         // Activate fast scroller when user press Down key while caption page is not visible
-        if (!state && !captionPage.isVisible) showFastScroller()
-        else mediaAdapter.getCaption(slider.currentItem).let { caption ->
+        //if (!state && !captionPage.isVisible) showFastScroller()
+        //else mediaAdapter.getCaption(slider.currentItem).let { caption ->
+        mediaAdapter.getCaption(slider.currentItem).let { caption ->
             if (caption.isNotEmpty()) {
                 if (state) {
                     captionHintingAnimation.cancel()
@@ -620,7 +638,7 @@ class TVSliderFragment: Fragment() {
 
     class MediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
        clickListener: ((Boolean?) -> Unit), imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
-       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit, private val cListener: (Boolean) -> Unit,
+       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit, private val cListener: (Boolean) -> Unit, private val fsLauncher: () -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
         fun isSlideVideo(position: Int): Boolean = try { currentList[position].photo.mimeType.startsWith("video") } catch (_: Exception) { false }
@@ -662,31 +680,53 @@ class TVSliderFragment: Fragment() {
             recyclerView.itemAnimator = null
             recyclerView.setOnKeyListener(object : View.OnKeyListener {
                 val lm = recyclerView.layoutManager as LinearLayoutManager
+                var isLongPress = false
+
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
-                    if (event?.action == KeyEvent.ACTION_UP) {
-                        when(keyCode) {
-                            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
-                                scrollListener(if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) 1f else -1f)
+                    when(event?.action) {
+                        KeyEvent.ACTION_UP -> {
+                            if (isLongPress) {
+                                isLongPress = false
                                 return true
                             }
-                            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
-                                recyclerView.findViewHolderForLayoutPosition(lm.findFirstVisibleItemPosition())?.let { viewHolder ->
-                                    if (viewHolder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) { viewHolder.playOrPauseOnTV() }
-                                    iListener(getItem(viewHolder.bindingAdapterPosition))
+
+                            when(keyCode) {
+                                KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
+                                    scrollListener(if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) 1f else -1f)
+                                    return true
+                                }
+                                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
+                                    recyclerView.findViewHolderForLayoutPosition(lm.findFirstVisibleItemPosition())?.let { viewHolder ->
+                                        if (viewHolder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) { viewHolder.playOrPauseOnTV() }
+                                        iListener(getItem(viewHolder.bindingAdapterPosition))
+                                        return true
+                                    }
+                                }
+                                KeyEvent.KEYCODE_DPAD_UP -> {
+                                    cListener(true)
+                                    return true
+                                }
+                                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                    cListener(false)
                                     return true
                                 }
                             }
-                            KeyEvent.KEYCODE_DPAD_UP -> {
-                                cListener(true)
-                                return true
+                        }
+                        KeyEvent.ACTION_DOWN -> {
+                            if (!isLongPress && event.repeatCount > 5) {
+                                isLongPress = true
+                                when (keyCode) {
+                                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
+                                        fsLauncher()
+                                        return true
+                                    }
+                                }
                             }
-                            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                cListener(false)
-                                return true
-                            }
+
+                            return isLongPress
                         }
                     }
-
+                    
                     return false
                 }
             })
