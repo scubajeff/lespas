@@ -170,6 +170,7 @@ class TVSliderFragment: Fragment() {
             { media -> toggleMeta(media, metaPage.isVisible) },
             { state -> toggleCaption(state) },
             { showFastScroller() },
+            {},
         )
 
         fastScrollAdapter = FastScrollAdapter(
@@ -192,6 +193,7 @@ class TVSliderFragment: Fragment() {
                     metaPage.isVisible -> toggleMeta(NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)), true)
                     captionPage.isVisible -> hideCaptionPage()
                     fastScroller.isVisible -> hideFastScroller()
+                    // TODO press back twice to exit
                     else -> parentFragmentManager.popBackStack()
                 }
             }
@@ -638,7 +640,7 @@ class TVSliderFragment: Fragment() {
 
     class MediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel,
        clickListener: ((Boolean?) -> Unit), imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, panoLoader: (NCShareViewModel.RemotePhoto, ImageView?, PLManager, PLSphericalPanorama) -> Unit, cancelLoader: (View) -> Unit,
-       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit, private val cListener: (Boolean) -> Unit, private val fsLauncher: () -> Unit
+       private val scrollListener: (Float) -> Unit, private val iListener: (NCShareViewModel.RemotePhoto) -> Unit, private val cListener: (Boolean) -> Unit, private val fsLauncher: () -> Unit, private val cmLauncher: () -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, panoLoader, cancelLoader) {
         fun getPhotoAt(position: Int): Photo = currentList[position].photo
         fun isSlideVideo(position: Int): Boolean = try { currentList[position].photo.mimeType.startsWith("video") } catch (_: Exception) { false }
@@ -716,6 +718,10 @@ class TVSliderFragment: Fragment() {
                             if (!isLongPress && event.repeatCount > 5) {
                                 isLongPress = true
                                 when (keyCode) {
+                                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
+                                        cmLauncher()
+                                        return true
+                                    }
                                     KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
                                         fsLauncher()
                                         return true

@@ -181,6 +181,8 @@ class MainActivity : AppCompatActivity() {
 
             // Setup observer to fire up SyncAdapter
             lifecycleScope.launch { actionsPendingModel.allPendingActions.collect { actions -> if (actions.isNotEmpty()) requestSync() } }
+
+            if (isTV) requestSync(SyncAdapter.SYNC_REMOTE_CHANGES)
         }
     }
 
@@ -228,10 +230,10 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun requestSync() {
+    private fun requestSync(syncAction: Int = SyncAdapter.SYNC_LOCAL_CHANGES) {
         ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
             putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-            putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            putInt(SyncAdapter.ACTION, syncAction)
         })
     }
 
