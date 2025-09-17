@@ -117,8 +117,8 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
             org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         }
 
-        overwriteCheckBox = view.findViewById<CheckBox?>(R.id.overwrite).apply { setOnClickListener { hideSoftKeyboard(it) }}
-        dstCheckBox = view.findViewById<CheckBox?>(R.id.dst).apply { setOnClickListener { hideSoftKeyboard(it) }}
+        overwriteCheckBox = view.findViewById<CheckBox>(R.id.overwrite).apply { setOnClickListener { hideSoftKeyboard(it) }}
+        dstCheckBox = view.findViewById<CheckBox>(R.id.dst).apply { setOnClickListener { hideSoftKeyboard(it) }}
         offsetEditText = view.findViewById<TextInputEditText>(R.id.offset_textinputedittext).apply { setOnFocusChangeListener { v, hasFocus -> if (!hasFocus) hideSoftKeyboard(v) }}
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener {
             hideSoftKeyboard(it)
@@ -339,6 +339,9 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                     minDiff = diff
                                     match = i
                                 }
+
+                                // Photos and trackpoints are all sorted by timestamp, if the new 'diff' is greater than current 'minDiff', we got the match
+                                if (diff > minDiff) break
                             }
 
                             if (match != NO_MATCH) {
