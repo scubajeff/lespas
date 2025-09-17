@@ -366,4 +366,5 @@
     <string name="video_play_header">Reproducción de vídeo</string>
     <string name="title_tv_my_albums">Mis álbumes</string>
     <string name="title_tv_shared_with_me">Compartido Recibido</string>
+    <string name="tv_slider_exit_toast">Presione nuevamente el botón \"Atrás\" para salir.</string>
 </resources>

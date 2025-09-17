@@ -401,4 +401,5 @@
     <string name="video_play_header">Lecture de la vidéo</string>
     <string name="title_tv_my_albums">Mes albums</string>
     <string name="title_tv_shared_with_me">Partagés Reçus</string>
+    <string name="tv_slider_exit_toast">Appuyez à nouveau sur le bouton « Retour » pour quitter.</string>
 </resources>

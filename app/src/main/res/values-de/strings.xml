@@ -416,4 +416,5 @@
     <string name="video_play_header">Video Abspielen</string>
     <string name="title_tv_my_albums">Meine Alben</string>
     <string name="title_tv_shared_with_me">Geteilt Empfangen</string>
+    <string name="tv_slider_exit_toast">Drücken Sie erneut die Taste „Zurück“, um das Menü zu verlassen.</string>
 </resources>

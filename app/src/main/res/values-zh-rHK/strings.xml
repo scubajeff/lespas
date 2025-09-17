@@ -363,4 +363,5 @@
     <string name="video_play_header">視頻播放</string>
     <string name="title_tv_my_albums">我的相冊</string>
     <string name="title_tv_shared_with_me">親友分享</string>
+    <string name="tv_slider_exit_toast">再次按下「返回」按鈕即可退出。</string>
 </resources>

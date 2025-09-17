@@ -364,4 +364,5 @@
     <string name="video_play_header">ビデオ再生</string>
     <string name="title_tv_my_albums">私のアルバム</string>
     <string name="title_tv_shared_with_me">友人や家族との共有</string>
+    <string name="tv_slider_exit_toast">もう一度「戻る」ボタンを押して終了してください。</string>
 </resources>

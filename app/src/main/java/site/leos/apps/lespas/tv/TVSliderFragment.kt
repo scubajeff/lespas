@@ -25,11 +25,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TableRow
 import android.widget.TextView
@@ -61,6 +63,7 @@ import androidx.transition.Slide
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.snackbar.Snackbar
 import com.panoramagl.PLManager
 import com.panoramagl.PLSphericalPanorama
 import kotlinx.coroutines.Dispatchers
@@ -107,6 +110,8 @@ import kotlin.math.roundToInt
 class TVSliderFragment: Fragment() {
     private lateinit var mediaAdapter: MediaAdapter
     private lateinit var slider: ViewPager2
+
+    private lateinit var exitSnackbar: Snackbar
 
     private lateinit var captionPage: ConstraintLayout
     private lateinit var tvCaption: TextView
@@ -193,8 +198,20 @@ class TVSliderFragment: Fragment() {
                     metaPage.isVisible -> toggleMeta(NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)), true)
                     captionPage.isVisible -> hideCaptionPage()
                     fastScroller.isVisible -> hideFastScroller()
-                    // TODO press back twice to exit
-                    else -> parentFragmentManager.popBackStack()
+                    exitSnackbar.isShown -> {
+                        exitSnackbar.dismiss()
+                        parentFragmentManager.popBackStack()
+                    }
+                    else -> {
+                        exitSnackbar.view.run {
+                            layoutParams = (layoutParams as FrameLayout.LayoutParams).apply {
+                                gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+                                bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics).roundToInt()
+                                width = FrameLayout.LayoutParams.WRAP_CONTENT
+                            }
+                        }
+                        exitSnackbar.show()
+                    }
                 }
             }
         }.apply { isEnabled = true })
@@ -316,6 +333,8 @@ class TVSliderFragment: Fragment() {
                 }
             })
         }
+
+        exitSnackbar = Snackbar.make(slider, getString(R.string.tv_slider_exit_toast), 1000)
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

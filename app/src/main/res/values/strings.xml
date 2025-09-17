@@ -507,4 +507,7 @@
     <!-- TV Main Fragment -->
     <string name="title_tv_my_albums">My Albums</string>
     <string name="title_tv_shared_with_me">Shares Received</string>
+
+    <!-- TV Slider Fragment -->
+    <string name="tv_slider_exit_toast">Press \'Back\' button again to exit.</string>
 </resources>
