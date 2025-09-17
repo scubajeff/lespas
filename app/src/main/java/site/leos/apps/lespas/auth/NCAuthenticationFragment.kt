@@ -156,7 +156,7 @@ class NCAuthenticationFragment: Fragment() {
 
                     webView?.let {
                         // Reveal webview after Nextcloud login process landing page loaded
-                        if (webView.alpha == 0f) {
+                        if (it.alpha == 0f) {
                             //authWebpageBG.background.let { if (it is AnimatedVectorDrawable) it.stop() }
                             authWebpageBG.setBackgroundColor(ContextCompat.getColor(webView.context, R.color.color_background))
                             sloganView?.clearAnimation()
@@ -166,12 +166,14 @@ class NCAuthenticationFragment: Fragment() {
                                 animate().alpha(1f).setDuration(resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()).setListener(object: AnimatorListenerAdapter() {
                                     override fun onAnimationEnd(animation: Animator) {
                                         authWebpage.alpha = 1f
-                                        requestFocus()
+                                        //authWebpage.loadUrl("javascript:document.getElementsByClassName('login primary icon-confirm-white')[0].focus();")
+                                        //authWebpage.loadUrl("javascript:document.getElementById('login-form').focus();")
+                                        requestFocus(View.FOCUS_DOWN)
                                         super.onAnimationEnd(animation)
                                     }
                                 })
                             }
-                        }
+                        } else it.requestFocus(View.FOCUS_DOWN)
                     }
                 }
 
@@ -211,6 +213,7 @@ class NCAuthenticationFragment: Fragment() {
                 cacheMode = WebSettings.LOAD_NO_CACHE
                 userAgentString = "${resources.getString(R.string.app_name)} on ${Tools.getDeviceModel()}"
                 javaScriptEnabled = true
+                domStorageEnabled = true
             }
 
             savedInstanceState ?: run {
