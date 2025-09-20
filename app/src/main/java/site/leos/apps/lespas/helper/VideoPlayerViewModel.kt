@@ -69,7 +69,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
                     if (playbackState == Player.STATE_ENDED) {
                         playWhenReady = false
-                        //seekTo(0L)
+                        if (!isNotTV && !slideshowMode) seekTo(0L)
                         saveVideoPosition(currentVideo)
                     }
                 }
