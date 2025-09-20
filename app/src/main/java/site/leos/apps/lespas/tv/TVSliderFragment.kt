@@ -272,7 +272,7 @@ class TVSliderFragment: Fragment() {
         captionHint = view.findViewById(R.id.caption_hint)
 
         fastScroller = view.findViewById<HorizontalGridView>(R.id.fast_scroller).apply {
-            var gainFocus = false
+            var ignoreKeyPress = true
             windowAlignmentOffsetPercent = 8f
             itemAnimator = null
             adapter = fastScrollAdapter
@@ -301,17 +301,17 @@ class TVSliderFragment: Fragment() {
             }
 
             // When fast scroller appears, ignore the long keypress which is still firing
-            onFocusChangeListener = View.OnFocusChangeListener { view, focused -> if (focused) gainFocus = true }
+            viewTreeObserver.addOnGlobalLayoutListener { if (this.visibility != View.VISIBLE) ignoreKeyPress = true }
             setOnKeyInterceptListener(object : BaseGridView.OnKeyInterceptListener {
                 override fun onInterceptKeyEvent(event: KeyEvent): Boolean {
-                    if (gainFocus) {
+                    if (ignoreKeyPress) {
                         if (event.action == KeyEvent.ACTION_UP) {
-                            gainFocus = false
+                            ignoreKeyPress = false
                             return true
                         }
                     }
 
-                    return gainFocus
+                    return ignoreKeyPress
                 }
             })
         }
@@ -319,7 +319,7 @@ class TVSliderFragment: Fragment() {
         slider = view.findViewById<ViewPager2>(R.id.slider).apply {
             adapter = mediaAdapter
             requestFocus()
-
+            
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
@@ -701,16 +701,10 @@ class TVSliderFragment: Fragment() {
             recyclerView.itemAnimator = null
             recyclerView.setOnKeyListener(object : View.OnKeyListener {
                 val lm = recyclerView.layoutManager as LinearLayoutManager
-                var isLongPress = false
 
                 override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
                     when(event?.action) {
                         KeyEvent.ACTION_UP -> {
-                            if (isLongPress) {
-                                isLongPress = false
-                                return true
-                            }
-
                             when(keyCode) {
                                 KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
                                     scrollListener(if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) 1f else -1f)
@@ -734,21 +728,14 @@ class TVSliderFragment: Fragment() {
                             }
                         }
                         KeyEvent.ACTION_DOWN -> {
-                            if (!isLongPress && event.repeatCount > 5) {
-                                isLongPress = true
+                            if (event.repeatCount == 5) {
                                 when (keyCode) {
-                                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> {
-                                        cmLauncher()
-                                        return true
-                                    }
-                                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> {
-                                        fsLauncher()
-                                        return true
-                                    }
+                                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_SELECT, KeyEvent.KEYCODE_BUTTON_A -> cmLauncher()
+                                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_BUTTON_L1, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BUTTON_R1 -> fsLauncher()
                                 }
                             }
 
-                            return isLongPress
+                            return event.repeatCount >= 5
                         }
                     }
                     
