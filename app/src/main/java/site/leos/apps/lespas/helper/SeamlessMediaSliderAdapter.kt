@@ -375,6 +375,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             ivMedia.apply {
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
+                ivMotionPhotoPlayButton.isVisible = isMotionPhoto
             }
             this.isMotionPhoto = isMotionPhoto
         }
