@@ -84,6 +84,8 @@ class ObjectSearchSlideFragment : Fragment() {
     private val searchModel: SearchFragment.SearchModel by viewModels(ownerProducer = { requireParentFragment() }) { SearchFragment.SearchModelFactory(requireActivity().application, imageLoaderModel, actionModel)}
 
     private val isAndroid15 = Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    private var hdrHeadroom = 5.0f
+    private var firstSlide = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,8 +94,19 @@ class ObjectSearchSlideFragment : Fragment() {
             requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             { state -> toggleBottomControl(state) },
-            { photo, imageView, type -> imageLoaderModel.setImagePhoto(photo, imageView!!, type) { startPostponedEnterTransition() }},
-            { photo, imageView, plManager, panorama -> imageLoaderModel.setImagePhoto(photo, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) { startPostponedEnterTransition() }},
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(photo, imageView!!, type) { isFullType ->
+                startPostponedEnterTransition()
+                if (firstSlide && isFullType) {
+                    slider.beginFakeDrag()
+                    slider.fakeDragBy(0f)
+                    slider.endFakeDrag()
+                    firstSlide = false
+                }
+            }},
+            { photo, imageView, plManager, panorama -> imageLoaderModel.setImagePhoto(photo, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) {
+                startPostponedEnterTransition()
+                firstSlide = false
+            }},
             { imageView -> imageLoaderModel.cancelSetImagePhoto(imageView) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
@@ -105,6 +118,7 @@ class ObjectSearchSlideFragment : Fragment() {
         })
 
         this.window = requireActivity().window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
 
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
@@ -140,7 +154,7 @@ class ObjectSearchSlideFragment : Fragment() {
                         if (this is PhotoView) {
                             if (getTag(R.id.HDR_TAG) as Boolean? == true) {
                                 window.colorMode = ActivityInfo.COLOR_MODE_HDR
-                                if (isAndroid15) window.desiredHdrHeadroom = 5f
+                                if (isAndroid15) window.desiredHdrHeadroom = hdrHeadroom
                             }
                             else {
                                 window.colorMode = ActivityInfo.COLOR_MODE_DEFAULT

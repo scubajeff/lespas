@@ -137,6 +137,7 @@ class StoryFragment : Fragment() {
     private lateinit var knobPosition: CircularProgressIndicator
 
     private val isAndroid15 = Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    private var hdrHeadroom = 5.0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -198,6 +199,8 @@ class StoryFragment : Fragment() {
         bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), if (isPublication) album.bgmId else "file://${Tools.getLocalRoot(requireContext())}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"))[BGMViewModel::class.java]
 
         this.window = requireActivity().window
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -237,7 +240,7 @@ class StoryFragment : Fragment() {
                         if (this is PhotoView) {
                             if (getTag(R.id.HDR_TAG) as Boolean? == true) {
                                 window.colorMode = ActivityInfo.COLOR_MODE_HDR
-                                if (isAndroid15) window.desiredHdrHeadroom = 5f
+                                if (isAndroid15) window.desiredHdrHeadroom = hdrHeadroom
                             }
                             else {
                                 window.colorMode = ActivityInfo.COLOR_MODE_DEFAULT

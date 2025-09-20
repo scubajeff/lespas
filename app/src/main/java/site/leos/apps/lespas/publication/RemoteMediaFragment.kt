@@ -102,6 +102,8 @@ class RemoteMediaFragment: Fragment() {
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
     private val isAndroid15 = Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    private var hdrHeadroom = 5.0f
+    private var firstSlide = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,8 +116,24 @@ class RemoteMediaFragment: Fragment() {
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleBottomControls(state) },
-            { media, imageView, type -> if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.setImagePhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
-            { media, imageView, plManager, panorama -> shareModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) { startPostponedEnterTransition() }},
+            { media, imageView, type ->
+                if (type == NCShareViewModel.TYPE_NULL) {
+                    startPostponedEnterTransition()
+                    firstSlide = false
+                } else shareModel.setImagePhoto(media, imageView!!, type) { isFullType ->
+                    startPostponedEnterTransition()
+                    if (firstSlide && isFullType) {
+                        slider.beginFakeDrag()
+                        slider.fakeDragBy(0f)
+                        slider.endFakeDrag()
+                        firstSlide = false
+                    }
+                }
+            },
+            { media, imageView, plManager, panorama -> shareModel.setImagePhoto(media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) {
+                startPostponedEnterTransition()
+                firstSlide = false
+            }},
             { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -144,6 +162,8 @@ class RemoteMediaFragment: Fragment() {
         autoRotate = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
 
         this.window = requireActivity().window
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -179,7 +199,7 @@ class RemoteMediaFragment: Fragment() {
                         if (this is PhotoView) {
                             if (getTag(R.id.HDR_TAG) as Boolean? == true) {
                                 window.colorMode = ActivityInfo.COLOR_MODE_HDR
-                                if (isAndroid15) window.desiredHdrHeadroom = 5f
+                                if (isAndroid15) window.desiredHdrHeadroom = hdrHeadroom
                             }
                             else {
                                 window.colorMode = ActivityInfo.COLOR_MODE_DEFAULT

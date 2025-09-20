@@ -105,6 +105,8 @@ class GallerySlideFragment : Fragment() {
     private var nextInLine = ""
     private val handler = Handler(Looper.getMainLooper())
     private val isAndroid15 = Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    private var hdrHeadroom = 5.0f
+    private var firstSlide = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,11 +121,25 @@ class GallerySlideFragment : Fragment() {
             playerViewModel,
             { state -> toggleBottomControls(state) },
             { localMedia, imageView, type ->
-                if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
-                else imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, type) { startPostponedEnterTransition() }
+                if (type == NCShareViewModel.TYPE_NULL) {
+                    startPostponedEnterTransition()
+                    firstSlide = false
+                }
+                else imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, type) { isFullType ->
+                    startPostponedEnterTransition()
+                    if (firstSlide && isFullType) {
+                        mediaViewPager.beginFakeDrag()
+                        mediaViewPager.fakeDragBy(0f)
+                        mediaViewPager.endFakeDrag()
+                        firstSlide = false
+                    }
+                }
             },
             { localMedia, imageView, plManager, panorama ->
-                imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) { startPostponedEnterTransition() }
+                imageLoaderModel.setImagePhoto(localMedia.media, imageView!!, NCShareViewModel.TYPE_PANORAMA, plManager, panorama) {
+                    startPostponedEnterTransition()
+                    firstSlide = false
+                }
             },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT }
@@ -141,6 +157,8 @@ class GallerySlideFragment : Fragment() {
         })
 
         this.window = requireActivity().window
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -177,7 +195,7 @@ class GallerySlideFragment : Fragment() {
                         if (this is PhotoView) {
                             if (getTag(R.id.HDR_TAG) as Boolean? == true) {
                                 window.colorMode = ActivityInfo.COLOR_MODE_HDR
-                                if (isAndroid15) window.desiredHdrHeadroom = 5f
+                                if (isAndroid15) window.desiredHdrHeadroom = hdrHeadroom
                             }
                             else {
                                 window.colorMode = ActivityInfo.COLOR_MODE_DEFAULT
