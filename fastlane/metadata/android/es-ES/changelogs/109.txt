@@ -1,0 +1,5 @@
+* Compatibilidad con HDR para una mejor visualización de fotos HDR en Android 15 y versiones posteriores
+* Se ha corregido un error por el que las fotos se etiquetaban incorrectamente como fotos en movimiento
+* Mantenga pulsada la tecla izquierda/derecha para activar el desplazamiento rápido en Android TV
+* Se ha optimizado el geoetiquetado con GPX, especialmente con archivos GPX de gran tamaño
+* Varias mejoras y correcciones de errores

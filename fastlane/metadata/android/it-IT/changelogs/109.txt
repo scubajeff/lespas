@@ -1,0 +1,5 @@
+* Supporto HDR headroom per una migliore visualizzazione delle foto HDR su Android 15 e versioni successive
+* Risolto un bug che causava l'errata etichettatura delle foto come Motion Photos
+* Premere a lungo il tasto Sinistra/Destra per attivare lo scorrimento veloce su Android TV
+* Ottimizzazione del geotagging con GPX, in particolare con file GPX di grandi dimensioni
+* Vari miglioramenti e correzioni di bug

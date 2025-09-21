@@ -1,3 +1,10 @@
+## Version 2.10.2
+* Support HDR headroom for improved display of HDR photos on Android 15 and above
+* Fixed a bug where photos were incorrectly tagged as Motion Photos
+* Use long press on the Left/Right key to activate fast scrolling on Android TV
+* Optimised geotagging with GPX, especially with large GPX files
+* Various improvements and bug fixes
+
 ## Version 2.10.1
 * Support Google Motion Photo
 * Fixed bug of reading photo taken date for old photos with incomplete EXIF meta data

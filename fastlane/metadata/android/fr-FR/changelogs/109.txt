@@ -1,0 +1,5 @@
+* Prise en charge de la marge HDR pour un meilleur affichage des photos HDR sur Android 15 et versions ultérieures
+* Correction d'un bug qui entraînait le marquage incorrect des photos comme photos animées
+* Appuyez longuement sur la touche gauche/droite pour activer le défilement rapide sur Android TV
+* Optimisation du géomarquage avec GPX, en particulier avec les fichiers GPX volumineux
+* Diverses améliorations et corrections de bugs
