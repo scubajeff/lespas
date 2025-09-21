@@ -136,7 +136,8 @@ Les Pas supports Android TV since release 2.10. Navigation on home screen is tri
 | Left, Right | Move to prev, next photo                                                          |
 | Select      | Toggle meta data panel on the right                                               |
 | Up          | Show caption if any                                                               |
-| Down        | If caption is showing, hide caption. If caption is not showing, start fast scroll |
+| Down        | If caption is showing, hide caption.                                              |
+| Long press on Left or Right | Activate fast scroll                                              |
 | Up, Down    | When in fast scroll mode, move to next/prev date if album is sorted by date       |
 
 ### About synchronization
