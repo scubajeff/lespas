@@ -42,7 +42,7 @@
     <string name="option_menu_slideshow">幻燈片播放</string>
     <string name="button_text_set_cover">設置為相冊封面</string>
     <string name="button_text_share">分享</string>
-    <string name="button_text_info">相片信息</string>
+    <string name="button_text_info">詳情</string>
     <string name="toast_cover_applied">已更新相冊封面。</string>
     <string name="toast_cover_set_canceled">操作已取消。</string>
     <string name="settings_title">設置</string>
