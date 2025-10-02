@@ -129,7 +129,9 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 pWidth = width
                                 pHeight = height
                             }
-                            view.findViewById<TextView>(R.id.info_size).text = if (photoMeta.size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(photoMeta.size), String.format("%sw × %sh", "$pWidth", "$pHeight"))
+                            view.findViewById<TextView>(R.id.info_size).text =
+                                (if (photoMeta.size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(photoMeta.size), String.format("%sw × %sh", "$pWidth", "$pHeight"))) +
+                                        if (requireArguments().getBoolean(KEY_IS_HDR)) ", HDR" else ""
                             view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
 
                             if (photoMeta.mfg.isNotEmpty()) {
@@ -399,15 +401,22 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         const val KEY_MEDIA = "KEY_MEDIA"
         const val KEY_REMOTE_MEDIA = "KEY_REMOTE_MEDIA"
         private const val KEY_HAS_SIZE_INFO = "KEY_HAS_SIZE_INFO"
+        private const val KEY_IS_HDR = "KEY_IS_HDR"
 
         @JvmStatic
-        fun newInstance(media: Photo) = MetaDataDialogFragment().apply { arguments = Bundle().apply { putParcelable(KEY_MEDIA, media) }}
+        fun newInstance(media: Photo, isHDR: Boolean = false) = MetaDataDialogFragment().apply {
+            arguments = Bundle().apply {
+                putParcelable(KEY_MEDIA, media)
+                putBoolean(KEY_IS_HDR, isHDR)
+            }
+        }
 
         @JvmStatic
-        fun newInstance(media: NCShareViewModel.RemotePhoto, hasSizeInfo: Boolean = false) = MetaDataDialogFragment().apply {
+        fun newInstance(media: NCShareViewModel.RemotePhoto, hasSizeInfo: Boolean = false, isHDR: Boolean = false) = MetaDataDialogFragment().apply {
             arguments = Bundle().apply {
                 putParcelable(KEY_REMOTE_MEDIA, media)
                 putBoolean(KEY_HAS_SIZE_INFO, hasSizeInfo)
+                putBoolean(KEY_IS_HDR, isHDR)
             }
         }
     }

@@ -258,7 +258,8 @@ class RemoteMediaFragment: Fragment() {
             setOnClickListener {
                 handler.post(hideBottomControls)
                 if (parentFragmentManager.findFragmentByTag(TAG_INFO_DIALOG) == null) {
-                    MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.currentPosition.value]).show(parentFragmentManager, TAG_INFO_DIALOG)
+                    MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.currentPosition.value], isHDR = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && window.colorMode == ActivityInfo.COLOR_MODE_HDR)
+                        .show(parentFragmentManager, TAG_INFO_DIALOG)
                 }
             }
         }

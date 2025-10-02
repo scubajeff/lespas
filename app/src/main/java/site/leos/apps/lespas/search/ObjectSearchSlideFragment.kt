@@ -214,7 +214,8 @@ class ObjectSearchSlideFragment : Fragment() {
         view.findViewById<Button>(R.id.info_button).run {
             setOnClickListener {
                 handlerBottomControl.post(hideBottomControls)
-                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) MetaDataDialogFragment.newInstance(pAdapter.getPhotoAt(slider.currentItem)).show(parentFragmentManager, INFO_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) MetaDataDialogFragment.newInstance(pAdapter.getPhotoAt(slider.currentItem), isHDR = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && window.colorMode == ActivityInfo.COLOR_MODE_HDR)
+                    .show(parentFragmentManager, INFO_DIALOG)
             }
         }
         view.findViewById<Button>(R.id.remove_button).run {
