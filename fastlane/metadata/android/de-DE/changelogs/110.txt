@@ -1,0 +1,5 @@
+* Unterstützung von HDR-Headroom für eine verbesserte Anzeige von HDR-Fotos unter Android 15 und höher
+* Behebung eines Fehlers, durch den Fotos fälschlicherweise als Motion Photos gekennzeichnet wurden
+* Durch langes Drücken der Links-/Rechts-Taste kann unter Android TV das schnelle Scrollen aktiviert werden
+* Optimierte Geotagging-Funktion mit GPX, insbesondere bei großen GPX-Dateien
+* Verschiedene Verbesserungen und Fehlerbehebungen

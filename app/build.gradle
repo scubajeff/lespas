@@ -28,8 +28,8 @@ android {
     defaultConfig {
         minSdk 25
         targetSdk 35
-        versionCode 109
-        versionName '2.10.2'
+        versionCode 110
+        versionName '2.10.3'
         multiDexEnabled true
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
