@@ -88,7 +88,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.8.9'
 
     // Room components
-    def roomVersion = "2.8.0"
+    def roomVersion = "2.8.1"
     implementation "androidx.room:room-runtime:$roomVersion"
     annotationProcessor "androidx.room:room-compiler:$roomVersion"
     ksp "androidx.room:room-compiler:$roomVersion"
@@ -96,13 +96,13 @@ dependencies {
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     // Lifecycle components
-    def lifecycleVersion = "2.9.3"
+    def lifecycleVersion = "2.9.4"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
 
     // Kotlin components
-    implementation 'androidx.work:work-runtime-ktx:2.10.4'
+    implementation 'androidx.work:work-runtime-ktx:2.10.5'
     def coroutineVersion = '1.10.2'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
