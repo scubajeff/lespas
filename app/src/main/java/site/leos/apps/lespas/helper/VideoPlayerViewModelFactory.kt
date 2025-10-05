@@ -26,8 +26,6 @@ import okhttp3.OkHttpClient
 
 @OptIn(UnstableApi::class)
 class VideoPlayerViewModelFactory (
-    private val activity: Activity, private val callFactory: OkHttpClient, private val cache: SimpleCache?,
-    private val savedSystemVolume: Int, private val sessionVolumePercentage: Float,
-    private val slideshowMode: Boolean = false): ViewModelProvider.NewInstanceFactory() {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(VideoPlayerViewModel(activity, callFactory, cache, savedSystemVolume, sessionVolumePercentage, slideshowMode))!!
+    private val activity: Activity, private val callFactory: OkHttpClient, private val cache: SimpleCache?, private val sessionVolumePercentage: Float, private val slideshowMode: Boolean = false): ViewModelProvider.NewInstanceFactory() {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = modelClass.cast(VideoPlayerViewModel(activity, callFactory, cache, sessionVolumePercentage, slideshowMode))!!
 }

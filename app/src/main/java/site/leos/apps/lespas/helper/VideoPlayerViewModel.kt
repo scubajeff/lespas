@@ -46,14 +46,16 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val savedSystemVolume: Int, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, sessionVolumePercentage: Float, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var window = activity.window
     private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
     private val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val savedSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     private val maxSystemVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-    private var currentVolumePercentage = sessionVolumePercentage   // follow session volume setting
+    // Follow session volume setting if it's set
+    private var currentVolumePercentage = if (sessionVolumePercentage == -1.0f) savedSystemVolume.toFloat() / maxSystemVolume else sessionVolumePercentage
     private var pauseJob: Job? = null
     private var isNotTV = true
 

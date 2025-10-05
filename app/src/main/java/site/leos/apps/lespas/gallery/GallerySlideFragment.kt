@@ -112,7 +112,7 @@ class GallerySlideFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         folderArgument = requireArguments().getString(ARGUMENT_FOLDER) ?: ""
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSavedSystemVolume(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), imageLoaderModel.getSessionVolumePercentage()))[VideoPlayerViewModel::class.java]
 
         mediaAdapter = MediaSlideAdapter(
             requireContext(),
