@@ -31,7 +31,6 @@ import android.graphics.Rect
 import android.graphics.drawable.Animatable2
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.AnimatedVectorDrawable
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaDataSource
 import android.media.MediaMetadataRetriever
@@ -51,6 +50,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
@@ -427,17 +427,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 return result
             } catch (e: UnknownHostException) {
-                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}")
+                e.printStackTrace()
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: SocketTimeoutException) {
-                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}")
+                e.printStackTrace()
                 // Retry for network unavailable, hope it's temporarily
                 backOff *= 2
                 sleep(backOff)
             } catch (e: Exception) {
-                Log.e(">>>>>>>>", "NCShareViewModel-refreshSharees: ${e.message}")
                 e.printStackTrace()
                 break
             }
@@ -863,7 +862,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) {
-                    if (drawable == null && bitmap != null) drawable = BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, bitmap!!))
+                    if (drawable == null && bitmap != null) drawable = Tools.getRoundBitmap(view.context, bitmap!!).toDrawable(view.resources)
                     drawable?.let { drawAvatar(it, view) }
                 }
 
@@ -1363,6 +1362,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
             val forceNetwork = imagePhoto.photo.shareId and Photo.NEED_REFRESH == Photo.NEED_REFRESH
+            val isMediaOnServer = imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
             try {
                 // Special treatment for video items
@@ -1382,7 +1382,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         TYPE_GRID, TYPE_IN_MAP -> {
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
-                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
+                                isMediaOnServer -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
                                 Tools.isPhotoFromGallery(imagePhoto) -> {
                                     updateCache = false
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -1436,7 +1436,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                         TYPE_VIDEO ->
                             // For video items, use thumbnail for TYPE_GRID, TYPE_COVER, TYPE_SMALL_COVER
-                            getVideoThumbnail(coroutineContext.job, imagePhoto)
+                            getVideoThumbnail(coroutineContext.job, imagePhoto, isMediaOnServer)
                         TYPE_EMPTY_ROLL_COVER ->
                             // Empty camera roll cover
                             ContextCompat.getDrawable(view.context, R.drawable.empty_roll)!!.toBitmap()
@@ -1446,7 +1446,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                             ensureActive()
                             when {
-                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
+                                isMediaOnServer -> {
                                     // Photo is from remote album and is already uploaded
                                     try {
                                         getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
@@ -1511,7 +1511,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     }
                                                     // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
                                                     // Hence, picture with original orientation must be allowed in local album
-                                                    if (imagePhoto.photo.orientation != 0 && ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || Tools.isPhotoFromGallery(imagePhoto)))
+                                                    if (imagePhoto.photo.orientation != 0 && (isMediaOnServer || Tools.isPhotoFromGallery(imagePhoto)))
                                                     //if (imagePhoto.photo.orientation != 0)
                                                         Bitmap.createBitmap(this, 0, 0, width, height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, false)
                                                     else this
@@ -1531,7 +1531,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 height = imagePhoto.photo.width
                                             }
                                         } else {
-                                            if (!(imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED)) orientation = 0
+                                            if (!isMediaOnServer) orientation = 0
                                         }
                                         val rect =
                                             when (orientation) {
@@ -1657,7 +1657,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun getBitmapFromImageCache(key: String): Bitmap? = imageCache.get(key)
 
-    private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
+    private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto, isMediaOnServer: Boolean): Bitmap? {
         return if (Tools.isPhotoFromGallery(imagePhoto)) {
             val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -1695,7 +1695,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Local cached missing OR
                 // Remote preview not available, due to limited storage space for small size self-hosted server, FFMPEG is not always installed
                 // Resort to extract thumbnail from video, this is a time-consuming procedure
-                bitmap = extractVideoThumbnail(imagePhoto, job)
+                bitmap = extractVideoThumbnail(imagePhoto, job, isMediaOnServer)
             }
 
             // Cache thumbnail at local
@@ -1706,13 +1706,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     // This is singleton, means only one MetaDataRetriever working at a time
-    @Synchronized private fun extractVideoThumbnail(imagePhoto: RemotePhoto, job: Job): Bitmap? {
+    @Synchronized private fun extractVideoThumbnail(imagePhoto: RemotePhoto, job: Job, isMediaOnServer: Boolean): Bitmap? {
         job.ensureActive()
         var bitmap: Bitmap?
         var remoteDataSource: VideoMetaDataMediaSource? = null
 
         mediaMetadataRetriever.apply {
-            if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+            if (isMediaOnServer) {
                 // Should allow "/" in photo's remote path string, obviously, and name string, that's for fetching camera backups on server
                 //setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
                 remoteDataSource = VideoMetaDataMediaSource(imagePhoto, resourceRoot, webDav, job, httpCallMap, getMediaSize(imagePhoto))
