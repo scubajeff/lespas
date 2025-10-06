@@ -111,6 +111,11 @@
                         android:textAlignment="textEnd"
                         style="@style/TextAppearance.AppCompat.Small"/>
                     <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:maxLines="3"
+                        android:lineBreakStyle="strict"
+                        android:lineBreakWordStyle="phrase"
                         android:id="@+id/info_camera_model"
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
@@ -124,7 +129,11 @@
                         android:textAlignment="textEnd"
                         style="@style/TextAppearance.AppCompat.Small"/>
                     <TextView
-                        android:lines="1"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:maxLines="2"
+                        android:lineBreakStyle="strict"
+                        android:lineBreakWordStyle="phrase"
                         android:id="@+id/info_parameter"
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
