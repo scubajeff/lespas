@@ -241,7 +241,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             },
             { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }},
-            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) },
+            { renameAlbum() },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -889,15 +890,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         true
                     }
                     R.id.option_menu_rename-> {
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            albumModel.getAllAlbumName().also {
-                                val names = mutableListOf<String>()
-                                // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
-                                // name check should include hidden ones
-                                it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
-                                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) RenameDialogFragment.newInstance(album.name, names, RenameDialogFragment.REQUEST_TYPE_ALBUM).show(parentFragmentManager, RENAME_DIALOG)
-                            }
-                        }
+                        renameAlbum()
                         true
                     }
                     R.id.option_menu_settings-> {
@@ -1039,6 +1032,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         requireContext().contentResolver.unregisterContentObserver(snapseedOutputObserver)
 
         super.onDestroy()
+    }
+
+    private fun renameAlbum() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            albumModel.getAllAlbumName().also {
+                val names = mutableListOf<String>()
+                // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
+                // name check should include hidden ones
+                it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
+                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) RenameDialogFragment.newInstance(album.name, names, RenameDialogFragment.REQUEST_TYPE_ALBUM).show(parentFragmentManager, RENAME_DIALOG)
+            }
+        }
     }
 
     private fun updateSearchMenu() {
@@ -1223,7 +1228,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+    class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit, private val titleClickListener: () -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
         private lateinit var album: Album
         private lateinit var photos: List<Photo>
@@ -1239,7 +1244,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentCover = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)
             private val ivCover = itemView.findViewById<ImageView>(R.id.photo)
-            private val tvTitle = itemView.findViewById<TextView>(R.id.title)
+            private val tvTitle = itemView.findViewById<TextView>(R.id.title).apply { setOnClickListener { titleClickListener() }}
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
             private val tvTotal = itemView.findViewById<TextView>(R.id.total)
             private val tvRecipients = itemView.findViewById<TextView>(R.id.recipients)
