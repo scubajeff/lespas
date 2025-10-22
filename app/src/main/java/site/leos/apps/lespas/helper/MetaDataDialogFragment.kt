@@ -52,6 +52,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -129,9 +130,12 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 pWidth = width
                                 pHeight = height
                             }
-                            view.findViewById<TextView>(R.id.info_size).text =
-                                (if (photoMeta.size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(photoMeta.size), String.format("%sw × %sh", "$pWidth", "$pHeight"))) +
-                                        if (requireArguments().getBoolean(KEY_IS_HDR)) ", HDR" else ""
+
+                            var sizeString = ""
+                            if (photoMeta.size != 0L) sizeString = String.format("%s, ", Tools.humanReadableByteCountSI(photoMeta.size))
+                            sizeString += String.format(Locale.getDefault(), "%dw × %dh", pWidth, pHeight)
+                            if (requireArguments().getBoolean(KEY_IS_HDR)) sizeString += ", HDR"
+                            view.findViewById<TextView>(R.id.info_size).text = sizeString
                             view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
 
                             if (photoMeta.mfg.isNotEmpty()) {
@@ -187,7 +191,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
     private var isMapInitialized = false
     @SuppressLint("ClickableViewAccessibility")
-    private fun showMap(photo: Photo) {
+    private suspend fun showMap(photo: Photo) {
         try {
             with(mapView) {
                 if (!isMapInitialized) {
@@ -257,8 +261,10 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 if (locality.isNotEmpty() && country.isNotEmpty()) {
                     // TODO use map text overlay instead
                     localityTextView.run {
-                        text = String.format("%s, %s", locality, country)
-                        isVisible = true
+                        withContext(Dispatchers.Main) {
+                            text = String.format("%s, %s", locality, country)
+                            isVisible = true
+                        }
                     }
                 } else {
                     // TODO robust way to detect if media is from publications
@@ -270,13 +276,13 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 if (address.countryName != null) {
                                     val locality = address.locality ?: address.adminArea ?: Photo.NO_ADDRESS
                                     localityTextView.run {
-                                        text = String.format("%s, %s", locality, address.countryName)
-                                        isVisible = true
+                                        withContext(Dispatchers.Main) {
+                                            text = String.format("%s, %s", locality, address.countryName)
+                                            isVisible = true
+                                        }
                                     }
 
-                                    lifecycleScope.launch(Dispatchers.IO) {
-                                        try { PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS) } catch (_: IllegalStateException) {}
-                                    }
+                                    try { PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS) } catch (_: IllegalStateException) {}
                                 }
                             }
 
