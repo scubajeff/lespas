@@ -519,7 +519,7 @@ class TVSliderFragment: Fragment() {
             TransitionManager.beginDelayedTransition(metaPage, Slide(Gravity.END).apply { duration = 200 })
             metaPage.isVisible = true
             tvName.text = rPhoto.photo.name
-            tvDate.text = String.format("%s %s", rPhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), rPhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
+            tvDate.text = String.format("%s %s", rPhoto.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), rPhoto.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.MEDIUM)))
 
             viewLifecycleOwner.lifecycleScope.launch(metaDisplayThread) {
                 val pm = PhotoMeta(rPhoto.photo)

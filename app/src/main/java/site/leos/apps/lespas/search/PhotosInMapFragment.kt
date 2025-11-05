@@ -237,7 +237,7 @@ class PhotosInMapFragment: Fragment() {
                                     }
                                 }
                                 findViewById<TextView>(R.id.label).text =
-                                    if (Tools.isPhotoFromGallery(remotePhoto)) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                    if (Tools.isPhotoFromGallery(remotePhoto)) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) }
                                     else albumNames?.get(remotePhoto.photo.albumId)
                                 setOnClickListener(InfoWindowClickListener(mapView))
                             }

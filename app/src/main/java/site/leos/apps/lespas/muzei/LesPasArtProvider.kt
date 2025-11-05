@@ -258,7 +258,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
                     if (dest.exists()) setArtwork(Artwork(
                         title = album.name,
-                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" +
+                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}" +
                                 if (additionalCaption) with(LocalDate.now().year - photo.dateTaken.year) { if (this > 0) context!!.resources.getQuantityString(R.plurals.years_ago_today, this, this) else ""} else "" +
                                 if (photo.locality != Photo.NO_ADDRESS) ", @${photo.locality}" else "",
                         token = photo.id,

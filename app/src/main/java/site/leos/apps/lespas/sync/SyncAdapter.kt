@@ -698,7 +698,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // Web page construction
         // YAML header of blog post
-        var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset, themeId) + "\n"
+        var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)), coverAsset, coverAsset, themeId) + "\n"
 
         // Blog post content
         when (themeId) {

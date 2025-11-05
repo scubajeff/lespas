@@ -525,7 +525,7 @@ class PublicationDetailFragment: Fragment() {
                 tvName?.text = item.photo.name.substringBeforeLast('.')
 
                 tvMeta?.apply {
-                    text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
+                    text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
             }
