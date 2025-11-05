@@ -36,19 +36,20 @@
 
     <TextView
         android:id="@+id/meta"
-        style="@style/TextAppearance.AppCompat.Caption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
         android:paddingHorizontal="@dimen/small_padding"
         android:paddingVertical="@dimen/tiny_padding"
+        style="@style/TextAppearance.AppCompat.Caption"
+        android:textSize="14sp"
+        android:textColor="?primaryTextWhite"
+        android:textAlignment="textEnd"
         android:shadowColor="@color/dark_gray_overlay_background"
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="1"
-        android:textAlignment="textEnd"
-        android:textColor="?primaryTextWhite"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         tools:ignore="TextContrastCheck"
         tools:text="meta" />
 
