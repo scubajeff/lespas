@@ -153,3 +153,12 @@ To enable publishing (e.g. sharing album with other users on Nextcloud server), 
 - Set up groups on Nextcloud server and add users who wish to share LesPas albums to the group. A user not belong to any group can not download the sharee list from server, this is a limitation of Nextcloud Sharee API
 - Optionally, but highly recommended for the sake of a smooth user experience, set up Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
 - Optionally, set up a specific "shared_with_me" folder to house all the shares you received, otherwise, Nextcloud will dump all the shares you received into your root folder. This can be done by adding the line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for details. If you don't like Nextcloud's dumping behavior at all, a Nextcloud server app [Mv Shared Pics](https://gitlab.com/frederikb96/nextcloud-mvsharedpics), created by [@frederikb96](https://github.com/frederikb96), can be used to automatically move folders a user received via a share, which contain files with a specific mime type (e.g. pictures) to a configurable destination. This is useful in combination with albums shared via Les Pas since they will be automatically moved to the desired location, such that the default folder where shares are received is kept clean.
+
+
+## Translations
+
+Please help with translations using the [Weblate](https://toolate.othing.xyz/projects/les-pas/).
+
+<a href="https://toolate.othing.xyz/projects/les-pas/">
+<img alt="Translation status" src="https://toolate.othing.xyz/widget/les-pas/multi-auto.svg"/>
+</a>
