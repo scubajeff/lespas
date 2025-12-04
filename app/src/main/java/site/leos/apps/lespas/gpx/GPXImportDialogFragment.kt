@@ -78,7 +78,6 @@ import kotlin.math.abs
 
 class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import_dialog) {
     private lateinit var overwriteCheckBox: CheckBox
-    private lateinit var dstCheckBox: CheckBox
     private lateinit var offsetEditText: TextInputEditText
     private lateinit var okButton: MaterialButton
     private lateinit var mapView: MapView
@@ -118,7 +117,6 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         }
 
         overwriteCheckBox = view.findViewById<CheckBox>(R.id.overwrite).apply { setOnClickListener { hideSoftKeyboard(it) }}
-        dstCheckBox = view.findViewById<CheckBox>(R.id.dst).apply { setOnClickListener { hideSoftKeyboard(it) }}
         offsetEditText = view.findViewById<TextInputEditText>(R.id.offset_textinputedittext).apply { setOnFocusChangeListener { v, hasFocus -> if (!hasFocus) hideSoftKeyboard(v) }}
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener {
             hideSoftKeyboard(it)
@@ -131,11 +129,10 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                     hideSoftKeyboard(it)
                     isEnabled = false
                     overwriteCheckBox.isEnabled = false
-                    dstCheckBox.isEnabled = false
                     offsetEditText.isEnabled = false
                     this@GPXImportDialogFragment.isCancelable = false
 
-                    taggingViewModel.run(requireActivity().application, requireArguments().parcelable(ALBUM)!!, requireArguments().parcelableArray<Photo>(PHOTOS)!!.toList(), trackPoints, overwriteCheckBox.isChecked, if (dstCheckBox.isChecked) 3600000L else 0L, offsetEditText.text.toString().toInt() * 60000L, ViewModelProvider(requireActivity())[NCShareViewModel::class.java])
+                    taggingViewModel.run(requireActivity().application, requireArguments().parcelable(ALBUM)!!, requireArguments().parcelableArray<Photo>(PHOTOS)!!.toList(), trackPoints, overwriteCheckBox.isChecked, offsetEditText.text.toString().toInt() * 60000L, ViewModelProvider(requireActivity())[NCShareViewModel::class.java])
                 } else dismiss()
             }
         }
@@ -182,14 +179,12 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                                 parser.getAttributeValue(null, "lon")?.toDouble()?.let { value ->
                                                     if (value in -180.0..180.0) value else Photo.NO_GPS_DATA
                                                 } ?: run { Photo.NO_GPS_DATA }
-                                            } catch (e: java.lang.NumberFormatException) {
-                                                Photo.NO_GPS_DATA
-                                            },
+                                            } catch (_: java.lang.NumberFormatException) { Photo.NO_GPS_DATA },
                                             latitude = try {
                                                 parser.getAttributeValue(null, "lat")?.toDouble()?.let { value ->
                                                     if (value in -90.0..90.0) value else Photo.NO_GPS_DATA
                                                 } ?: run { Photo.NO_GPS_DATA }
-                                            } catch (e: java.lang.NumberFormatException) { Photo.NO_GPS_DATA },
+                                            } catch (_: java.lang.NumberFormatException) { Photo.NO_GPS_DATA },
                                         )
                                     }
                                 }
@@ -197,12 +192,12 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                             XmlPullParser.TEXT -> text = parser.text
                             XmlPullParser.END_TAG -> {
                                 when (parser.name) {
-                                    "ele" -> trackPoint.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
-                                    "course" -> trackPoint.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    "ele" -> trackPoint.altitude = try { text.toDouble() } catch (_: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    "course" -> trackPoint.bearing = try { text.toDouble() } catch (_: NumberFormatException) { Photo.NO_GPS_DATA }
                                     "time" -> trackPoint.timeStamp = try {
                                         // Automatically adjust track point's timestamp base on track point's timezone offset. Java Timezone library DST data is not reliable, for example, Egypt observers DST during summer time but is not correctly reported
                                         Instant.parse(text).toEpochMilli() +
-                                            if (trackPoint.latitude != Photo.NO_GPS_DATA && trackPoint.longitude != Photo.NO_GPS_DATA) TimeZone.getTimeZone(TimezoneMapper.latLngToTimezoneString(trackPoint.latitude, trackPoint.longitude)).rawOffset
+                                            if (trackPoint.latitude != Photo.NO_GPS_DATA && trackPoint.longitude != Photo.NO_GPS_DATA) TimeZone.getTimeZone(TimezoneMapper.latLngToTimezoneString(trackPoint.latitude, trackPoint.longitude)).getOffset(Instant.parse(text).toEpochMilli())
                                             else 0
                                     } catch (_: Exception) { 0L }
                                     "cmt" -> trackPoint.caption = text
@@ -239,7 +234,6 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                     }
                     mapView.invalidate()
                     overwriteCheckBox.isEnabled = false
-                    dstCheckBox.isEnabled = false
                     offsetEditText.isEnabled = false
                     okButton.isEnabled = false
                 }
@@ -288,7 +282,6 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         okButton.text = getString(R.string.button_text_done)
         okButton.isEnabled = true
         overwriteCheckBox.isEnabled = true
-        dstCheckBox.isEnabled = true
         offsetEditText.isEnabled = true
     }
 
@@ -298,7 +291,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
 
         private var job: Job? = null
 
-        fun run(context: Application, album: Album, photos: List<Photo>, trackPoints: List<GPXTrackPoint>, overwrite: Boolean, dstOffset: Long, diffAllowed: Long, ncModel: NCShareViewModel) {
+        fun run(context: Application, album: Album, photos: List<Photo>, trackPoints: List<GPXTrackPoint>, overwrite: Boolean, diffAllowed: Long, ncModel: NCShareViewModel) {
             job = viewModelScope.launch(Dispatchers.IO) {
                 val localLesPasFolder = Tools.getLocalRoot(context)
                 val remoteLesPasFolder = "${Tools.getRemoteHome(context)}/${album.name}"
@@ -313,8 +306,8 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 var diff: Long
                 var minDiff: Long
                 var takenTime: Long
-                val minDate = trackPoints.first().timeStamp + dstOffset
-                val maxDate = trackPoints.last().timeStamp + dstOffset
+                val minDate = trackPoints.first().timeStamp
+                val maxDate = trackPoints.last().timeStamp
 
                 run outer@{
                     photos.sortedBy { it.dateTaken }.forEach { photo ->
@@ -334,7 +327,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                             minDiff = Long.MAX_VALUE
 
                             for (i in startWith until trackPoints.size) {
-                                diff = abs(takenTime - trackPoints[i].timeStamp - dstOffset)
+                                diff = abs(takenTime - trackPoints[i].timeStamp)
                                 if (diff < diffAllowed && diff < minDiff) {
                                     minDiff = diff
                                     match = i

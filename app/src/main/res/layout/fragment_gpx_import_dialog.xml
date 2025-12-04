@@ -79,19 +79,10 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <CheckBox
-            android:id="@+id/dst"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/offset_textinputlayout"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:layout_marginTop="@dimen/small_padding"
-            android:text="@string/checkbox_text_dst" />
-
-        <CheckBox
             android:id="@+id/overwrite"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/dst"
+            app:layout_constraintTop_toBottomOf="@+id/offset_textinputlayout"
             app:layout_constraintLeft_toLeftOf="parent"
             android:text="@string/checkbox_text_overwrite" />
 
