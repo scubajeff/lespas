@@ -1,3 +1,6 @@
+## Version 2.10.5
+* Automatically apply DST adjustment when geotagging with GPX file
+
 ## Version 2.10.4
 * Various improvements and bug fixes
 

@@ -1,0 +1,2 @@
+* Application automatique du réglage DST lors du géomarquage avec un fichier GPX
+* Diverses améliorations et corrections de bogues

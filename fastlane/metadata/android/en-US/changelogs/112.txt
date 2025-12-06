@@ -1,0 +1,2 @@
+* Automatically apply DST adjustment when geotagging with GPX file
+* Various improvements and bug fixes

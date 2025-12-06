@@ -1,0 +1,2 @@
+* Automatische Anwendung der Sommerzeitumstellung beim Geotagging mit GPX-Dateien
+* Verschiedene Verbesserungen und Fehlerbehebungen

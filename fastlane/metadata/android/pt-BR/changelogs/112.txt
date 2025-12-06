@@ -1,0 +1,2 @@
+* Aplique automaticamente o ajuste DST ao georreferenciar com arquivo GPX
+* Várias melhorias e correções de bugs

@@ -1,0 +1,2 @@
+* Applicazione automatica della regolazione DST durante il geotagging con file GPX
+* Vari miglioramenti e correzioni di bug

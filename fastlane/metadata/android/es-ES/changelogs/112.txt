@@ -1,0 +1,2 @@
+* Aplica automáticamente el ajuste del horario de verano al geolocalizar con archivos GPX.
+* Varias mejoras y correcciones de errores.
