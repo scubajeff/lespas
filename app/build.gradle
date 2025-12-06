@@ -28,8 +28,8 @@ android {
     defaultConfig {
         minSdk 25
         targetSdk 35
-        versionCode 111
-        versionName '2.10.4'
+        versionCode 112
+        versionName '2.10.5'
         multiDexEnabled true
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -52,9 +52,9 @@ android {
             ext.enableCrashlytics = false
         }
         release {
-            shrinkResources true
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            shrinkResources false
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }
     compileOptions {
