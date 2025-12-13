@@ -66,7 +66,7 @@
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">@color/toggle_group_button</item>
         <item name="android:textAllCaps">false</item>
-        <item name="iconTint">@color/toggle_group_button_icon</item>
+        <item name="iconTint">?colorPrimary</item>
         <item name="iconSize">20dp</item>
         <item name="strokeColor">@color/toggle_group_button</item>
         <item name="rippleColor">?colorControlBackground</item>
