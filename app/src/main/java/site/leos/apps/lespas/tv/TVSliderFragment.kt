@@ -335,6 +335,7 @@ class TVSliderFragment: Fragment() {
         }
 
         exitSnackbar = Snackbar.make(slider, getString(R.string.tv_slider_exit_toast), 1000)
+        exitSnackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)?.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
