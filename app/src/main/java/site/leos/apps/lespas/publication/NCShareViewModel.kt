@@ -85,7 +85,7 @@ import okhttp3.FormBody
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.closeQuietly
-import okhttp3.internal.headersContentLength
+//import okhttp3.internal.headersContentLength
 import okio.BufferedSource
 import okio.IOException
 import okio.buffer
@@ -815,7 +815,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         if (Tools.hasExif(remotePhoto.photo.mimeType)) try {
             response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", false)
             exif = try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null }
-            size = response.headersContentLength()
+            size = response.body?.contentLength() ?: -1L
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {

@@ -43,11 +43,15 @@
     <style name="Theme.LesPas" parent="Theme.LesPas.Base">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorOnPrimary">@color/color_on_primary</item>
         <item name="colorPrimaryVariant">@color/color_primary_variant</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/color_secondary</item>
+        <item name="colorOnSecondary">@color/color_on_secondary</item>
         <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
         <item name="colorSecondaryVariantFade">@color/color_secondary_variant_faded</item>
+
+        <item name="colorTertiary">@color/color_tertiary</item>
 
         <!-- Additional UI colors -->
         <item name="colorError">@color/color_error</item>
@@ -155,20 +159,20 @@
     <!-- Toolbar -->
     <style name="Theme.LesPas.ActionBar" parent="@style/Widget.MaterialComponents.Toolbar.Primary">
         <item name="background">?colorPrimary</item>
-        <item name="titleTextColor">?primaryTextWhite</item>
-        <item name="subtitleTextColor">?primaryTextWhite</item>
+        <item name="titleTextColor">?colorOnPrimary</item>
+        <item name="subtitleTextColor">?colorOnPrimary</item>
         <item name="theme">@style/ThemeOverlay.LesPas.Toolbar</item>
     </style>
 
     <style name="ThemeOverlay.LesPas.Toolbar" parent="ThemeOverlay.MaterialComponents.Toolbar.Primary">
-        <item name="colorControlNormal">?primaryTextWhite</item>
-        <item name="android:colorControlNormal">?primaryTextWhite</item>
+        <item name="colorControlNormal">?colorOnPrimary</item>
+        <item name="android:colorControlNormal">?colorOnPrimary</item>
         <item name="actionModeCloseDrawable">@drawable/ic_baseline_close_24</item>
         <item name="actionOverflowButtonStyle">@style/Theme.LesPas.ActionButton</item>
     </style>
 
     <style name="Theme.LesPas.ActionButton" parent="Widget.AppCompat.ActionButton.Overflow">
-        <item name="tint">?primaryTextWhite</item>
+        <item name="tint">?colorOnPrimary</item>
     </style>
 
     <!-- ActionMode -->

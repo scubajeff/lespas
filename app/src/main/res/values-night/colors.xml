@@ -24,6 +24,7 @@
     <color name="color_secondary_variant">#3FAB9C</color>
     <color name="color_secondary_variant_faded">#503FAB9C</color>
     <color name="color_on_secondary">@color/lespas_white</color>
+    <color name="color_tertiary">@color/lespas_white</color>
     <color name="color_background">#1F3B34</color>
     <color name="color_surface">#26564E</color>
     <color name="color_recipient_chip_text">#B2FFFFFF</color>
