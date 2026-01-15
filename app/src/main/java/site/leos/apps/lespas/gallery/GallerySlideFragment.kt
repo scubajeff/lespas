@@ -426,20 +426,20 @@ class GallerySlideFragment : Fragment() {
     private fun setList(localMedias: List<GalleryFragment.GalleryMedia>?) {
         if (!localMedias.isNullOrEmpty()) {
             val scrollToId = galleryModel.getCurrentPhotoId().substringAfterLast('/')
-            val scrollToPosition = localMedias.indexOfFirst { it.media.photo.id.substringAfterLast('/') == scrollToId }
 
-            // Pixel camera launch Gallery with the latest shot's uri, which might not be in MediaStore yet, so we wait for the next round of collection
-            if (scrollToPosition == -1) return
-            else {
-                requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
-                    when {
-                        subFolder.isEmpty() -> localMedias
-                        subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
-                        folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
-                        else -> localMedias.filter { it.fullPath == subFolder }
-                    }
-                }.let { filtered ->
-                    if (filtered.isEmpty()) parentFragmentManager.popBackStack()
+            requireArguments().getString(ARGUMENT_SUBFOLDER, "").let { subFolder ->
+                when {
+                    subFolder.isEmpty() -> localMedias
+                    subFolder == GalleryFolderViewFragment.CHIP_FOR_ALL_TAG -> localMedias
+                    folderArgument == GalleryFragment.ALL_FOLDER -> localMedias.filter { it.appName == subFolder }
+                    else -> localMedias.filter { it.fullPath == subFolder }
+                }
+            }.let { filtered ->
+                if (filtered.isEmpty()) parentFragmentManager.popBackStack()
+                else {
+                    val scrollToPosition = filtered.indexOfFirst { it.media.photo.id.substringAfterLast('/') == scrollToId }
+                    // Pixel camera launch Gallery with the latest shot's uri, which might not be in MediaStore yet, so we wait for the next round of collection
+                    if (scrollToPosition == -1) return
                     else mediaAdapter.submitList(filtered) {
                         mediaViewPager.setCurrentItem(scrollToPosition, false)
                         mediaAdapter.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.ALLOW
