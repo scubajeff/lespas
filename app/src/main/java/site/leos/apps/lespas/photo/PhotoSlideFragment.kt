@@ -16,9 +16,7 @@
 
 package site.leos.apps.lespas.photo
 
-import android.content.BroadcastReceiver
 import android.content.ClipData
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -135,8 +133,8 @@ class PhotoSlideFragment : Fragment() {
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
 
-    private lateinit var snapseedCatcher: BroadcastReceiver
-    private lateinit var snapseedOutputObserver: ContentObserver
+    //private lateinit var snapseedCatcher: BroadcastReceiver
+    private lateinit var editorOutputObserver: ContentObserver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
     private val snapseedFileUris = mutableSetOf<Uri>()
 
@@ -218,6 +216,7 @@ class PhotoSlideFragment : Fragment() {
         }
 
         // Broadcast receiver listening on share destination
+/*
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
@@ -231,9 +230,10 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }
+*/
 
         // Content observer looking for Snapseed output
-        snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        editorOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
             private var lastId = ""
 
             override fun onChange(selfChange: Boolean, uri: Uri?) {
@@ -512,11 +512,10 @@ class PhotoSlideFragment : Fragment() {
                                     setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
                                 })
 
-                                // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
-                                view.context.sendBroadcast(Intent().apply {
-                                    action = CHOOSER_SPY_ACTION
-                                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                                })
+                                requireContext().contentResolver.apply {
+                                    unregisterContentObserver(editorOutputObserver)
+                                    registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
+                                }
                             }
                             SHARE_TO_WALLPAPER -> {
                                 startActivity(Intent.createChooser(Intent().apply {
@@ -540,7 +539,7 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_EXPORTED)
+        //ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_EXPORTED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
@@ -617,7 +616,7 @@ class PhotoSlideFragment : Fragment() {
 
         imageLoaderModel.saveSessionVolumePercentage(playerViewModel.getVolume())
 
-        requireContext().unregisterReceiver(snapseedCatcher)
+        //requireContext().unregisterReceiver(snapseedCatcher)
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         slider.adapter = null
 
@@ -646,7 +645,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onDestroy() {
         handlerBottomControl.removeCallbacksAndMessages(null)
 
-        requireContext().contentResolver.unregisterContentObserver(snapseedOutputObserver)
+        requireContext().contentResolver.unregisterContentObserver(editorOutputObserver)
 
         super.onDestroy()
     }

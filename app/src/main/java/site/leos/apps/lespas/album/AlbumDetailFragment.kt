@@ -16,10 +16,7 @@
 
 package site.leos.apps.lespas.album
 
-import android.content.BroadcastReceiver
 import android.content.ClipData
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
@@ -150,7 +147,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
-    private lateinit var snapseedCatcher: BroadcastReceiver
+    //private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
     private val snapseedFileUris = mutableSetOf<Uri>()
@@ -259,6 +256,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         })
 
+/*
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -277,6 +275,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }
+*/
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -532,7 +531,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_EXPORTED)
+        //ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_EXPORTED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         currentQuery = currentPhotoModel.getCurrentQuery()
@@ -589,11 +588,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                     setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
                                 })
 
-                                // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
-                                requireContext().sendBroadcast(Intent().apply {
-                                    action = CHOOSER_SPY_ACTION
-                                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                                })
+                                requireContext().contentResolver.apply {
+                                    unregisterContentObserver(snapseedOutputObserver)
+                                    registerContentObserver(
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                        true,
+                                        snapseedOutputObserver
+                                    )
+                                }
                             }
 /*
                             // Copy/Move to another album is always a server job now
@@ -1019,7 +1021,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         recyclerView.adapter = null
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
-        requireContext().unregisterReceiver(snapseedCatcher)
+        //requireContext().unregisterReceiver(snapseedCatcher)
 
         // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
         if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
