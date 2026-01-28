@@ -20,6 +20,7 @@
     <attr name="primaryTextBlack" format="color" />
 
     <attr name="colorButtonText" format="color" />
+    <attr name="colorDialogBorder" format="color" />
 
     <attr name="colorBottomSheetBackground" format="color" />
     <attr name="colorAnimatedPlaceHolder" format="color" />
