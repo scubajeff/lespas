@@ -21,7 +21,7 @@ Features:
     * Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
     * Support Remote Album, which have all its media files stored in Nextcloud server only, freeing up Phone's storage
     * Run on Android TV for big-screen viewing pleasure
-    * Integrate with [Snapseed](https://play.google.com/store/apps/details?id=com.niksoftware.snapseed) for photo editing
+    * Integrated with various photo and video editing apps, such as [Snapseed](https://play.google.com/store/apps/details?id=com.niksoftware.snapseed), [Photoshop Express](https://play.google.com/store/apps/details?id=com.adobe.psmobile), [ImageToolbox](https://f-droid.org/en/packages/ru.tech.imageresizershrinker/) and [Open Video Editor](https://f-droid.org/en/packages/io.github.devhyper.openvideoeditor/)
     * Support adding caption to photo
     * Search for photos by objects with AI
     * Search photos by location

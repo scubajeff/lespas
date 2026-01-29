@@ -5,7 +5,7 @@ Gerenciamento, sincronização e arquivamento
   * Suporta formatos de mídia padrão, além de RAW, fotos HDR, Panorama Photo Sphere e Motion Photo
   * Funciona em Android TV para um prazer de visualização em tela grande
   * Gerencie arquivos de mídia na galeria do seu telefone e faça backup automático no servidor; cada pasta de mídia no seu telefone tem sua própria configuração de backup
-  * Integração com o Snapseed para edição de fotos
+  * Integrado com vários aplicativos de edição de fotos e vídeos, como Snapseed, Photoshop Express, ImageToolbox e Open Video Editor
   * Suporte para adicionar legenda à foto
   * A sincronização funciona com o servidor Nextcloud e entre vários dispositivos, edite álbuns no servidor Nextcloud e em todos os seus dispositivos móveis simultaneamente.
   * Suporte ao Remote Album, que tem todos os seus arquivos de mídia armazenados somente no servidor Nextcloud, liberando o armazenamento do telefone.

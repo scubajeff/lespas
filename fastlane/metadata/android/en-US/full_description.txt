@@ -5,7 +5,7 @@ Managing, Syncing and Archiving
   * Support standard media format plus RAW format, HDR photo, Panorama Photo Sphere, Motion Photo
   * Run on Android TV for big-screen viewing pleasure
   * Manage media files in your phone's gallery and auto backup to server, each media folder in your phone has its own backup setting
-  * Integrate with Snapseed for photo editing
+  * Integrated with various photo and video editing apps, such as Snapseed, Photoshop Express, ImageToolbox and Open Video Editor
   * Support adding caption to photo
   * Synchronization with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
   * Support Remote Album, which have all it's media file stored in Nextcloud server only, free up Phone's storage

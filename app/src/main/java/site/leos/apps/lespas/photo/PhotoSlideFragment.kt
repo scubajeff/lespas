@@ -20,6 +20,7 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.database.ContentObserver
 import android.graphics.Color
@@ -46,6 +47,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -150,9 +152,12 @@ class PhotoSlideFragment : Fragment() {
     private var hdrHeadroom = 5.0f
     private var firstSlide = true
 
+    private lateinit var sp: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
         album = requireArguments().parcelable(KEY_ALBUM)!!
         // Album meta won't change during this fragment lifecycle
         isRemote = Tools.isRemoteAlbum(album)
@@ -210,9 +215,7 @@ class PhotoSlideFragment : Fragment() {
         })
 
         previousOrientationSetting = requireActivity().requestedOrientation
-        with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
-            autoRotate = getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
-        }
+        autoRotate = sp.getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
 
 /*
         // Broadcast receiver listening on editor choice
@@ -258,7 +261,7 @@ class PhotoSlideFragment : Fragment() {
                                 viewLifecycleOwner.lifecycleScope.launch {
                                     getWorkInfoByIdFlow(workerId).flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { workInfo ->
                                         if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
-                                            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.edit_replace_pref_key), false)) {
+                                            if (sp.getBoolean(requireContext().getString(R.string.edit_replace_pref_key), false)) {
                                                 // When replacing original with edit result, refresh image cache of all size
                                                 val photoId = pAdapter.getPhotoAt(slider.currentItem).id
                                                 imageLoaderModel.invalidPhoto(photoId)
@@ -442,18 +445,20 @@ class PhotoSlideFragment : Fragment() {
         }
         editButton.run {
             // Edit replace/add preference can't be changed in this screen, safe to fix the action icon
-            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.edit_replace_pref_key), false)) {
-                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(),  R.drawable.ic_baseline_edit_replace_24), null, null)
-                text = getString(R.string.button_text_edit_replace)
-            }
-            else {
-                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_edit_add_24), null, null)
-                text = getString(R.string.button_text_edit_add)
-            }
+            updateEditButtonDisplay()
+
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideBottomControls)
                 shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_EDITOR)
+            }
+
+            setOnLongClickListener {
+                getString(R.string.edit_replace_pref_key).let { key ->
+                    sp.edit(commit = true) { putBoolean(key, !sp.getBoolean(key, false)) }
+                    updateEditButtonDisplay()
+                }
+                true
             }
         }
         removeButton.run {
@@ -642,6 +647,19 @@ class PhotoSlideFragment : Fragment() {
         requireContext().contentResolver.unregisterContentObserver(editorOutputObserver)
 
         super.onDestroy()
+    }
+
+    private fun updateEditButtonDisplay() {
+        editButton.run {
+            if (sp.getBoolean(getString(R.string.edit_replace_pref_key), false)) {
+                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(),  R.drawable.ic_baseline_edit_replace_24), null, null)
+                text = getString(R.string.button_text_edit_replace)
+            }
+            else {
+                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_edit_add_24), null, null)
+                text = getString(R.string.button_text_edit_add)
+            }
+        }
     }
 
     // Toggle visibility of bottom controls and system decoView
