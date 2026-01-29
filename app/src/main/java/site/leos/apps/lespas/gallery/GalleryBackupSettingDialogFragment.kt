@@ -19,7 +19,6 @@ package site.leos.apps.lespas.gallery
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -34,6 +33,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.net.toUri
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
@@ -107,8 +107,8 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
             }
         }
 
-        view.findViewById<RecyclerView?>(R.id.exclude_list).apply { adapter = folderNameAdapter }
-        autoRemoveChoice = view.findViewById<MaterialButtonToggleGroup?>(R.id.remove_options).apply {
+        view.findViewById<RecyclerView>(R.id.exclude_list).apply { adapter = folderNameAdapter }
+        autoRemoveChoice = view.findViewById<MaterialButtonToggleGroup>(R.id.remove_options).apply {
             // TODO no way to delete files without prompting user for permission in Android 11
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) this.isEnabled = false
         }
@@ -124,7 +124,7 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
                         if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                             lastCheckedId = autoRemoveChoice.checkedButtonId
                             autoRemoveChoice.check(R.id.remove_never)
-                            manageMediaPermissionRequestLauncher.launch(Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, Uri.parse("package:${BuildConfig.APPLICATION_ID}")))
+                            manageMediaPermissionRequestLauncher.launch(Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA, "package:${BuildConfig.APPLICATION_ID}".toUri()))
                         } else autoRemoveChoice.check(R.id.remove_never)
                     }
                     REMOVE_OLD_FILES_WARNING_REQUEST -> notWarned = false
@@ -201,7 +201,7 @@ class GalleryBackupSettingDialogFragment : LesPasDialogFragment(R.layout.fragmen
         val externalStorageUri = MediaStore.Files.getContentUri("external")
 
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val projection = arrayOf(pathSelection,)
+        val projection = arrayOf(pathSelection)
         val selection = "$pathSelection LIKE '${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) parent else "${GalleryFragment.STORAGE_EMULATED}_/${parent}"}%'"
 
         try {
