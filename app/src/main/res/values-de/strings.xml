@@ -75,7 +75,7 @@
     <string name="button_text_share">Teilen</string>
     <string name="button_text_use_as">Verwenden als</string>
     <string name="button_text_info">Informationen</string>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - Ersetzen</string>
+    <string name="button_text_edit_replace">Retuschieren - Ersetzen</string>
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">Neues Albumcover wurde eingestellt.</string>
@@ -94,12 +94,10 @@
     <string name="gallery_as_album_title">Galerie als Album anzeigen</string>
 
     <string name="default_mute_title">Video standardmäßig stummschalten</string>
-    <string name="edit_header">Bearbeiten</string>
-    <string name="snapseed_integration_title">Snapseed-Integration</string>
-    <string name="snapseed_integration_summary">Hinweis: Bitte verwenden Sie in Snapseed das JPEG-Ausgabeformat.</string>
-    <string name="snapseed_replace_title">Original ersetzen</string>
-    <string name="snapseed_replace_on_summary">Ja, ersetzen Sie das Originalfoto durch die Version von Snapseed.</string>
-    <string name="snapseed_replace_off_summary">Nein, fügen Sie die Version von Snapseed zum Album hinzu. Verwalten Sie Duplikate selbst.</string>
+    <string name="edit_header">Retuschieren</string>
+    <string name="edit_replace_title">Original ersetzen</string>
+    <string name="edit_replace_on_summary">Ja, ersetzen Sie das Originalfoto durch das Bearbeitungsergebnis.</string>
+    <string name="edit_replace_off_summary">Nein, füge die bearbeitete Datei zusammen mit dem Original zum Album hinzu. Verwalte Duplikate selbst.</string>
 
     <string name="privacy_header">Datenschutz</string>
     <string name="remove_meta_data_before_sharing_title">Sensible Metadaten vor der Weitergabe entfernen</string>
@@ -132,9 +130,7 @@
     <string name="msg_logout_dialog">Vom Konto %1$s abmelden?</string>
     <string name="yes_logout">Abmelden</string>
 
-    <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung, um auf diese Dateien zuzugreifen.</string>
     <string name="proceed_request">Weiter</string>
-    <string name="install_snapseed_dialog_msg">Snapseed jetzt installieren?</string>
 
     <!-- Destination DialogFragment -->
     <string name="sync_status_stage_backup_pictures">Sichern von Mediendateien…</string>
@@ -283,7 +279,7 @@
     <string name="cache_size_title">Größe des Remote-Album-Caches festlegen</string>
     <string name="cache_size_summary">Aktuelle Cache-Größe: %1$dMB</string>
     <string name="cache_size_setting_hint">Größe des Cache:</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - Hinzufügen</string>
+    <string name="button_text_edit_add">Retuschieren - Hinzufügen</string>
     <string name="checkbox_text_set_remote">Remote-Album, Mediendateien nur auf dem Server gespeichert.</string>
     <string name="tooltips_text_create_folder">Neuen Ordner erstellen</string>
     <string name="login_to_new_account">Sie melden sich mit einem neuen Konto an. Sie sollten sich zuerst von Ihrem aktuellen Konto abmelden und dann Les Pas neu starten. Mit dem Abmelden fortfahren?</string>

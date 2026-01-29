@@ -91,9 +91,9 @@
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
-                android:id="@+id/snapseed_button"
-                android:drawableTop="@drawable/ic_baseline_snapseed_24"
-                android:text="@string/button_text_edit_in_snapseed_replace"
+                android:id="@+id/edit_button"
+                android:drawableTop="@drawable/ic_baseline_edit_replace_24"
+                android:text="@string/button_text_edit_replace"
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
 
             <Button

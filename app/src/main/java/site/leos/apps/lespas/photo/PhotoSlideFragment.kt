@@ -61,6 +61,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.withResumed
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
@@ -85,18 +86,17 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.MediaEditResultWorker
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.SeamlessMediaSliderAdapter
 import site.leos.apps.lespas.helper.ShareOutDialogFragment
-import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.helper.VideoPlayerViewModel
 import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
@@ -115,7 +115,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var removeButton: Button
     private lateinit var coverButton: Button
     private lateinit var useAsButton: Button
-    private lateinit var snapseedButton: Button
+    private lateinit var editButton: Button
     private lateinit var captionTextView: TextView
 
     private lateinit var slider: ViewPager2
@@ -133,10 +133,9 @@ class PhotoSlideFragment : Fragment() {
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
 
-    //private lateinit var snapseedCatcher: BroadcastReceiver
+    //private lateinit var editorSelectionNotifier: BroadcastReceiver
     private lateinit var editorOutputObserver: ContentObserver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
-    private val snapseedFileUris = mutableSetOf<Uri>()
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -215,64 +214,70 @@ class PhotoSlideFragment : Fragment() {
             autoRotate = getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
         }
 
-        // Broadcast receiver listening on share destination
 /*
-        snapseedCatcher = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
-                    // Register content observer if integration with snapseed setting is on
-                    if (PreferenceManager.getDefaultSharedPreferences(context!!).getBoolean(getString(R.string.snapseed_pref_key), false)) {
-                        context!!.contentResolver.apply {
-                            unregisterContentObserver(snapseedOutputObserver)
-                            registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, snapseedOutputObserver)
-                        }
-                    }
+        // Broadcast receiver listening on editor choice
+        editorSelectionNotifier = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+*/
+/*
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                    IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOOSER_RESULT, ChooserResult::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: ${it.selectedComponent}", )} ?: run { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: error", )}
+                else
+                    IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: $it", )}
+*//*
+
+                requireContext().contentResolver.apply {
+                    unregisterContentObserver(editorOutputObserver)
+                    registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
                 }
             }
         }
 */
 
-        // Content observer looking for Snapseed output
+        // Content observer looking for editor output
         editorOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            private var lastId = ""
-
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
 
-                // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
-                uri?.lastPathSegment?.let {
-                    if (it != lastId) {
-                        lastId = it
+                uri?.let {
+                    // Stop monitoring ASAP once valid change result returned. Since Media Store usually will report multiple changes on the same file
+                    requireContext().contentResolver.unregisterContentObserver(this)
 
-                        val workerId = UUID.randomUUID()
-                        with(WorkManager.getInstance(requireContext())) {
-                            enqueue(OneTimeWorkRequestBuilder<SnapseedResultWorker>()
-                                .setInputData(workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id))
-                                .setId(workerId)
-                                .build()
-                            )
+                    // Launch coroutine that will run when app resumed, by then the editing result will most likely be ready for collection
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        viewLifecycleOwner.withResumed {
+                            val workerId = UUID.randomUUID()
+                            with(WorkManager.getInstance(requireContext())) {
+                                enqueue(
+                                    OneTimeWorkRequestBuilder<MediaEditResultWorker>()
+                                        .setInputData(workDataOf(MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(), MediaEditResultWorker.KEY_SHARED_MEDIA to pAdapter.getPhotoAt(slider.currentItem).id, MediaEditResultWorker.KEY_ALBUM to album.id))
+                                        .setId(workerId)
+                                        .build()
+                                )
 
-                            viewLifecycleOwner.lifecycleScope.launch {
-                                getWorkInfoByIdFlow(workerId).flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { workInfo ->
-                                    if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
-                                        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                            // When replacing original with Snapseed result, refresh image cache of all size
-                                            val photoId = pAdapter.getPhotoAt(slider.currentItem).id
-                                            imageLoaderModel.invalidPhoto(photoId)
-                                            if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), photoId).delete() }
+                                viewLifecycleOwner.lifecycleScope.launch {
+                                    getWorkInfoByIdFlow(workerId).flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { workInfo ->
+                                        if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.edit_replace_pref_key), false)) {
+                                                // When replacing original with edit result, refresh image cache of all size
+                                                val photoId = pAdapter.getPhotoAt(slider.currentItem).id
+                                                imageLoaderModel.invalidPhoto(photoId)
+                                                if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), photoId).delete() }
+                                            }
+
+                                            // Remove editor output file if running on Android 12 or above and Manager Media role has been assigned
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
+                                                deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, arrayListOf(uri))).setFillInIntent(null).build())
                                         }
-
-                                        // Removing snapseed file from MediaStore for Android 12 or above, actual removal happen during onStop()
-                                        snapseedFileUris.add(uri)
                                     }
                                 }
                             }
                         }
-                        requireContext().contentResolver.unregisterContentObserver(this)
                     }
                 }
             }
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
@@ -346,13 +351,10 @@ class PhotoSlideFragment : Fragment() {
 
                             // Can't delete cover
                             removeButton.isEnabled = this.id != album.cover
-                            with(!(Tools.isMediaPlayable(this.mimeType) || this.mimeType == Tools.PANORAMA_MIMETYPE)) {
-                                // Can't set video as avatar
-                                useAsButton.isEnabled = this
-                                // Can't Snapseed video
-                                snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
-                            }
-
+                            // Can't set video, panorama as avatar
+                            useAsButton.isEnabled = !(Tools.isMediaPlayable(this.mimeType) || this.mimeType == Tools.PANORAMA_MIMETYPE)
+                            // Can't edit panorama or animated
+                            editButton.isEnabled = Tools.isMediaRetouchable(this.mimeType)
                             // Can't set panorama as cover TODO make it possible
                             coverButton.isEnabled = this.mimeType != Tools.PANORAMA_MIMETYPE
 
@@ -391,7 +393,7 @@ class PhotoSlideFragment : Fragment() {
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)
         useAsButton = view.findViewById(R.id.set_as_button)
-        snapseedButton = view.findViewById(R.id.snapseed_button)
+        editButton = view.findViewById(R.id.edit_button)
         captionTextView = view.findViewById(R.id.caption)
 
         coverButton.run {
@@ -438,20 +440,20 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }
-        snapseedButton.run {
-            // Snapseed edit replace/add preference can't be changed in this screen, safe to fix the action icon
-            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
-                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(),  R.drawable.ic_baseline_snapseed_24), null, null)
-                text = getString(R.string.button_text_edit_in_snapseed_replace)
+        editButton.run {
+            // Edit replace/add preference can't be changed in this screen, safe to fix the action icon
+            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.edit_replace_pref_key), false)) {
+                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(),  R.drawable.ic_baseline_edit_replace_24), null, null)
+                text = getString(R.string.button_text_edit_replace)
             }
             else {
-                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24), null, null)
-                text = getString(R.string.button_text_edit_in_snapseed_add)
+                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_edit_add_24), null, null)
+                text = getString(R.string.button_text_edit_add)
             }
             //setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 handlerBottomControl.post(hideBottomControls)
-                shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_SNAPSEED)
+                shareOut(strip = false, lowResolution = false, shareType = SHARE_TO_EDITOR)
             }
         }
         removeButton.run {
@@ -503,18 +505,14 @@ class PhotoSlideFragment : Fragment() {
                                     putExtra(ShareReceiverActivity.KEY_CURRENT_ALBUM_ID, album.id)
                                 }, null))
                             }
-                            SHARE_TO_SNAPSEED -> {
-                                startActivity(Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    setDataAndType(uris[0], shareOutMimeType)
-                                    putExtra(Intent.EXTRA_STREAM, uris[0])
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
-                                })
-
+                            SHARE_TO_EDITOR -> {
+                                startActivity(Tools.prepareShareOutIntent(uris, shareOutMimeType))
                                 requireContext().contentResolver.apply {
                                     unregisterContentObserver(editorOutputObserver)
-                                    registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
+                                    if (shareOutMimeType.startsWith("image"))
+                                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
+                                    else
+                                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
                                 }
                             }
                             SHARE_TO_WALLPAPER -> {
@@ -539,7 +537,7 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        //ContextCompat.registerReceiver(requireContext(), snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION), ContextCompat.RECEIVER_EXPORTED)
+        //ContextCompat.registerReceiver(requireContext(), editorSelectionNotifier, IntentFilter(EDITOR_SELECTION_NOTIFIER_ACTION).apply { addDataType("image/*"); addDataType("video/*") }, ContextCompat.RECEIVER_EXPORTED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
@@ -616,7 +614,7 @@ class PhotoSlideFragment : Fragment() {
 
         imageLoaderModel.saveSessionVolumePercentage(playerViewModel.getVolume())
 
-        //requireContext().unregisterReceiver(snapseedCatcher)
+        //requireContext().unregisterReceiver(editorSelectionNotifier)
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         slider.adapter = null
 
@@ -634,10 +632,6 @@ class PhotoSlideFragment : Fragment() {
             requestedOrientation = previousOrientationSetting
             supportActionBar?.show()
         }
-
-        // Remove snapshot work file if running on Android 12 or above and Manager Media role has been assigned
-        if (snapseedFileUris.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
-            deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, snapseedFileUris)).setFillInIntent(null).build())
 
         super.onDestroyView()
     }
@@ -763,7 +757,7 @@ class PhotoSlideFragment : Fragment() {
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
 
         private const val GENERAL_SHARE = 0
-        private const val SHARE_TO_SNAPSEED = 1
+        private const val SHARE_TO_EDITOR = 1
         private const val SHARE_TO_WALLPAPER = 2
 
         //private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
@@ -771,7 +765,7 @@ class PhotoSlideFragment : Fragment() {
         private const val KEY_SHAREOUT_MIMETYPE = "KEY_SHAREOUT_MIMETYPE"
         private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 
-        const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
+        //const val EDITOR_SELECTION_NOTIFIER_ACTION = "site.leos.apps.lespas.SELECTION_NOTIFIER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"
 
         @JvmStatic

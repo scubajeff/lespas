@@ -63,8 +63,8 @@
     <string name="button_text_set_cover">Установить как обложку</string>
     <string name="button_text_share">Поделиться</string>
     <string name="button_text_info">Информация</string>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - Заменить</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - Добавить</string>
+    <string name="button_text_edit_replace">Ретушь - Заменить</string>
+    <string name="button_text_edit_add">Ретушь - Добавить</string>
     <string name="button_text_save">Сохранить</string>
     <string name="hint_caption">Добавить подпись</string>
     <string name="toast_cover_set_canceled">Отменена установка новой обложки.</string>
@@ -80,10 +80,9 @@
     <string name="video_play_header">Воспроизведение видео</string>
     <string name="auto_replay_title">Воспроизводить видео автоматически</string>
     <string name="default_mute_title">Глушить видео по умолчанию</string>
-    <string name="edit_header">Изменить</string>
-    <string name="snapseed_integration_title">Интеграция Snapseed</string>
-    <string name="snapseed_replace_title">Заменить оригинал</string>
-    <string name="snapseed_replace_on_summary">Да, заменить оригинальное фото версией из Snapseed.</string>
+    <string name="edit_header">Ретушь</string>
+    <string name="edit_replace_title">Заменить оригинал</string>
+    <string name="edit_replace_on_summary">Да, замените исходное фото результатом редактирования.</string>
     <string name="privacy_header">Конфиденциальность</string>
     <string name="remove_meta_data_before_sharing_title">Удалить чувствительные метаданные перед отправкой</string>
     <string name="use_low_resolution_to_share_title">Снижение разрешения изображения перед отправкой</string>
@@ -112,12 +111,11 @@
     </plurals>
     <string name="msg_set_as_remote">При установке альбома как «Отдалённый» все его мультимедийные файлы с этого устройства будут удалены. Продолжить?</string>
     <string name="confirm_delete">Вы уверены, что хотите удалить?</string>
-    <string name="snapseed_replace_off_summary">Нет, добавить версию Snapseed в альбом. Разберусь с дубликатами самостоятельно.</string>
+    <string name="edit_replace_off_summary">Нет, добавьте отредактированный файл в альбом рядом с оригиналом. Управляйте дубликатами самостоятельно.</string>
     <string name="msg_low_storage_space">Ваше внутреннее хранилище свободно менее чем на 10%, это помешает Les Pas синхронизироваться с сервером.</string>
     <string name="total_photo">Фотографии: %1$d</string>
     <string name="theme_dark_entries">Тёмная тема</string>
     <string name="sync_deletion_title">Синхронизировать удаление галереи с архивом сервера</string>
-    <string name="snapseed_integration_summary">Примечание: пожалуйста, позвольте Snapseed использовать формат вывода JPEG</string>
     <string name="transfer_to_internal">Перенос альбомов во внутреннее хранилище</string>
     <string name="sync_deletion_rational">Чтобы получить больше гибкости при принятии решений во время синхронизации при каждом удалении, вам следует предоставить Les Pas разрешение на управление медиа.</string>
     <string name="camera_model">Модель:</string>
@@ -180,7 +178,6 @@
     <string name="wifionly_summary_off">Нет, потребляет мобильные данные — будьте осторожны, если у вас большая коллекция фотографий.</string>
     <string name="yes_logout">Да, выйти</string>
     <string name="blog_exemption_clause">Вы несёте ответственность за ваш блог и любые предоставленные на нём материалы, включая соблюдение местных законов. Пожалуйста, не публикуйте материалы, если у вас нет на них прав. Всё, что вы публикуете в блоге, МОЖЕТ быть доступно широкой публике.</string>
-    <string name="storage_access_permission_rationale">Snapseed сохраняет файлы в собственной папке «Snapseed». Предоставьте разрешение на доступ к хранилищу для чтения этих файлов.</string>
     <string name="need_access_media_location_permission">, Les Pas требуется разрешение Доступ к местоположению медиа.</string>
     <string name="checkbox_text_set_remote">Отдалённый альбом, медиафайлы хранятся только на сервере.</string>
     <string name="it_takes_time">В зависимости от размера файлов и текущей доступности сети может пройти некоторое время, прежде чем новые альбомы и фотографии появятся в списке.</string>
@@ -206,7 +203,6 @@
     <string name="button_text_tag">Геометка</string>
     <string name="object_animal">Животное</string>
     <string name="msg_invalid_gpx_file">Файл %1$s неправильный, или не найдено временных меток!</string>
-    <string name="install_snapseed_dialog_msg">Установить Snapseed сейчас?</string>
     <string name="button_text_resync">Повторная синхронизация</string>
     <string name="button_text_help">Помощь!</string>
     <string name="backup_remaining">%d ушёл</string>

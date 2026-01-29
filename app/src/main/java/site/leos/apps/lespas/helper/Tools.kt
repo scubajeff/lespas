@@ -18,6 +18,7 @@ package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
@@ -380,6 +381,7 @@ object Tools {
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
     fun isMediaAnimated(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp")
+    fun isMediaRetouchable(mimeType: String): Boolean = (mimeType != "image/agif") && (mimeType != "image/awebp") && (mimeType != PANORAMA_MIMETYPE)
 
     fun hasExif(mimeType: String): Boolean = mimeType.substringAfter("image/", "") in FORMATS_WITH_EXIF
 
@@ -644,6 +646,38 @@ object Tools {
                 systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
             }
         }
+    }
+
+    //fun prepareShareOutIntent(context: Context, uris: List<Uri>, mimeType: String, action: String): Intent = Intent.createChooser(
+    fun prepareShareOutIntent(uris: List<Uri>, mimeType: String): Intent = Intent.createChooser(
+        Intent().apply {
+            this.action = Intent.ACTION_EDIT
+            setDataAndType(uris[0], mimeType)
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        },
+        null,
+/*
+        // Register a broadcast receiver to spy on user choose result, in order to register content observer to monitor editing result
+        PendingIntent.getBroadcast(
+            context, 1,
+            Intent().apply {
+                this.action = action
+                this.type = mimeType
+            },
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT
+            else PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        ).intentSender
+*/
+    ).apply {
+        // Exclude Android built-in image editor, and Google Photo since it doesn't support editing file from app's private space
+        putExtra(
+            Intent.EXTRA_EXCLUDE_COMPONENTS,
+            arrayOf(
+                ComponentName("com.google.android.markup", "com.google.android.markup.AnnotateActivity"),
+                ComponentName("com.google.android.apps.photos", "com.google.android.apps.photos.editor.intents.EditActivity"),
+                ComponentName("com.google.android.apps.photos", "com.google.android.apps.photos.editor.intents.EditVideoActivity"),
+            )
+        )
     }
 
     fun getPreparingSharesSnackBar(anchorView: View, cancelAction: View.OnClickListener?): Snackbar {

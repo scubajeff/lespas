@@ -56,7 +56,7 @@
     <string name="button_text_set_cover">アルバムカバー</string>
     <string name="button_text_use_as">として使用</string>
     <string name="button_text_info">写真情報</string>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - 置き換え</string>
+    <string name="button_text_edit_replace">補正 - 置き換え</string>
     <string name="toast_cover_applied">アルバムジャケットを更新しました。</string>
     <string name="toast_cover_set_canceled">操作がキャンセルされました。</string>
     <string name="settings_title">設定</string>
@@ -86,12 +86,9 @@
     <string name="wifionly_summary_on">はい、モバイルデータを消費しません。</string>
     <string name="wifionly_summary_off">いいえ、モバイルデータを消費します。写真のコレクションが多い場合は注意が必要です。</string>
     <string name="account_header">アカウント</string>
-    <string name="snapseed_integration_title">Snapseedとの統合</string>
-    <string name="snapseed_integration_summary">注：SnapseedはJPEG形式で出力するように設定してください。</string>
-    <string name="snapseed_replace_title">元の写真を置き換える</string>
-    <string name="snapseed_replace_on_summary">はい、元の写真をSnapseedのレタッチ結果に自動的に置き換えます。</string>
-    <string name="snapseed_replace_off_summary">いいえ、元の写真はそのままで、Snapseedのレタッチ結果だけをアルバムに追加します。</string>
-    <string name="storage_access_permission_rationale">Snapseedはレタッチ結果を「Snapseed」というディレクトリに保存するので、これらのファイルを読むためのストレージアクセスを許可してください。</string>
+    <string name="edit_replace_title">元の写真を置き換える</string>
+    <string name="edit_replace_on_summary">はい、元の写真編集結果と置き換えてください。</string>
+    <string name="edit_replace_off_summary">いいえ、編集したファイルを元のファイルと一緒にアルバムに追加してください。重複はご自身で管理してください。</string>
     <string name="proceed_request">デ・オーソライズ</string>
     <string name="logout_title">サーバーからのログアウト</string>
     <string name="msg_logout_dialog">アカウント %1$s からログアウトしますか？</string>
@@ -188,9 +185,8 @@
     <string name="button_text_download">ダウンロード</string>
     <string name="button_text_add_to_lespas">アルバムに追加</string>
     <string name="remove_meta_data_before_sharing_title">共有前に画像のプライバシー・メタデータを削除する</string>
-    <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>
     <string name="default_mute_title">デフォルトのビデオミュート</string>
-    <string name="edit_header">リタッチ</string>
+    <string name="edit_header">写真修正</string>
     <string name="privacy_header">個人情報保護</string>
     <string name="no">いいえ</string>
     <string name="yes">はい。</string>
@@ -231,7 +227,7 @@
     <string name="cache_size_title">リモートアルバムキャッシュサイズを設定する</string>
     <string name="cache_size_summary">現在のキャッシュ・サイズ: %1$dMB</string>
     <string name="cache_size_setting_hint">キャッシュサイズ。</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - 追加</string>
+    <string name="button_text_edit_add">補正 - 追加</string>
     <string name="checkbox_text_set_remote">リモートアルバム、メディアファイルはサーバーにのみ保存されます。</string>
     <string name="tooltips_text_create_folder">新しいフォルダーを作成する</string>
     <string name="login_to_new_account">新しいアカウントでログインしています。まず現在のアカウントをログアウトしてから、Les Pasを起動し直してください。ログアウトを実行しますか？</string>

@@ -134,20 +134,13 @@
         app:icon="@drawable/ic_baseline_edit_24">
 
         <SwitchPreferenceCompat
-            app:key="@string/snapseed_pref_key"
-            app:title="@string/snapseed_integration_title"
-            app:summaryOn="@string/snapseed_integration_summary"
+            app:key="@string/edit_replace_pref_key"
+            app:title="@string/edit_replace_title"
+            app:summaryOn="@string/edit_replace_on_summary"
+            app:summaryOff="@string/edit_replace_off_summary"
             app:singleLineTitle="false"
             app:defaultValue="false" />
-
-        <SwitchPreferenceCompat
-            app:dependency="@string/snapseed_pref_key"
-            app:key="@string/snapseed_replace_pref_key"
-            app:title="@string/snapseed_replace_title"
-            app:summaryOn="@string/snapseed_replace_on_summary"
-            app:summaryOff="@string/snapseed_replace_off_summary"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
+<!--        app:dependency="@string/snapseed_pref_key" -->
 
     </PreferenceCategory>
 

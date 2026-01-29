@@ -92,8 +92,8 @@
     <string name="button_text_share">Condividi</string>
     <string name="button_text_use_as">Utilizzare come</string>
     <string name="button_text_info">Informazioni</string>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - Sostituisci</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - Aggiungi</string>
+    <string name="button_text_edit_replace">Ritocco - Sostituisci</string>
+    <string name="button_text_edit_add">Ritocco - Aggiungi</string>
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">Nuova copertina impostata.</string>
@@ -115,12 +115,10 @@
     <string name="gallery_as_album_title">Galleria visualizzata come album</string>
 
     <string name="default_mute_title">Disattivare il video per impostazione predefinita</string>
-    <string name="edit_header">Modifica</string>
-    <string name="snapseed_integration_title">Integrazione con Snapseed</string>
-    <string name="snapseed_integration_summary">Nota: consenti a Snapseed di usare il formato JPEG</string>
-    <string name="snapseed_replace_title">Sostituisci originale</string>
-    <string name="snapseed_replace_on_summary">Sì, sostituisci la foto originale con la versione di Snapseed.</string>
-    <string name="snapseed_replace_off_summary">No, aggiungi la versione di Snapseed all\'album. Gestisci i duplicati autonomamente.</string>
+    <string name="edit_header">Ritocco</string>
+    <string name="edit_replace_title">Sostituisci originale</string>
+    <string name="edit_replace_on_summary">Sì, sostituisci la foto originale con il risultato dell\'editing.</string>
+    <string name="edit_replace_off_summary">No, aggiungi il file modificato all\'album insieme all\'originale. Gestisci tu stesso i duplicati.</string>
 
     <string name="privacy_header">Privacy</string>
     <string name="remove_meta_data_before_sharing_title">Rimuovere i metadati sensibili prima di condividerli</string>
@@ -165,13 +163,11 @@
     <string name="msg_logout_dialog">Uscire dall\'account %1$s\?</string>
     <string name="yes_logout">Sì, esci</string>
 
-    <string name="storage_access_permission_rationale">Snapseed salva i file nella cartella \"Snapseed\". Per visualizzarli, consenti l\'accesso all\'archivio.</string>
     <string name="backup_exif_location_permission_rationale">Per effettuare il backup dei dati GPS delle foto</string>
     <string name="search_exif_location_permission_rationale">Per cercare informazioni sulla posizione nella galleria</string>
     <string name="read_exif_location_permission_rationale">Per visualizzare le informazioni di geolocalizzazione delle foto</string>
     <string name="need_access_media_location_permission">, Les Pas ha bisogno del permesso di accesso alla posizione.</string>
     <string name="proceed_request">Continua</string>
-    <string name="install_snapseed_dialog_msg">Installare Snapseed\?</string>
 
     <!-- Destination DialogFragment -->
     <string name="sync_status_stage_backup_pictures">Backup dei file multimediali...</string>

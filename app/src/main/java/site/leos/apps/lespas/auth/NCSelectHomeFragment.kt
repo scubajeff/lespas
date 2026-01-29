@@ -306,7 +306,7 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.gallery_as_album_perf_key),
                                 getString(R.string.show_archive_perf_key),
                                 //getString(R.string.roll_list_first_perf_key),
-                                getString(R.string.snapseed_replace_pref_key),
+                                getString(R.string.edit_replace_pref_key),
                                 //getString(R.string.sync_pref_key),
                                 getString(R.string.wifionly_pref_key),
                                 getString(R.string.chinese_map_pref_key),
@@ -349,9 +349,6 @@ class NCSelectHomeFragment: Fragment() {
 
                                 // String list preferences
                                 LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(", ").toSet())
-
-                                // Snapseed integration preference depends on existence of Snapseed app
-                                getString(R.string.snapseed_pref_key) -> editor.putBoolean(key, value.toBoolean() && requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null)
                             }
                         }
                     }

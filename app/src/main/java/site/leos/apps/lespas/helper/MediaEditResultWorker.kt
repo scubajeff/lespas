@@ -16,9 +16,11 @@
 
 package site.leos.apps.lespas.helper
 
+import android.content.ContentResolver
 import android.content.Context
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
@@ -34,50 +36,50 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import java.io.File
 
-class SnapseedResultWorker(private val context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
+class MediaEditResultWorker(private val context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
     override suspend fun doWork(): Result {
         var result = Result.failure()
 
-        val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val appRootFolder = Tools.getLocalRoot(context)
-
         val cr = context.contentResolver
-        var imagePath = ""
-        var imageName = ""
-        var imageSize = 0L
+        val uri = (inputData.keyValueMap[KEY_MEDIA_URI] as String).toUri()
+        //val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val appRootFolder = Tools.getLocalRoot(context)
+        //var mediaPath = ""
+        var mediaName = ""
+        var mediaSize = 0L
+
         val photoDao = LespasDatabase.getDatabase(context).photoDao()
         val albumDao = LespasDatabase.getDatabase(context).albumDao()
         val actionDao = LespasDatabase.getDatabase(context).actionDao()
-        val uri = (inputData.keyValueMap[KEY_IMAGE_URI] as String).toUri()
         val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
-        val exifInterface: ExifInterface?
 
-        if ((inputData.keyValueMap[KEY_SHARED_PHOTO] as String).isNotEmpty()) {
-            val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
+        if ((inputData.keyValueMap[KEY_SHARED_MEDIA] as String).isNotEmpty()) {
+            val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_MEDIA] as String)
             withContext(Dispatchers.IO) {
                 cr.query(uri, null, null, null, null)?.use { cursor ->
                     cursor.moveToFirst()
-                    imagePath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
-                    imageName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                    //mediaPath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
+                    mediaName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
                     // Latest Snapseed will keep file's original name when there's no name conflict in it's output folder
-                    if (imageName == originalPhoto.name) imageName = imageName.substringBeforeLast('.') + "_01." + imageName.substringAfterLast('.')
-                    imageSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
+                    if (mediaName == originalPhoto.name) mediaName = mediaName.substringBeforeLast('.') + "_01." + mediaName.substringAfterLast('.')
+                    mediaSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
                 }
 
-                // Wait until Snapseed result file is synced to disk. Seems like system media store start scanning it even before the file is written completely and reporting 0 file size
+                // Wait until editing result file is synced to disk. Seems like system media store start scanning it even before the file is written completely and reporting 0 file size
                 // TODO any other proper way to do this?
-                while (imageSize == 0L) {
-                    delay(200)
+                while (mediaSize == 0L) {
+                    delay(1000)
 
                     cr.query(uri, null, null, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) imageSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
+                        if (cursor.moveToFirst()) mediaSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
                         else return@withContext
                     }
                 }
 
-                if (imagePath.contains("Snapseed/")) {
+                // TODO way needed to verify image creator
+                //if (imagePath.contains("Snapseed/") || imagePath.contains("Photoshop Express/")) {
                     // If this is under Snapseed's folder
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.snapseed_replace_pref_key), false)) {
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.edit_replace_pref_key), false)) {
                         /* Replace the original */
 
                         // Make a copy of this file after imageName, e.g. the photo name, so that when new eTag synced back from server, file will not need to be downloaded
@@ -85,7 +87,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         try {
                             cr.openInputStream(uri)?.use { input ->
                                 // Name new photo filename after Snapseed's output name
-                                File(appRootFolder, imageName).outputStream().use { output ->
+                                File(appRootFolder, mediaName).outputStream().use { output ->
                                     input.copyTo(output)
                                 }
                             }
@@ -96,9 +98,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         }
 
                         // Update local database
-                        exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
-                        val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(
-                            id = originalPhoto.id, albumId = album.id, name = imageName,
+/*
+                        cr.getType(uri)?.let { mimeType ->
+                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(context, uri) }} catch (_: SecurityException) { null } catch (_: RuntimeException) { null }
+                            else exifInterface = try { ExifInterface("$appRootFolder/$mediaName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+                        }
+                        val newPhoto = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$mediaName", Photo.DEFAULT_MIMETYPE, mediaName).copy(
+                            id = originalPhoto.id, albumId = album.id, name = mediaName,
                             // Preserve original meta
                             dateTaken = originalPhoto.dateTaken,
                             caption = originalPhoto.caption,
@@ -110,6 +116,8 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                             country = originalPhoto.country,
                             countryCode = originalPhoto.countryCode,
                         )
+*/
+                        val newPhoto = prepareNewPhoto(uri, mediaName, appRootFolder, cr, album.id, originalPhoto.id, originalPhoto)
 
                         // Update local DB, result will be shown immediately, take care album cover too
                         photoDao.update(newPhoto)
@@ -141,9 +149,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                             actionDao.insert(this)
                         }
                     } else {
-                        /* Copy Snapseed output */
+                        /* Copy editing output */
                         // Append content uri _id as suffix to make a unique filename, this will be use as both fileId and filename
-                        val fileName = "${imageName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${imageName.substringAfterLast('.')}"
+                        val fileName = "${mediaName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${mediaName.substringAfterLast('.')}"
 
                         // Copy file to our private storage area
                         try {
@@ -159,9 +167,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         }
 
                         // Create new photo in local database
-                        exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+/*
+                        cr.getType(uri)?.let { mimeType ->
+                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(context, uri) }} catch (_: SecurityException) { null } catch (_: RuntimeException) { null }
+                            else exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+                        }
                         photoDao.insert(
-                            Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(
+                            Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(
                                 id = fileName, albumId = album.id, name = fileName,
                                 // Preserve original meta
                                 dateTaken = originalPhoto.dateTaken,
@@ -175,6 +187,8 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                                 countryCode = originalPhoto.countryCode,
                             )
                         )
+*/
+                        photoDao.insert(prepareNewPhoto(uri, fileName, appRootFolder, cr, album.id, fileName, originalPhoto))
 
                         with(mutableListOf<Action>()) {
                             // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
@@ -187,23 +201,53 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Remove cache copy
                     try { File(context.cacheDir, originalPhoto.name).delete() } catch (_: Exception) {}
 
-                    // Remove snapseed output here if running on Android 10 or lower
-                    // If on Android 12, handle it in AlbumDetailFragment or PhotoSlideFragment where ActivityResultLauncher is available.
+                    // Remove editing output here if running on Android 10 or lower
+                    // If on Android 12 or above, handle it in AlbumDetailFragment or PhotoSlideFragment where ActivityResultLauncher is available.
                     // There is no way to delete the file in Android 11 without user intervention
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try { cr.delete(uri, null, null) } catch (_: Exception) {}
 
                     //result = Result.success(workDataOf(KEY_IMAGE_URI to (inputData.keyValueMap[KEY_IMAGE_URI] as String)))
                     result = Result.success()
-                }
+                //}
             }
         }
 
         return result
     }
 
+    private fun prepareNewPhoto(mediaUri: Uri, mediaName: String, localRoot: String, cr: ContentResolver, albumId: String, photoId: String, originalPhoto: Photo): Photo {
+        var exifInterface: ExifInterface? = null
+        var metadataRetriever: MediaMetadataRetriever? = null
+        var mediaMimeType: String = Photo.DEFAULT_MIMETYPE
+
+        cr.getType(mediaUri)?.let { mimeType ->
+            mediaMimeType = mimeType
+            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(context, mediaUri) }} catch (_: SecurityException) { null } catch (_: RuntimeException) { null }
+            else exifInterface = try { ExifInterface("$localRoot/$mediaName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
+        }
+
+        val newPhoto: Photo = Tools.getPhotoParams(metadataRetriever, exifInterface, "$localRoot/$mediaName", mediaMimeType, mediaName).copy(
+            id = photoId, albumId = albumId, name = mediaName,
+            // Preserve original meta
+            dateTaken = originalPhoto.dateTaken,
+            caption = originalPhoto.caption,
+            latitude = originalPhoto.latitude,
+            longitude = originalPhoto.longitude,
+            altitude = originalPhoto.altitude,
+            bearing = originalPhoto.bearing,
+            locality = originalPhoto.locality,
+            country = originalPhoto.country,
+            countryCode = originalPhoto.countryCode,
+        )
+
+        metadataRetriever?.release()
+
+        return newPhoto
+    }
+
     companion object {
-        const val KEY_IMAGE_URI = "IMAGE_URI"
-        const val KEY_SHARED_PHOTO = "SHARE_PHOTO"
+        const val KEY_MEDIA_URI = "MEDIA_URI"
+        const val KEY_SHARED_MEDIA = "SHARE_MEDIA"
         const val KEY_ALBUM = "ALBUM"
         //const val KEY_INVALID_OLD_PHOTO_CACHE = "INVALID_OLD_PHOTO_CACHE"
         //const val KEY_PUBLISHED = "IS_ALBUM_PUBLISHED"

@@ -49,13 +49,6 @@
     <uses-feature android:name="android.hardware.vr.high_performance" android:required="false"/>
 
     <queries>
-        <package android:name="com.niksoftware.snapseed" />
-        <intent>
-            <action android:name="android.intent.action.SEND" />
-            <data android:mimeType="image/jpeg" />
-        </intent>
-    </queries>
-    <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />

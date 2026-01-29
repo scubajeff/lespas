@@ -39,9 +39,9 @@
         android:icon="@drawable/ic_baseline_file_export_24"
         app:showAsAction="never" />
 
-    <item android:id="@+id/snapseed_edit"
-        android:title="@string/button_text_edit_in_snapseed_replace"
-        android:icon="@drawable/ic_baseline_snapseed_24"
+    <item android:id="@+id/edit_media"
+        android:title="@string/button_text_edit_replace"
+        android:icon="@drawable/ic_baseline_edit_replace_24"
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/rename_media"

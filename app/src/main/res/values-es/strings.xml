@@ -60,12 +60,9 @@
     <string name="wifionly_summary_on">Sí, no consumirá datos móviles.</string>
     <string name="wifionly_summary_off">No, consume datos móviles - se recomienda tener cuidado cuando se tiene una gran colección de fotos.</string>
     <string name="account_header">Cuenta</string>
-    <string name="snapseed_integration_title">Integración de las Snapseed</string>
-    <string name="snapseed_integration_summary">Nota: Por favor, deja que Snapseed use el formato de salida JPEG</string>
-    <string name="snapseed_replace_title">Reemplazar el original</string>
-    <string name="snapseed_replace_on_summary">Sí, sustituye la foto original por la versión de Snapseed.</string>
-    <string name="snapseed_replace_off_summary">No, añade la versión de Snapseed al álbum. Gestiona tú mismo los duplicados.</string>
-    <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso para acceder a esos archivos.</string>
+    <string name="edit_replace_title">Reemplazar el original</string>
+    <string name="edit_replace_on_summary">Sí, reemplaza la foto original con el resultado de la edición.</string>
+    <string name="edit_replace_off_summary">No, agrega el archivo editado al álbum junto con el original. Gestiona tú mismo los duplicados.</string>
     <string name="proceed_request">Proceda</string>
     <string name="logout_title">Cierre de sesión</string>
     <string name="msg_logout_dialog">¿Desconexión de la cuenta %1$s?</string>
@@ -108,7 +105,7 @@
         <item quantity="one">%1$d seleccionado</item>
         <item quantity="other">%1$d seleccionados</item>
     </plurals>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
+    <string name="button_text_edit_replace">Retocar - Reemplazar</string>
     <string name="msg_no_media_found">No se ha encontrado ninguna imagen o vídeo en el dispositivo.</string>
     <string name="option_menu_empty_trash">Vaciar la papelera</string>
     <string name="option_menu_show_archive">Archivo</string>
@@ -189,9 +186,8 @@
     <string name="button_text_download">Descargar</string>
     <string name="button_text_add_to_lespas">Añadir al álbum</string>
     <string name="remove_meta_data_before_sharing_title">Elimine los metadatos sensibles antes de compartirlos</string>
-    <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
     <string name="default_mute_title">Silenciar el vídeo por defecto</string>
-    <string name="edit_header">Retacear</string>
+    <string name="edit_header">Retocar</string>
     <string name="privacy_header">Privacidad</string>
     <string name="no">No</string>
     <string name="yes">Sí</string>
@@ -232,7 +228,7 @@
     <string name="cache_size_title">Establecer el tamaño de la caché del álbum remoto</string>
     <string name="cache_size_summary">Tamaño actual de la caché: %1$dMB</string>
     <string name="cache_size_setting_hint">Tamaño de la caché:</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - Añadir</string>
+    <string name="button_text_edit_add">Retocar - Añadir</string>
     <string name="checkbox_text_set_remote">Álbum remoto, archivos multimedia almacenados sólo en el servidor.</string>
     <string name="tooltips_text_create_folder">Crear nueva carpeta</string>
     <string name="login_to_new_account">Estás entrando con una nueva cuenta. Primero debe cerrar la sesión de la cuenta actual y luego volver a iniciar Les Pas. ¿Proceder a cerrar la sesión?</string>

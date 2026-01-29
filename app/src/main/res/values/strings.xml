@@ -114,8 +114,8 @@
     <string name="button_text_share">Share</string>
     <string name="button_text_use_as">Use as</string>
     <string name="button_text_info">Info</string>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - Replace</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - Add</string>
+    <string name="button_text_edit_replace">Retouch - Replace</string>
+    <string name="button_text_edit_add">Retouch - Add</string>
     <string name="button_text_save">Save</string>
     <string name="hint_caption">Add caption</string>
 
@@ -156,14 +156,11 @@
     <string name="auto_replay_title">Replay video automatically</string>
     <string name="default_mute_title">Mute video by default</string>
 
-    <string name="edit_header">Edit</string>
-    <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
-    <string name="snapseed_integration_title">Snapseed integration</string>
-    <string name="snapseed_integration_summary">Note: please let Snapseed use JPEG output format</string>
-    <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
-    <string name="snapseed_replace_title">Replace original</string>
-    <string name="snapseed_replace_on_summary">Yes, replace original photo with Snapseed\'s version.</string>
-    <string name="snapseed_replace_off_summary">No, add Snapseed\'s version to album. Manage duplicates yourself.</string>
+    <string name="edit_header">Retouch</string>
+    <string name="edit_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
+    <string name="edit_replace_title">Replace original</string>
+    <string name="edit_replace_on_summary">Yes, replace the original photo with the editing result.</string>
+    <string name="edit_replace_off_summary">No, add the edited file to the album alongside the original. Manage duplicates yourself.</string>
 
     <string name="privacy_header">Privacy</string>
     <string name="remove_meta_data_before_sharing_pref_key" translatable="false">STRIP_EXIF_BEFORE_SHARING</string>
@@ -230,13 +227,11 @@
     <string name="blog_name_default">My Albums</string>
     <string name="blog_exemption_clause">You’re responsible for your use of the blogging feature and any content you provide, including compliance with applicable laws. Please don’t post content unless you have the right to do so. Anything you post in the blog CAN be access by the general public.</string>
 
-    <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
     <string name="backup_exif_location_permission_rationale">To backup GPS data saved in photo</string>
     <string name="search_exif_location_permission_rationale">To search for location information in gallery</string>
     <string name="read_exif_location_permission_rationale">To show location information of photos</string>
     <string name="need_access_media_location_permission">, Les Pas needs Access Media Location permission.</string>
     <string name="proceed_request">Proceed</string>
-    <string name="install_snapseed_dialog_msg">Install Snapseed now?</string>
 
     <!-- Sync Status Dialog Fragment -->
     <string name="button_text_resync">Re-Sync</string>

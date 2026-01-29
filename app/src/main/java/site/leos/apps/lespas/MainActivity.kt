@@ -139,17 +139,9 @@ class MainActivity : AppCompatActivity() {
                         }
                     } ?: run {
                         lifecycleScope.launch {
-                            // If storage permission is granted, request ACCESS_MEDIA_LOCATION if running on Android Q and above, else disable Snapseed integration, camera roll backup and camera roll as album feature
-                            if (Tools.shouldRequestStoragePermission(this@MainActivity))
-                                sp.edit {
-                                    putBoolean(getString(R.string.snapseed_pref_key), false)
-                                    //putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
-                                    putBoolean(getString(R.string.gallery_as_album_perf_key), false)
-                                }
+                            // If storage access permission is not granted, disable 'Gallery as Album' option, else request ACCESS_MEDIA_LOCATION if running on Android Q and above,
+                            if (Tools.shouldRequestStoragePermission(this@MainActivity)) sp.edit { putBoolean(getString(R.string.gallery_as_album_perf_key), false)}
                             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
-
-                            // If Snapseed is not installed, disable Snapseed integration
-                            packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run { sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }}
 
                             // Sync when receiving network tickle
                             ContentResolver.setSyncAutomatically(accounts[0], getString(R.string.sync_authority), true)
