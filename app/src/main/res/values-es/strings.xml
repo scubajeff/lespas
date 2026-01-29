@@ -188,6 +188,9 @@
     <string name="remove_meta_data_before_sharing_title">Elimine los metadatos sensibles antes de compartirlos</string>
     <string name="default_mute_title">Silenciar el vídeo por defecto</string>
     <string name="edit_header">Retocar</string>
+    <string name="remove_editor_output_title">Eliminar archivos de trabajo</string>
+    <string name="remove_editor_output_on_summary">El archivo de trabajo creado por la aplicación Retouch se eliminará una vez que se haya recopilado.</string>
+    <string name="editor_output_deletion_rational">Para eliminar el archivo de trabajo de retoque en segundo plano sin solicitar su permiso cada vez, debe conceder a Les Pas el permiso Administrar medios.</string>
     <string name="privacy_header">Privacidad</string>
     <string name="no">No</string>
     <string name="yes">Sí</string>

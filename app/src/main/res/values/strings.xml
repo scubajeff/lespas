@@ -161,6 +161,10 @@
     <string name="edit_replace_title">Replace original</string>
     <string name="edit_replace_on_summary">Yes, replace the original photo with the editing result.</string>
     <string name="edit_replace_off_summary">No, add the edited file to the album alongside the original. Manage duplicates yourself.</string>
+    <string name="remove_editor_output_pref_key" translatable="false">REMOVE_EDITOR_OUTPUT</string>
+    <string name="remove_editor_output_title">Remove work files</string>
+    <string name="remove_editor_output_on_summary">The work file created by the Retouch app will be deleted once it has been collected.</string>
+    <string name="editor_output_deletion_rational">In order to remove retouching work file in the background without asking for your permission each time, you should grant Les Pas the Manage Media permission.</string>
 
     <string name="privacy_header">Privacy</string>
     <string name="remove_meta_data_before_sharing_pref_key" translatable="false">STRIP_EXIF_BEFORE_SHARING</string>
@@ -178,6 +182,7 @@
     <string name="is_syncing_message">Les Pas is syncing with server, it\'s not safe to transfer storage now, please try again a few minutes later.</string>
     <string name="yes_transfer">Proceed</string>
     <string name="storage_statistic_pref_key" translatable="false">STATISTIC</string>
+
     <string name="storage_statistic_title">Statistic</string>
     <string name="statistic_db_message">%1$,d photos in %2$,d albums</string>
     <string name="statistic_storage_message">%1$s used in %2$s</string>

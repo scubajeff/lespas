@@ -139,8 +139,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     } ?: run {
                         lifecycleScope.launch {
-                            // If storage access permission is not granted, disable 'Gallery as Album' option, else request ACCESS_MEDIA_LOCATION if running on Android Q and above,
-                            if (Tools.shouldRequestStoragePermission(this@MainActivity)) sp.edit { putBoolean(getString(R.string.gallery_as_album_perf_key), false)}
+                            // If storage access permission is not granted, disable 'Gallery as Album' and 'Remove retouch output' options, else request ACCESS_MEDIA_LOCATION if running on Android Q and above,
+                            if (Tools.shouldRequestStoragePermission(this@MainActivity)) sp.edit {
+                                putBoolean(getString(R.string.gallery_as_album_perf_key), false)
+                                putBoolean(getString(R.string.remove_editor_output_pref_key), false)
+                            }
                             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission()) {}.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
 
                             // Sync when receiving network tickle
@@ -247,8 +250,6 @@ class MainActivity : AppCompatActivity() {
         when(key) {
             // TODO ignore changes of preferences that don't need backup
             AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
-            //SettingsFragment.LAST_BACKUP_CAMERA,
-            //SettingsFragment.LAST_BACKUP_PICTURE,
             getString(R.string.sync_deletion_perf_key),
             getString(R.string.backup_status_pref_key),
             getString(R.string.sync_status_local_action_pref_key),

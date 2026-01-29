@@ -187,6 +187,9 @@
     <string name="remove_meta_data_before_sharing_title">分享前删除图片隐私元数据</string>
     <string name="default_mute_title">默认视频静音</string>
     <string name="edit_header">修图</string>
+    <string name="remove_editor_output_title">删除修图软件工作文件</string>
+    <string name="remove_editor_output_on_summary">修图应用程序创建的工作文件在完成处理后将被删除。</string>
+    <string name="editor_output_deletion_rational">为避免每次在后台删除修图工作文件时都需征得您的许可，您应授予Les Pas应用程序管理媒体的权限。</string>
     <string name="privacy_header">隐私保护</string>
     <string name="no">不用</string>
     <string name="yes">好的</string>

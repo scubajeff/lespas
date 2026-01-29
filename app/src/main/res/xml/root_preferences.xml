@@ -140,8 +140,14 @@
             app:summaryOff="@string/edit_replace_off_summary"
             app:singleLineTitle="false"
             app:defaultValue="false" />
-<!--        app:dependency="@string/snapseed_pref_key" -->
 
+        <SwitchPreferenceCompat
+            app:key="@string/remove_editor_output_pref_key"
+            app:title="@string/remove_editor_output_title"
+            app:summaryOn="@string/remove_editor_output_on_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+        
     </PreferenceCategory>
 
     <PreferenceCategory

@@ -98,25 +98,6 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                         }
 
                         // Update local database
-/*
-                        cr.getType(uri)?.let { mimeType ->
-                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(context, uri) }} catch (_: SecurityException) { null } catch (_: RuntimeException) { null }
-                            else exifInterface = try { ExifInterface("$appRootFolder/$mediaName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
-                        }
-                        val newPhoto = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$mediaName", Photo.DEFAULT_MIMETYPE, mediaName).copy(
-                            id = originalPhoto.id, albumId = album.id, name = mediaName,
-                            // Preserve original meta
-                            dateTaken = originalPhoto.dateTaken,
-                            caption = originalPhoto.caption,
-                            latitude = originalPhoto.latitude,
-                            longitude = originalPhoto.longitude,
-                            altitude = originalPhoto.altitude,
-                            bearing = originalPhoto.bearing,
-                            locality = originalPhoto.locality,
-                            country = originalPhoto.country,
-                            countryCode = originalPhoto.countryCode,
-                        )
-*/
                         val newPhoto = prepareNewPhoto(uri, mediaName, appRootFolder, cr, album.id, originalPhoto.id, originalPhoto)
 
                         // Update local DB, result will be shown immediately, take care album cover too
@@ -167,27 +148,6 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                         }
 
                         // Create new photo in local database
-/*
-                        cr.getType(uri)?.let { mimeType ->
-                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(context, uri) }} catch (_: SecurityException) { null } catch (_: RuntimeException) { null }
-                            else exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
-                        }
-                        photoDao.insert(
-                            Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(
-                                id = fileName, albumId = album.id, name = fileName,
-                                // Preserve original meta
-                                dateTaken = originalPhoto.dateTaken,
-                                caption = originalPhoto.caption,
-                                latitude = originalPhoto.latitude,
-                                longitude = originalPhoto.longitude,
-                                altitude = originalPhoto.altitude,
-                                bearing = originalPhoto.bearing,
-                                locality = originalPhoto.locality,
-                                country = originalPhoto.country,
-                                countryCode = originalPhoto.countryCode,
-                            )
-                        )
-*/
                         photoDao.insert(prepareNewPhoto(uri, fileName, appRootFolder, cr, album.id, fileName, originalPhoto))
 
                         with(mutableListOf<Action>()) {
@@ -204,7 +164,7 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                     // Remove editing output here if running on Android 10 or lower
                     // If on Android 12 or above, handle it in AlbumDetailFragment or PhotoSlideFragment where ActivityResultLauncher is available.
                     // There is no way to delete the file in Android 11 without user intervention
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try { cr.delete(uri, null, null) } catch (_: Exception) {}
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.remove_editor_output_pref_key), false) && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try { cr.delete(uri, null, null) } catch (_: Exception) {}
 
                     //result = Result.success(workDataOf(KEY_IMAGE_URI to (inputData.keyValueMap[KEY_IMAGE_URI] as String)))
                     result = Result.success()

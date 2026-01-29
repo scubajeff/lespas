@@ -96,6 +96,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
     private val storagePermission = Tools.getStoragePermissionsArray()
     private lateinit var showGalleryPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var removeWorkFilesPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var manageMediaPermissionRequestLauncher: ActivityResultLauncher<Intent>
 
@@ -373,8 +374,13 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             getString(R.string.blog_name_pref_key) -> ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateBlogSiteTitle()
             //getString(R.string.pictures_sub_folder_exclusion_pref_key) -> { findPreference<MultiSelectListPreference>(key)?.run { updatePicturesBackupExclusionSummary(this) }}
             getString(R.string.sync_deletion_perf_key) ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))
+                if (sharedPreferences?.getBoolean(key, false) == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))
                     if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sync_deletion_rational), positiveButtonText = getString(R.string.proceed_request), individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
+            getString(R.string.remove_editor_output_pref_key) -> {
+                if (sharedPreferences?.getBoolean(key, false) == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) {
+                    if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.editor_output_deletion_rational), positiveButtonText = getString(R.string.proceed_request), individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
+                }
+            }
             else -> {}
         }
     }

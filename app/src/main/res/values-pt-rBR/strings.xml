@@ -112,6 +112,9 @@
     <string name="edit_replace_on_summary">Sim, substitua a foto original pelo resultado da edição.</string>
     <string name="edit_replace_off_summary">Não, adicione o arquivo editado ao álbum junto com o original. Gerencie você mesmo as duplicatas.</string>
 
+    <string name="remove_editor_output_title">Remover arquivos de trabalho</string>
+    <string name="remove_editor_output_on_summary">O arquivo de trabalho criado pelo aplicativo Retouch será excluído assim que for coletado.</string>
+    <string name="editor_output_deletion_rational">Para remover o arquivo de trabalho de retoque em segundo plano sem solicitar sua permissão todas as vezes, você deve conceder ao Les Pas a permissão Gerenciar mídia.</string>
     <string name="privacy_header">Privacidade</string>
     <string name="remove_meta_data_before_sharing_title">Remova metadados confidenciais antes de compartilhar</string>
 

@@ -83,6 +83,9 @@
     <string name="edit_header">Ретушь</string>
     <string name="edit_replace_title">Заменить оригинал</string>
     <string name="edit_replace_on_summary">Да, замените исходное фото результатом редактирования.</string>
+    <string name="remove_editor_output_title">Удалить рабочие файлы</string>
+    <string name="remove_editor_output_on_summary">Рабочий файл, созданный приложением Retouch, будет удален после сбора.</string>
+    <string name="editor_output_deletion_rational">Чтобы удалять файлы ретуширования в фоновом режиме без ежечасного запроса вашего разрешения, вы должны предоставить Les Pas разрешение «Управление мультимедиа».</string>
     <string name="privacy_header">Конфиденциальность</string>
     <string name="remove_meta_data_before_sharing_title">Удалить чувствительные метаданные перед отправкой</string>
     <string name="use_low_resolution_to_share_title">Снижение разрешения изображения перед отправкой</string>

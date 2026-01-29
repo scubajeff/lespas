@@ -111,6 +111,9 @@
     <string name="edit_replace_title">Remplacer l\'original</string>
     <string name="edit_replace_on_summary">Oui, remplacez la photo originale par le résultat de l\'édition.</string>
     <string name="edit_replace_off_summary">Non, ajoutez le fichier modifié à l\'album à côté de l\'original. Gérez vous-même les doublons.</string>
+    <string name="remove_editor_output_title">Supprimer les fichiers de travail</string>
+    <string name="remove_editor_output_on_summary">Le fichier de travail créé par l\'application Retouch sera supprimé une fois qu\'il aura été récupéré.</string>
+    <string name="editor_output_deletion_rational">Afin de supprimer les fichiers de retouche en arrière-plan sans demander votre autorisation à chaque fois, vous devez accorder à Les Pas l\'autorisation « Gérer les médias ».</string>
     <string name="privacy_header">Vie privée</string>
     <string name="remove_meta_data_before_sharing_title">Supprimer les métadonnées sensibles avant de les partager</string>
     <string name="use_low_resolution_to_share_title">Réduire la résolution de l\'image avant de la partager</string>

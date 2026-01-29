@@ -120,6 +120,9 @@
     <string name="edit_replace_on_summary">Sì, sostituisci la foto originale con il risultato dell\'editing.</string>
     <string name="edit_replace_off_summary">No, aggiungi il file modificato all\'album insieme all\'originale. Gestisci tu stesso i duplicati.</string>
 
+    <string name="remove_editor_output_title">Rimuovi file di lavoro</string>
+    <string name="remove_editor_output_on_summary">Il file di lavoro creato dall\'app Retouch verrà eliminato una volta raccolto.</string>
+    <string name="editor_output_deletion_rational">Per rimuovere il file di lavoro di ritocco in background senza chiedere ogni volta il tuo permesso, devi concedere a Les Pas l\'autorizzazione Gestisci contenuti multimediali.</string>
     <string name="privacy_header">Privacy</string>
     <string name="remove_meta_data_before_sharing_title">Rimuovere i metadati sensibili prima di condividerli</string>
 

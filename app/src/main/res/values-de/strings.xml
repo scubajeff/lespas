@@ -99,6 +99,9 @@
     <string name="edit_replace_on_summary">Ja, ersetzen Sie das Originalfoto durch das Bearbeitungsergebnis.</string>
     <string name="edit_replace_off_summary">Nein, füge die bearbeitete Datei zusammen mit dem Original zum Album hinzu. Verwalte Duplikate selbst.</string>
 
+    <string name="remove_editor_output_title">Arbeitsdateien entfernen</string>
+    <string name="remove_editor_output_on_summary">Die von der Retouch-App erstellte Arbeitsdatei wird gelöscht, sobald sie erfasst wurde.</string>
+    <string name="editor_output_deletion_rational">Um Retuschierarbeiten im Hintergrund zu entfernen, ohne jedes Mal Ihre Erlaubnis einzuholen, sollten Sie Les Pas die Berechtigung „Medien verwalten” erteilen.</string>
     <string name="privacy_header">Datenschutz</string>
     <string name="remove_meta_data_before_sharing_title">Sensible Metadaten vor der Weitergabe entfernen</string>
 

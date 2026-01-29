@@ -187,6 +187,9 @@
     <string name="remove_meta_data_before_sharing_title">共有前に画像のプライバシー・メタデータを削除する</string>
     <string name="default_mute_title">デフォルトのビデオミュート</string>
     <string name="edit_header">写真修正</string>
+    <string name="remove_editor_output_title">写真編集ソフトの作業ファイルを削除する</string>
+    <string name="remove_editor_output_on_summary">画像編集アプリで作成された作業ファイルは、処理完了後に削除されます。</string>
+    <string name="editor_output_deletion_rational">毎回許可を求めることなくバックグラウンドでレタッチ作業ファイルを削除するには、Les Pasに「メディアの管理」権限を付与する必要があります。</string>
     <string name="privacy_header">個人情報保護</string>
     <string name="no">いいえ</string>
     <string name="yes">はい。</string>
