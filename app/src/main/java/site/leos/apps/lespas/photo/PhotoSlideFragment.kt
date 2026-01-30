@@ -253,7 +253,14 @@ class PhotoSlideFragment : Fragment() {
                             with(WorkManager.getInstance(requireContext())) {
                                 enqueue(
                                     OneTimeWorkRequestBuilder<MediaEditResultWorker>()
-                                        .setInputData(workDataOf(MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(), MediaEditResultWorker.KEY_SHARED_MEDIA to pAdapter.getPhotoAt(slider.currentItem).id, MediaEditResultWorker.KEY_ALBUM to album.id))
+                                        .setInputData(
+                                            workDataOf(
+                                                MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(),
+                                                MediaEditResultWorker.KEY_SHARED_MEDIA to pAdapter.getPhotoAt(slider.currentItem).id,
+                                                MediaEditResultWorker.KEY_ALBUM to album.id,
+                                                MediaEditResultWorker.KEY_REPLACE_ORIGINAL to sp.getBoolean(getString(R.string.edit_replace_pref_key), false),
+                                            )
+                                        )
                                         .setId(workerId)
                                         .build()
                                 )

@@ -40,13 +40,17 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
     override suspend fun doWork(): Result {
         var result = Result.failure()
 
-        val cr = context.contentResolver
         val uri = (inputData.keyValueMap[KEY_MEDIA_URI] as String).toUri()
-        //val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val replaceOriginal = inputData.keyValueMap[KEY_REPLACE_ORIGINAL] as Boolean
+
+        val cr = context.contentResolver
         val appRootFolder = Tools.getLocalRoot(context)
+
+        //val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         //var mediaPath = ""
         var mediaName = ""
         var mediaSize = 0L
+        var mediaNewId = ""
 
         val photoDao = LespasDatabase.getDatabase(context).photoDao()
         val albumDao = LespasDatabase.getDatabase(context).albumDao()
@@ -60,60 +64,65 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                     cursor.moveToFirst()
                     //mediaPath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
                     mediaName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
-                    // Latest Snapseed will keep file's original name when there's no name conflict in it's output folder
-                    if (mediaName == originalPhoto.name) mediaName = mediaName.substringBeforeLast('.') + "_01." + mediaName.substringAfterLast('.')
                     mediaSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
-                }
+                } ?: run { return@withContext }
 
-                // Wait until editing result file is synced to disk. Seems like system media store start scanning it even before the file is written completely and reporting 0 file size
-                // TODO any other proper way to do this?
+                // Wait until editing result file is synced to disk. Seems like system media store start scanning it even before the file is written completely and reporting 0 file size.
+                // TODO in the latest implementation, this worker will start only when Les Pas app is in resume state, maybe this is not necessary
                 while (mediaSize == 0L) {
                     delay(1000)
 
                     cr.query(uri, null, null, null, null)?.use { cursor ->
                         if (cursor.moveToFirst()) mediaSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
                         else return@withContext
-                    }
+                    } ?: run { return@withContext }
                 }
 
-                // TODO way needed to verify image creator
-                //if (imagePath.contains("Snapseed/") || imagePath.contains("Photoshop Express/")) {
-                    // If this is under Snapseed's folder
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.edit_replace_pref_key), false)) {
-                        /* Replace the original */
+                // TODO need to verify source of retouching app?
+                //if (imagePath.contains("Snapseed/") || imagePath.contains("Photoshop Express/"))
 
-                        // Make a copy of this file after imageName, e.g. the photo name, so that when new eTag synced back from server, file will not need to be downloaded
-                        // If we share this photo to Snapseed again, the share function will use this new name, then snapseed will append another "-01" to the result filename
-                        try {
-                            cr.openInputStream(uri)?.use { input ->
-                                // Name new photo filename after Snapseed's output name
-                                File(appRootFolder, mediaName).outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // Quit when exception happens during file copy
-                            return@withContext
+                // Setup new name for the media
+                if (replaceOriginal) {
+                    // Avoid name conflict with original, some retouching apps are really lazy
+                    // Retouching output will be copied to private space with this new name, so that when new eTag synced back from server, file will not need to be downloaded again
+                    if (mediaName == originalPhoto.name) mediaName = mediaName.substringBeforeLast('.') + "_01." + mediaName.substringAfterLast('.')
+
+                    // When replacing original media, reuse it's old id
+                    mediaNewId = originalPhoto.id
+                } else {
+                    // When adding retouching result to album, in order to get a unique filename, append media store media id to the filename
+                    mediaName = "${mediaName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${mediaName.substringAfterLast('.')}"
+
+                    // Newly added media should use filename as it's temporary id
+                    mediaNewId = mediaName
+                }
+
+                try {
+                    cr.openInputStream(uri)?.use { input ->
+                        File(appRootFolder, mediaName).outputStream().use { output ->
+                            input.copyTo(output)
                         }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // Quit when exception happens during file copy
+                    return@withContext
+                }
 
-                        // Update local database
-                        val newPhoto = prepareNewPhoto(uri, mediaName, appRootFolder, cr, album.id, originalPhoto.id, originalPhoto)
+                prepareNewPhoto(uri, mediaName, appRootFolder, cr, album.id, mediaNewId, originalPhoto).let { newPhoto ->
+                    // Meta data retrieving failed, only happen in video meta data extracting
+                    if (newPhoto.width == 0 || newPhoto.height == 0) return@withContext
 
+                    if (replaceOriginal) {
                         // Update local DB, result will be shown immediately, take care album cover too
                         photoDao.update(newPhoto)
                         if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
-                        // Invalid image cache to show new image and change CurrentPhotoModel's filename
-                        //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
 
-/*
                         // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
-                        try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
-*/
+                        //try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
 
                         // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any, e.g. only send the latest version
                         try { File(appRootFolder, originalPhoto.name).delete() } catch (_: Exception) {}
-
 
                         // Update server
                         with(mutableListOf<Action>()) {
@@ -121,54 +130,37 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                             add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                             add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
                             if (album.cover == newPhoto.id) add(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-/*
-                            // Replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
-                            add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))
-                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
-*/
+
+                            // Another implementation: replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
+                            //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))
+                            //add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
 
                             actionDao.insert(this)
                         }
                     } else {
-                        /* Copy editing output */
-                        // Append content uri _id as suffix to make a unique filename, this will be use as both fileId and filename
-                        val fileName = "${mediaName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${mediaName.substringAfterLast('.')}"
-
-                        // Copy file to our private storage area
-                        try {
-                            cr.openInputStream(uri)?.use { input ->
-                                File(appRootFolder, fileName).outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // Quit when exception happens during file copy
-                            return@withContext
-                        }
-
                         // Create new photo in local database
-                        photoDao.insert(prepareNewPhoto(uri, fileName, appRootFolder, cr, album.id, fileName, originalPhoto))
+                        photoDao.insert(newPhoto)
+
 
                         with(mutableListOf<Action>()) {
                             // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
-                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, Photo.DEFAULT_MIMETYPE, album.name, fileName, fileName, System.currentTimeMillis(), album.shareId))
+                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, Photo.DEFAULT_MIMETYPE, album.name, mediaName, mediaName, System.currentTimeMillis(), album.shareId))
 
                             actionDao.insert(this)
                         }
                     }
+                }
 
-                    // Remove cache copy
-                    try { File(context.cacheDir, originalPhoto.name).delete() } catch (_: Exception) {}
+                // Remove cache copy
+                try { File(context.cacheDir, originalPhoto.name).delete() } catch (_: Exception) {}
 
-                    // Remove editing output here if running on Android 10 or lower
-                    // If on Android 12 or above, handle it in AlbumDetailFragment or PhotoSlideFragment where ActivityResultLauncher is available.
-                    // There is no way to delete the file in Android 11 without user intervention
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.remove_editor_output_pref_key), false) && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try { cr.delete(uri, null, null) } catch (_: Exception) {}
+                // Remove editing output here if running on Android 10 or lower
+                // If on Android 12 or above, handle it in AlbumDetailFragment or PhotoSlideFragment where ActivityResultLauncher is available.
+                // There is no way to delete the file in Android 11 without user intervention
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.remove_editor_output_pref_key), false) && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try { cr.delete(uri, null, null) } catch (_: Exception) {}
 
-                    //result = Result.success(workDataOf(KEY_IMAGE_URI to (inputData.keyValueMap[KEY_IMAGE_URI] as String)))
-                    result = Result.success()
-                //}
+                //result = Result.success(workDataOf(KEY_IMAGE_URI to (inputData.keyValueMap[KEY_IMAGE_URI] as String)))
+                result = Result.success()
             }
         }
 
@@ -209,7 +201,6 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
         const val KEY_MEDIA_URI = "MEDIA_URI"
         const val KEY_SHARED_MEDIA = "SHARE_MEDIA"
         const val KEY_ALBUM = "ALBUM"
-        //const val KEY_INVALID_OLD_PHOTO_CACHE = "INVALID_OLD_PHOTO_CACHE"
-        //const val KEY_PUBLISHED = "IS_ALBUM_PUBLISHED"
+        const val KEY_REPLACE_ORIGINAL = "KEY_REPLACE_ORIGINAL"
     }
 }
