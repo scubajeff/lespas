@@ -187,6 +187,7 @@
     <string name="remove_meta_data_before_sharing_title">分享前先刪除圖片隱私元數據</string>
     <string name="default_mute_title">默認視頻靜音</string>
     <string name="edit_header">修圖</string>
+    <string name="editor_output_deletion_rational">為避免每次在後台刪除修圖工作文件時都需徵得您的許可，您應授予Les Pas應用程序管理媒體的權限。</string>
     <string name="privacy_header">私隱保護</string>
     <string name="no">唔使</string>
     <string name="yes">Ok</string>
@@ -360,4 +361,6 @@
     <string name="title_tv_my_albums">我的相冊</string>
     <string name="title_tv_shared_with_me">親友分享</string>
     <string name="tv_slider_exit_toast">再次按下「返回」按鈕即可退出。</string>
+    <string name="remove_editor_output_title">刪除修圖軟件工作文件</string>
+    <string name="remove_editor_output_on_summary">修圖應用程序創建的工作文件在完成處理後將被刪除。</string>
 </resources>
