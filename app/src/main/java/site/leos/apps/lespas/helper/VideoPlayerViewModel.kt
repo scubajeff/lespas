@@ -180,10 +180,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
             // Only pause if current playing video is the same as the argument. When swiping between two video items, onViewAttachedToWindow in SeamlessMediaSliderAdapter will call pause with last item's uri
             // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
-            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) {
-                videoPlayer.pause()
-                if (!slideshowMode && isNotTV) resetSystemVolume()
-            }
+            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) videoPlayer.pause()
         }.apply {
             invokeOnCompletion { pauseJob = null }
         }
