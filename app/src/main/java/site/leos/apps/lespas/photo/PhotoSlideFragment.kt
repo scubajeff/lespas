@@ -307,6 +307,7 @@ class PhotoSlideFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, shareOutBackPressedCallback)
 
         this.window = requireActivity().window
+        playerViewModel.setWindow(window)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
     }

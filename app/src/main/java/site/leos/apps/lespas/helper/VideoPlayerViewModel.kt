@@ -23,6 +23,8 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.net.Uri
 import android.provider.Settings
+import android.view.Window
+import android.view.WindowManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.AudioAttributes
@@ -79,8 +81,16 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
 
-                    if (!isPlaying) saveVideoPosition(currentVideo)
-                    window.decorView.keepScreenOn = isPlaying
+                    if (!isPlaying) {
+                        saveVideoPosition(currentVideo)
+                        if (isNotTV) {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                            window.addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON)
+                        }
+                    } else {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON)
+                    }
                 }
             })
 
@@ -126,6 +136,9 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Restore session volume
         setVolume(0f)
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON)
 
         if (view != null && uri != null) {
             if (view.context is Activity) window = (view.context as Activity).window
@@ -211,6 +224,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
     fun getBrightness(): Float = brightness
 
+    fun setWindow(window: Window) { this.window = window }
 /*
     fun resetPlayer() {
         videoMap.clear()

@@ -162,6 +162,7 @@ class RemoteMediaFragment: Fragment() {
         autoRotate = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
 
         this.window = requireActivity().window
+        playerViewModel.setWindow(window)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
     }

@@ -199,6 +199,7 @@ class StoryFragment : Fragment() {
         bgmModel = ViewModelProvider(this, BGMViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), if (isPublication) album.bgmId else "file://${Tools.getLocalRoot(requireContext())}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"))[BGMViewModel::class.java]
 
         this.window = requireActivity().window
+        playerViewModel.setWindow(window)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) hdrHeadroom = requireContext().display.highestHdrSdrRatio
     }
