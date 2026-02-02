@@ -84,7 +84,7 @@ dependencies {
     // Core
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation 'androidx.core:core-ktx:1.17.0'
-    implementation 'androidx.activity:activity-ktx:1.12.1'
+    implementation 'androidx.activity:activity-ktx:1.12.3'
     implementation 'androidx.fragment:fragment-ktx:1.8.9'
 
     // Room components
@@ -102,7 +102,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
 
     // Kotlin components
-    implementation 'androidx.work:work-runtime-ktx:2.11.0'
+    implementation 'androidx.work:work-runtime-ktx:2.11.1'
     def coroutineVersion = '1.10.2'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
@@ -118,7 +118,7 @@ dependencies {
     implementation 'androidx.exifinterface:exifinterface:1.4.2'
 
     // Media3
-    def media3_version = "1.8.0"
+    def media3_version = "1.9.1"
     implementation "androidx.media3:media3-exoplayer:$media3_version"
     implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
     implementation "androidx.media3:media3-ui:$media3_version"
