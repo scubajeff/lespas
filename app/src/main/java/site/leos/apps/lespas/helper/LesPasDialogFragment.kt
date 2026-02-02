@@ -61,7 +61,9 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
         if (maxHeightLandscape > 0.0f && rootLayout is ConstraintLayout) setMaxHeight((resources.displayMetrics.heightPixels * maxHeightLandscape).toInt())
 
         rootLayout.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        themeBackground.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimaryVariant))
+        val primary = MaterialColors.getColor(requireContext(), com.google.android.material.R.attr.colorPrimaryVariant, Color.BLACK)
+        val borderColor = MaterialColors.getColor(requireContext(), R.attr.colorDialogBorder, primary)
+        themeBackground.background = DialogShapeDrawable.newInstance(requireContext(), borderColor)
     }
 
     override fun onStart() {

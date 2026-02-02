@@ -79,6 +79,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialElevationScale
@@ -551,7 +552,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
                             .replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
-                        receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)?.apply { setTint(ContextCompat.getColor(requireContext(), R.color.bottom_control_button)) }
+                        receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)?.apply { setTint(MaterialColors.getColor(
+                            requireContext(),
+                            com.google.android.material.R.attr.colorOnPrimary,
+                            ContextCompat.getColor(requireContext(), R.color.color_on_primary) // Properly resolved
+                        )) }
                         return true
                     }
                     R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.LesPas.MaterialOverlay" parent="ThemeOverlay.Material3.DynamicColors.DayNight">
+        <item name="colorDialogBorder">?colorPrimary</item>
         <item name="useMaterialThemeColors">true</item>
     </style>
 </resources>
