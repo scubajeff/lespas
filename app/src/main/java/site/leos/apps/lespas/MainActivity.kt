@@ -82,9 +82,9 @@ class MainActivity : AppCompatActivity() {
         val isTV = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
         Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TV, R.style.Theme_LesPas_TrueBlack)
+        Tools.applyMaterialOverlayTheme(this, R.style.Theme_LesPas_MaterialOverlay)
 
         super.onCreate(savedInstanceState)
-        Tools.applyMaterialOverlayTheme(this, R.style.Theme_LesPas_MaterialOverlay)
         if (isTV) setContentView(R.layout.activity_main_tv)
         else {
             setContentView(R.layout.activity_main)
