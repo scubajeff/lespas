@@ -221,7 +221,7 @@ class NCSelectHomeFragment: Fragment() {
     }
 
     override fun onDestroyView() {
-        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        requireActivity().window.statusBarColor = Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)
         super.onDestroyView()
     }
 
