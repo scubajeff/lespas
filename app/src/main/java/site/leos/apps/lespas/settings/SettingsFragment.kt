@@ -372,15 +372,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
             getString(R.string.material_theme_pref_key) -> {
                 sharedPreferences?.getBoolean(key, false)?.let { _ ->
-                    Tools.applyTheme(
-                        requireActivity() as AppCompatActivity,
-                        R.style.Theme_LesPas,
-                        R.style.Theme_LesPas_TV,
-                        R.style.Theme_LesPas_TrueBlack,
-                    )
-                    Tools.applyMaterialOverlayTheme(
-                        requireActivity() as AppCompatActivity, R.style.Theme_LesPas_MaterialOverlay
-                    )
+                    Tools.applyTheme(requireActivity() as AppCompatActivity, R.style.Theme_LesPas, R.style.Theme_LesPas_TV, R.style.Theme_LesPas_TrueBlack)
+                    Tools.applyMaterialOverlayTheme(requireActivity() as AppCompatActivity, R.style.Theme_LesPas_MaterialOverlay)
                     requireActivity().recreate()
                 }
             }
