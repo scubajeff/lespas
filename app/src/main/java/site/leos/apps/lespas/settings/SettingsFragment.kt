@@ -96,7 +96,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
     private val storagePermission = Tools.getStoragePermissionsArray()
     private lateinit var showGalleryPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
-    private lateinit var removeWorkFilesPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var manageMediaPermissionRequestLauncher: ActivityResultLauncher<Intent>
 
