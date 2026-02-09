@@ -346,7 +346,7 @@ class PublicationDetailFragment: Fragment() {
                         }
 
                         findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
-                            ContextCompat.getColor(requireContext(), R.color.lespas_white).let {
+                            Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimaryInverse).let {
                                 setTextColor(it)
                                 setHintTextColor(ColorUtils.setAlphaComponent(it, 0xA0))
                             }

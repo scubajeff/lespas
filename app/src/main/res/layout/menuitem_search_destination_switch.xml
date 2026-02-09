@@ -37,39 +37,15 @@
         tools:ignore="RtlHardcoded,RtlSymmetry">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/search_album"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:insetLeft="0dp"
-            android:insetRight="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            style="?attr/materialButtonOutlinedStyle"
-            app:strokeColor="@color/search_destination_switch_text"
+            style="@style/Theme.LesPas.Toggle.Button.Toolbar"
             android:tooltipText="@string/tooltips_search_album"
             app:icon="@drawable/ic_baseline_footprint_24"
-            app:iconSize="18dp"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            app:iconTint="@color/search_destination_switch_text"
             tools:ignore="UnusedAttribute" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/search_gallery"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:insetLeft="0dp"
-            android:insetRight="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            style="?attr/materialButtonOutlinedStyle"
-            app:strokeColor="@color/search_destination_switch_text"
+            style="@style/Theme.LesPas.Toggle.Button.Toolbar"
             android:tooltipText="@string/tooltips_search_gallery"
             app:icon="@drawable/ic_baseline_device_24"
-            app:iconSize="18dp"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            app:iconTint="@color/search_destination_switch_text"
             tools:ignore="UnusedAttribute" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 </RelativeLayout>

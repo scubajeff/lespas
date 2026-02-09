@@ -22,8 +22,8 @@
         <item name="android:layout_gravity">center</item>
         <item name="android:lines">2</item>
         <item name="android:background">@android:color/transparent</item>
-        <item name="android:textColor">@color/bottom_control_button</item>
-        <item name="android:drawableTint">@color/bottom_control_button</item>
+        <item name="android:textColor">?primaryTextWhite</item>
+        <item name="android:drawableTint">?primaryTextWhite</item>
     </style>
 
     <style name="DialogAnimation">
@@ -83,6 +83,21 @@
         <item name="iconSize">32dp</item>
         <item name="iconGravity">textStart</item>
     </style>
+    <style name="Theme.LesPas.Toggle.Button.Toolbar" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:strokeColor">@color/search_destination_switch</item>
+        <item name="strokeColor">@color/search_destination_switch</item>
+        <item name="iconTint">@color/search_destination_switch</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+    </style>
 
 
     <style name="Theme.Lespas.Media3.Duration" parent="Widget.MaterialComponents.TextView">
@@ -134,6 +149,7 @@
         <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
+        <item name="android:tint">?primaryTextWhite</item>
     </style>
 
     <style name="Theme.LesPas.Gallery.Folder.Chip" parent="Widget.MaterialComponents.Chip.Choice">

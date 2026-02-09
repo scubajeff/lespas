@@ -17,5 +17,5 @@
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:color="#80ffffff" android:state_enabled="false" />
-    <item android:color="?attr/primaryTextWhite" />
+    <item android:color="?attr/colorPrimaryInverse" />
 </selector>

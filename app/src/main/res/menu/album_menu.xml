@@ -15,7 +15,7 @@
   ~   limitations under the License.
   -->
 
-<menu
+<menu xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
@@ -23,9 +23,9 @@
         android:title="@string/publication_list_fragment_title"
         android:orderInCategory="50"
         android:icon="@drawable/ic_baseline_shared_with_me_24"
-        app:iconTint="?colorPrimaryInverse"
         android:enabled="false"
-        app:showAsAction="always" />
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction" />
     <item
         android:id="@+id/option_menu_gallery"
         android:title="@string/gallery_name"

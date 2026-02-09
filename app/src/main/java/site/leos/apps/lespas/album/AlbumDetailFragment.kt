@@ -837,7 +837,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     })
 
                     actionView?.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
-                        ContextCompat.getColor(requireContext(), R.color.lespas_white).let {
+                        Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimaryInverse).let {
                             setTextColor(it)
                             setHintTextColor(ColorUtils.setAlphaComponent(it, 0xA0))
                         }
@@ -1080,7 +1080,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     // On special Actions of this fragment
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu): Boolean {
-        mode?.menuInflater?.inflate(R.menu.album_detail_actions_mode, menu)
+        mode?.menuInflater?.inflate(R.menu.actions_mode_album_detail_fragment, menu)
 
         mediaRenameAction = menu.findItem(R.id.rename_media)
 

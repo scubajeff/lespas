@@ -53,7 +53,7 @@
             android:paddingTop="@dimen/small_padding"
             android:maxLines="@integer/caption_max_lines"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/bottom_control_button"
+            android:textColor="?primaryTextWhite"
             android:hint="@string/hint_caption"
             android:textColorHint="#898989"
             android:scrollbars="vertical" />

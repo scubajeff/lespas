@@ -25,7 +25,7 @@
     android:layout_centerInParent="true"
     android:paddingRight="12dp"
     android:indeterminate="true"
-    app:indicatorColor="?primaryTextWhite"
+    app:indicatorColor="?colorPrimaryInverse"
     app:indicatorSize="18dp"
     app:trackColor="#28ffffff"
     app:trackThickness="9dp"

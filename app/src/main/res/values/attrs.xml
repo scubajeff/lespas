@@ -29,4 +29,5 @@
     <attr name="colorToggleButtonOnToolbar" format="color" />
     <attr name="colorErrorDatePicker" format="color" />
     <attr name="colorControlBackground" format="color" />
+    <attr name="colorNewShareWithMe" format="color" />
 </resources>

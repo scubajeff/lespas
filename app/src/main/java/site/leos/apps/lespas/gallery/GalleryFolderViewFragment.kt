@@ -551,7 +551,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.action_mode_gallery, menu)
+        mode?.menuInflater?.inflate(R.menu.action_mode_gallery_fragment, menu)
 
         downloadMenuItem = menu?.findItem(R.id.download_to_device)
         uploadMenuItem = menu?.findItem(R.id.upload_to_archive)

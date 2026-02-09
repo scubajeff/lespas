@@ -488,9 +488,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         }
 
                         it.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
-                            ContextCompat.getColor(requireContext(), R.color.lespas_white).let { white ->
-                                setTextColor(white)
-                                setHintTextColor(ColorUtils.setAlphaComponent(white, 0xA0))
+                            Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimaryInverse).let { textColor ->
+                                setTextColor(textColor)
+                                setHintTextColor(ColorUtils.setAlphaComponent(textColor, 0xA0))
                             }
                         }
                     }
@@ -649,7 +649,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.album_actions_mode, menu)
+        mode?.menuInflater?.inflate(R.menu.actions_mode_album_fragment, menu)
         toggleRemoteMenu = menu?.findItem(R.id.toggle_remote)
 
         fab.isEnabled = false
@@ -809,7 +809,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         receivedShareMenu?.icon = this
                         this.start()
                     }
-                } else receivedShareMenu?.icon?.setTint(ContextCompat.getColor(requireContext(), R.color.color_secondary))
+                } else receivedShareMenu?.icon?.setTint(Tools.getAttributeColor(requireContext(), R.attr.colorNewShareWithMe))
 
         }
     }

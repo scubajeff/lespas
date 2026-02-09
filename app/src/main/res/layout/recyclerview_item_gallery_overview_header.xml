@@ -64,6 +64,7 @@
         android:layout_marginHorizontal="@dimen/small_padding"
         android:layout_gravity="center"
         android:button="@drawable/gallery_backup_switch"
+        android:buttonTint="?android:textColorPrimary"
         android:tooltipText="@string/tooltips_enable_backup"
         android:contentDescription="@string/tooltips_enable_backup"
         tools:ignore="RtlHardcoded,UnusedAttribute" />

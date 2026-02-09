@@ -167,17 +167,10 @@ class ObjectSearchSlideFragment : Fragment() {
                     try {
                         pAdapter.getPhotoAt(position).photo.run {
                             if (autoRotate) requireActivity().requestedOrientation = if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-/*
-                            if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId != GalleryFragment.FROM_ARCHIVE && caption.isNotEmpty()) {
+                            if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && caption.isNotEmpty()) {
                                 captionTextView.text = caption
                                 captionArea.isVisible = true
                             } else captionArea.isVisible = false
-*/
-                            captionTextView.text = when(albumId) {
-                                GalleryFragment.FROM_DEVICE_GALLERY -> "From Gallery"
-                                GalleryFragment.FROM_ARCHIVE -> "From archive"
-                                else -> "From album"
-                            }
                         }
                     } catch (_: IndexOutOfBoundsException) {}
 
