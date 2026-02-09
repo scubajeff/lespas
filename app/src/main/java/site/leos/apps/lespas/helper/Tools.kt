@@ -1037,13 +1037,26 @@ object Tools {
         }
     }
 
-    fun applyTheme(context: AppCompatActivity, normalThemeId: Int, trueBlackThemeId: Int) {
+    fun applyTheme(context: AppCompatActivity, normalThemeId: Int, tvThemeId: Int, trueBlackThemeId: Int) {
+
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val isTV = context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
+        val defaultThemeId = if (isTV) tvThemeId else normalThemeId
+
         sp.getString(context.getString(R.string.auto_theme_perf_key), context.getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
         if (sp.getBoolean(context.getString(R.string.true_black_pref_key), false) && (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             context.setTheme(trueBlackThemeId)
-        } else context.setTheme(normalThemeId)
+        } else context.setTheme(defaultThemeId)
+    }
+
+    fun applyMaterialOverlayTheme(context :AppCompatActivity, themeId: Int) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+
+        if (sp.getBoolean("MATERIAL_THEME", false)) {
+            context.theme.applyStyle(themeId, true)
+        }
     }
 
     fun getBearing(exif: ExifInterface): Double {

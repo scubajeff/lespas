@@ -355,18 +355,34 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        when(key) {
+        when (key) {
             getString(R.string.auto_theme_perf_key) -> {
-                sharedPreferences?.getString(key, getString(R.string.theme_auto_values))?.let { newValue ->
-                    findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
-                        if (newValue == getString(R.string.theme_light_values)) {
-                            // Disable true black theme switch if fixed light theme selected
-                            isEnabled = false
-                            isChecked = false
-                        } else isEnabled = true
-                    }
+                sharedPreferences?.getString(key, getString(R.string.theme_auto_values))
+                    ?.let { newValue ->
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
+                            if (newValue == getString(R.string.theme_light_values)) {
+                                // Disable true black theme switch if fixed light theme selected
+                                isEnabled = false
+                                isChecked = false
+                            } else isEnabled = true
+                        }
 
-                    AppCompatDelegate.setDefaultNightMode(newValue.toInt())
+                        AppCompatDelegate.setDefaultNightMode(newValue.toInt())
+                    }
+            }
+
+            getString(R.string.material_theme_pref_key) -> {
+                sharedPreferences?.getBoolean(key, false)?.let { _ ->
+                    Tools.applyTheme(
+                        requireActivity() as AppCompatActivity,
+                        R.style.Theme_LesPas,
+                        R.style.Theme_LesPas_TV,
+                        R.style.Theme_LesPas_TrueBlack,
+                    )
+                    Tools.applyMaterialOverlayTheme(
+                        requireActivity() as AppCompatActivity, R.style.Theme_LesPas_MaterialOverlay
+                    )
+                    requireActivity().recreate()
                 }
             }
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}

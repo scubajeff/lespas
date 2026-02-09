@@ -431,4 +431,5 @@
     <string name="title_tv_my_albums">I miei album</string>
     <string name="title_tv_shared_with_me">Ricevuta condivisa</string>
     <string name="tv_slider_exit_toast">Premere nuovamente il pulsante “Indietro” per uscire.</string>
+    <string name="material_theme_title">Tema materiale</string>
 </resources>

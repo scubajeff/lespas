@@ -137,6 +137,8 @@
     <string name="theme_auto_values" translatable="false">-1</string>
     <string name="true_black_pref_key" translatable="false">TRUE_BLACK_THEME</string>
     <string name="true_black_title">True black dark theme</string>
+    <string name="material_theme_title">Enable Material Theme</string>
+    <string name="material_theme_pref_key" translatable="false">MATERIAL_THEME</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
     <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>

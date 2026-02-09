@@ -81,9 +81,15 @@ class MainActivity : AppCompatActivity() {
         val isTV = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
 
         //Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
-        Tools.applyTheme(this, if (isTV) R.style.Theme_LesPas_TV else R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
+        Tools.applyTheme(
+            this,
+            R.style.Theme_LesPas,
+            R.style.Theme_LesPas_TV,
+            R.style.Theme_LesPas_TrueBlack,
+        )
 
         super.onCreate(savedInstanceState)
+        Tools.applyMaterialOverlayTheme(this, R.style.Theme_LesPas_MaterialOverlay)
         if (isTV) setContentView(R.layout.activity_main_tv)
         else {
             setContentView(R.layout.activity_main)
@@ -92,21 +98,30 @@ class MainActivity : AppCompatActivity() {
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
-        if (accounts.isEmpty() && savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
+        if (accounts.isEmpty() && savedInstanceState == null) supportFragmentManager.beginTransaction()
+            .add(R.id.container_root, NCLoginFragment()).commit()
         else {
             // Edge to edge
             toolbar = findViewById(R.id.toolbar)
             ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, windowInsets ->
                 // Should apply horizontal padding, so that action mode would work in 3-button navigation mode
-                val displayCutoutInset = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
+                val displayCutoutInset =
+                    windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
                 val systemBarInset = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-                toolbar?.updatePadding(top = systemBarInset.top, left = systemBarInset.left + displayCutoutInset.left, right = systemBarInset.right + displayCutoutInset.right)
+                toolbar?.updatePadding(
+                    top = systemBarInset.top,
+                    left = systemBarInset.left + displayCutoutInset.left,
+                    right = systemBarInset.right + displayCutoutInset.right
+                )
                 windowInsets
             }
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
-            supportFragmentManager.setFragmentResultListener(MAIN_ACTIVITY_REQUEST_KEY, this) { _, bundle ->
+            supportFragmentManager.setFragmentResultListener(
+                MAIN_ACTIVITY_REQUEST_KEY, this
+            ) { _, bundle ->
                 if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_RESULT_KEY, false)) {
                     when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
                         CONFIRM_RESTART_DIALOG -> {
@@ -114,20 +129,31 @@ class MainActivity : AppCompatActivity() {
                             navigateUpTo(Intent(this, MainActivity::class.java))
                             startActivity(intent)
                         }
+
                         CONFIRM_REQUIRE_SD_DIALOG -> finish()
                     }
                 }
             }
 
             if (savedInstanceState == null) {
-                if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && ((getSystemService(Context.STORAGE_SERVICE) as StorageManager).let { ss -> ss.storageVolumes.size < 2 || ss.storageVolumes[1].state != Environment.MEDIA_MOUNTED })) {
+                if (!sp.getBoolean(
+                        SettingsFragment.KEY_STORAGE_LOCATION, true
+                    ) && ((getSystemService(Context.STORAGE_SERVICE) as StorageManager).let { ss -> ss.storageVolumes.size < 2 || ss.storageVolumes[1].state != Environment.MEDIA_MOUNTED })
+                ) {
                     // We need external SD mounted writable
-                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), cancelable = false, individualKey = CONFIRM_REQUIRE_SD_DIALOG, requestKey = MAIN_ACTIVITY_REQUEST_KEY)
-                        .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
+                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(
+                        getString(R.string.sd_card_not_ready),
+                        cancelable = false,
+                        individualKey = CONFIRM_REQUIRE_SD_DIALOG,
+                        requestKey = MAIN_ACTIVITY_REQUEST_KEY
+                    ).show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
                 } else {
                     lifecycleScope.launch(Dispatchers.IO) {
                         // Make sure photo's folder created
-                        try { File(Tools.getLocalRoot(applicationContext)).mkdir() } catch (_: Exception) {}
+                        try {
+                            File(Tools.getLocalRoot(applicationContext)).mkdir()
+                        } catch (_: Exception) {
+                        }
                     }
 
                     intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
@@ -135,7 +161,15 @@ class MainActivity : AppCompatActivity() {
                         lifecycleScope.launch(Dispatchers.IO) {
                             album = AlbumRepository(this@MainActivity.application).getThisAlbum(it)
                         }.invokeOnCompletion {
-                            album?.let { supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(it, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit() }
+                            album?.let {
+                                supportFragmentManager.beginTransaction().add(
+                                    R.id.container_root, AlbumDetailFragment.newInstance(
+                                        it,
+                                        intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO)
+                                            ?: ""
+                                    ), AlbumDetailFragment::class.java.canonicalName
+                                ).commit()
+                            }
                         }
                     } ?: run {
                         lifecycleScope.launch {

@@ -30,6 +30,7 @@
     <color name="color_secondary_variant">#236E5F</color>
     <color name="color_secondary_variant_faded">#20236E5F</color>
     <color name="color_on_secondary">@color/lespas_black</color>
+    <color name="color_tertiary">@color/lespas_black</color>
     <color name="color_background">#EFE8D8</color>
     <color name="color_surface">#E4E9D2</color>
     <color name="color_error">#FFD101</color>

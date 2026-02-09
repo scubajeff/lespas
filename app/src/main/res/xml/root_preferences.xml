@@ -28,6 +28,11 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
+            app:key="@string/material_theme_pref_key"
+            app:title="@string/material_theme_title"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
             app:key="@string/true_black_pref_key"
             app:title="@string/true_black_title"
             app:defaultValue="false" />
