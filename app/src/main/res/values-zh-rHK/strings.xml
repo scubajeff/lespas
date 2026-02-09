@@ -363,4 +363,5 @@
     <string name="tv_slider_exit_toast">再次按下「返回」按鈕即可退出。</string>
     <string name="remove_editor_output_title">刪除修圖軟件工作文件</string>
     <string name="remove_editor_output_on_summary">修圖應用程序創建的工作文件在完成處理後將被刪除。</string>
+    <string name="material_theme_title">啓用Material主題</string>
 </resources>

@@ -369,4 +369,5 @@
     <string name="title_tv_my_albums">Мои альбомы</string>
     <string name="title_tv_shared_with_me">Полученные акции</string>
     <string name="tv_slider_exit_toast">Нажмите кнопку «Назад» еще раз, чтобы выйти.</string>
+    <string name="material_theme_title">Включить материальную тему</string>
 </resources>
