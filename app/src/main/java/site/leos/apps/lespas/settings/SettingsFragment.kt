@@ -354,43 +354,58 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        when (key) {
-            getString(R.string.auto_theme_perf_key) -> {
-                sharedPreferences?.getString(key, getString(R.string.theme_auto_values))
-                    ?.let { newValue ->
-                        findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
-                            if (newValue == getString(R.string.theme_light_values)) {
-                                // Disable true black theme switch if fixed light theme selected
-                                isEnabled = false
-                                isChecked = false
-                            } else isEnabled = true
+        try {
+            when (key) {
+                getString(R.string.auto_theme_perf_key) -> {
+                    sharedPreferences?.getString(key, getString(R.string.theme_auto_values))
+                        ?.let { newValue ->
+                            findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
+                                if (newValue == getString(R.string.theme_light_values)) {
+                                    // Disable true black theme switch if fixed light theme selected
+                                    isEnabled = false
+                                    isChecked = false
+                                } else isEnabled = true
+                            }
+
+                            AppCompatDelegate.setDefaultNightMode(newValue.toInt())
                         }
+                }
 
-                        AppCompatDelegate.setDefaultNightMode(newValue.toInt())
+                getString(R.string.material_theme_pref_key) -> {
+                    sharedPreferences?.getBoolean(key, false)?.let { _ ->
+                        Tools.applyTheme(requireActivity() as AppCompatActivity, R.style.Theme_LesPas, R.style.Theme_LesPas_TV, R.style.Theme_LesPas_TrueBlack)
+                        Tools.applyMaterialOverlayTheme(requireActivity() as AppCompatActivity, R.style.Theme_LesPas_MaterialOverlay)
+                        requireActivity().recreate()
                     }
-            }
+                }
 
-            getString(R.string.material_theme_pref_key) -> {
-                sharedPreferences?.getBoolean(key, false)?.let { _ ->
-                    Tools.applyTheme(requireActivity() as AppCompatActivity, R.style.Theme_LesPas, R.style.Theme_LesPas_TV, R.style.Theme_LesPas_TrueBlack)
-                    Tools.applyMaterialOverlayTheme(requireActivity() as AppCompatActivity, R.style.Theme_LesPas_MaterialOverlay)
-                    requireActivity().recreate()
+                CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800)) }
+                getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
+                getString(R.string.blog_name_pref_key) -> ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateBlogSiteTitle()
+                //getString(R.string.pictures_sub_folder_exclusion_pref_key) -> { findPreference<MultiSelectListPreference>(key)?.run { updatePicturesBackupExclusionSummary(this) }}
+                getString(R.string.sync_deletion_perf_key) ->
+                    if (sharedPreferences?.getBoolean(key, false) == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))
+                        if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(
+                            getString(R.string.sync_deletion_rational),
+                            positiveButtonText = getString(R.string.proceed_request),
+                            individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST,
+                            requestKey = SETTING_REQUEST_KEY
+                        ).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
+
+                getString(R.string.remove_editor_output_pref_key) -> {
+                    if (sharedPreferences?.getBoolean(key, false) == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) {
+                        if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(
+                            getString(R.string.editor_output_deletion_rational),
+                            positiveButtonText = getString(R.string.proceed_request),
+                            individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST,
+                            requestKey = SETTING_REQUEST_KEY
+                        ).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
+                    }
                 }
+
+                else -> {}
             }
-            CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
-            getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
-            getString(R.string.blog_name_pref_key) -> ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateBlogSiteTitle()
-            //getString(R.string.pictures_sub_folder_exclusion_pref_key) -> { findPreference<MultiSelectListPreference>(key)?.run { updatePicturesBackupExclusionSummary(this) }}
-            getString(R.string.sync_deletion_perf_key) ->
-                if (sharedPreferences?.getBoolean(key, false) == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext()))
-                    if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sync_deletion_rational), positiveButtonText = getString(R.string.proceed_request), individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
-            getString(R.string.remove_editor_output_pref_key) -> {
-                if (sharedPreferences?.getBoolean(key, false) == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(requireContext())) {
-                    if (parentFragmentManager.findFragmentByTag(MANAGE_MEDIA_PERMISSION_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.editor_output_deletion_rational), positiveButtonText = getString(R.string.proceed_request), individualKey = MANAGE_MEDIA_PERMISSION_RATIONALE_REQUEST, requestKey = SETTING_REQUEST_KEY).show(parentFragmentManager, MANAGE_MEDIA_PERMISSION_DIALOG)
-                }
-            }
-            else -> {}
-        }
+        } catch (_: IllegalStateException) {}
     }
 
     private fun showStatistic(preference: Preference) {
