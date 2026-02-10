@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <!--
+<!--
   ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
   ~
   ~   Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,7 @@
   ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
-  -->
-<resources xmlns:tools="http://schemas.android.com/tools">
+  --><resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
     <string name="option_menu_empty_trash">Vider la corbeille</string>
     <string name="option_menu_show_archive">Archives</string>
@@ -283,7 +282,6 @@
     <string name="object_vehicle">Véhicule</string>
     <string name="object_location">Lieu</string>
     <string name="object_face">Visage</string>
-
     <!-- Muzei Artwork Provider -->
     <string name="the_end">Fin</string>
     <string name="muzei_provider_description">Le moment de Les Pas</string>
@@ -357,7 +355,6 @@
         <item quantity="one">", Il y a %1$d an aujourd'hui"</item>
         <item quantity="other">", Il y a %1$d ans aujourd'hui"</item>
     </plurals>
-
     <string name="msg_player_skip">5 secondes</string>
     <string name="internal_publish">Interne</string>
     <string name="external_publish">Public</string>
