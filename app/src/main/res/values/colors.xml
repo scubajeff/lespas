@@ -50,6 +50,7 @@
 
     <color name="ic_launcher_background">#EFE8D8</color>
     <color name="ic_launcher_gallery_background">#2B8E7E</color>
+    <color name="ic_banner_background">#1F3B34</color>
     <color name="dark_gray_overlay_background">#80000000</color>
     <color name="bottom_bar_background">#B3404040</color>
 
