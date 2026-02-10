@@ -1,3 +1,7 @@
+## Version 2.11.0
+* Support Material Dynamic Theme, thanks to Github user [@flamboyantpenguin](https://github.com/flamboyantpenguin)
+* Support integration with various photo retouching apps and video editing apps
+
 ## Version 2.10.5
 * Automatically apply DST adjustment when geotagging with GPX file
 
@@ -24,13 +28,13 @@
 
 ## Version 2.10.0
 * Initial support for Android TV
-* ru translation added thanks to Github user @yurtpage
+* ru translation added thanks to Github user [@yurtpage](https://github.com/yurtpage)
 * Various improvements and bug fixes
 
 ## Version 2.9.10
 * Updated Snapseed integration to cope with behaviour changes in latest Snapseed
-* Updated German translation from Github user @dave7895
-* PR by Github user @dave7895 to fix app crash when restoring in a device without external SD card from a previous device which has SD
+* Updated German translation from Github user [@dave7895](https://github.com/dave7895)
+* PR by Github user [@dave7895](https://github.com/dave7895) to fix app crash when restoring in a device without external SD card from a previous device which has SD
 * Fixed ANR in Gallery when use "Select All" on a folder with many pictures
 
 ## Version 2.9.9

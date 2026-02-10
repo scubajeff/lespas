@@ -1,0 +1,3 @@
+* Prise en charge du thème Material Dynamic, grâce à l'utilisateur Github @flamboyantpenguin
+* Prise en charge de l'intégration avec diverses applications de retouche photo et de montage vidéo
+* Diverses améliorations et corrections de bugs

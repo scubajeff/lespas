@@ -1,0 +1,3 @@
+* Unterstützung für dynamische Themen dank Github-Nutzer @flamboyantpenguin
+* Unterstützung für die Integration mit verschiedenen Bildbearbeitungs- und Videobearbeitungs-Apps
+* Verschiedene Verbesserungen und Fehlerbehebungen

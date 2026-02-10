@@ -1,0 +1,3 @@
+* Support Material Dynamic Theme, thanks to Github user @flamboyantpenguin
+* Support integration with various photo retouching apps and video editing apps
+* Various improvements and bug fixes

@@ -1,0 +1,3 @@
+* Compatibilidad con Material Dynamic Theme, gracias al usuario de Github @flamboyantpenguin
+* Compatibilidad con diversas aplicaciones de retoque fotográfico y edición de vídeo
+* Diversas mejoras y correcciones de errores
