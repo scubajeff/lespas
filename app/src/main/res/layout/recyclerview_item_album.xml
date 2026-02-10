@@ -24,7 +24,6 @@
     android:layout_marginTop="@dimen/small_padding"
     android:layout_marginLeft="@dimen/list_horizontal_margin"
     android:layout_marginRight="@dimen/list_horizontal_margin"
-    android:foreground="?android:attr/selectableItemBackground"
     app:cardCornerRadius="0dp"
     app:cardElevation="6dp"
     app:cardUseCompatPadding="true">
@@ -61,7 +60,7 @@
             android:paddingTop="@dimen/small_padding"
             android:paddingBottom="@dimen/big_padding"
             android:paddingHorizontal="@dimen/small_padding"
-            android:background="@drawable/album_item_background">
+            android:foreground="@drawable/album_item_background">
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/title"

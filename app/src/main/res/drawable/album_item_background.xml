@@ -17,5 +17,5 @@
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/album_item_selected_background" android:state_activated="true" />
-    <item android:drawable="@drawable/surface_background_drawable" />
+    <item android:drawable="@android:color/transparent" />
 </selector>
