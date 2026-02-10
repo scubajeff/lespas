@@ -15,6 +15,11 @@
   -->
 
 <resources>
+    <style name="Theme.LesPas.MaterialOverlay" parent="ThemeOverlay.Material3.DynamicColors.DayNight">
+        <item name="colorDialogBorder">?colorPrimary</item>
+        <item name="useMaterialThemeColors">true</item>
+    </style>
+
     <style name="Widget.LesPas.ButtonBar.Fullscreen" parent="Widget.AppCompat.ButtonBar">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
