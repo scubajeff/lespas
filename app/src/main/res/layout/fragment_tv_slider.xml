@@ -74,7 +74,9 @@
         android:clipToPadding="false"
         android:visibility="gone"
         tools:visibility="visible"
-        tools:listitem="@layout/recyclerview_item_tv_slider_fast_scroller" />
+        tools:listitem="@layout/recyclerview_item_tv_slider_fast_scroller"
+        android:focusable="true"
+        android:focusableInTouchMode="true" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/info_page"

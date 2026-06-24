@@ -144,10 +144,21 @@ class TVSliderFragment: Fragment() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val metaDisplayThread = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
-    private var captionAnimationJob: Job? = null
+    private var captionAnimationJob: Job?
     private val wordIterator: BreakIterator = BreakIterator.getWordInstance(Locale.getDefault())
     private var captionHintingAnimation = AnimatorSet()
     private var isSortedByDate = true
+    
+    private var slideshowActive = false
+    private var slideshowHandler = Handler(Looper.getMainLooper())
+    private val slideshowDelay = 3000L
+    private val slideshowKeyCodes = setOf(
+        KeyEvent.KEYCODE_DPAD_CENTER,
+        KeyEvent.KEYCODE_ENTER,
+        KeyEvent.KEYCODE_NUMPAD_ENTER,
+        KeyEvent.KEYCODE_BUTTON_SELECT,
+        KeyEvent.KEYCODE_BUTTON_A
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -366,11 +377,64 @@ class TVSliderFragment: Fragment() {
         }
 
         setupCaptionHintingAnimation()
+        setupSlideshowKeyHandling()
+    }
+    
+    private fun setupSlideshowKeyHandling() {
+        fastScroller.setOnKeyListener { _, keyCode, event ->
+            if (event?.action == KeyEvent.ACTION_DOWN && slideshowKeyCodes.contains(keyCode) && event.repeatCount == 0L) {
+                startSlideshowLongPress()
+                return@setOnKeyListener true
+            }
+            if (event?.action == KeyEvent.ACTION_UP && slideshowActive) {
+                stopSlideshow()
+                return@setOnKeyListener true
+            }
+            false
+        }
+    }
+    
+    private fun startSlideshowLongPress() {
+        if (slideshowActive) return
+        
+        captionHint.visibility = View.VISIBLE
+        
+        slideshowHandler.postDelayed({
+            if (!slideshowActive && captionHint.visibility == View.VISIBLE) {
+                startAutomaticSlideshow()
+            }
+        }, 2000)
+    }
+    
+    private fun startAutomaticSlideshow() {
+        slideshowActive = true
+        currentSlideshowPosition = slider.currentItem
+        
+        slideshowJob = lifecycleScope.launch {
+            while (slideshowActive) {
+                delay(slideshowDelay)
+                if (slideshowActive && slider.adapter != null) {
+                    val nextPosition = (currentSlideshowPosition + 1) % slider.adapter!!.itemCount
+                    slider.setCurrentItem(nextPosition, true)
+                    currentSlideshowPosition = nextPosition
+                }
+            }
+        }
+    }
+    
+    private fun stopSlideshow() {
+        slideshowActive = false
+        slideshowHandler.removeCallbacksAndMessages(null)
+        captionHint.visibility = View.GONE
     }
 
-    override fun onResume() {
-        super.onResume()
-        mediaAdapter.setPauseVideo(true)
+    override fun onDestroy() {
+        captionHintingAnimation.cancel()
+        captionAnimationJob?.cancel()
+        metaDisplayThread.cancel()
+        handler.removeCallbacksAndMessages(null)
+        slideshowHandler.removeCallbacksAndMessages(null)
+        super.onDestroy()
     }
 
     override fun onStop() {
