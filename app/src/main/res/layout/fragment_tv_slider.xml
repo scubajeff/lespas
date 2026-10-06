@@ -139,22 +139,26 @@
                 tools:visibility="visible">
                 <TextView
                     android:text="@string/camera_model"
-                    style="@style/Theme.LesPas.TV.Table.Text.Label"
-                    android:maxLines="3"/>
+                    style="@style/Theme.LesPas.TV.Table.Text.Label"/>
                 <TextView
                     android:id="@+id/info_camera_model"
-                    style="@style/Theme.LesPas.TV.Table.Text"/>
+                    android:padding="@dimen/tiny_padding"
+                    android:lineBreakStyle="strict"
+                    android:lineBreakWordStyle="phrase"
+                    android:maxLines="3"/>
             </TableRow>
             <TableRow android:id="@+id/param_row"
                 android:visibility="gone"
                 tools:visibility="visible">
                 <TextView
                     android:text="@string/parameter"
-                    style="@style/Theme.LesPas.TV.Table.Text.Label"
-                    android:maxLines="2"/>
+                    style="@style/Theme.LesPas.TV.Table.Text.Label"/>
                 <TextView
                     android:id="@+id/info_parameter"
-                    style="@style/Theme.LesPas.TV.Table.Text"/>
+                    android:padding="@dimen/tiny_padding"
+                    android:lineBreakStyle="strict"
+                    android:lineBreakWordStyle="phrase"
+                    android:maxLines="2"/>
             </TableRow>
             <TableRow android:id="@+id/artist_row"
                 android:visibility="gone"
