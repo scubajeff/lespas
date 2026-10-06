@@ -139,7 +139,8 @@
                 tools:visibility="visible">
                 <TextView
                     android:text="@string/camera_model"
-                    style="@style/Theme.LesPas.TV.Table.Text.Label"/>
+                    style="@style/Theme.LesPas.TV.Table.Text.Label"
+                    android:maxLines="3"/>
                 <TextView
                     android:id="@+id/info_camera_model"
                     style="@style/Theme.LesPas.TV.Table.Text"/>
@@ -149,7 +150,8 @@
                 tools:visibility="visible">
                 <TextView
                     android:text="@string/parameter"
-                    style="@style/Theme.LesPas.TV.Table.Text.Label"/>
+                    style="@style/Theme.LesPas.TV.Table.Text.Label"
+                    android:maxLines="2"/>
                 <TextView
                     android:id="@+id/info_parameter"
                     style="@style/Theme.LesPas.TV.Table.Text"/>
