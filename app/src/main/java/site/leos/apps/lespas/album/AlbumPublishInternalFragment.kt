@@ -31,7 +31,11 @@ import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.inputmethod.EditorInfo
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.Filter
+import android.widget.Filterable
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
 import androidx.core.view.isNotEmpty
@@ -95,7 +99,7 @@ class AlbumPublishInternalFragment: Fragment() {
 
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener { (parentFragment as AlbumPublishDialogFragment).dismiss() }
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {
-            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedSharees) add(NCShareViewModel.Recipient("", if (publicationTypeToggleGroup.checkedButtonId == R.id.joint_album) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, "", s)) }
+            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedSharees) add(NCShareViewModel.Recipient("", if (publicationTypeToggleGroup.checkedButtonId == R.id.joint_album) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.DEFAULT_SHARE_PERMISSION, 0L, "", s)) }
             val permissionUnChanged = if (currentRecipients.isNotEmpty() && newRecipients.isNotEmpty()) currentRecipients[0].permission == newRecipients[0].permission else false
             val recipientsToRemove = currentRecipients.toMutableList().apply {
                 if (permissionUnChanged) {

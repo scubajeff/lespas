@@ -2088,17 +2088,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val SHARE_TYPE_PUBLIC = 3
         const val SHARE_TYPE_CIRCLES = 7
 
-        const val PERMISSION_CAN_READ = 1
+        private const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2
         private const val PERMISSION_CAN_CREATE = 4
         private const val PERMISSION_CAN_DELETE = 8
-        private const val PERMISSION_SHARE = 16
-        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + PERMISSION_CAN_READ    // 7
-        const val PERMISSION_PUBLIC_CAN_READ = PERMISSION_CAN_READ + PERMISSION_SHARE                       // 17
-        const val PERMISSION_PUBLIC_JOINT = PERMISSION_JOINT + PERMISSION_CAN_DELETE + PERMISSION_SHARE     // 31
-        //private const val PERMISSION_CAN_DELETE = 8
-        //private const val PERMISSION_CAN_SHARE = 16
-        //private const val PERMISSION_ALL = 31
+        private const val PERMISSION_RESHARE = 16
+        const val DEFAULT_SHARE_PERMISSION = PERMISSION_CAN_READ + PERMISSION_RESHARE
+        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + DEFAULT_SHARE_PERMISSION
+        const val PERMISSION_PUBLIC_CAN_READ = DEFAULT_SHARE_PERMISSION
+        const val PERMISSION_PUBLIC_JOINT = PERMISSION_JOINT + PERMISSION_CAN_DELETE
 
         const val BLOG_TYPE_PUBLIC = 1
         const val BLOG_TYPE_PRIVATE = 2
