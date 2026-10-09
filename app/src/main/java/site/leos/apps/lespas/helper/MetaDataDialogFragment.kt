@@ -63,7 +63,6 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -287,8 +286,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                     }
                 } else {
-                    // TODO robust way to detect if media is from publications
-                    if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
+                    try {
                         GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latitude, longitude, 1)
                     } catch (_: IOException) { null }?.let { result ->
                         if (result.isNotEmpty()) {
