@@ -81,7 +81,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     private var mapIntent = Intent(Intent.ACTION_VIEW)
     private lateinit var scrollView: ScrollView
     private lateinit var mapView: MapView
-    private lateinit var okButton: MaterialButton
     private lateinit var mapButton: MaterialButton
     private lateinit var localityTextView: TextView
     private lateinit var remotePhoto: NCShareViewModel.RemotePhoto
@@ -102,7 +101,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
         scrollView = view.findViewById(R.id.background)
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
-        okButton = view.findViewById(R.id.ok_button)
         mapButton = view.findViewById(R.id.map_button)
         mapView = view.findViewById(R.id.map)
         localityTextView = view.findViewById(R.id.locality)
@@ -113,7 +111,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         view.findViewById<TextView>(R.id.info_filename).text = remotePhoto.photo.name.substringAfterLast("/")
         view.findViewById<TextView>(R.id.info_shotat).text = formatDateString(remotePhoto.photo.dateTaken)
         if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA && !isMapInitialized) lifecycleScope.launch(mapDisplayThread) { showMap(remotePhoto.photo) }
-        else showButtons()
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -161,7 +158,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = formatDateString(it) }
 
                             if (!isMapInitialized && latitude != Photo.NO_GPS_DATA && latitude != remotePhoto.photo.latitude && longitude != remotePhoto.photo.longitude) lifecycleScope.launch(mapDisplayThread) { showMap(photoMeta.photo) }
-                            else showButtons()
                         }
                     }
                 }
@@ -196,11 +192,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
     private fun formatDateString(date: LocalDateTime): String {
         return String.format("%s %s", date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), date.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.MEDIUM)))
-    }
-
-    private fun showButtons() {
-        okButton.isVisible = true
-        scrollView.smoothScrollBy(0, 1)
     }
 
     private var isMapInitialized = false
@@ -252,7 +243,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         )
                     )
                 }
-                invalidate()
 
                 this.isVisible = true
             }
@@ -272,9 +262,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
                     isVisible = true
                 }
-
-                // Show ok button and make sure dialog window is enlarged
-                showButtons()
 
                 // Show locality under map box
                 if (locality.isNotEmpty() && country.isNotEmpty()) {

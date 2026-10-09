@@ -183,9 +183,7 @@
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/locality"
                 style="@style/Theme.LesPas.TextButton"
-                android:text="@android:string/ok"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:text="@android:string/ok" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/map_button"
