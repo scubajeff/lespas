@@ -63,6 +63,7 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.gallery.GalleryFragment
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -287,7 +288,10 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                         }
                                     }
 
-                                    try { PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS) } catch (_: IllegalStateException) {}
+                                    // If picture is from own album, save address for future use
+                                    if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
+                                        PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
+                                    } catch (_: IllegalStateException) {}
                                 }
                             }
 
