@@ -367,8 +367,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderName holds the file's path in the local device
                     // Property fileName holds the file's name
                     "${action.folderName}${action.fileName}".let { filePath ->
-                        webDav.delete("${userBase}${archiveBase}/${Tools.getDeviceModel()}/$filePath")
-                        snapshotDeletion.add(filePath)
+                        if (webDav.delete("${userBase}${archiveBase}/${Tools.getDeviceModel()}/$filePath")) snapshotDeletion.add(filePath)
                     }
                 }
 

@@ -118,12 +118,12 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         }
     }
 
-    fun delete(targetName: String) {
+    fun delete(targetName: String): Boolean {
         httpClient.newCall(Request.Builder().url(Uri.encode(targetName, "&=?/:")).delete().build()).execute().use { response->
-            when {
-                response.isSuccessful -> return
-                response.code == 404 -> return
-                response.code == 409 -> return  // Caddy web server
+            return when {
+                response.isSuccessful -> true
+                response.code == 404 -> false
+                response.code == 409 -> false // Caddy web server
                 else -> throw OkHttpWebDavException(response)
             }
         }
