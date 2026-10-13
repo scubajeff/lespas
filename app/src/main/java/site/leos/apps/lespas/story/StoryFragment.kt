@@ -758,6 +758,12 @@ class StoryFragment : Fragment() {
                                 alpha = 1.0f
                                 scaleX = 1.0f
                                 scaleY = 1.0f
+
+                                // Make sure the inner imageview is set to original scale
+                                findViewById<ImageView>(R.id.media)?.run {
+                                    scaleX = 1.0f
+                                    scaleY = 1.0f
+                                }
                             }
                         }
                     }
