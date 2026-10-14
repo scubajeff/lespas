@@ -25,7 +25,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
-import android.database.ContentObserver
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -110,7 +109,6 @@ class GalleryFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val galleryModel: GalleryViewModel by viewModels { GalleryViewModelFactory(requireActivity(), imageLoaderModel, actionModel) }
 
-    private lateinit var mediaStoreObserver: ContentObserver
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<Array<String>>
@@ -151,13 +149,6 @@ class GalleryFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean) {
-                super.onChange(selfChange)
-                galleryModel.reloadDeviceMediaStore()
-            }
-        }
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
@@ -254,8 +245,6 @@ class GalleryFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         savedInstanceState ?: run { storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray()) }
-        requireActivity().contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
-        requireActivity().contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -378,18 +367,10 @@ class GalleryFragment: Fragment() {
                     }
                     galleryModel.setIsPreparingShareOut(false)
                 }
-                launch {
-                    galleryModel.medias.collect { localMedias ->
-                        localMedias?.let {
-                            if (localMedias.size == 1 && localMedias[0].media.photo.lastModified == LocalDateTime.MAX) {
-                                requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
-                                requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
-                            }
-                        }
-                    }
-                }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch { imageLoaderModel.mediaStoreChangeEvent.collect { galleryModel.reloadDeviceMediaStore() }}
 
         parentFragmentManager.setFragmentResultListener(DESTINATION_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, result ->
             // Inform GallerySliderFragment
@@ -508,8 +489,6 @@ class GalleryFragment: Fragment() {
     }
 
     override fun onDestroyView() {
-        requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
-        requireActivity().contentResolver.unregisterContentObserver(mediaStoreObserver)
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         sp.unregisterOnSharedPreferenceChangeListener(archiveWorksListener)
 

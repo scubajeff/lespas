@@ -22,7 +22,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
-import android.database.ContentObserver
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -60,10 +59,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.withResumed
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
@@ -72,23 +69,17 @@ import androidx.transition.Fade
 import androidx.transition.Slide
 import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.panoramagl.PLManager
 import com.panoramagl.PLSphericalPanorama
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.MediaEditResultWorker
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
@@ -103,7 +94,6 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
-import java.util.UUID
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -136,9 +126,7 @@ class PhotoSlideFragment : Fragment() {
     private var waitingMsg: Snackbar? = null
     private val handler = Handler(Looper.getMainLooper())
 
-    //private lateinit var editorSelectionNotifier: BroadcastReceiver
-    private lateinit var editorOutputObserver: ContentObserver
-    private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private lateinit var deleteEditorWorkFileLauncher: ActivityResultLauncher<IntentSenderRequest>
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -218,78 +206,7 @@ class PhotoSlideFragment : Fragment() {
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = sp.getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
 
-/*
-        // Broadcast receiver listening on editor choice
-        editorSelectionNotifier = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-*/
-/*
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
-                    IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOOSER_RESULT, ChooserResult::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: ${it.selectedComponent}", )} ?: run { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: error", )}
-                else
-                    IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: $it", )}
-*//*
-
-                requireContext().contentResolver.apply {
-                    unregisterContentObserver(editorOutputObserver)
-                    registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                }
-            }
-        }
-*/
-
-        // Content observer looking for editor output
-        editorOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
-                super.onChange(selfChange, uri)
-
-                uri?.let {
-                    // Stop monitoring ASAP once valid change result returned. Since Media Store usually will report multiple changes on the same file
-                    requireContext().contentResolver.unregisterContentObserver(this)
-
-                    // Launch coroutine that will run when app resumed, by then the editing result will most likely be ready for collection
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        viewLifecycleOwner.withResumed {
-                            val workerId = UUID.randomUUID()
-                            with(WorkManager.getInstance(requireContext())) {
-                                enqueue(
-                                    OneTimeWorkRequestBuilder<MediaEditResultWorker>()
-                                        .setInputData(
-                                            workDataOf(
-                                                MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(),
-                                                MediaEditResultWorker.KEY_SHARED_MEDIA to pAdapter.getPhotoAt(slider.currentItem).id,
-                                                MediaEditResultWorker.KEY_ALBUM to album.id,
-                                                MediaEditResultWorker.KEY_REPLACE_ORIGINAL to sp.getBoolean(getString(R.string.edit_replace_pref_key), false),
-                                            )
-                                        )
-                                        .setId(workerId)
-                                        .build()
-                                )
-
-                                viewLifecycleOwner.lifecycleScope.launch {
-                                    getWorkInfoByIdFlow(workerId).flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { workInfo ->
-                                        if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
-                                            if (sp.getBoolean(requireContext().getString(R.string.edit_replace_pref_key), false)) {
-                                                // When replacing original with edit result, refresh image cache of all size
-                                                val photoId = pAdapter.getPhotoAt(slider.currentItem).id
-                                                imageLoaderModel.invalidPhoto(photoId)
-                                                if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), photoId).delete() }
-                                            }
-
-                                            // Remove editor output file if running on Android 12 or above and Manager Media role has been assigned
-                                            if (sp.getBoolean(getString(R.string.remove_editor_output_pref_key), false) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
-                                                try { deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, arrayListOf(uri))).setFillInIntent(null).build()) } catch (_: Exception) {}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteEditorWorkFileLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
 
@@ -529,14 +446,8 @@ class PhotoSlideFragment : Fragment() {
                                 }, null))
                             }
                             SHARE_TO_EDITOR -> {
-                                startActivity(Tools.prepareShareOutIntent(uris, shareOutMimeType))
-                                requireContext().contentResolver.apply {
-                                    unregisterContentObserver(editorOutputObserver)
-                                    if (shareOutMimeType.startsWith("image"))
-                                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                                    else
-                                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                                }
+                                startActivity(Tools.prepareShareOutIntent(uris, shareOutMimeType,))
+                                imageLoaderModel.newEditResult(pAdapter.getPhotoAt(slider.currentItem), Tools.isRemoteAlbum(album), sp.getBoolean(getString(R.string.edit_replace_pref_key), false))
                             }
                             SHARE_TO_WALLPAPER -> {
                                 startActivity(Intent.createChooser(Intent().apply {
@@ -560,7 +471,13 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        //ContextCompat.registerReceiver(requireContext(), editorSelectionNotifier, IntentFilter(EDITOR_SELECTION_NOTIFIER_ACTION).apply { addDataType("image/*"); addDataType("video/*") }, ContextCompat.RECEIVER_EXPORTED)
+        // This routine should be running when app in background, until this fragment is replaced or popped
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext())) viewLifecycleOwner.lifecycleScope.launch {
+            imageLoaderModel.deleteEditorOutputFile.collect { uri ->
+                if (sp.getBoolean(getString(R.string.remove_editor_output_pref_key), false)) try { deleteEditorWorkFileLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, arrayListOf(uri))).setFillInIntent(null).build()) } catch (_: Exception) {}
+            }
+        }
+
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
@@ -637,7 +554,6 @@ class PhotoSlideFragment : Fragment() {
 
         imageLoaderModel.saveSessionVolumePercentage(playerViewModel.getVolume())
 
-        //requireContext().unregisterReceiver(editorSelectionNotifier)
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         slider.adapter = null
 
@@ -661,8 +577,6 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onDestroy() {
         handlerBottomControl.removeCallbacksAndMessages(null)
-
-        requireContext().contentResolver.unregisterContentObserver(editorOutputObserver)
 
         super.onDestroy()
     }
@@ -782,6 +696,18 @@ class PhotoSlideFragment : Fragment() {
         fun getCurrentQuery(): String = currentQuery
     }
 
+/*
+    class SpyOn: BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent) {
+            Log.e(">>>>>>>>", "SpyOn-onReceive: ", )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOOSER_RESULT, ChooserResult::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: ${it.selectedComponent}", )} ?: run { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: error", )}
+            else
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: $it", )}
+        }
+    }
+*/
+
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
@@ -801,7 +727,6 @@ class PhotoSlideFragment : Fragment() {
         private const val KEY_SHAREOUT_MIMETYPE = "KEY_SHAREOUT_MIMETYPE"
         private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 
-        //const val EDITOR_SELECTION_NOTIFIER_ACTION = "site.leos.apps.lespas.SELECTION_NOTIFIER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"
 
         @JvmStatic

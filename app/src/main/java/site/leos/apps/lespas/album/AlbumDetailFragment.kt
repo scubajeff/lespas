@@ -21,7 +21,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
-import android.database.ContentObserver
 import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
@@ -65,10 +64,8 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.withResumed
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -82,10 +79,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
@@ -101,7 +94,6 @@ import site.leos.apps.lespas.gpx.GPXExportDialogFragment
 import site.leos.apps.lespas.gpx.GPXImportDialogFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasGetMediaContract
-import site.leos.apps.lespas.helper.MediaEditResultWorker
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.RenameDialogFragment
 import site.leos.apps.lespas.helper.ShareOutDialogFragment
@@ -126,7 +118,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.UUID
 import kotlin.math.abs
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
@@ -148,9 +139,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
-    //private lateinit var editorSelectionNotifier: BroadcastReceiver
-    private lateinit var editorOutputObserver: ContentObserver
-    private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private lateinit var deleteEditorWorkFileLauncher: ActivityResultLauncher<IntentSenderRequest>
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private var sharedPhoto = Photo(dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
     private var shareOutType = GENERAL_SHARE
@@ -255,80 +244,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         })
 
-        // Broadcast receiver listening on editor choice
-/*
-        editorSelectionNotifier = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-*/
-/*
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
-                    IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOOSER_RESULT, ChooserResult::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: ${it.selectedComponent}", )} ?: run { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: error", )}
-                else
-                    IntentCompat.getParcelableExtra(intent, Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java)?.let { Log.e(">>>>>>>>", "PhotoSlideFragment-onReceive: $it", )}
-*//*
-
-                requireContext().contentResolver.apply {
-                    unregisterContentObserver(editorOutputObserver)
-                    if (intent.type!!.startsWith("image"))
-                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                    else
-                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                }
-            }
-        }
-*/
-
-        // Content observer looking for editor output
-        editorOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
-                super.onChange(selfChange, uri)
-
-                uri?.let {
-                    // Stop monitoring ASAP once valid change result returned. Since Media Store usually will report multiple changes on the same file
-                    requireContext().contentResolver.unregisterContentObserver(this)
-
-                    // Launch coroutine that will run when app resumed, by then the editing result will most likely be ready for collection
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        viewLifecycleOwner.withResumed {
-                            val workerId = UUID.randomUUID()
-                            with(WorkManager.getInstance(requireContext())) {
-                                enqueue(
-                                    OneTimeWorkRequestBuilder<MediaEditResultWorker>()
-                                        .setInputData(
-                                            workDataOf(
-                                                MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(),
-                                                MediaEditResultWorker.KEY_SHARED_MEDIA to sharedPhoto.id,
-                                                MediaEditResultWorker.KEY_ALBUM to album.id,
-                                                MediaEditResultWorker.KEY_REPLACE_ORIGINAL to sp.getBoolean(getString(R.string.edit_replace_pref_key), false),
-                                            )
-                                        )
-                                        .setId(workerId)
-                                        .build()
-                                )
-
-                                viewLifecycleOwner.lifecycleScope.launch {
-                                    getWorkInfoByIdFlow(workerId).flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { workInfo ->
-                                        if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
-                                            if (sp.getBoolean(requireContext().getString(R.string.edit_replace_pref_key), false)) {
-                                                // If replace original is on, refresh image cache of all size
-                                                imageLoaderModel.invalidPhoto(sharedPhoto.id)
-                                                if (Tools.isRemoteAlbum(album)) lifecycleScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(requireContext()), sharedPhoto.id).delete() }
-                                            }
-
-                                            // Remove editor output file if running on Android 12 or above and Manager Media role has been assigned
-                                            if (sp.getBoolean(getString(R.string.remove_editor_output_pref_key), false) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))
-                                                deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, arrayListOf(uri))).setFillInIntent(null).build())
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) deleteEditorWorkFileLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {}
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
@@ -541,7 +457,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        //ContextCompat.registerReceiver(requireContext(), editorSelectionNotifier, IntentFilter(EDITOR_SELECTION_NOTIFIER_ACTION).apply { addDataType("image/*"); addDataType("video/*") }, ContextCompat.RECEIVER_EXPORTED)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         currentQuery = currentPhotoModel.getCurrentQuery()
@@ -563,10 +478,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 val cr = requireActivity().contentResolver
                                 val clipData = ClipData.newUri(cr, "", uris[0])
                                 for (i in 1 until uris.size) {
-                                    if (isActive) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                    if (this@launch.isActive) clipData.addItem(cr, ClipData.Item(uris[i]))
                                 }
 
-                                if (isActive) startActivity(Intent.createChooser(Intent().apply {
+                                if (this@launch.isActive) startActivity(Intent.createChooser(Intent().apply {
                                     if (uris.size == 1) {
                                         // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
                                         action = Intent.ACTION_SEND
@@ -588,13 +503,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             }
                             SHARE_TO_EDITOR -> {
                                 startActivity(Tools.prepareShareOutIntent(uris, sharedPhoto.mimeType))
-                                requireContext().contentResolver.apply {
-                                    unregisterContentObserver(editorOutputObserver)
-                                    if (sharedPhoto.mimeType.startsWith("image"))
-                                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                                    else
-                                        registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, editorOutputObserver)
-                                }
+                                imageLoaderModel.newEditResult(sharedPhoto, Tools.isRemoteAlbum(album), sp.getBoolean(getString(R.string.edit_replace_pref_key), false))
                             }
                         }
                     }
@@ -659,6 +568,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         newAlbumDetail.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
                     }
                 }
+            }
+        }
+
+        // This routine should be running when app in background, until this fragment is replaced or popped
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext())) viewLifecycleOwner.lifecycleScope.launch {
+            imageLoaderModel.deleteEditorOutputFile.collect { uri ->
+                if (sp.getBoolean(getString(R.string.remove_editor_output_pref_key), false)) try { deleteEditorWorkFileLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, arrayListOf(uri))).setFillInIntent(null).build()) } catch (_: Exception) {}
             }
         }
 
@@ -1012,15 +928,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         recyclerView.adapter = null
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
-        //requireContext().unregisterReceiver(editorSelectionNotifier)
 
         super.onDestroyView()
-    }
-
-    override fun onDestroy() {
-        requireContext().contentResolver.unregisterContentObserver(editorOutputObserver)
-
-        super.onDestroy()
     }
 
     private fun renameAlbum() {
@@ -1360,14 +1269,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
-            if (payloads.isEmpty()) onBindViewHolder(holder, position)
-            else if (holder is CoverViewHolder) holder.bindViewItem(currentList.first(), payloads)
-            else {
-                when {
-                    payloads.isEmpty() -> (holder as PhotoViewHolder).bindViewItem(currentList[position])
-                    payloads[0] == SelectionTracker.SELECTION_CHANGED_MARKER -> (holder as PhotoViewHolder).binViewSelectionState(currentList[position])
-                    else -> (holder as PhotoViewHolder).bindViewItem(currentList[position])
-                }
+            when {
+                payloads.isEmpty() -> onBindViewHolder(holder, position)
+                holder is CoverViewHolder -> holder.bindViewItem(currentList.first(), payloads)
+                payloads[0] == SelectionTracker.SELECTION_CHANGED_MARKER -> (holder as PhotoViewHolder).binViewSelectionState(currentList[position])
+                else -> (holder as PhotoViewHolder).bindViewItem(currentList[position])
             }
         }
 
@@ -1510,8 +1416,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         private const val GENERAL_SHARE = 0
         private const val SHARE_TO_EDITOR = 1
-
-        //const val EDITOR_SELECTION_NOTIFIER_ACTION = "site.leos.apps.lespas.SELECTION_NOTIFIER_ALBUMDETAIL"
 
         const val KEY_ALBUM = "ALBUM"
         const val KEY_SCROLL_TO = "KEY_SCROLL_TO"   // SearchResultFragment use this for scrolling to designed photo

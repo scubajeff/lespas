@@ -16,12 +16,15 @@
 
 package site.leos.apps.lespas.publication
 
+//import okhttp3.internal.headersContentLength
 import android.accounts.AccountManager
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -38,8 +41,11 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.os.Parcelable
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import android.util.LruCache
 import android.util.Size
@@ -61,6 +67,10 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.android.material.chip.Chip
 import com.panoramagl.PLImage
 import com.panoramagl.PLManager
@@ -85,7 +95,6 @@ import okhttp3.FormBody
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.closeQuietly
-//import okhttp3.internal.headersContentLength
 import okio.BufferedSource
 import okio.IOException
 import okio.buffer
@@ -97,6 +106,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.gallery.GalleryFragment
+import site.leos.apps.lespas.helper.MediaEditResultWorker
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
@@ -110,7 +120,10 @@ import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.math.max
@@ -175,6 +188,104 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun saveSessionVolumePercentage(newPercentage: Float) { sessionVolumePercentage = newPercentage }
     fun getSessionVolumePercentage() = sessionVolumePercentage
 
+    private val _mediaStoreChangeEvent = MutableSharedFlow<Boolean>()
+    val mediaStoreChangeEvent: SharedFlow<Boolean> = _mediaStoreChangeEvent
+    private val _deleteEditorOutputFile = MutableSharedFlow<Uri>()
+    val deleteEditorOutputFile: SharedFlow<Uri> = _deleteEditorOutputFile
+    private val cr = application.contentResolver
+    private val editResultWatchList: MutableSet<Replacement> = mutableSetOf()
+    fun newEditResult(photo: Photo, isRemote: Boolean, replace: Boolean) {
+        editResultWatchList.find { it.photoId == photo.id }?.run { editResultWatchList.remove(this) }
+        editResultWatchList.add(Replacement().copy(photoId = photo.id, albumId = photo.albumId, isRemote = isRemote, name = photo.name, dateTaken = photo.dateTaken, replace = replace))
+    }
+    private fun removeEditResult(item: Replacement) { editResultWatchList.remove(item) }
+    private val mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            super.onChange(selfChange, uri)
+
+            // Inform observer, which is GalleryFragment only for now
+            viewModelScope.launch { _mediaStoreChangeEvent.emit(true) }
+
+            uri?.let {
+                if (editResultWatchList.isNotEmpty()) viewModelScope.launch {
+                    var matched = Replacement()
+                    var mediaName = ""
+                    var mediaDate = LocalDateTime.MIN
+                    try {
+                        // Match edit result in pendingReplaceList
+                        cr.query(uri, null, null, null, null)?.use { cursor ->
+                            cursor.moveToFirst()
+                            
+                            // Ignore the ContentProvider.insert notification when a new file is created
+                            if (cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE)) <= 0L) return@launch
+                            
+                            mediaName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                            mediaDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(cursor.getColumnIndexOrThrow("datetaken"))), ZoneId.systemDefault())
+                        }
+                    } catch (_: Exception) { return@launch }
+
+                    run breaking@{
+                        // Match name only, since editor might change output file format
+                        val name = mediaName.substringBeforeLast('.')
+                        editResultWatchList.forEach { pending ->
+                            if (name.contains(pending.name.substringBeforeLast('.'))) {
+                                matched = pending
+                                return@breaking
+                            }
+                            if (mediaDate == pending.dateTaken) {
+                                matched = pending
+                                return@breaking
+                            }
+                        }
+                    }
+
+                    if (matched.name.isNotEmpty()) {
+                        // Match found in watch list
+                        //Log.e(">>>>>>>>", "NCShareViewModel-mediaSotreObserver-onChange: {$mediaName, $mediaDate} matches $matched", )
+                        removeEditResult(matched)
+
+                        val workerId = UUID.randomUUID()
+                        with(WorkManager.getInstance(application)) {
+                            enqueue(
+                                OneTimeWorkRequestBuilder<MediaEditResultWorker>()
+                                    .setInputData(
+                                        workDataOf(
+                                            MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(),
+                                            MediaEditResultWorker.KEY_MEDIA_NAME to mediaName,
+                                            MediaEditResultWorker.KEY_PHOTO to matched.photoId,
+                                            MediaEditResultWorker.KEY_ALBUM to matched.albumId,
+                                            MediaEditResultWorker.KEY_REPLACE_ORIGINAL to matched.replace,
+                                        )
+                                    )
+                                    .setId(workerId)
+                                    .build()
+                            )
+
+                            getWorkInfoByIdFlow(workerId).collect { workInfo ->
+                                if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                    if (matched.replace) {
+                                        // When replacing original with edit result, refresh image cache of all size
+                                        invalidPhoto(matched.photoId)
+                                        if (matched.isRemote) viewModelScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(application), matched.photoId).delete() }
+                                    }
+
+                                    // Remove editor output file if running on Android 12 or above and Manager Media role has been assigned
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(application)) _deleteEditorOutputFile.emit(uri)
+                                }
+                            }
+                        }
+                    }
+/*
+                    else {
+                        Log.e(">>>>>>>>", "NCShareViewModel-mediaSotreObserver-onChange: {$mediaName $mediaDate} has no match in watch list", )
+                        editResultWatchList.forEach { Log.e(">>>>>>>>", "NCShareViewModel-mediaSotreObserver-onChange: $it", ) }
+                    }
+*/
+                }
+            }
+        }
+    }
+
     init {
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
@@ -191,6 +302,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
         }
+
+        cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
+        cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
     }
 
     fun getServerBaseUrl(): String = baseUrl
@@ -1290,7 +1404,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun getUserLoginName(): String = user.loginName
     fun getUserDisplayName(): String = user.displayName
 
-    private val cr = application.contentResolver
     private val circleAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_nc_circles_24) as Drawable }
     private val groupAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_group_24) as Drawable }
     private val publicAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_public_24) as Drawable }
@@ -1310,8 +1423,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         fun onGetPaletteComplete(palette: Palette?)
     }
 
+    @SuppressLint("ThreadConstraint")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null,
-        paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
+                      paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         when(viewType) {
@@ -1800,6 +1914,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     override fun onCleared() {
         //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
+        cr.unregisterContentObserver(mediaStoreObserver)
+        cr.unregisterContentObserver(mediaStoreObserver)
+
         decoderJobMap.forEach { if (it.value.isActive) {
             httpCallMap[it.value]?.cancel()
             it.value.cancel()
@@ -1987,6 +2104,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     class ImageCache(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
+
+    @Parcelize
+    data class Replacement (
+        val photoId: String = "",
+        val albumId: String = "",
+        val isRemote: Boolean = false,
+        val name: String = "",
+        val dateTaken: LocalDateTime = LocalDateTime.MIN,
+        val replace: Boolean = false,
+    ): Parcelable {
     }
 
     @Parcelize
