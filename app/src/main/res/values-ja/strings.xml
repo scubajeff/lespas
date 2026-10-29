@@ -245,6 +245,7 @@
     <string name="msg_downloading_exif">サーバーからメタデータを取得する</string>
     <string name="sync_status_action_delete_media">アルバム『%2$s』内の写真%1$sを削除しています</string>
     <string name="sync_status_action_delete_album">アルバム『%s』は削除されています</string>
+    <string name="sync_status_action_add_album">アルバム「%s」を作成中</string>
     <string name="sync_status_action_add_media">アルバム『%2$s』に%1$sを追加しました</string>
     <string name="sync_status_action_rename_album">アルバム『%1$s』は『%2$s』に名前が変更されました</string>
     <string name="sync_status_action_hide_album">アルバム『%s』は非表示になっています</string>

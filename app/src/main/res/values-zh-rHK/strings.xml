@@ -243,6 +243,7 @@
     <string name="backup_remaining">還有%d個</string>
     <string name="sync_status_action_delete_media">正在刪除相冊《%2$s》中的照片%1$s</string>
     <string name="sync_status_action_delete_album">正在刪除相冊《%s》</string>
+    <string name="sync_status_action_add_album">正在建立相簿《%s》</string>
     <string name="sync_status_action_add_media">正在添加%1$s到相冊《%2$s》中</string>
     <string name="sync_status_action_rename_album">正在將相冊《%1$s》改名為《%2$s》</string>
     <string name="sync_status_action_hide_album">正在隱藏相冊《%s》</string>

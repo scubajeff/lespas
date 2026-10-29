@@ -200,6 +200,7 @@
     <string name="backup_remaining">%d ушёл</string>
     <string name="sync_status_action_delete_media">Удаление %1$s из альбома «%2$s»</string>
     <string name="sync_status_action_delete_album">Удаление альбома «%s»</string>
+    <string name="sync_status_action_add_album">Создание альбома «%s»</string>
     <string name="sync_status_action_add_media">Добавление %1$s в альбом «%2$s»</string>
     <string name="sync_status_action_rename_album">Переименование альбома «%1$s» в «%2$s»</string>
     <string name="sync_status_action_hide_album">Скрытие альбома «%s»</string>
