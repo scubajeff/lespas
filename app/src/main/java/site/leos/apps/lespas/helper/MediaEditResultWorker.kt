@@ -52,7 +52,7 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
         val photoDao = LespasDatabase.getDatabase(context).photoDao()
         val albumDao = LespasDatabase.getDatabase(context).albumDao()
         val actionDao = LespasDatabase.getDatabase(context).actionDao()
-        val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
+        val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)!!
 
         if ((inputData.keyValueMap[KEY_PHOTO] as String).isNotEmpty()) {
             val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_PHOTO] as String)

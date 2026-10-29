@@ -652,7 +652,7 @@ class SearchFragment: Fragment() {
             if (photosFromAlbums.isNotEmpty()) {
                 mutableMapOf<Album, MutableList<Photo>>().let { dMap ->
                     photosFromAlbums.forEach { media ->
-                        (if (media.remotePath.isEmpty()) albumRepository.getThisAlbum(media.photo.albumId) else albumRepository.getAlbumByName(media.remotePath.substringAfterLast('/')))?.let { album ->
+                        (if (media.remotePath.isEmpty()) albumRepository.getThisAlbum(media.photo.albumId)!! else albumRepository.getAlbumByName(media.remotePath.substringAfterLast('/')))?.let { album ->
                             dMap[album]?.add(media.photo) ?: run { dMap.put(album, mutableListOf(media.photo)) }
                         }
                     }

@@ -262,7 +262,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val albums = mutableListOf<Album>()
             val timestamp = System.currentTimeMillis()
             albumIds.forEach {
-                albumRepository.getThisAlbum(it).let { album ->
+                albumRepository.getThisAlbum(it)?.let { album ->
                     albums.add(album)
                     actions.add(Action(null, Action.ACTION_META_RESCAN, album.id, album.name, "", "", timestamp, 1))
                     try {

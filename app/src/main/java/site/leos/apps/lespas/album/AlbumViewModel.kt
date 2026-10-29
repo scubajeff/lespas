@@ -39,7 +39,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun getAllPhotoInAlbum(albumId: String): Flow<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId)
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }
     fun getAllAlbumIdName(): List<IDandName> = albumRepository.getAllAlbumIdName()
-    fun getThisAlbum(albumId: String): Album = albumRepository.getThisAlbum(albumId)
+    fun getThisAlbum(albumId: String): Album? = albumRepository.getThisAlbum(albumId)
     fun getAllAlbumName(): List<String> = albumRepository.getAllAlbumName()
     val allHiddenAlbums: Flow<List<Album>> = albumRepository.getAllHiddenAlbumsFlow()
 

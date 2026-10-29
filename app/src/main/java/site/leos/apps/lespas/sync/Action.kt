@@ -101,6 +101,9 @@ abstract class ActionDao: BaseDao<Action>() {
     // cover id is stored in fileName property
     abstract fun updateCoverInPendingActions(albumId: String, coverId: String)
 
+    @Query("UPDATE ${Action.TABLE_NAME} SET folderId = :newId WHERE folderId =:oldId")
+    abstract fun updateNewAlbumId(oldId: String, newId: String)
+
     //@Query(value = "SELECT EXISTS (SELECT fileName FROM ${Action.TABLE_NAME} WHERE fileName = :photoName AND action = ${Action.ACTION_ADD_FILES_ON_SERVER})")
     //abstract fun fileInUse(photoName: String): Boolean
 

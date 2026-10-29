@@ -133,7 +133,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId LIMIT 1")
-    abstract fun getThisAlbum(albumId: String): Album
+    abstract fun getThisAlbum(albumId: String): Album?
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getThisAlbumList(albumId: String): List<Album>
