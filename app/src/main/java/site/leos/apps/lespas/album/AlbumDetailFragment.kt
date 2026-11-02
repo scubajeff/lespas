@@ -87,6 +87,7 @@ import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -173,6 +174,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var selectionBackPressedCallback: OnBackPressedCallback
     private lateinit var nameFilterBackPressedCallback: OnBackPressedCallback
     private lateinit var shareOutBackPressedCallback: OnBackPressedCallback
+
+    private var collectionJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -462,6 +465,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         currentQuery = currentPhotoModel.getCurrentQuery()
 
         viewLifecycleOwner.lifecycleScope.launch {
+            imageLoaderModel.formalAlbumId.collect { namePair ->
+                if (!namePair.first.isNullOrEmpty() && !namePair.second.isNullOrEmpty()) {
+                    if (namePair.first == album.id) {
+                        album.id = namePair.second!!
+                        launchAlbumDetailCollectionJob()
+                    }
+                }
+            }
+        }
+
+        launchAlbumDetailCollectionJob()
+
+        viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     publishModel.shareOutUris.collect { uris ->
@@ -519,53 +535,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     publishModel.shareByMe.collect { shares ->
                         sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
                         mAdapter.setRecipient(sharedByMe)
-                    }
-                }
-                launch {
-                    albumModel.getAlbumDetail(album.id)?.collect { newAlbumDetail ->
-                        // Cover might changed, photo might be deleted, so get updates from latest here
-                        val oldListType = album.sortOrder
-                        album = newAlbumDetail.album
-
-                        // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
-                        if (abs(oldListType - album.sortOrder) == 100) {
-                            recyclerView.adapter = null
-                            recyclerView.layoutManager = newLayoutManger()
-                            recyclerView.adapter = mAdapter
-
-                            updateSearchMenu()
-                        }
-
-                        mAdapter.setAlbum(newAlbumDetail, currentQuery)
-                        (activity as? AppCompatActivity)?.supportActionBar?.title = newAlbumDetail.album.name
-
-                        // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
-                        if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
-                            (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
-                            currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
-                        }
-
-                        // Scroll to designated photo at first run
-                        if (scrollTo.isNotEmpty()) {
-                            (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
-                            scrollTo = ""
-                        }
-
-                        // Restore selection state
-                        if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
-
-                        lifecycleScope.launch {
-                            newAlbumDetail.photos.forEach { photo ->
-                                if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
-                                    mapOptionMenu?.isVisible = true
-                                    gpxExportOptionMenu?.isVisible = true
-                                    return@launch
-                                }
-                            }
-                        }
-
-                        // Disable "Manage Blog" menu if this is a all video album
-                        newAlbumDetail.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
                     }
                 }
             }
@@ -930,6 +899,64 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
 
         super.onDestroyView()
+    }
+
+    private fun launchAlbumDetailCollectionJob() {
+        collectionJob?.cancel()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                collectionJob = launch {
+                    albumModel.getAlbumDetail(album.id).collect { newAlbumDetail ->
+                        newAlbumDetail?.let {
+                            // Cover might changed, photo might be deleted, so get updates from latest here
+                            val oldListType = album.sortOrder
+                            album = newAlbumDetail.album
+
+                            // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
+                            if (abs(oldListType - album.sortOrder) == 100) {
+                                recyclerView.adapter = null
+                                recyclerView.layoutManager = newLayoutManger()
+                                recyclerView.adapter = mAdapter
+
+                                updateSearchMenu()
+                            }
+
+                            mAdapter.setAlbum(newAlbumDetail, currentQuery)
+                            (activity as? AppCompatActivity)?.supportActionBar?.title = newAlbumDetail.album.name
+
+                            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
+                            if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
+                                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
+                                currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
+                            }
+
+                            // Scroll to designated photo at first run
+                            if (scrollTo.isNotEmpty()) {
+                                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
+                                scrollTo = ""
+                            }
+
+                            // Restore selection state
+                            if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
+
+                            lifecycleScope.launch {
+                                newAlbumDetail.photos.forEach { photo ->
+                                    if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
+                                        mapOptionMenu?.isVisible = true
+                                        gpxExportOptionMenu?.isVisible = true
+                                        return@launch
+                                    }
+                                }
+                            }
+
+                            // Disable "Manage Blog" menu if this is a all video album
+                            newAlbumDetail.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun renameAlbum() {

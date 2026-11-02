@@ -197,7 +197,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 val appRootFolder = Tools.getLocalRoot(application)
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
-                val fakeAlbumId = System.currentTimeMillis().toString()
+                val tempAlbumId = System.currentTimeMillis().toString()
                 val contentResolver = application.contentResolver
                 val metadataRetriever = MediaMetadataRetriever()
                 var exifInterface: ExifInterface?
@@ -209,7 +209,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
                 if (album.id.isEmpty()) {
                     // New album, set a fake ID, sync adapter will correct it when real id is available
-                    album.id = fakeAlbumId
+                    album.id = tempAlbumId
                 }
                 uris.forEachIndexed { index, uri ->
                     sourceIsRemote = uri.scheme == GalleryFragment.ARCHIVE_SCHEME
@@ -365,7 +365,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         // Update joint album content meta, DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
                         actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.coverFileName.substringBeforeLast('/'), "", "", System.currentTimeMillis(), 1))
                     } else {
-                        if (album.id == fakeAlbumId) {
+                        if (album.id == tempAlbumId) {
 /*
                             // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
                             // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder

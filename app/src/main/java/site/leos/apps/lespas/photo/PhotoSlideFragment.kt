@@ -74,7 +74,10 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.panoramagl.PLManager
 import com.panoramagl.PLSphericalPanorama
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -142,6 +145,8 @@ class PhotoSlideFragment : Fragment() {
     private var firstSlide = true
 
     private lateinit var sp: SharedPreferences
+
+    private var collectionJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -277,7 +282,6 @@ class PhotoSlideFragment : Fragment() {
 
                     try {
                         pAdapter.getPhotoAt(position).run {
-                            currentPhotoModel.setCurrentPosition(position + 1)
                             if (autoRotate) requireActivity().requestedOrientation = if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
                             // Can't delete cover
@@ -292,6 +296,8 @@ class PhotoSlideFragment : Fragment() {
                             // Update caption
                             captionTextView.text = caption
                         }
+
+                        currentPhotoModel.setCurrentPosition(position + 1)
                     } catch (_: IndexOutOfBoundsException) {}
                 }
             })
@@ -416,13 +422,20 @@ class PhotoSlideFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
-                        pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder)
-                        slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
+            imageLoaderModel.formalAlbumId.collect { namePair ->
+                if (!namePair.first.isNullOrEmpty() && !namePair.second.isNullOrEmpty()) {
+                    if (namePair.first == album.id) {
+                        album.id = namePair.second!!
+                        withContext(Dispatchers.Main) { launchPhotoCollectionJob() }
                     }
                 }
+            }
+        }
+
+        launchPhotoCollectionJob()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     imageLoaderModel.shareOutUris.collect { uris ->
                         // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
@@ -581,6 +594,24 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
     }
 
+    private fun launchPhotoCollectionJob() {
+        collectionJob?.cancel()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                collectionJob = launch {
+                    albumModel.getAllPhotoInAlbum(album.id).collect { photos ->
+                        if (photos.isNotEmpty()) {
+                            pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder) {
+                                slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun updateEditButtonDisplay() {
         editButton.run {
             if (sp.getBoolean(getString(R.string.edit_replace_pref_key), false)) {
@@ -669,28 +700,34 @@ class PhotoSlideFragment : Fragment() {
         override fun getItemMimeType(position: Int): String = getItem(position).mimeType
         override fun isMotionPhoto(position: Int): Boolean = Tools.isMotionPhoto(getItem(position).shareId)
 
-        fun setPhotos(collection: List<Photo>, sortOrder: Int) {
+        fun setPhotos(collection: List<Photo>, sortOrder: Int, callback: kotlinx.coroutines.Runnable) {
             val photos = Tools.sortPhotos(collection, sortOrder)
-            submitList(photos.toMutableList())
+            submitList(photos.toMutableList(), callback)
         }
 
         fun getPhotoAt(position: Int): Photo = currentList[position]
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
-        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
+        // Use photo taken date (most likely from photo's EXIF) as the unique id, instead of using photo's ID, which seems to be unique, but when a newly created photo or the entire album
+        // is not yet uploaded, photo's id is provisional, and will get patched, e.g. changed, once it's synced, if the user remain focus on this photo in this fragment screen, viewpager will unwillingly
+        // jump to the first item of the album
+        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.dateTaken == newItem.dateTaken
         override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name
     }
 
     class CurrentPhotoViewModel : ViewModel() {
         // AlbumDetail fragment grid item positions shared with AlbumDetailFragment
         private var currentPosition = 0
-        private var lastPosition = 0
         fun setCurrentPosition(position: Int) { currentPosition = position }
         fun getCurrentPosition(): Int = currentPosition
+        
+        // Use only by AlbumDetailFragment when it needs to move to another position after restored 
+        private var lastPosition = 0
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
 
+        // Query defines photo filter
         private var currentQuery = ""
         fun setCurrentQuery(query: String) { currentQuery = query }
         fun getCurrentQuery(): String = currentQuery

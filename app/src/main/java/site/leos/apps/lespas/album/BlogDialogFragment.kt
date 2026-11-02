@@ -270,10 +270,12 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                     }
                 }
                 launch {
-                    albumModel.getAlbumDetail(album.id)?.collect { newAlbumDetail ->
-                        photoAdapter.submitList(Tools.sortPhotos(newAlbumDetail.photos, newAlbumDetail.album.sortOrder))
+                    albumModel.getAlbumDetail(album.id).collect { newAlbumDetail ->
+                        newAlbumDetail?.let {
+                            photoAdapter.submitList(Tools.sortPhotos(newAlbumDetail.photos, newAlbumDetail.album.sortOrder))
 
-                        photoAdapter.currentList.forEach { photo -> if (!Tools.isBitSet(photo.shareId, Photo.EXCLUDE_FROM_BLOG)) selectionTracker.select(photo.id) }
+                            photoAdapter.currentList.forEach { photo -> if (!Tools.isBitSet(photo.shareId, Photo.EXCLUDE_FROM_BLOG)) selectionTracker.select(photo.id) }
+                        }
                     }
                 }
             }

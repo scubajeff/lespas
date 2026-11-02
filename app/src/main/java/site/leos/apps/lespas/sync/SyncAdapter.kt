@@ -25,6 +25,7 @@ import android.content.AbstractThreadedSyncAdapter
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
 import android.content.SyncResult
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -45,6 +46,7 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import okhttp3.FormBody
 import okhttp3.Headers
@@ -53,6 +55,7 @@ import okhttp3.internal.http2.StreamResetException
 import okio.IOException
 import org.json.JSONException
 import org.json.JSONObject
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
@@ -383,6 +386,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             photoRepository.fixNewPhotosAlbumId(action.folderId, fileId)
                             albumRepository.fixNewLocalAlbumId(action.folderId, fileId, action.fileName)
                             actionRepository.updateAlbumIdInPendingActions(action.folderId, fileId)
+
+                            // Inform foreground fragment, like AlbumDetailFragment and PhotoSlideFragment that new album id arrived
+                            LocalBroadcastManager.getInstance(application).sendBroadcast(
+                                Intent(NEW_ALBUM_ID_ARRIVED).apply {
+                                    putExtra(TEMP_ALBUM_ID, action.folderId)
+                                    putExtra(FORMAL_ALBUM_ID, fileId)
+                                }
+                            )
 
                             // touch meta file
                             try { File("${localBaseFolder}/${fileId}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
@@ -2180,6 +2191,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val SYNC_STATUS_MESSAGE_FORMAT = "%d|%d"
         private const val SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT = "%d``%s``%s``%s``%s``%d"
         private const val SYNC_STATUS_BACKUP_MESSAGE_FORMAT = "%s|%s|%d|%d|%d"
+
+
+        const val NEW_ALBUM_ID_ARRIVED = "${BuildConfig.APPLICATION_ID}.NEW_ALBUM_ID_ARRIVED"
+        const val TEMP_ALBUM_ID = "${BuildConfig.APPLICATION_ID}.TEMP_ALBUM_ID"
+        const val FORMAL_ALBUM_ID = "${BuildConfig.APPLICATION_ID}.FORMAL_ALBUM_ID"
 
         private const val TAG = "SyncAdapter: "
         private const val ETAG_MISSING = "ETAG_MISSING"

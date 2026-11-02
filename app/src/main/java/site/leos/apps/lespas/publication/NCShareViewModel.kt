@@ -21,8 +21,11 @@ import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.Bitmap
@@ -60,7 +63,9 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
@@ -286,6 +291,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+    private val _formalAlbumId = MutableStateFlow<Pair<String?, String?>>(Pair("", ""))
+    val formalAlbumId: StateFlow<Pair<String?, String?>> = _formalAlbumId
+    private val updateAlbumIdBroadcastReceiver = UpdateAlbumIdBroadcastReceiver { oldId, newId ->
+        viewModelScope.launch { _formalAlbumId.emit(Pair(oldId, newId)) }
+    }
+    class UpdateAlbumIdBroadcastReceiver(private val updateAlbumId:(String?, String?) -> Unit): BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent) {
+            updateAlbumId(intent.getStringExtra(SyncAdapter.TEMP_ALBUM_ID), intent.getStringExtra(SyncAdapter.FORMAL_ALBUM_ID))
+        }
+    }
+
     init {
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
@@ -305,6 +321,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
         cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
+
+        LocalBroadcastManager.getInstance(application).registerReceiver(updateAlbumIdBroadcastReceiver, IntentFilter(SyncAdapter.NEW_ALBUM_ID_ARRIVED))
     }
 
     fun getServerBaseUrl(): String = baseUrl
@@ -1916,6 +1934,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
         cr.unregisterContentObserver(mediaStoreObserver)
         cr.unregisterContentObserver(mediaStoreObserver)
+
+        LocalBroadcastManager.getInstance(application).unregisterReceiver(updateAlbumIdBroadcastReceiver)
 
         decoderJobMap.forEach { if (it.value.isActive) {
             httpCallMap[it.value]?.cancel()
