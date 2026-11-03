@@ -1088,20 +1088,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 else null
                             }
                         } else cr.openInputStream(rp.photo.id.toUri())
-                        else -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
-                            var inSampleSize = 1
-                            var p = max(rp.photo.width, rp.photo.height) / 2
+                        else ->
+                            if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
+                                var inSampleSize = 1
+                                var p = max(rp.photo.width, rp.photo.height) / 2
 
-                            while(p > 1440) {
-                                inSampleSize *= 2
-                                p /= 2
+                                while(p > 1440) {
+                                    inSampleSize *= 2
+                                    p /= 2
+                                }
+                                ensureActive()
+                                try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localFileFolder, rp.photo.name).inputStream() } catch (_: FileNotFoundException) { null }}?.use { fs ->
+                                    BitmapFactory.decodeStream(fs, null, BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }
+                                }
+                            } else {
+                                try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localFileFolder, rp.photo.name).inputStream() } catch (_: FileNotFoundException) { null }}
                             }
-                            ensureActive()
-                            BitmapFactory.decodeFile("$localFileFolder/${rp.photo.id}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }
-                                ?: run { BitmapFactory.decodeFile("$localFileFolder/${rp.photo.name}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }}
-                        } else {
-                            try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { File(localFileFolder, rp.photo.name).inputStream() }
-                        }
                     }?.use { source ->
                         File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${rp.photo.name.substringAfterLast('.')}" else rp.photo.name).let { destFile ->
                             destFile.outputStream().use { dest ->
@@ -1440,6 +1442,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         fun onGetPaletteComplete(palette: Palette?)
     }
 
+    fun getPlaceHolderBitmap() = placeholderBitmap
+
     @SuppressLint("ThreadConstraint")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null,
                       paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
@@ -1549,11 +1553,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 else -> {
                                     // For local album, file available in device and already rotated to up-right position.
                                     val option = BitmapFactory.Options().apply { inSampleSize = thumbnailSize }
-                                    "${localFileFolder}/${imagePhoto.photo.id}".let { namedAfterID ->
-                                        // Local image file named after photo's id
-                                        if (File(namedAfterID).exists()) BitmapFactory.decodeFile(namedAfterID, option)
-                                        // When local image changed after being edited, file named after photo's name
-                                        else BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.name}", option)
+                                    try { File(localFileFolder, imagePhoto.photo.id).inputStream() } catch (_: Exception) { try { File(localFileFolder, imagePhoto.photo.name).inputStream() } catch (_: Exception) { null} }?.use { fs ->
+                                        BitmapFactory.decodeStream(fs, null, option)
                                     } ?: run {
                                         // Fall back to remote copy
                                         getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
@@ -1856,7 +1857,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
 
         // If replaced by Snapseed, photo.id is not gonna changed, and there is a local new file named after photo name, we need to show this one before the sync completed
-        if (forceNetwork) bitmap = BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
+        if (forceNetwork) bitmap = try { File(localFileFolder, imagePhoto.photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localFileFolder, imagePhoto.photo.id).inputStream()} catch (_: FileNotFoundException) { null }}?.use { fs ->
+            BitmapFactory.decodeStream(fs, null, BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
+        }
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
         bitmap ?: run {

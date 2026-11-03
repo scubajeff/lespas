@@ -23,7 +23,6 @@ import android.graphics.BitmapFactory
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -42,6 +41,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.MenuProvider
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
@@ -82,6 +82,7 @@ import site.leos.apps.lespas.story.BGMViewModel
 import site.leos.apps.lespas.story.BGMViewModelFactory
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
+import java.io.FileNotFoundException
 import java.lang.Double.max
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -422,11 +423,13 @@ class PhotosInMapFragment: Fragment() {
             }
             marker.image = BitmapDrawable(resources,
                 if (Tools.isPhotoFromGallery(photo)) {
-                    var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
+                    var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(photo.id.toUri()), null, option)
                     if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                     bmp
                 }
-                else BitmapFactory.decodeFile("$localPath/${photo.id}", option)
+                else try { File(localPath, photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localPath, photo.id).inputStream() } catch (_: FileNotFoundException) { null}}?.use { fs ->
+                    BitmapFactory.decodeStream(fs, null, option) ?: run { imageLoaderModel.getPlaceHolderBitmap() }
+                } ?: run { imageLoaderModel.getPlaceHolderBitmap() }
             )
         }
     }

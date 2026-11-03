@@ -486,7 +486,7 @@ class SearchFragment: Fragment() {
                                     when {
                                         photo.id.startsWith("content") -> BitmapFactory.decodeStream(cr.openInputStream(photo.id.toUri()), null, option)
                                         remotePhoto.remotePath.isNotEmpty() -> archiveModel.getPreview(remotePhoto)
-                                        else -> BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
+                                        else -> try { BitmapFactory.decodeFile("$rootPath/${photo.id}", option) } catch (_: Exception) { try { BitmapFactory.decodeFile("$rootPath/${photo.name}", option) } catch (_: Exception) { null }}
                                     }?.let {
                                         // Inference
                                         ensureActive()
