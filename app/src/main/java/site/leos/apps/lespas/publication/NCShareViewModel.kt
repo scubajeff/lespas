@@ -1718,7 +1718,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                         view.setImageDrawable(this)
                         view.setTag(R.id.HDR_TAG, false)
-                        view.setTag(R.id.PHOTO_ID, "")
                     } ?: run {
                         bitmap?.let {
                             if (viewType == TYPE_PANORAMA) {
@@ -1733,17 +1732,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     view.setImageBitmap(placeholderBitmap)
                                 } finally {
                                     view.setTag(R.id.HDR_TAG, false)
-                                    view.setTag(R.id.PHOTO_ID, "")
                                 }
                             } else {
                                 view.setImageBitmap(it)
                                 view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (viewType == TYPE_FULL || viewType == TYPE_TV_FULL) && it.hasGainmap())
-                                view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
                             }
                         } ?: run {
                             view.setImageBitmap(placeholderBitmap)
                             view.setTag(R.id.HDR_TAG, false)
-                            view.setTag(R.id.PHOTO_ID, "")
                         }
                     }
 

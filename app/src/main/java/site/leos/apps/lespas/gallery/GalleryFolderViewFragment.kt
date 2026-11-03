@@ -803,8 +803,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
             fun bind(item: GalleryFragment.GalleryMedia) {
                 item.media.photo.let { photo ->
-                    // Prevent re-loading image again which result in a flickering
-                    if (ivPhoto.getTag(R.id.PHOTO_ID) != photo.id) imageLoader(item.media, ivPhoto)
+                    imageLoader(item.media, ivPhoto)
                     ViewCompat.setTransitionName(ivPhoto, photo.id)
 
                     bindLocationIndicator(item)

@@ -145,15 +145,13 @@ class ObjectSearchFragment : Fragment() {
 
             fun bind(item: SearchFragment.SearchModel.ObjectDetectResult) {
                 with(ivPhoto) {
-                    if (getTag(R.id.PHOTO_ID) != item.remotePhoto.photo.id) {
-                        imageLoader(item.remotePhoto, this)
-                        ViewCompat.setTransitionName(this, item.remotePhoto.photo.id)
+                    imageLoader(item.remotePhoto, this)
+                    ViewCompat.setTransitionName(this, item.remotePhoto.photo.id)
 
-                        //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
-                        tvLabel.text =
-                            if (searchTarget == R.id.search_album) albumNames[item.remotePhoto.photo.albumId]
-                            else item.remotePhoto.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
-                    }
+                    //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
+                    tvLabel.text =
+                        if (searchTarget == R.id.search_album) albumNames[item.remotePhoto.photo.albumId]
+                        else item.remotePhoto.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
             }
         }
