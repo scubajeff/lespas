@@ -93,15 +93,15 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                     if (newPhoto.width == 0 || newPhoto.height == 0) return@withContext
 
                     if (replaceOriginal) {
-                        // Update local DB, result will be shown immediately, take care album cover too
-                        photoDao.update(newPhoto)
-                        if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
-
                         // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
-                        //try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
+                        try { File(appRootFolder, originalPhoto.id).delete() } catch (_: Exception) {}
 
                         // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any, e.g. only send the latest version
                         try { File(appRootFolder, originalPhoto.name).delete() } catch (_: Exception) {}
+
+                        // Update local DB, result will be shown immediately, take care album cover too
+                        photoDao.update(newPhoto)
+                        if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
 
                         // Update server
                         with(mutableListOf<Action>()) {

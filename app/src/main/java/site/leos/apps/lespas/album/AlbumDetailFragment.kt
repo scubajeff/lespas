@@ -1231,16 +1231,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     it.isSelected = selectionTracker.isSelected(photo.id)
 
                     with(ivPhoto) {
-/*
-                        if (currentPhotoName != photo.name) {
-                            imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
-                            ViewCompat.setTransitionName(this, photo.id)
-                            currentPhotoName = photo.name
-                        }
-*/
-                        if (ivPhoto.getTag(R.id.PHOTO_ID) != photo.id) imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
+                        imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
                         ViewCompat.setTransitionName(this, photo.id)
-
                         binViewSelectionState(photo)
                     }
 

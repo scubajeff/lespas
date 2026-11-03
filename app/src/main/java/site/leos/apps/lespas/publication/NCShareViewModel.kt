@@ -316,7 +316,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
 
-            videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
+            videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (_: Exception) { null }
         }
 
         cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
@@ -396,7 +396,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 )
                             )
 
-                            @Suppress("SimpleRedundantLet")
                             result.find { share -> share.fileId == getString("item_source") }?.let { item ->
                                 // If this folder existed in result, add new sharee only
                                 item.with.add(sharee)
@@ -519,7 +518,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
 
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Either there is no album meta json file in the folder, or json parse error means it's not a lespas share
             }
         }
@@ -1179,7 +1178,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 */
     fun isExisted(source: String): Boolean {
-        return try { webDav.isExisted(source) } catch (e: Exception) { false }
+        return try { webDav.isExisted(source) } catch (_: Exception) { false }
     }
 
     fun downloadFile(source: String, dest: File, useCache: Boolean = true): Boolean {
@@ -1445,11 +1444,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null,
                       paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
+        val isMediaOnServer = imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
         when(viewType) {
             // Set a low resolution version first for TYPE_FULL image
             TYPE_FULL -> {
                 imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                    // TODO is this necessary for local image?
                     // Load low resolution image from cache of TYPE_GRID version
                     view.setImageBitmap(it)
                     view.setTag(R.id.HDR_TAG, false)
@@ -1473,21 +1474,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         } catch (_: Exception) {}
                     }
-                    // If no low resolution version found, clear the image to reveal the loading sign in the background
-                    else view.setImageDrawable(null)
+                    // If no low resolution version found, clear the view to reveal the loading sign in view's background for remote images
+                    else if (isMediaOnServer) view.setImageDrawable(null)
                 }
             }
-            // For TV full image, stay with the old image
+            // For big screen Android TV, don't change to loading sign, stay with the old image
             TYPE_TV_FULL -> {}
             // For other types, clear the image to reveal the loading sign in the background
             else -> { view.setImageDrawable(null) }
         }
 
         // Except for TV, show loading animation for remote image which has been already uploaded
-        if (viewType != TYPE_TV_FULL && imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+        if (viewType != TYPE_TV_FULL && isMediaOnServer) {
             view.background = (if (viewType == TYPE_FULL || viewType == TYPE_PANORAMA) loadingDrawableLV else loadingDrawable).apply { start() }
 
-            // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
+            // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, which is not yet available
             if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete(false)
         }
 
@@ -1495,7 +1496,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
             val forceNetwork = imagePhoto.photo.shareId and Photo.NEED_REFRESH == Photo.NEED_REFRESH
-            val isMediaOnServer = imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
             try {
                 // Special treatment for video items
@@ -1547,29 +1547,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                 }
                                 else -> {
-/*
-                                    try {
-                                        // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
-                                        // Hence, picture with original orientation must be allowed in local album
-                                        BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })?.let { bmp ->
-                                            if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
-                                            else bmp
-                                        } ?: run {
-                                            // Fall back to remote
-                                            getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
-                                        }
-                                    } catch (_: Exception) {
-                                        // Fall back to remote
-                                        getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
-                                    }
-*/
                                     // For local album, file available in device and already rotated to up-right position.
                                     val option = BitmapFactory.Options().apply { inSampleSize = thumbnailSize }
-                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", option)
-                                        // Fall back to read file named after image name. After snapseed, a not yet uploaded image, it's id is not the same as it's name anymore
-                                        ?: run { BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.name}", option) }
-                                        // Fall back to remote thumbnail if anything bad happened while decoding.
-                                        ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
+                                    "${localFileFolder}/${imagePhoto.photo.id}".let { namedAfterID ->
+                                        // Local image file named after photo's id
+                                        if (File(namedAfterID).exists()) BitmapFactory.decodeFile(namedAfterID, option)
+                                        // When local image changed after being edited, file named after photo's name
+                                        else BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.name}", option)
+                                    } ?: run {
+                                        // Fall back to remote copy
+                                        getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
+                                    }
                                 }
                             }
                         }
@@ -1589,7 +1577,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Photo is from remote album and is already uploaded
                                     try {
                                         getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
-                                    } catch (e: OkHttpWebDavException) {
+                                    } catch (_: OkHttpWebDavException) {
                                         // Fall back to local, especially after replaced by Snapseed result, the remote image is gone and there is a local version of newly edited file named after photo id
                                         File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                     }
@@ -1708,10 +1696,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && updateCache) imageCache.put(key, bitmap)
                 }
             }
-            catch (e: OkHttpWebDavException) {
+            catch (_: OkHttpWebDavException) {
                 //Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
             }
-            catch (e: Exception) {
+            catch (_: Exception) {
                 //e.printStackTrace()
             }
             finally {
@@ -1802,7 +1790,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
                     cr.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Some Android Q Rom, like AEX for EMUI 9, throw ArithmeticException
                     @Suppress("DEPRECATION")
                     MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
@@ -1827,7 +1815,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null, job).use {
                         BitmapFactory.decodeStream(it, null, null)
                     }
-                } catch (e: Exception) { null }
+                } catch (_: Exception) { null }
             }
 
             if (bitmap == null) {
@@ -1982,7 +1970,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                     break
-                } catch (e: SocketTimeoutException) {
+                } catch (_: SocketTimeoutException) {
                     retry++
                     //Log.e(">>>>>>>>>>>", "head reading retry $retry")
                     sleep(retry * BACKOFF_INTERVAL)
@@ -2013,7 +2001,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                     break
-                } catch (e: SocketTimeoutException) {
+                } catch (_: SocketTimeoutException) {
                     retry++
                     //Log.e(">>>>>>>>>>>", "seek reading retry $retry")
                     sleep(retry * BACKOFF_INTERVAL)
@@ -2064,7 +2052,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         }
                                     }
                                     break
-                                } catch (e: SocketTimeoutException) {
+                                } catch (_: SocketTimeoutException) {
                                     retry++
                                     //Log.e(">>>>>>>>>>>", "tail reading retry $retry")
                                     sleep(retry * BACKOFF_INTERVAL)
@@ -2106,7 +2094,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (byteRead != -1) mBufferOffset += byteRead
                     }
                 }
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 //Log.e(">>>>>>>>>>>", "job cancel, closing datasource")
                 close()
             }
@@ -2134,8 +2122,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val name: String = "",
         val dateTaken: LocalDateTime = LocalDateTime.MIN,
         val replace: Boolean = false,
-    ): Parcelable {
-    }
+    ): Parcelable
 
     @Parcelize
     data class Sharee(
@@ -2249,7 +2236,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val BLOG_TYPE_PUBLIC = 1
         const val BLOG_TYPE_PRIVATE = 2
 
-        private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
         const val ARCHIVE_SNAPSHOT_FILE = "archive_snapshot.json"
     }
 }
