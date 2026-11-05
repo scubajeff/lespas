@@ -1,3 +1,9 @@
+## Version 2.11.6
+* More robust implementation of image editor integration; fixed multiple bugs involving photo editing for 'Local' album
+* Added Nextcloud 'ReShare' permission when publishing albums; fixed broken photo copying from friends' publications
+* Fixed camera lens data display in TV's metadata page
+* Various improvements and bug fixes
+
 ## Version 2.11.5
 * Various improvements and bug fixes
 
