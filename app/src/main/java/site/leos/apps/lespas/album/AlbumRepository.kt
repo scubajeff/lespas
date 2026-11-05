@@ -25,20 +25,20 @@ class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
-    fun getThisAlbum(albumId: String): Album = albumDao.getThisAlbum(albumId)
+    fun getThisAlbum(albumId: String): Album? = try { albumDao.getThisAlbum(albumId) } catch (_: IllegalStateException) { null }
     fun getThisAlbumList(albumId: String): List<Album> = albumDao.getThisAlbumList(albumId)
-    fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)
+    fun getAlbumByName(albumName: String): Album? = try { albumDao.getAlbumByName(albumName) } catch (_: IllegalStateException) { null }
     fun upsert(album: Album) { albumDao.upsert(album) }
-    fun update(album: Album){ albumDao.update(album) }
+    fun update(album: Album) { albumDao.update(album) }
     fun deleteById(albumId: String) { albumDao.deleteById(albumId) }
     fun changeName(albumId: String, newName: String) = albumDao.changeName(albumId, newName)
     fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverFileName, cover.coverMimeType, cover.coverOrientation) }
     fun getMeta(albumId: String): Meta = albumDao.getMeta(albumId)
     fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun getAllAlbumIdAndETag(): List<IDandETag> = albumDao.getAllIdAndETag()
-    fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>? = albumDao.getAlbumDetail(albumId)
+    fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos?> = albumDao.getAlbumDetail(albumId)
     fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
-    fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}
+    fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId) }
     fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}
     fun setSortOrder(albumId: String, sortOrder: Int) { albumDao.setSortOrder(albumId, sortOrder) }
     fun getAllAlbumIdName(): List<IDandName> = albumDao.getAllAlbumIdName()

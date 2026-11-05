@@ -221,7 +221,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                         }
                     }
                 }?.let { photo ->
-                    val album = albumRepository.getThisAlbum(photo.albumId)
+                    val album = albumRepository.getThisAlbum(photo.albumId)!!
                     val dest = File(application.cacheDir, photo.id)
                     try {
                         if (Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {

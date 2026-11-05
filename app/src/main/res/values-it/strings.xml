@@ -311,6 +311,7 @@
     <string name="backup_remaining">% rimasti</string>
     <string name="sync_status_action_delete_media">Rimozione di %1$s nell\'album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Rimozione dell\'album \'%s\'</string>
+    <string name="sync_status_action_add_album">Creazione dell\'album “%s”</string>
     <string name="sync_status_action_add_media">Aggiunta di %1$s all\'album \'%2$s\'</string>
     <string name="sync_status_action_rename_album">Rinominare l\'album \'%1$s in \'%2$s\'</string>
     <string name="sync_status_action_hide_album">Nascosto l\'album \'%s\'</string>

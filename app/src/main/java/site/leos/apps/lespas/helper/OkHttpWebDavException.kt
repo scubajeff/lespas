@@ -23,7 +23,7 @@ class OkHttpWebDavException(response: Response): Exception() {
     val stackTraceString: String
     init {
         statusCode = response.code
-        stackTraceString = "${this.statusCode}} ${this.stackTraceToString()}"
+        stackTraceString = "${this.statusCode}, ${this.stackTraceToString()}"
 
         response.close()
     }

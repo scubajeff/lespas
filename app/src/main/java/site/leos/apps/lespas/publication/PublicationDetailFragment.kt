@@ -493,32 +493,30 @@ class PublicationDetailFragment: Fragment() {
         private var panoramaMark: Drawable? = null
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            private var currentPhotoId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
             private val tvMeta = itemView.findViewById<TextView>(R.id.meta)
             private val tvName = itemView.findViewById<TextView>(R.id.title)
 
             fun bind(item: NCShareViewModel.RemotePhoto) {
                 ivPhoto.apply {
-                    if (currentPhotoId != item.photo.id) {
-                        imageLoader(item, this)
-                        ViewCompat.setTransitionName(this, item.photo.id)
-                        currentPhotoId = item.photo.id
-                        if (!showName) {
-                            (itemView as ConstraintLayout).let {
-                                ConstraintSet().apply {
-                                    clone(it)
-                                    setDimensionRatio(R.id.photo, "H,${item.photo.width}:${item.photo.height}")
-                                    applyTo(it)
-                                }
+                    imageLoader(item, this)
+                    ViewCompat.setTransitionName(this, item.photo.id)
+                    if (!showName) {
+                        (itemView as ConstraintLayout).let {
+                            ConstraintSet().apply {
+                                clone(it)
+                                setDimensionRatio(R.id.photo, "H,${item.photo.width}:${item.photo.height}")
+                                applyTo(it)
                             }
                         }
                     }
+
                     foreground = when {
                         Tools.isMediaPlayable(item.photo.mimeType) -> playMark
                         item.photo.mimeType == Tools.PANORAMA_MIMETYPE -> panoramaMark
                         else -> null
                     }
+
                     setOnClickListener { clickListener(this, currentList, currentList.indexOf(item)) }
                 }
 

@@ -25,6 +25,7 @@ import android.content.AbstractThreadedSyncAdapter
 import android.content.ContentProviderClient
 import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
 import android.content.SyncResult
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -45,6 +46,7 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import okhttp3.FormBody
 import okhttp3.Headers
@@ -53,6 +55,7 @@ import okhttp3.internal.http2.StreamResetException
 import okio.IOException
 import org.json.JSONException
 import org.json.JSONObject
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
@@ -367,8 +370,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderName holds the file's path in the local device
                     // Property fileName holds the file's name
                     "${action.folderName}${action.fileName}".let { filePath ->
-                        webDav.delete("${userBase}${archiveBase}/${Tools.getDeviceModel()}/$filePath")
-                        snapshotDeletion.add(filePath)
+                        if (webDav.delete("${userBase}${archiveBase}/${Tools.getDeviceModel()}/$filePath")) snapshotDeletion.add(filePath)
                     }
                 }
 
@@ -383,6 +385,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // mind that we purposely leave the eTag column empty
                             photoRepository.fixNewPhotosAlbumId(action.folderId, fileId)
                             albumRepository.fixNewLocalAlbumId(action.folderId, fileId, action.fileName)
+                            actionRepository.updateAlbumIdInPendingActions(action.folderId, fileId)
+
+                            // Inform foreground fragment, like AlbumDetailFragment and PhotoSlideFragment that new album id arrived
+                            LocalBroadcastManager.getInstance(application).sendBroadcast(
+                                Intent(NEW_ALBUM_ID_ARRIVED).apply {
+                                    putExtra(TEMP_ALBUM_ID, action.folderId)
+                                    putExtra(FORMAL_ALBUM_ID, fileId)
+                                }
+                            )
 
                             // touch meta file
                             try { File("${localBaseFolder}/${fileId}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
@@ -413,7 +424,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_UPDATE_ALBUM_META -> {
                     // Property folderId holds id of the album needed meta update
                     // Property folderName has the name of the album, the name when this action fired, if there is a album renaming happen afterward, local database will only has the new name
-                    albumRepository.getThisAlbum(action.folderId).apply {
+                    albumRepository.getThisAlbum(action.folderId)?.apply {
                         updateAlbumMeta(id, action.folderName, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
 
                         // Touch file to avoid re-download
@@ -587,7 +598,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property fileName holds option flags, 1st bit 'includeSocial', 2nd bit 'includeCopyright'
                     if (createBlogSite()) {
                         updateBlogIndex()
-                        createBlogPost(albumRepository.getThisAlbum(action.folderId), photoRepository.getPhotosForBlog(action.folderId), action.fileId)
+                        createBlogPost(albumRepository.getThisAlbum(action.folderId)!!, photoRepository.getPhotosForBlog(action.folderId), action.fileId)
                     } else {
                         // TODO
                     }
@@ -1673,7 +1684,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Maintaining album cover and duration if deletion happened
                     val photosLeft = photoRepository.getAlbumPhotos(changedAlbum.id)
                     if (photosLeft.isNotEmpty()) {
-                        albumRepository.getThisAlbum(changedAlbum.id).run {
+                        albumRepository.getThisAlbum(changedAlbum.id)?.run {
                             startDate = photosLeft[0].dateTaken
                             endDate = photosLeft.last().dateTaken
 
@@ -2018,7 +2029,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                createBlogPost(albumRepository.getThisAlbum(albumId), photoRepository.getPhotosForBlog(albumId), themeId)
+                createBlogPost(albumRepository.getThisAlbum(albumId)!!, photoRepository.getPhotosForBlog(albumId), themeId)
             } catch (_: Exception) {}
         }
     }
@@ -2180,6 +2191,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val SYNC_STATUS_MESSAGE_FORMAT = "%d|%d"
         private const val SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT = "%d``%s``%s``%s``%s``%d"
         private const val SYNC_STATUS_BACKUP_MESSAGE_FORMAT = "%s|%s|%d|%d|%d"
+
+
+        const val NEW_ALBUM_ID_ARRIVED = "${BuildConfig.APPLICATION_ID}.NEW_ALBUM_ID_ARRIVED"
+        const val TEMP_ALBUM_ID = "${BuildConfig.APPLICATION_ID}.TEMP_ALBUM_ID"
+        const val FORMAL_ALBUM_ID = "${BuildConfig.APPLICATION_ID}.FORMAL_ALBUM_ID"
 
         private const val TAG = "SyncAdapter: "
         private const val ETAG_MISSING = "ETAG_MISSING"

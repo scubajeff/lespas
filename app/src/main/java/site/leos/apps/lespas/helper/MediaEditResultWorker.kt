@@ -21,14 +21,12 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import android.provider.OpenableColumns
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.LespasDatabase
 import site.leos.apps.lespas.R
@@ -48,36 +46,17 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
 
         //val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         //var mediaPath = ""
-        var mediaName = ""
-        var mediaSize = 0L
+        var mediaName = inputData.keyValueMap[KEY_MEDIA_NAME] as String
         var mediaNewId = ""
 
         val photoDao = LespasDatabase.getDatabase(context).photoDao()
         val albumDao = LespasDatabase.getDatabase(context).albumDao()
         val actionDao = LespasDatabase.getDatabase(context).actionDao()
-        val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
+        val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)!!
 
-        if ((inputData.keyValueMap[KEY_SHARED_MEDIA] as String).isNotEmpty()) {
-            val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_MEDIA] as String)
+        if ((inputData.keyValueMap[KEY_PHOTO] as String).isNotEmpty()) {
+            val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_PHOTO] as String)
             withContext(Dispatchers.IO) {
-                cr.query(uri, null, null, null, null)?.use { cursor ->
-                    cursor.moveToFirst()
-                    //mediaPath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
-                    mediaName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
-                    mediaSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
-                } ?: run { return@withContext }
-
-                // Wait until editing result file is synced to disk. Seems like system media store start scanning it even before the file is written completely and reporting 0 file size.
-                // TODO in the latest implementation, this worker will start only when Les Pas app is in resume state, maybe this is not necessary
-                while (mediaSize == 0L) {
-                    delay(1000)
-
-                    cr.query(uri, null, null, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) mediaSize = cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))
-                        else return@withContext
-                    } ?: run { return@withContext }
-                }
-
                 // TODO need to verify source of retouching app?
                 //if (imagePath.contains("Snapseed/") || imagePath.contains("Photoshop Express/"))
 
@@ -110,19 +89,19 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
                 }
 
                 prepareNewPhoto(uri, mediaName, appRootFolder, cr, album.id, mediaNewId, originalPhoto).let { newPhoto ->
-                    // Meta data retrieving failed, only happen in video meta data extracting
+                    // Metadata retrieving failed, only happen in video metadata extracting
                     if (newPhoto.width == 0 || newPhoto.height == 0) return@withContext
 
                     if (replaceOriginal) {
-                        // Update local DB, result will be shown immediately, take care album cover too
-                        photoDao.update(newPhoto)
-                        if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
-
                         // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
-                        //try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
+                        try { File(appRootFolder, originalPhoto.id).delete() } catch (_: Exception) {}
 
                         // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any, e.g. only send the latest version
                         try { File(appRootFolder, originalPhoto.name).delete() } catch (_: Exception) {}
+
+                        // Update local DB, result will be shown immediately, take care album cover too
+                        photoDao.update(newPhoto)
+                        if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
 
                         // Update server
                         with(mutableListOf<Action>()) {
@@ -181,6 +160,7 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
         val newPhoto: Photo = Tools.getPhotoParams(metadataRetriever, exifInterface, "$localRoot/$mediaName", mediaMimeType, mediaName).copy(
             id = photoId, albumId = albumId, name = mediaName,
             // Preserve original meta
+            // TODO What if user actually want to change dateTaken, GPS etc.
             dateTaken = originalPhoto.dateTaken,
             caption = originalPhoto.caption,
             latitude = originalPhoto.latitude,
@@ -199,7 +179,8 @@ class MediaEditResultWorker(private val context: Context, workerParams: WorkerPa
 
     companion object {
         const val KEY_MEDIA_URI = "MEDIA_URI"
-        const val KEY_SHARED_MEDIA = "SHARE_MEDIA"
+        const val KEY_MEDIA_NAME = "MEDIA_NAME"
+        const val KEY_PHOTO = "PHOTO"
         const val KEY_ALBUM = "ALBUM"
         const val KEY_REPLACE_ORIGINAL = "KEY_REPLACE_ORIGINAL"
     }

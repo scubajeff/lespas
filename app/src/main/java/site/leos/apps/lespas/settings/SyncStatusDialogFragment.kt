@@ -152,7 +152,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                         Action.ACTION_DELETE_FILES_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_media), action[4], action[2])
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_album), action[2])
                         Action.ACTION_ADD_FILES_ON_SERVER -> String.format(getString(R.string.sync_status_action_add_media), action[4], action[2])
-                        Action.ACTION_ADD_DIRECTORY_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_album), action[2])
+                        Action.ACTION_ADD_DIRECTORY_ON_SERVER -> String.format(getString(R.string.sync_status_action_add_album), action[2])
                         Action.ACTION_RENAME_DIRECTORY -> {
                             when {
                                 action[4].first() == '.' -> String.format(getString(R.string.sync_status_action_hide_album), action[2])

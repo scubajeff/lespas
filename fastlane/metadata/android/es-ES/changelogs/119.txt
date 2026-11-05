@@ -1,0 +1,4 @@
+* Se ha mejorado la integración del editor de imágenes; se han corregido varios errores relacionados con la edición de fotos en el álbum «Local»
+* Se ha agregado el permiso «ReShare» de Nextcloud al publicar álbumes; se ha corregido un error que impedía copiar fotos de las publicaciones de amigos
+* Se ha corregido la visualización de los datos del lente de la cámara en la página de metadatos de la TV
+* Diversas mejoras y correcciones de errores

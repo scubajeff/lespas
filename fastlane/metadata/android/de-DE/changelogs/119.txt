@@ -1,0 +1,4 @@
+* Robustere Umsetzung der Integration des Bildbearbeitungsprogramms; Behebung mehrerer Fehler im Zusammenhang mit der Bildbearbeitung für das Album „Lokal“
+* Hinzufügung der Nextcloud-Berechtigung „ReShare“ beim Veröffentlichen von Alben; Behebung eines Fehlers beim Kopieren von Fotos aus Veröffentlichungen von Freunden
+* Behebung eines Fehlers bei der Anzeige der Kameraobjektivdaten auf der Metadaten-Seite des Fernsehers
+* Verschiedene Verbesserungen und Fehlerbehebungen

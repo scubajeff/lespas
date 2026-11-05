@@ -199,6 +199,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     @SuppressLint("ClickableViewAccessibility")
     private suspend fun showMap(photo: Photo) {
         try {
+            // Prepare the map view
             with(mapView) {
                 if (!isMapInitialized) {
                     isMapInitialized = true
@@ -243,28 +244,27 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         )
                     )
                 }
-                invalidate()
 
                 this.isVisible = true
-                scrollView.smoothScrollBy(0, 1)
             }
 
             with(photo) {
+                // Prepare "Show in Map" button
                 mapIntent.data = (
                     if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
                         Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
                     else "geo:${latitude},${longitude}?z=20"
                 ).toUri()
-                mapIntent.resolveActivity(requireActivity().packageManager)?.let {
-                    mapButton.apply {
-                        setOnClickListener {
-                            startActivity(mapIntent)
-                            dismiss()
-                        }
-
-                        isVisible = true
+                mapButton.apply {
+                    setOnClickListener {
+                        startActivity(mapIntent)
+                        dismiss()
                     }
+
+                    isVisible = true
                 }
+
+                // Show locality under map box
                 if (locality.isNotEmpty() && country.isNotEmpty()) {
                     // TODO use map text overlay instead
                     localityTextView.run {
@@ -274,8 +274,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                     }
                 } else {
-                    // TODO robust way to detect if media is from publications
-                    if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
+                    try {
                         GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latitude, longitude, 1)
                     } catch (_: IOException) { null }?.let { result ->
                         if (result.isNotEmpty()) {
@@ -289,7 +288,10 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                         }
                                     }
 
-                                    try { PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS) } catch (_: IllegalStateException) {}
+                                    // If picture is from own album, save address for future use
+                                    if (albumId != GalleryFragment.FROM_DEVICE_GALLERY && albumId.isNotEmpty()) try {
+                                        PhotoRepository(requireActivity().application).updateAddress(id, locality, address.countryName, address.countryCode ?: Photo.NO_ADDRESS)
+                                    } catch (_: IllegalStateException) {}
                                 }
                             }
 

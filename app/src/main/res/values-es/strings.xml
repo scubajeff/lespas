@@ -246,6 +246,7 @@
     <string name="backup_remaining">Quedan %d</string>
     <string name="sync_status_action_delete_media">Eliminando %1$s en el álbum \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Eliminando el álbum \'%s\'</string>
+    <string name="sync_status_action_add_album">Creando el álbum «%s»</string>
     <string name="sync_status_action_add_media">Añadiendo %1$s al álbum \'%2$s\'</string>
     <string name="sync_status_action_rename_album">Cambiando el nombre del álbum \'%1$s a \'%2$s\'</string>
     <string name="sync_status_action_hide_album">Ocultación del álbum \'%s\'</string>

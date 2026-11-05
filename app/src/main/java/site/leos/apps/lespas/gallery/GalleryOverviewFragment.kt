@@ -593,9 +593,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
 
                 itemView.let {
                     with(ivPhoto) {
-                        // Prevent re-loading image again which result in a flickering
-                        if (getTag(R.id.PHOTO_ID) != item.media.photo.id) imageLoader(item.media, this)
-
+                        imageLoader(item.media, this)
                         ViewCompat.setTransitionName(this, photo.id)
 
                         it.isSelected = selectionTracker.isSelected(photo.id)
@@ -646,9 +644,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 overflow = count > max
 
                 ivPhoto.run {
-                    // Prevent re-loading image again which result in a flickering
-                    if (getTag(R.id.PHOTO_ID) != item.media.photo.id) imageLoader(item.media, this)
-
+                    imageLoader(item.media, this)
                     ViewCompat.setTransitionName(this, photo.id)
 
                     itemView.isSelected = selectionTracker.isSelected(photo.id)

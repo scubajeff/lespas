@@ -16,12 +16,18 @@
 
 package site.leos.apps.lespas.publication
 
+//import okhttp3.internal.headersContentLength
 import android.accounts.AccountManager
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
@@ -38,8 +44,11 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.os.Parcelable
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import android.util.LruCache
 import android.util.Size
@@ -54,13 +63,19 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.palette.graphics.Palette
 import androidx.preference.PreferenceManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.android.material.chip.Chip
 import com.panoramagl.PLImage
 import com.panoramagl.PLManager
@@ -85,7 +100,6 @@ import okhttp3.FormBody
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.internal.closeQuietly
-//import okhttp3.internal.headersContentLength
 import okio.BufferedSource
 import okio.IOException
 import okio.buffer
@@ -97,6 +111,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.gallery.GalleryFragment
+import site.leos.apps.lespas.helper.MediaEditResultWorker
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
@@ -110,7 +125,10 @@ import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.math.max
@@ -175,6 +193,115 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun saveSessionVolumePercentage(newPercentage: Float) { sessionVolumePercentage = newPercentage }
     fun getSessionVolumePercentage() = sessionVolumePercentage
 
+    private val _mediaStoreChangeEvent = MutableSharedFlow<Boolean>()
+    val mediaStoreChangeEvent: SharedFlow<Boolean> = _mediaStoreChangeEvent
+    private val _deleteEditorOutputFile = MutableSharedFlow<Uri>()
+    val deleteEditorOutputFile: SharedFlow<Uri> = _deleteEditorOutputFile
+    private val cr = application.contentResolver
+    private val editResultWatchList: MutableSet<Replacement> = mutableSetOf()
+    fun newEditResult(photo: Photo, isRemote: Boolean, replace: Boolean) {
+        editResultWatchList.find { it.photoId == photo.id }?.run { editResultWatchList.remove(this) }
+        editResultWatchList.add(Replacement().copy(photoId = photo.id, albumId = photo.albumId, isRemote = isRemote, name = photo.name, dateTaken = photo.dateTaken, replace = replace))
+    }
+    private fun removeEditResult(item: Replacement) { editResultWatchList.remove(item) }
+    private val mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            super.onChange(selfChange, uri)
+
+            // Inform observer, which is GalleryFragment only for now
+            viewModelScope.launch { _mediaStoreChangeEvent.emit(true) }
+
+            uri?.let {
+                if (editResultWatchList.isNotEmpty()) viewModelScope.launch {
+                    var matched = Replacement()
+                    var mediaName = ""
+                    var mediaDate = LocalDateTime.MIN
+                    try {
+                        // Match edit result in pendingReplaceList
+                        cr.query(uri, null, null, null, null)?.use { cursor ->
+                            cursor.moveToFirst()
+                            
+                            // Ignore the ContentProvider.insert notification when a new file is created
+                            if (cursor.getLong(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE)) <= 0L) return@launch
+                            
+                            mediaName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                            mediaDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(cursor.getColumnIndexOrThrow("datetaken"))), ZoneId.systemDefault())
+                        }
+                    } catch (_: Exception) { return@launch }
+
+                    run breaking@{
+                        // Match name only, since editor might change output file format
+                        val name = mediaName.substringBeforeLast('.')
+                        editResultWatchList.forEach { pending ->
+                            if (name.contains(pending.name.substringBeforeLast('.'))) {
+                                matched = pending
+                                return@breaking
+                            }
+                            if (mediaDate == pending.dateTaken) {
+                                matched = pending
+                                return@breaking
+                            }
+                        }
+                    }
+
+                    if (matched.name.isNotEmpty()) {
+                        // Match found in watch list
+                        //Log.e(">>>>>>>>", "NCShareViewModel-mediaSotreObserver-onChange: {$mediaName, $mediaDate} matches $matched", )
+                        removeEditResult(matched)
+
+                        val workerId = UUID.randomUUID()
+                        with(WorkManager.getInstance(application)) {
+                            enqueue(
+                                OneTimeWorkRequestBuilder<MediaEditResultWorker>()
+                                    .setInputData(
+                                        workDataOf(
+                                            MediaEditResultWorker.KEY_MEDIA_URI to uri.toString(),
+                                            MediaEditResultWorker.KEY_MEDIA_NAME to mediaName,
+                                            MediaEditResultWorker.KEY_PHOTO to matched.photoId,
+                                            MediaEditResultWorker.KEY_ALBUM to matched.albumId,
+                                            MediaEditResultWorker.KEY_REPLACE_ORIGINAL to matched.replace,
+                                        )
+                                    )
+                                    .setId(workerId)
+                                    .build()
+                            )
+
+                            getWorkInfoByIdFlow(workerId).collect { workInfo ->
+                                if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                    if (matched.replace) {
+                                        // When replacing original with edit result, refresh image cache of all size
+                                        invalidPhoto(matched.photoId)
+                                        if (matched.isRemote) viewModelScope.launch(Dispatchers.IO) { File(Tools.getLocalRoot(application), matched.photoId).delete() }
+                                    }
+
+                                    // Remove editor output file if running on Android 12 or above and Manager Media role has been assigned
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(application)) _deleteEditorOutputFile.emit(uri)
+                                }
+                            }
+                        }
+                    }
+/*
+                    else {
+                        Log.e(">>>>>>>>", "NCShareViewModel-mediaSotreObserver-onChange: {$mediaName $mediaDate} has no match in watch list", )
+                        editResultWatchList.forEach { Log.e(">>>>>>>>", "NCShareViewModel-mediaSotreObserver-onChange: $it", ) }
+                    }
+*/
+                }
+            }
+        }
+    }
+
+    private val _formalAlbumId = MutableStateFlow<Pair<String?, String?>>(Pair("", ""))
+    val formalAlbumId: StateFlow<Pair<String?, String?>> = _formalAlbumId
+    private val updateAlbumIdBroadcastReceiver = UpdateAlbumIdBroadcastReceiver { oldId, newId ->
+        viewModelScope.launch { _formalAlbumId.emit(Pair(oldId, newId)) }
+    }
+    class UpdateAlbumIdBroadcastReceiver(private val updateAlbumId:(String?, String?) -> Unit): BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent) {
+            updateAlbumId(intent.getStringExtra(SyncAdapter.TEMP_ALBUM_ID), intent.getStringExtra(SyncAdapter.FORMAL_ALBUM_ID))
+        }
+    }
+
     init {
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
@@ -189,8 +316,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
 
-            videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
+            videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (_: Exception) { null }
         }
+
+        cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
+        cr.registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaStoreObserver)
+
+        LocalBroadcastManager.getInstance(application).registerReceiver(updateAlbumIdBroadcastReceiver, IntentFilter(SyncAdapter.NEW_ALBUM_ID_ARRIVED))
     }
 
     fun getServerBaseUrl(): String = baseUrl
@@ -264,7 +396,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 )
                             )
 
-                            @Suppress("SimpleRedundantLet")
                             result.find { share -> share.fileId == getString("item_source") }?.let { item ->
                                 // If this folder existed in result, add new sharee only
                                 item.with.add(sharee)
@@ -387,7 +518,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
 
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Either there is no album meta json file in the folder, or json parse error means it's not a lespas share
             }
         }
@@ -957,20 +1088,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 else null
                             }
                         } else cr.openInputStream(rp.photo.id.toUri())
-                        else -> if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
-                            var inSampleSize = 1
-                            var p = max(rp.photo.width, rp.photo.height) / 2
+                        else ->
+                            if (lowResolution && !Tools.isMediaPlayable(rp.photo.mimeType)) {
+                                var inSampleSize = 1
+                                var p = max(rp.photo.width, rp.photo.height) / 2
 
-                            while(p > 1440) {
-                                inSampleSize *= 2
-                                p /= 2
+                                while(p > 1440) {
+                                    inSampleSize *= 2
+                                    p /= 2
+                                }
+                                ensureActive()
+                                try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localFileFolder, rp.photo.name).inputStream() } catch (_: FileNotFoundException) { null }}?.use { fs ->
+                                    BitmapFactory.decodeStream(fs, null, BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }
+                                }
+                            } else {
+                                try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localFileFolder, rp.photo.name).inputStream() } catch (_: FileNotFoundException) { null }}
                             }
-                            ensureActive()
-                            BitmapFactory.decodeFile("$localFileFolder/${rp.photo.id}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }
-                                ?: run { BitmapFactory.decodeFile("$localFileFolder/${rp.photo.name}", BitmapFactory.Options().apply { this.inSampleSize = inSampleSize })?.let { if (it.compress(Bitmap.CompressFormat.JPEG, 95, tempFile.outputStream())) tempFile.inputStream() else null }}
-                        } else {
-                            try { File(localFileFolder, rp.photo.id).inputStream() } catch (_: FileNotFoundException) { File(localFileFolder, rp.photo.name).inputStream() }
-                        }
                     }?.use { source ->
                         File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${rp.photo.name.substringAfterLast('.')}" else rp.photo.name).let { destFile ->
                             destFile.outputStream().use { dest ->
@@ -1047,7 +1180,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 */
     fun isExisted(source: String): Boolean {
-        return try { webDav.isExisted(source) } catch (e: Exception) { false }
+        return try { webDav.isExisted(source) } catch (_: Exception) { false }
     }
 
     fun downloadFile(source: String, dest: File, useCache: Boolean = true): Boolean {
@@ -1290,7 +1423,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun getUserLoginName(): String = user.loginName
     fun getUserDisplayName(): String = user.displayName
 
-    private val cr = application.contentResolver
     private val circleAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_nc_circles_24) as Drawable }
     private val groupAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_group_24) as Drawable }
     private val publicAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_public_24) as Drawable }
@@ -1310,14 +1442,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         fun onGetPaletteComplete(palette: Palette?)
     }
 
+    fun getPlaceHolderBitmap() = placeholderBitmap
+
+    @SuppressLint("ThreadConstraint")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, panoManager: PLManager? = null, panorama: PLSphericalPanorama? = null, animationCallback: Animatable2.AnimationCallback? = null,
-        paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
+                      paletteCallBack: GetPaletteListener? = null, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
+        val isMediaOnServer = imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
         when(viewType) {
             // Set a low resolution version first for TYPE_FULL image
             TYPE_FULL -> {
                 imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                    // TODO is this necessary for local image?
                     // Load low resolution image from cache of TYPE_GRID version
                     view.setImageBitmap(it)
                     view.setTag(R.id.HDR_TAG, false)
@@ -1341,21 +1478,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         } catch (_: Exception) {}
                     }
-                    // If no low resolution version found, clear the image to reveal the loading sign in the background
-                    else view.setImageDrawable(null)
+                    // If no low resolution version found, clear the view to reveal the loading sign in view's background for remote images
+                    else if (isMediaOnServer) view.setImageDrawable(null)
                 }
             }
-            // For TV full image, stay with the old image
+            // For big screen Android TV, don't change to loading sign, stay with the old image
             TYPE_TV_FULL -> {}
             // For other types, clear the image to reveal the loading sign in the background
             else -> { view.setImageDrawable(null) }
         }
 
         // Except for TV, show loading animation for remote image which has been already uploaded
-        if (viewType != TYPE_TV_FULL && imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+        if (viewType != TYPE_TV_FULL && isMediaOnServer) {
             view.background = (if (viewType == TYPE_FULL || viewType == TYPE_PANORAMA) loadingDrawableLV else loadingDrawable).apply { start() }
 
-            // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
+            // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, which is not yet available
             if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete(false)
         }
 
@@ -1363,7 +1500,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
             val forceNetwork = imagePhoto.photo.shareId and Photo.NEED_REFRESH == Photo.NEED_REFRESH
-            val isMediaOnServer = imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
             try {
                 // Special treatment for video items
@@ -1415,29 +1551,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                 }
                                 else -> {
-/*
-                                    try {
-                                        // After version 2.9.7, user can add archive item to album, so the source is not always from local device, therefore we will not be able to rotate picture to the up-right position when adding them into album.
-                                        // Hence, picture with original orientation must be allowed in local album
-                                        BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })?.let { bmp ->
-                                            if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, false)
-                                            else bmp
-                                        } ?: run {
-                                            // Fall back to remote
-                                            getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
-                                        }
-                                    } catch (_: Exception) {
-                                        // Fall back to remote
-                                        getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
-                                    }
-*/
                                     // For local album, file available in device and already rotated to up-right position.
                                     val option = BitmapFactory.Options().apply { inSampleSize = thumbnailSize }
-                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", option)
-                                        // Fall back to read file named after image name. After snapseed, a not yet uploaded image, it's id is not the same as it's name anymore
-                                        ?: run { BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.name}", option) }
-                                        // Fall back to remote thumbnail if anything bad happened while decoding.
-                                        ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
+                                    try { File(localFileFolder, imagePhoto.photo.id).inputStream() } catch (_: Exception) { try { File(localFileFolder, imagePhoto.photo.name).inputStream() } catch (_: Exception) { null} }?.use { fs ->
+                                        BitmapFactory.decodeStream(fs, null, option)
+                                    } ?: run {
+                                        // Fall back to remote copy
+                                        getRemoteThumbnail(coroutineContext.job, imagePhoto, type)
+                                    }
                                 }
                             }
                         }
@@ -1457,7 +1578,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Photo is from remote album and is already uploaded
                                     try {
                                         getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
-                                    } catch (e: OkHttpWebDavException) {
+                                    } catch (_: OkHttpWebDavException) {
                                         // Fall back to local, especially after replaced by Snapseed result, the remote image is gone and there is a local version of newly edited file named after photo id
                                         File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                     }
@@ -1576,10 +1697,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && updateCache) imageCache.put(key, bitmap)
                 }
             }
-            catch (e: OkHttpWebDavException) {
+            catch (_: OkHttpWebDavException) {
                 //Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
             }
-            catch (e: Exception) {
+            catch (_: Exception) {
                 //e.printStackTrace()
             }
             finally {
@@ -1598,7 +1719,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                         view.setImageDrawable(this)
                         view.setTag(R.id.HDR_TAG, false)
-                        view.setTag(R.id.PHOTO_ID, "")
                     } ?: run {
                         bitmap?.let {
                             if (viewType == TYPE_PANORAMA) {
@@ -1613,17 +1733,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     view.setImageBitmap(placeholderBitmap)
                                 } finally {
                                     view.setTag(R.id.HDR_TAG, false)
-                                    view.setTag(R.id.PHOTO_ID, "")
                                 }
                             } else {
                                 view.setImageBitmap(it)
                                 view.setTag(R.id.HDR_TAG, Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (viewType == TYPE_FULL || viewType == TYPE_TV_FULL) && it.hasGainmap())
-                                view.setTag(R.id.PHOTO_ID, imagePhoto.photo.id)
                             }
                         } ?: run {
                             view.setImageBitmap(placeholderBitmap)
                             view.setTag(R.id.HDR_TAG, false)
-                            view.setTag(R.id.PHOTO_ID, "")
                         }
                     }
 
@@ -1670,7 +1787,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
                     cr.loadThumbnail(imagePhoto.photo.id.toUri(), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Some Android Q Rom, like AEX for EMUI 9, throw ArithmeticException
                     @Suppress("DEPRECATION")
                     MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
@@ -1695,7 +1812,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null, job).use {
                         BitmapFactory.decodeStream(it, null, null)
                     }
-                } catch (e: Exception) { null }
+                } catch (_: Exception) { null }
             }
 
             if (bitmap == null) {
@@ -1740,7 +1857,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
 
         // If replaced by Snapseed, photo.id is not gonna changed, and there is a local new file named after photo name, we need to show this one before the sync completed
-        if (forceNetwork) bitmap = BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
+        if (forceNetwork) bitmap = try { File(localFileFolder, imagePhoto.photo.id).inputStream() } catch (_: FileNotFoundException) { try { File(localFileFolder, imagePhoto.photo.id).inputStream()} catch (_: FileNotFoundException) { null }}?.use { fs ->
+            BitmapFactory.decodeStream(fs, null, BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
+        }
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
         bitmap ?: run {
@@ -1800,6 +1919,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     override fun onCleared() {
         //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
+        cr.unregisterContentObserver(mediaStoreObserver)
+        cr.unregisterContentObserver(mediaStoreObserver)
+
+        LocalBroadcastManager.getInstance(application).unregisterReceiver(updateAlbumIdBroadcastReceiver)
+
         decoderJobMap.forEach { if (it.value.isActive) {
             httpCallMap[it.value]?.cancel()
             it.value.cancel()
@@ -1845,7 +1969,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                     break
-                } catch (e: SocketTimeoutException) {
+                } catch (_: SocketTimeoutException) {
                     retry++
                     //Log.e(">>>>>>>>>>>", "head reading retry $retry")
                     sleep(retry * BACKOFF_INTERVAL)
@@ -1876,7 +2000,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                     break
-                } catch (e: SocketTimeoutException) {
+                } catch (_: SocketTimeoutException) {
                     retry++
                     //Log.e(">>>>>>>>>>>", "seek reading retry $retry")
                     sleep(retry * BACKOFF_INTERVAL)
@@ -1927,7 +2051,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         }
                                     }
                                     break
-                                } catch (e: SocketTimeoutException) {
+                                } catch (_: SocketTimeoutException) {
                                     retry++
                                     //Log.e(">>>>>>>>>>>", "tail reading retry $retry")
                                     sleep(retry * BACKOFF_INTERVAL)
@@ -1969,7 +2093,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (byteRead != -1) mBufferOffset += byteRead
                     }
                 }
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 //Log.e(">>>>>>>>>>>", "job cancel, closing datasource")
                 close()
             }
@@ -1988,6 +2112,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     class ImageCache(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
+
+    @Parcelize
+    data class Replacement (
+        val photoId: String = "",
+        val albumId: String = "",
+        val isRemote: Boolean = false,
+        val name: String = "",
+        val dateTaken: LocalDateTime = LocalDateTime.MIN,
+        val replace: Boolean = false,
+    ): Parcelable
 
     @Parcelize
     data class Sharee(
@@ -2088,22 +2222,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val SHARE_TYPE_PUBLIC = 3
         const val SHARE_TYPE_CIRCLES = 7
 
-        const val PERMISSION_CAN_READ = 1
+        private const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2
         private const val PERMISSION_CAN_CREATE = 4
         private const val PERMISSION_CAN_DELETE = 8
-        private const val PERMISSION_SHARE = 16
-        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + PERMISSION_CAN_READ    // 7
-        const val PERMISSION_PUBLIC_CAN_READ = PERMISSION_CAN_READ + PERMISSION_SHARE                       // 17
-        const val PERMISSION_PUBLIC_JOINT = PERMISSION_JOINT + PERMISSION_CAN_DELETE + PERMISSION_SHARE     // 31
-        //private const val PERMISSION_CAN_DELETE = 8
-        //private const val PERMISSION_CAN_SHARE = 16
-        //private const val PERMISSION_ALL = 31
+        private const val PERMISSION_RESHARE = 16
+        const val DEFAULT_SHARE_PERMISSION = PERMISSION_CAN_READ + PERMISSION_RESHARE
+        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + DEFAULT_SHARE_PERMISSION
+        const val PERMISSION_PUBLIC_CAN_READ = DEFAULT_SHARE_PERMISSION
+        const val PERMISSION_PUBLIC_JOINT = PERMISSION_JOINT + PERMISSION_CAN_DELETE
 
         const val BLOG_TYPE_PUBLIC = 1
         const val BLOG_TYPE_PRIVATE = 2
 
-        private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
         const val ARCHIVE_SNAPSHOT_FILE = "archive_snapshot.json"
     }
 }

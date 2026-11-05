@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
                     intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
                         var album: Album? = null
                         lifecycleScope.launch(Dispatchers.IO) {
-                            album = AlbumRepository(this@MainActivity.application).getThisAlbum(it)
+                            album = AlbumRepository(this@MainActivity.application).getThisAlbum(it)!!
                         }.invokeOnCompletion {
                             album?.let {
                                 supportFragmentManager.beginTransaction().add(

@@ -110,7 +110,7 @@ class AlbumPublishExternalFragment: Fragment() {
                             mutableListOf(
                                 NCShareViewModel.Recipient(
                                     currentPublicRecipient?.shareId ?: "",
-                                    if (publicationTypeToggleGroup.checkedButtonId == R.id.solo_album) NCShareViewModel.PERMISSION_CAN_READ else NCShareViewModel.PERMISSION_JOINT,
+                                    if (publicationTypeToggleGroup.checkedButtonId == R.id.solo_album) NCShareViewModel.DEFAULT_SHARE_PERMISSION else NCShareViewModel.PERMISSION_JOINT,
                                     0L,
                                     "",
                                     NCShareViewModel.Sharee("", "", NCShareViewModel.SHARE_TYPE_PUBLIC)

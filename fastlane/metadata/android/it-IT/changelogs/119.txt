@@ -1,0 +1,4 @@
+* Implementazione più solida dell'integrazione con l'editor di immagini; risolti diversi bug relativi alla modifica delle foto nell'album “Locale”
+* Aggiunta l'autorizzazione “ReShare” di Nextcloud durante la pubblicazione degli album; risolto il problema che impediva la copia delle foto dalle pubblicazioni degli amici
+* Risolto il problema relativo alla visualizzazione dei dati dell'obiettivo della fotocamera nella pagina dei metadati della TV
+* Vari miglioramenti e correzioni di bug

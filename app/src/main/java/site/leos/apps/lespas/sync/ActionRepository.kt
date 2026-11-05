@@ -31,6 +31,7 @@ class ActionRepository(application: Application){
     fun addActions(actions: List<Action>) = actionDao.upsert(actions)
     fun addAction(action: Action) = actionDao.upsert(action)
     fun updateCoverInPendingActions(albumId: String, coverId: String) { actionDao.updateCoverInPendingActions(albumId, coverId) }
+    fun updateAlbumIdInPendingActions(oldId: String, newId: String) { actionDao.updateNewAlbumId(oldId, newId) }
     //fun safeToRemoveFile(photoName: String): Boolean = !actionDao.fileInUse(photoName)
     //fun discardCurrentWorkingAction() { actionDao.deleteFirstRow() }
 }

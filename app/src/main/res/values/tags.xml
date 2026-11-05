@@ -16,5 +16,4 @@
 
 <resources>
     <item name="HDR_TAG" type="id" />
-    <item name="PHOTO_ID" type="id" />
 </resources>
