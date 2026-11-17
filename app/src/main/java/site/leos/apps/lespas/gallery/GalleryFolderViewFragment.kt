@@ -87,6 +87,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.gallery.GalleryOverviewFragment.Companion.LAUNCH_BY_GALLERY
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.LesPasFastScroller
@@ -95,6 +96,7 @@ import site.leos.apps.lespas.helper.ShareOutDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -197,7 +199,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        postponeEnterTransition()
+        if (!galleryModel.isShowAllAtStartup()) postponeEnterTransition()
 
         chipForAll = view.findViewById(R.id.chip_for_all)
         currentCheckedTag = galleryModel.getCurrentSubFolder()
@@ -464,6 +466,20 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             }
 
             override fun onPrepareMenu(menu: Menu) {
+                when(folderArgument) {
+                    GalleryFragment.ALL_FOLDER ->
+                        if (galleryModel.isShowAllAtStartup()) {
+                            menu.findItem(R.id.option_menu_overview).isVisible = true
+                            menu.findItem(R.id.option_menu_settings).isVisible = true
+                        }
+                    GalleryFragment.TRASH_FOLDER -> {
+                        menu.findItem(R.id.option_menu_empty_trash)?.isVisible = true
+                        menu.findItem(R.id.option_menu_archive).isVisible = false
+                        menu.findItem(R.id.option_menu_archive_forced_refresh).isVisible = false
+                        menu.findItem(R.id.option_menu_calendar_view).isVisible = false
+                        menu.findItem(R.id.option_menu_search_gallery).isVisible = false
+                    }
+                }
                 if (folderArgument == GalleryFragment.TRASH_FOLDER) {
                     menu.findItem(R.id.option_menu_empty_trash)?.isVisible = true
                     menu.findItem(R.id.option_menu_archive).isVisible = false
@@ -503,8 +519,20 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
                     }
                     true
                 }
+                R.id.option_menu_overview -> {
+                    parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                        .replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    true
+                }
                 R.id.option_menu_empty_trash -> {
                     if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_empty_trash), positiveButtonText = getString(R.string.yes_delete), individualKey = EMPTY_TRASH_REQUEST_KEY, requestKey = GALLERY_FOLDERVIEW_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    true
+                }
+                R.id.option_menu_settings-> {
+                    exitTransition = null
+                    reenterTransition = null
+                    parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                        .replace(R.id.container_child_fragment, SettingsFragment(), LAUNCH_BY_GALLERY).addToBackStack(null).commit()
                     true
                 }
                 else -> false
@@ -628,7 +656,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
             R.id.share -> {
                 val photoIds = getSelectedPhotoIDs(false)
                 if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
-                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaStore.canManageMedia(requireContext()) else false)?.show(parentFragmentManager, SHARE_OUT_DIALOG)
+                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))?.show(parentFragmentManager, SHARE_OUT_DIALOG)
                     ?: run {
                         actionMode?.finish()
                         galleryModel.shareOut(photoIds, strip = false, lowResolution = false, removeAfterwards = false)
@@ -681,7 +709,7 @@ class GalleryFolderViewFragment : Fragment(), ActionMode.Callback {
 
     @SuppressLint("InflateParams")
     private fun prepareList(localMedias: List<GalleryFragment.GalleryMedia>, savedInstanceState: Bundle?) {
-        if (localMedias.isEmpty()) parentFragmentManager.popBackStack()
+        if (!galleryModel.isShowAllAtStartup() && localMedias.isEmpty()) parentFragmentManager.popBackStack()
 
         // Disable list setting for now
         subFolderChipGroup.setOnCheckedStateChangeListener(null)
