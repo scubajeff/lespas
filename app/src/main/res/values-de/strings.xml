@@ -283,6 +283,7 @@
     <string name="nearby_convergence_title">Fotos in der Nähe automatisch zusammenführen</string>
     <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos mit dem nächstgelegenen Foto mit GPS-Koordinaten zusammengeführt.</string>
     <string name="true_black_title">Echt schwarzes Thema</string>
+    <string name="tooltips_overview">Ordnerübersicht</string>
     <string name="tooltips_enable_backup">Sicherung einschalten</string>
     <string name="tooltips_backup_setting">Backup-Einstellung</string>
     <string name="msg_archive_empty">Archiv leer, bis Sie mit der Sicherung Ihrer Galerie beginnen.</string>
@@ -389,7 +390,8 @@
     <string name="msg_saved_location">Die Fotos werden im Ordner \"Download\" gespeichert.</string>
     <string name="tooltips_local_copy">Lokale Kopie</string>
     <string name="tooltips_archive_copy">Archivierte Kopie</string>
-    <string name="show_archive_title">Server-Archiv in der Galerie anzeigen</string>
+    <string name="show_all_at_startup_title">Alle Fotos beim Start anzeigen</string>
+    <string name="show_archive_title">Serverarchiv standardmäßig anzeigen</string>
     <string name="action_download_to_device">Auf das Gerät herunterladen</string>
     <string name="action_upload_to_archive">Hochladen ins Archiv</string>
     <string name="checkbox_text_remove_local_copy">Lokale Kopie in diesem Gerät</string>

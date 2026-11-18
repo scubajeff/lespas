@@ -65,6 +65,12 @@
             app:defaultValue="true" />
 
         <SwitchPreferenceCompat
+            app:key="@string/show_all_at_startup_perf_key"
+            app:title="@string/show_all_at_startup_title"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
             app:key="@string/show_archive_perf_key"
             app:title="@string/show_archive_title"
             app:singleLineTitle="false"

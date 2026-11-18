@@ -72,7 +72,8 @@
     <string name="true_black_title">Полностью чёрная тема</string>
     <string name="default_sort_order_title">Порядок сортировки фотографий по умолчанию для нового альбома</string>
     <string name="gallery_as_album_title">Галерея отображается как альбом</string>
-    <string name="show_archive_title">Показать архив сервера в галерее</string>
+    <string name="show_all_at_startup_title">Показывать все фотографии при запуске</string>
+    <string name="show_archive_title">По умолчанию отображать архив сервера</string>
     <string name="video_play_header">Воспроизведение видео</string>
     <string name="auto_replay_title">Воспроизводить видео автоматически</string>
     <string name="default_mute_title">Глушить видео по умолчанию</string>
@@ -283,6 +284,7 @@
     <string name="action_download_to_device">Скачать на устройство</string>
     <string name="action_upload_to_archive">Загрузить в архив</string>
     <string name="tooltips_date_picker">Выберите дату</string>
+    <string name="tooltips_overview">Обзор папки</string>
     <string name="tooltips_enable_backup">Включить резервное копирование</string>
     <string name="tooltips_backup_setting">Настройки резервного копирования</string>
     <string name="tooltips_local_copy">Локальная копия</string>

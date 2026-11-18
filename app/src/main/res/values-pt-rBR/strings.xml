@@ -294,6 +294,7 @@
     <string name="nearby_convergence_title">Convergem automaticamente fotos próximas</string>
     <string name="nearby_convergence_summary">Ao reproduzir slideshow no mapa, converge as fotos para a próxima que tem coordenada GPS.</string>
     <string name="true_black_title">Verdadeiro tema negro e escuro</string>
+    <string name="tooltips_overview">Visão geral da pasta</string>
     <string name="tooltips_enable_backup">Ativar backup</string>
     <string name="tooltips_backup_setting">Configuração de backup</string>
     <string name="msg_archive_empty">Arquivo vazio até que você inicie o backup de sua galeria.</string>
@@ -401,7 +402,8 @@
     <string name="msg_saved_location">As fotos serão salvas na pasta \"Download\".</string>
     <string name="tooltips_local_copy">Cópia local</string>
     <string name="tooltips_archive_copy">Cópia de arquivo</string>
-    <string name="show_archive_title">Mostrar o arquivo do servidor na Galeria</string>
+    <string name="show_all_at_startup_title">Mostrar todas as fotos na inicialização</string>
+    <string name="show_archive_title">Mostrar o arquivo do servidor por padrão</string>
     <string name="action_download_to_device">Download para o dispositivo</string>
     <string name="action_upload_to_archive">Fazer upload para o arquivo</string>
     <string name="checkbox_text_remove_local_copy">Cópia local neste dispositivo</string>

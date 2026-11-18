@@ -298,6 +298,7 @@
     <string name="prefer_latest">Recenti</string>
     <string name="skip_late_night_update">Salta aggiornamento notturno</string>
     <string name="hint_timestamp_pattern">La data di creazione della foto può essere modificata includendo il modello yyyyMMdd_hhmmss nel nome.</string>
+    <string name="tooltips_overview">Panoramica delle cartelle</string>
     <string name="tooltips_enable_backup">Abilita il backup</string>
     <string name="tooltips_backup_setting">Impostazione del backup</string>
     <string name="msg_archive_empty">Archivio vuoto finché non si avvia il backup della galleria.</string>
@@ -404,7 +405,8 @@
     <string name="msg_saved_location">Le foto verranno salvate nella cartella \"Download\".</string>
     <string name="tooltips_local_copy">Copia locale</string>
     <string name="tooltips_archive_copy">Copia d\'archivio</string>
-    <string name="show_archive_title">Mostra l\'archivio del server nella Galleria</string>
+    <string name="show_all_at_startup_title">Mostra tutte le foto all\'avvio</string>
+    <string name="show_archive_title">Mostra l\'archivio del server per impostazione predefinita</string>
     <string name="action_download_to_device">Scarica sul dispositivo</string>
     <string name="action_upload_to_archive">Caricare nell\'archivio</string>
     <string name="checkbox_text_remove_local_copy">La copia locale in questo dispositivo</string>

@@ -225,6 +225,7 @@
     <string name="msg_no_media_found">Aucune image ou vidéo n\'a été trouvée dans l\'appareil.</string>
     <!-- Camera Roll Fragment -->
     <string name="tooltips_date_picker">Choisir une date</string>
+    <string name="tooltips_overview">Présentation du dossier</string>
     <string name="tooltips_enable_backup">Activer la sauvegarde</string>
     <string name="tooltips_backup_setting">Paramètres de sauvegarde</string>
     <string name="msg_archive_empty">L\'archive est vide jusqu\'à ce que vous commenciez à sauvegarder votre galerie.</string>
@@ -374,7 +375,8 @@
     <string name="msg_saved_location">Les photos seront enregistrées dans le dossier \"Téléchargement\".</string>
     <string name="tooltips_local_copy">Copie locale</string>
     <string name="tooltips_archive_copy">Copie d\'archive</string>
-    <string name="show_archive_title">Afficher les archives du serveur dans la Galerie</string>
+    <string name="show_all_at_startup_title">Afficher toutes les photos au démarrage</string>
+    <string name="show_archive_title">Afficher les archives du serveur par défaut</string>
     <string name="action_download_to_device">Télécharger sur l\'appareil</string>
     <string name="action_upload_to_archive">Télécharger vers les archives</string>
     <string name="checkbox_text_remove_local_copy">La copie locale dans cet appareil</string>

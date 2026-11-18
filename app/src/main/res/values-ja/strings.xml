@@ -231,6 +231,7 @@
     <string name="nearby_convergence_title">近くの写真を自動収束</string>
     <string name="nearby_convergence_summary">地図上でスライドショーを再生すると、GPS座標を持つ近くの写真に収束します。</string>
     <string name="true_black_title">トゥルーブラックダークテーマ</string>
+    <string name="tooltips_overview">フォルダの概要</string>
     <string name="tooltips_enable_backup">バックアップを有効にする</string>
     <string name="tooltips_backup_setting">バックアップの設定</string>
     <string name="msg_archive_empty">ギャラリーのバックアップを開始してください。</string>
@@ -337,7 +338,8 @@
     <string name="msg_saved_location">写真は「ダウンロード」フォルダに保存されます。</string>
     <string name="tooltips_local_copy">現地コピー</string>
     <string name="tooltips_archive_copy">アーカイブコピー</string>
-    <string name="show_archive_title">ギャラリーにサーバーアーカイブを表示する</string>
+    <string name="show_all_at_startup_title">起動時にすべての写真を表示する</string>
+    <string name="show_archive_title">デフォルトでサーバーのアーカイブを表示する</string>
     <string name="action_download_to_device">デバイスにダウンロード</string>
     <string name="action_upload_to_archive">アーカイブへのアップロード</string>
     <string name="checkbox_text_remove_local_copy">このデバイスのローカルコピー</string>

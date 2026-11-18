@@ -229,6 +229,7 @@
     <string name="nearby_convergence_title">自動歸集附近照片</string>
     <string name="nearby_convergence_summary">在地圖上播放旅程時，自動將照片歸集到附近的有GPS坐標的照片上。</string>
     <string name="true_black_title">採用暗黑深色主题</string>
+    <string name="tooltips_overview">資料夾概覽</string>
     <string name="tooltips_enable_backup">備份開關</string>
     <string name="tooltips_backup_setting">備份設定</string>
     <string name="msg_archive_empty">存檔為空，請開始備份相簿。</string>
@@ -334,7 +335,8 @@
     <string name="msg_saved_location">照片將儲存在 \"下載 \"資料夾中。</string>
     <string name="tooltips_local_copy">手機裡有該文件</string>
     <string name="tooltips_archive_copy">伺服器上有存檔</string>
-    <string name="show_archive_title">在圖庫中顯示伺服器存檔</string>
+    <string name="show_all_at_startup_title">啟動時顯示所有照片列表</string>
+    <string name="show_archive_title">預設顯示伺服器存檔</string>
     <string name="action_download_to_device">下載到設備上</string>
     <string name="action_upload_to_archive">備份至伺服器</string>
     <string name="checkbox_text_remove_local_copy">本裝置中的檔案</string>
