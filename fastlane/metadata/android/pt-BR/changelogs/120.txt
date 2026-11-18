@@ -1,0 +1,2 @@
+* Adicionada uma opção para abrir a tela “Mostrar todas as fotos na Galeria” em vez da “Visão geral da pasta” ao iniciar a Galeria
+* Várias melhorias e correções de bugs

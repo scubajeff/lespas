@@ -1,0 +1,2 @@
+* Ajout d'une option permettant d'ouvrir l'écran « Afficher toutes les photos dans la galerie » au lieu de « Aperçu des dossiers » au démarrage de la galerie
+* Diverses améliorations et corrections de bogues

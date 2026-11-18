@@ -1,0 +1,2 @@
+* Aggiunta un'opzione per aprire la schermata “Mostra tutte le foto nella Galleria” anziché “Panoramica cartelle” all'avvio della Galleria
+* Vari miglioramenti e correzioni di bug
