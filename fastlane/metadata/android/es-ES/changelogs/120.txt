@@ -1,0 +1,2 @@
+* Se ha añadido una opción para abrir la pantalla «Mostrar todas las fotos en la galería» en lugar de «Resumen de carpetas» al iniciar la galería
+* Varias mejoras y correcciones de errores

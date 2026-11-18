@@ -232,6 +232,7 @@
     <string name="nearby_convergence_title">Convergencia automática de fotos cercanas</string>
     <string name="nearby_convergence_summary">Al reproducir el pase de diapositivas en el mapa, las fotos convergen en la más cercana que tenga coordenadas GPS.</string>
     <string name="true_black_title">Tema negro verdadero</string>
+    <string name="tooltips_overview">Descripción general de la carpeta</string>
     <string name="tooltips_enable_backup">Activar copia de seguridad</string>
     <string name="tooltips_backup_setting">Configuración de la copia de seguridad</string>
     <string name="msg_archive_empty">Archivo vacío hasta que empiece la copia de seguridad de su galería.</string>
@@ -339,7 +340,8 @@
     <string name="msg_saved_location">Las fotos se guardarán en la carpeta \"Descargas\".</string>
     <string name="tooltips_local_copy">Copia local</string>
     <string name="tooltips_archive_copy">Copia de archivo</string>
-    <string name="show_archive_title">Mostrar el archivo del servidor en la Galería</string>
+    <string name="show_all_at_startup_title">Mostrar todas las fotos al iniciar el programa</string>
+    <string name="show_archive_title">Mostrar el archivo del servidor de forma predeterminada</string>
     <string name="action_download_to_device">Descargar al dispositivo</string>
     <string name="action_upload_to_archive">Cargar en el archivo</string>
     <string name="checkbox_text_remove_local_copy">Copia local en este dispositivo</string>

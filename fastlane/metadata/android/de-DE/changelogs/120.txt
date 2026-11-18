@@ -1,0 +1,2 @@
+* Es wurde eine Option hinzugefügt, mit der beim Start der Galerie statt der „Ordnerübersicht“ der Bildschirm „Alle Fotos in der Galerie anzeigen“ geöffnet wird.
+* Verschiedene Verbesserungen und Fehlerbehebungen

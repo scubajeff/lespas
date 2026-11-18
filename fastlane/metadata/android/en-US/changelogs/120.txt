@@ -1,0 +1,2 @@
+* Added an option to open 'Show All Photos in Gallery' screen instead of 'Folder Overview' at Gallery startup
+* Various improvements and bug fixes

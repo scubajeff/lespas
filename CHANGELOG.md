@@ -1,3 +1,7 @@
+## Version 2.11.7
+* Added an option to open 'Show All Photos in Gallery' screen instead of 'Folder Overview' at Gallery startup
+* Various improvements and bug fixes
+
 ## Version 2.11.6
 * More robust implementation of image editor integration; fixed multiple bugs involving photo editing for 'Local' album
 * Added Nextcloud 'ReShare' permission when publishing albums; fixed broken photo copying from friends' publications

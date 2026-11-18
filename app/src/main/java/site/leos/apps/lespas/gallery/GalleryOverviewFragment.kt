@@ -392,6 +392,12 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                 super.onPrepareMenu(menu)
                 // Collecting on trash might have already done when menu created
                 trashMenuItem?.isEnabled = !galleryModel.trash.value.isNullOrEmpty()
+
+                // Hide 'Show All' menu item if needed
+                if (galleryModel.isShowAllAtStartup()) {
+                    menu.findItem(R.id.show_all).isVisible = false
+                    menu.findItem(R.id.option_menu_settings).isVisible = false
+                }
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -418,7 +424,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
                         reenterTransition = null
                         parentFragmentManager.beginTransaction().setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
                             .replace(R.id.container_child_fragment, SettingsFragment(), LAUNCH_BY_GALLERY).addToBackStack(null).commit()
-                        return true
+                        true
                     }
                     else -> false
                 }
@@ -517,7 +523,7 @@ class GalleryOverviewFragment : Fragment(), ActionMode.Callback {
             R.id.share -> {
                 val photoIds = getSelectedPhotoIDs(false)
                 if (parentFragmentManager.findFragmentByTag(SHARE_OUT_DIALOG) == null)
-                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaStore.canManageMedia(requireContext()) else false)?.show(parentFragmentManager, SHARE_OUT_DIALOG)
+                    ShareOutDialogFragment.newInstance(mimeTypes = galleryModel.getMimeTypes(photoIds), showRemoveAfterwards = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && MediaStore.canManageMedia(requireContext()))?.show(parentFragmentManager, SHARE_OUT_DIALOG)
                     ?: run {
                         selectionTracker.clearSelection()
                         galleryModel.shareOut(photoIds, strip = false, lowResolution = false, removeAfterwards = false)

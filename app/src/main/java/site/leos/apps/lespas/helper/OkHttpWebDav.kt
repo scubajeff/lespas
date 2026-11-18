@@ -54,7 +54,6 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
 import java.io.InterruptedIOException
-import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.security.KeyStore
@@ -475,6 +474,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         return Pair("", "")
     }
 
+/*
     private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long, ctx: Context, specialHeaders: Headers? = null): Pair<String, String> {
         val chunkFolder = "${chunkUploadBase}/${source}"
         var result = Pair("", "")
@@ -562,6 +562,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
         return result
     }
+*/
 
     private fun chunksUploadV2(inputStream: InputStream, source: String, dest: String, mimeType: String, fileSize: Long, ctx: Context, specialHeaders: Headers? = null): Pair<String, String> {
         val chunkFolder = "${chunkUploadBase}/${source}"

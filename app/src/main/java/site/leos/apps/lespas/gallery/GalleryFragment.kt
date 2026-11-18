@@ -103,6 +103,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlin.time.Duration.Companion.milliseconds
 
 class GalleryFragment: Fragment() {
     private val actionModel: ActionViewModel by viewModels()
@@ -150,12 +151,16 @@ class GalleryFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
+
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
+            galleryModel.setShowAllAtStartup(sp.getBoolean(getString(R.string.show_all_at_startup_perf_key), false))
+
             var isGranted = true
-            for(result in results) isGranted = isGranted && result.value
+            for((_, value) in results) isGranted = isGranted && value
             when {
                 isGranted -> {
                     // Explicitly request ACCESS_MEDIA_LOCATION permission
@@ -163,8 +168,7 @@ class GalleryFragment: Fragment() {
 
                     arguments?.parcelable<Uri>(ARGUMENT_URI)?.let { uri ->
                         if (uri == Uri.EMPTY) {
-                            galleryModel.asGallery(delayStart = false, order = "DESC", isPicker = true)
-                            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            launchAsGallery(true)
                         } else {
                             getFolderFromUri(uri)?.let {
                                 galleryModel.asGallery(delayStart = false, order = "ASC")
@@ -179,8 +183,7 @@ class GalleryFragment: Fragment() {
                         }
                     } ?: run {
                         // Launcher as Gallery within our own app, set list sort order to date descending
-                        galleryModel.asGallery(delayStart = false, order = "DESC")
-                        childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        launchAsGallery(false)
                     }
                 }
                 else -> quit()
@@ -236,8 +239,6 @@ class GalleryFragment: Fragment() {
                 //finish()
             }
         }
-
-        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_container, container, false)
@@ -304,7 +305,7 @@ class GalleryFragment: Fragment() {
                         }, 500)
                     }
                 }
-                launch {
+                launch shareOutUris@{
                     imageLoaderModel.shareOutUris.collect { uris ->
                         handler.removeCallbacksAndMessages(null)
                         if (waitingMsg?.isShownOrQueued == true) {
@@ -319,7 +320,7 @@ class GalleryFragment: Fragment() {
                                 GalleryViewModel.SHARE_NORMAL -> {
                                     val clipData = ClipData.newUri(cr, "", uris[0])
                                     for (i in 1 until uris.size) {
-                                        if (isActive) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                        if (this@shareOutUris.isActive) clipData.addItem(cr, ClipData.Item(uris[i]))
                                     }
                                     startActivity(Intent.createChooser(Intent().apply {
                                         if (uris.size > 1) {
@@ -495,6 +496,16 @@ class GalleryFragment: Fragment() {
         super.onDestroyView()
     }
 
+    private fun launchAsGallery(fromLauncher: Boolean) {
+        galleryModel.asGallery(delayStart = false, order = "DESC", isPicker = fromLauncher)
+        if (galleryModel.isShowAllAtStartup()) {
+            galleryModel.setCurrentPhotoId("")
+            galleryModel.resetCurrentSubFolder()
+            childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryFolderViewFragment.newInstance(ALL_FOLDER), GalleryFolderViewFragment::class.java.canonicalName).addToBackStack(null).commit()
+        }
+        else childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, GalleryOverviewFragment(), GalleryOverviewFragment::class.java.canonicalName).addToBackStack(null).commit()
+    }
+
     private fun quit() {
         if (tag == TAG_FROM_LAUNCHER) requireActivity().finish() else parentFragmentManager.popBackStack()
     }
@@ -644,18 +655,18 @@ class GalleryFragment: Fragment() {
         private val _pickedId = MutableStateFlow("")
         val pickedId: StateFlow<String> = _pickedId
 
-        private val _local = MutableStateFlow<List<GalleryMedia>>(mutableListOf())
+        private val _local = MutableStateFlow<List<GalleryMedia>?>(null)
         private val _medias = MutableStateFlow<List<GalleryMedia>?>(null)
         val medias: StateFlow<List<GalleryMedia>?> = _medias.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-        val trash: StateFlow<List<GalleryMedia>?> = _local.map { it.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
+        val trash: StateFlow<List<GalleryMedia>?> = _local.map { it?.filter { item -> item.folder == TRASH_FOLDER }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
         fun mediasInFolder(folderName: String): StateFlow<List<GalleryMedia>?> = _medias.map { it?.filter { item -> item.folder == folderName }}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
-        private var indexMap: Map<String, Int> = mapOf()
+        private var indexMap: Map<String, Int>? = mapOf()
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 launch {
                     combine(_local, imageModel.archive) { local, archiveMedia ->
-                        val localMedia = local.filter { it.folder != TRASH_FOLDER }
+                        val localMedia = local?.filter { it.folder != TRASH_FOLDER }
 
                         if (_showArchive.value != ARCHIVE_OFF && _showArchive.value != REFRESHING_GALLERY) {
                             archiveMedia?.let {
@@ -663,7 +674,7 @@ class GalleryFragment: Fragment() {
                                     // Deep copy to create a brand-new list for combining local and archive items
                                     val combinedList = archiveMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }.toMutableList()
 
-                                    if (localMedia.isNotEmpty()) {
+                                    if (!localMedia.isNullOrEmpty()) {
                                         // Create a map of archive items from this device for matching local medias later
                                         val searchMap = combinedList.filter { item -> item.volume == model && item.media.photo.lastModified >= localMedia.last().media.photo.lastModified }.associateBy { item -> item.fullPath + item.media.photo.name }
 
@@ -688,17 +699,17 @@ class GalleryFragment: Fragment() {
                                     // No content in archive yet
                                     archiveEmptyToast()
                                     //localMedia.map { it.copy() }.toList()
-                                    localMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
+                                    localMedia?.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
                                 }
                             } ?: run {
                                 // Archive refreshing job in NCShareViewModel emit NULL list when the job is running
                                 _showArchive.value = REFRESHING_ARCHIVE
-                                localMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
+                                localMedia?.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
                             }
-                        } else localMedia.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
+                        } else localMedia//localMedia?.map { it.copy(media = it.media.copy(photo = it.media.photo.copy())) }
                     }.collect { result ->
                         _medias.emit(result)
-                        indexMap = result.mapIndexed { index, media -> media.media.photo.id to index }.toMap()
+                        indexMap = result?.mapIndexed { index, media -> media.media.photo.id to index }?.toMap()
                     }
                 }
             }
@@ -719,7 +730,6 @@ class GalleryFragment: Fragment() {
             loadJob?.cancel()
             imageModel.stopRefreshingArchive(false)
             archiveSnapshotFileObserver.stopWatching()
-            super.onCleared()
         }
 
         fun reloadDeviceMediaStore() {
@@ -732,7 +742,7 @@ class GalleryFragment: Fragment() {
             defaultSortOrder = order
             loadJob = viewModelScope.launch(Dispatchers.IO) {
                 // Delay for 500ms when reload, because content observer will receive multiple notifications of change for a single file operation, like for example, creating a new file will result in 3 change notifications, including 1 NOTIFY_INSERT and 2 NOTIFY_UPDATE
-                if (delayStart) delay(300)
+                if (delayStart) delay(300.milliseconds)
                 ensureActive()
 
                 val localMedias = mutableListOf<GalleryMedia>()
@@ -786,6 +796,9 @@ class GalleryFragment: Fragment() {
                         var volumeColumn = -1
                         var isTrashColumn = -1
                         var xmpColumn = -1
+
+                        var pFormat = ""
+
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             volumeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
                             isTrashColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.IS_TRASHED)
@@ -801,7 +814,8 @@ class GalleryFragment: Fragment() {
                             // Insert media
                             mimeType = cursor.getString(typeColumn)
                             // Make sure image type is supported
-                            if (mimeType.startsWith("image") && mimeType.substringAfter("image/", "") !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
+                            pFormat = mimeType.substringAfter("image/", "")
+                            if (mimeType.startsWith("image") && pFormat !in Tools.SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
                             // MediaStore.Files.FileColumns.XMP only available since API 30
                             if (xmpColumn != -1) cursor.getBlob(xmpColumn)?.decodeToString()?.let {
                                 if (it.contains(Tools.PANORAMA_SIGNATURE)) mimeType = Tools.PANORAMA_MIMETYPE
@@ -820,22 +834,19 @@ class GalleryFragment: Fragment() {
                             if (dateTaken == 0L) dateTaken = dateAdded * 1000
 
                             // TODO might need to put this type checking routine to background
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                try {
-                                    if (mimeType.contains("webp")) {
-                                        // Set my own image/awebp mimetype for animated WebP
-                                        ensureActive()
-                                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/awebp"
-                                    }
-                                    if (mimeType.contains("gif")) {
-                                        // Set my own image/agif mimetype for animated GIF
-                                        ensureActive()
-                                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/agif"
-                                    }
-                                } catch (e: Exception) { e.printStackTrace() }
+                            if (pFormat == "webp" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                // Set my own image/awebp mimetype for animated WebP
+                                ensureActive()
+                                try { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/awebp" } catch (_: Exception) {}
+                            }
+                            if (pFormat == "gif" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                // Set my own image/agif mimetype for animated GIF
+                                ensureActive()
+                                try { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()))) is AnimatedImageDrawable) mimeType = "image/agif" } catch (_: Exception) {}
                             }
 
                             relativePath = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getString(pathColumn) else cursor.getString(pathColumn).substringAfter(STORAGE_EMULATED).substringAfter("/").substringBeforeLast('/') + "/"
+
                             localMedias.add(
                                 GalleryMedia(
                                     GalleryMedia.IS_IN_GALLERY,
@@ -974,7 +985,7 @@ class GalleryFragment: Fragment() {
         fun getGalleryMediaById(id: String): GalleryMedia? = _medias.value?.find { it.media.photo.id == id }
 */
         fun getPhotoById(id: String): NCShareViewModel.RemotePhoto? = getGalleryMediaById(id)?.media
-        fun getGalleryMediaById(id: String): GalleryMedia? = _medias.value?.let { list -> indexMap[id]?.let { index -> list[index] }}
+        fun getGalleryMediaById(id: String): GalleryMedia? = _medias.value?.let { list -> indexMap?.get(id)?.let { index -> list[index] }}
 
         private val _additions = MutableSharedFlow<List<String>>()
         val additions: SharedFlow<List<String>> = _additions
@@ -1123,6 +1134,11 @@ class GalleryFragment: Fragment() {
                 REFRESHING_GALLERY -> _showArchive.value = ARCHIVE_OFF
             }
         }
+
+        // 'Overview' screen or 'All Photos' screen at Gallery startup
+        private var showAllAtStartup = false
+        fun setShowAllAtStartup(showAllAtStartup: Boolean) { this.showAllAtStartup = showAllAtStartup}
+        fun isShowAllAtStartup(): Boolean = this.showAllAtStartup
 
         companion object {
             const val ARCHIVE_OFF = -1
