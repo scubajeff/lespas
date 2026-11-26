@@ -13,9 +13,7 @@
   ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
-  -->
-
-<resources>
+  --><resources>
     <string name="app_name">Les Pas</string>
     <string name="error_only_one_account">Sólo se permite una cuenta</string>
     <string name="welcome_message_title">¡Bienvenido a Les Pas!</string>
@@ -173,7 +171,7 @@
     <string name="prefer">Prefiero:</string>
     <string name="prefer_latest">Recientes</string>
     <string name="prefer_random">Al azar (el recurso de todo lo anterior)</string>
-    <string name="http_toggle_helper_text">\u2B11Toque el prefijo para activar el HTTP no seguro</string>
+    <string name="http_toggle_helper_text">⬑Toque el prefijo para activar el HTTP no seguro</string>
     <string name="gallery_as_album_title">Galería mostrada como álbum</string>
     <string name="relogin_title">Reinicio de sesión</string>
     <string name="relogin_summary">Si accidentalmente revocó la clave de acceso de Les Pas en el servidor.</string>
@@ -306,7 +304,6 @@
         <item quantity="one">, Hoy hace %1$d año</item>
         <item quantity="other">, Hoy hace %1$d años</item>
     </plurals>
-
     <string name="msg_player_skip">5 segundos</string>
     <string name="internal_publish">Interno</string>
     <string name="external_publish">Público</string>
