@@ -1,0 +1,2 @@
+* Dodano opcję otwierania ekranu „Pokaż wszystkie zdjęcia w galerii” zamiast „Przeglądu folderów” przy uruchamianiu Galerii
+* Różne ulepszenia i poprawki błędów

@@ -18,422 +18,440 @@
     <string name="app_name">Les Pas</string>
 
     <!-- MainActivity -->
-    <string name="need_to_restart">Storage transfer has finished. You need to restart Les Pas now.</string>
-    <string name="sd_card_not_ready">SD card is either not mounted or is read-only.</string>
-    <string name="msg_login_first">Please login to your server first.</string>
+   <string name="need_to_restart">Przenoszenie danych zostało zakończone. Wymagane jest teraz ponowne uruchomienie aplikacji Les Pas.</string>
+   <string name="sd_card_not_ready">Karta SD nie jest zamontowana lub jest w trybie tylko do odczytu.</string>
+   <string name="msg_login_first">Wymagane jest najpierw zalogowanie się na serwer.</string>
+
 
     <!-- Authenticator -->
-    <string name="error_only_one_account">Only one account allowed</string>
+    <string name="error_only_one_account">Dozwolone jest tylko jedno konto</string>
 
     <!-- NCLogin fragment -->
-    <string name="welcome_message_title">Welcome to Les Pas!</string>
-    <string name="welcome_message">To get started, please grant access on your Nextcloud server.</string>
-    <string name="http_toggle_helper_text">\u2B11Touch prefix to toggle unsecure HTTP</string>
+    <string name="welcome_message_title">Witamy w Les Pas!</string>
+    <string name="welcome_message">Aby rozpocząć, wymagane jest przyznanie dostępu na serwerze Nextcloud.</string>
+    <string name="http_toggle_helper_text">\u2B11Dotknięcie prefiksu przełącza na niezabezpieczone HTTP</string>
     <string name="nextcloud_credential_scheme" translatable="false">nc</string>
     <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
     <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
-    <string name="nc_userdata_server_protocol" translatable="false">NC_SERVER_PROTOCOL</string>
-    <string name="nc_userdata_server_host" translatable="false">NC_SERVER_HOST</string>
+    <string name="nc_userdata_server_protocol" translatable="false">NC_SERVER_PROTOCOL</string><string name="nc_userdata_server_host" translatable="false">NC_SERVER_HOST</string>
     <string name="nc_userdata_server_port" translatable="false">NC_SERVER_PORT</string>
     <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
     <string name="nc_userdata_loginname" translatable="false">NC_LOGINNAME</string>
     <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
     <string name="nc_userdata_selfsigned" translatable="false">NC_SELFSIGNED</string>
     <string name="nc_userdata_certificate" translatable="false">NC_SELFSIGNED_CERTIFICATE</string>
-    <string name="verify_ssl_certificate_title">Bad SSL Certificate</string>
-    <string name="verify_ssl_certificate_message">Server %1$s\'s certificate CAN NOT be verified, do you want to trust this server?</string>
-    <string name="untrusted_ssl_certificate_message">Subject:\n%1$s\n\nIssuer:\n%2$s\n\nSHA-256 Fingerprint:\n%3$s\n\nIssued on: %4$s\n\nExpired on: %5$s\n\n\nDo you want to trust this server?</string>
-    <string name="accept_certificate">Trust it!</string>
-    <string name="msg_install_qrcode_scanner">Please install a compatible QR code scanner app first. Like %1$sSecScanQR from F-Droid</string>
+    <string name="verify_ssl_certificate_title">Nieprawidłowy certyfikat SSL</string>
+    <string name="verify_ssl_certificate_message">Certyfikat serwera %1$s NIE MOŻE zostać zweryfikowany. Czy zaufać temu serwerowi?</string>
+    <string name="untrusted_ssl_certificate_message">Podmiot:\n%1$s\n\nWystawca:\n%2$s\n\nOdcisk palca SHA-256:\n%3$s\n\nData wystawienia: %4$s\n\nData wygaśnięcia: %5$s\n\n\nCzy zaufać temu serwerowi?</string>
+    <string name="accept_certificate">Zaufaj</string>
+    <string name="msg_install_qrcode_scanner">Wymagana jest wcześniejsza instalacja zgodnego skanera kodów QR, np. %1$sSecScanQR z F-Droid</string>
 
-    <string name="host_address_validation_error">Address not valid.</string>
-    <string name="host_not_valid">Address not valid (%1$d).</string>
-    <string name="unknown_host">Nextcloud server not found.</string>
-    <string name="network_error">Network error, try again.</string>
-    <string name="certificate_error">Site certificate error.</string>
+	<string name="host_address_validation_error">Nieprawidłowy adres.</string>
+	<string name="host_not_valid">Nieprawidłowy adres (%1$d).</string>
+	<string name="unknown_host">Nie znaleziono serwera Nextcloud.</string>
+	<string name="network_error">Błąd sieci, należy spróbować ponownie.</string>
+	<string name="certificate_error">Błąd certyfikatu witryny.</string>
 
-    <string name="pick_home">Set your home folder</string>
-    <string name="pick_home_note">"Les Pas saves your albums and backups in this folder on your server"</string>
-    <string name="button_text_set_as_home">Set</string>
-    <string name="tooltips_text_create_folder">Create new folder</string>
-
+	<string name="pick_home">Wybór folderu domowego</string>
+	<string name="pick_home_note">"Aplikacja Les Pas zapisuje w tym folderze na serwerze albumy oraz kopie zapasowe"</string>
+	<string name="button_text_set_as_home">Ustaw</string>
+	<string name="tooltips_text_create_folder">Utwórz nowy folder</string>
+	
     <!-- NCAuthentication fragment -->
-    <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
-    <string name="should_allow_launching_other_app">Please allow Les Pas launching other apps in your security settings.</string>
-    <string name="menu_item_qr_scanner_title">Scan QR code</string>
+	<string name="login_to_new_account">Następuje logowanie na nowe konto. Należy najpierw wylogować się z obecnego konta, a następnie ponownie uruchomić aplikację Les Pas. Czy kontynuować wylogowywanie?</string>
+	<string name="should_allow_launching_other_app">Wymagane jest zezwolenie aplikacji Les Pas na uruchamianie innych aplikacji w ustawieniach zabezpieczeń.</string>
+	<string name="menu_item_qr_scanner_title">Skanuj kod QR</string>
 
-    <!-- Various Nextcloud access endpoints and naming -->
-    <string name="local_base" translatable="false">/lespas</string>
-    <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
+	<!-- Various Nextcloud access endpoints and naming -->
+	<string name="local_base" translatable="false">/lespas</string>
+	<string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
-    <!-- Album fragment -->
-    <string name="fab_add_photos">Add photos</string>
-    <string name="unlock_please">Unlock hidden albums</string>
-    <string name="msg_set_as_remote">"Setting album as 'Remote' will remove all it's media files from this device. Proceed?"</string>
-    <string name="msg_set_as_local">"Setting album as 'Local' will download all it's media files from server, hence it would take a while. Proceed?"</string>
-    <string name="msg_low_storage_space">"Your internal storage space is less than 10% free, this will stop Les Pas from syncing with server."</string>
-    <string name="option_menu_name_filter">Filter by name</string>
+	<!-- Album fragment -->
+	<string name="fab_add_photos">Dodaj zdjęcia</string>
+	<string name="unlock_please">Odblokowanie ukrytych albumów</string>
+	<string name="msg_set_as_remote">"Ustawienie albumu jako 'Zdalny' usunie wszystkie jego pliki multimedialne z tego urządzenia. Czy kontynuować?"</string>
+	<string name="msg_set_as_local">"Ustawienie albumu jako 'Lokalny' pobierze wszystkie jego pliki multimedialne z serwera, co może chwilę potrwać. Czy kontynuować?"</string>
+	<string name="msg_low_storage_space">"Wolne miejsce w pamięci wewnętrznej spadło poniżej 10%, co wstrzyma synchronizację aplikacji Les Pas z serwerem."</string>
+	<string name="option_menu_name_filter">Filtruj według nazwy</string>
 
-    <!-- Album fragment, UnhideDialog fragment -->
-    <string name="hidden_albums">Hidden Albums:</string>
-    <string name="not_hiding">The following names already existed in hidden album list: %1$s</string>
+	<!-- Album fragment, UnhideDialog fragment -->
+	<string name="hidden_albums">Ukryte albumy:</string>
+	<string name="not_hiding">Następujące nazwy istnieją już na liście ukrytych albumów: %1$s</string>
 
     <!-- Album fragment, MetaRescanDialog fragment -->
-    <string name="msg_preserve_meta">Preserve existing</string>
-    <string name="button_text_rescan">Rescan</string>
-    <string name="button_text_caption">Caption</string>
-    <string name="button_text_location">Location</string>
-    <string name="button_text_taken_date">Date</string>
+	<string name="msg_preserve_meta">Zachowaj istniejące</string>
+	<string name="button_text_rescan">Skanuj ponownie</string>
+	<string name="button_text_caption">Opis</string>
+	<string name="button_text_location">Lokalizacja</string>
+	<string name="button_text_taken_date">Data</string>
 
     <!-- AlbumDetail fragment -->
-    <string name="confirm_delete">Are you sure you want to delete?</string>
-    <string name="yes_delete">Yes, delete</string>
-    <string name="rename_album">Change album name to</string>
-    <string name="rename_media">New name</string>
-    <string name="total_photo">Photos: %1$d</string>
-    <string name="duration_days">Days: %1$d</string>
-    <string name="duration_weeks">Weeks: %1$d</string>
-    <string name="duration_months">Months: %1$d</string>
-    <string name="duration_years">Years: %1$d</string>
-    <string name="published_to">Published to: %1$s</string>
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
-    <string name="preparing_shares">Preparing shares…</string>
-    <string name="msg_saved_location">Photos will be saved in \'Download\' folder.</string>
-    <string name="option_menu_search">Search for name</string>
-    <string name="option_menu_slideshow">Slideshow</string>
+	<string name="confirm_delete">Czy na pewno usunąć?</string>
+	<string name="yes_delete">Tak, usuń</string>
+	<string name="rename_album">Zmiana nazwy albumu na</string>
+	<string name="rename_media">Nowa nazwa</string>
+	<string name="total_photo">Zdjęcia: %1$d</string>
+	<string name="duration_days">Dni: %1$d</string>
+	<string name="duration_weeks">Tygodnie: %1$d</string>
+	<string name="duration_months">Miesiące: %1$d</string>
+	<string name="duration_years">Lata: %1$d</string>
+	<string name="published_to">Opublikowano w: %1$s</string>
+	<string name="yes">Tak</string>
+	<string name="no">Nie</string>
+	<string name="preparing_shares">Przygotowywanie udostępniania…</string>
+	<string name="msg_saved_location">Zdjęcia zostaną zapisane w folderze \'Download\'.</string>
+	<string name="option_menu_search">Szukaj według nazwy</string>
+	<string name="option_menu_slideshow">Pokaz slajdów</string>
+
 
     <!-- PhotoSlide fragment -->
-    <string name="button_text_set_cover">Set as cover</string>
-    <string name="button_text_share">Share</string>
-    <string name="button_text_use_as">Use as</string>
-    <string name="button_text_info">Info</string>
-    <string name="button_text_edit_replace">Retouch - Replace</string>
-    <string name="button_text_edit_add">Retouch - Add</string>
-    <string name="button_text_save">Save</string>
-    <string name="hint_caption">Add caption</string>
+	<string name="button_text_set_cover">Ustaw jako okładkę</string>
+	<string name="button_text_share">Udostępnij</string>
+	<string name="button_text_use_as">Użyj jako</string>
+	<string name="button_text_info">Informacje</string>
+	<string name="button_text_edit_replace">Retusz – Zastąp</string>
+	<string name="button_text_edit_add">Retusz – Dodaj</string>
+	<string name="button_text_save">Zapisz</string>
+	<string name="hint_caption">Dodaj opis</string>
+
 
     <!-- CropCover fragment -->
-    <string name="toast_cover_applied">New cover applied.</string>
-    <string name="toast_cover_set_canceled">Canceled setting new cover.</string>
+	<string name="toast_cover_applied">Zastosowano nową okładkę.</string>
+	<string name="toast_cover_set_canceled">Anulowano ustawianie nowej okładki.</string>
 
     <!-- Setting fragment -->
-    <string name="settings_title">Settings</string>
+    <string name="settings_title">Ustawienia</string>
 
-    <string name="view_header">View</string>
-    <string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
-    <string name="auto_theme_title">App theme</string>
-    <string name="theme_light_entries">Light theme</string>
-    <string name="theme_dark_entries">Dark theme</string>
-    <string name="theme_auto_entries">Follow system setting</string>
-    <string name="theme_light_values" translatable="false">1</string>
-    <string name="theme_dark_values" translatable="false">2</string>
-    <string name="theme_auto_values" translatable="false">-1</string>
-    <string name="true_black_pref_key" translatable="false">TRUE_BLACK_THEME</string>
-    <string name="true_black_title">True black dark theme</string>
-    <string name="material_theme_pref_key" translatable="false">MATERIAL_THEME</string>
-    <string name="material_theme_title">Enable Material Theme</string>
-    <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
-    <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
-    <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
-    <string name="default_sort_order_title">Default photo sort order for new album</string>
+	<string name="view_header">Widok</string>
+	<string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
+	<string name="auto_theme_title">Motyw aplikacji</string>
+	<string name="theme_light_entries">Jasny motyw</string>
+	<string name="theme_dark_entries">Ciemny motyw</string>
+	<string name="theme_auto_entries">Zgodny z ustawieniami systemu</string>
+	<string name="theme_light_values" translatable="false">1</string>
+	<string name="theme_dark_values" translatable="false">2</string>
+	<string name="theme_auto_values" translatable="false">-1</string>
+	<string name="true_black_pref_key" translatable="false">TRUE_BLACK_THEME</string>
+	<string name="true_black_title">Ciemny motyw z czystą czernią</string>
+	<string name="material_theme_pref_key" translatable="false">MATERIAL_THEME</string>
+	<string name="material_theme_title">Włącz motyw Material</string>
+	<string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
+	<string name="auto_rotate_title">Obracaj ekran zgodnie z proporcjami zdjęcia</string>
+	<string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
+	<string name="default_sort_order_title">Domyślna kolejność sortowania zdjęć w nowym albumie</string>
 
-    <string name="gallery_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
-    <string name="gallery_as_album_title">Gallery shown as an album</string>
-    <string name="show_all_at_startup_perf_key" translatable="false">SHOW_ALL_AT_STARTUP</string>
-    <string name="show_all_at_startup_title">Show all photos at startup</string>
-    <string name="show_archive_perf_key" translatable="false">SHOW_ARCHIVE</string>
-    <string name="show_archive_title">Show server archive by default</string>
-    <string name="sync_deletion_perf_key" translatable="false">SYNC_GALLERY_DELETION</string>
-    <string name="sync_deletion_title">Sync gallery deletion to server archive</string>
-    <string name="sync_deletion_rational">To gain more flexibility of making sync decision on every deletion, you should grant Les Pas the Manage Media permission.</string>
+	<string name="gallery_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
+	<string name="gallery_as_album_title">Wyświetlaj galerię jako album</string>
+	<string name="show_all_at_startup_perf_key" translatable="false">SHOW_ALL_AT_STARTUP</string>
+	<string name="show_all_at_startup_title">Pokaż wszystkie zdjęcia po uruchomieniu</string>
+	<string name="show_archive_perf_key" translatable="false">SHOW_ARCHIVE</string>
+	<string name="show_archive_title">Domyślnie pokazuj archiwum serwera</string>
+	<string name="sync_deletion_perf_key" translatable="false">SYNC_GALLERY_DELETION</string>
+	<string name="sync_deletion_title">Synchronizuj usuwanie z galerii z archiwum serwera</string>
+	<string name="sync_deletion_rational">Aby uzyskać większą elastyczność przy decydowaniu o synchronizacji każdego usunięcia, wymagane jest przyznanie aplikacji Les Pas uprawnienia do zarządzania multimediami.</string>
 
-    <string name="video_play_header">Video Playing</string>
-    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
-    <string name="default_mute_perf_key" translatable="false">DEFAULT_MUTE</string>
-    <string name="auto_replay_title">Replay video automatically</string>
-    <string name="default_mute_title">Mute video by default</string>
+	<string name="video_play_header">Odtwarzanie wideo</string>
+	<string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
+	<string name="default_mute_perf_key" translatable="false">DEFAULT_MUTE</string>
+	<string name="auto_replay_title">Automatycznie powtarzaj wideo</string>
+	<string name="default_mute_title">Domyślnie wyciszaj wideo</string>
 
-    <string name="edit_header">Retouch</string>
-    <string name="edit_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
-    <string name="edit_replace_title">Replace original</string>
-    <string name="edit_replace_on_summary">Yes, replace the original photo with the editing result.</string>
-    <string name="edit_replace_off_summary">No, add the edited file to the album alongside the original. Manage duplicates yourself.</string>
-    <string name="remove_editor_output_pref_key" translatable="false">REMOVE_EDITOR_OUTPUT</string>
-    <string name="remove_editor_output_title">Remove work files</string>
-    <string name="remove_editor_output_on_summary">The work file created by the Retouch app will be deleted once it has been collected.</string>
-    <string name="editor_output_deletion_rational">In order to remove retouching work file in the background without asking for your permission each time, you should grant Les Pas the Manage Media permission.</string>
+	<string name="edit_header">Retusz</string>
+	<string name="edit_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
+	<string name="edit_replace_title">Zastąp oryginał</string>
+	<string name="edit_replace_on_summary">Tak, oryginalne zdjęcie zostanie zastąpione wynikiem edycji.</string>
+	<string name="edit_replace_off_summary">Nie, edytowany plik zostanie dodany do albumu obok oryginału. Duplikatami należy zarządzać samodzielnie.</string>
+	<string name="remove_editor_output_pref_key" translatable="false">REMOVE_EDITOR_OUTPUT</string>
+	<string name="remove_editor_output_title">Usuń pliki robocze</string>
+	<string name="remove_editor_output_on_summary">Plik roboczy utworzony przez aplikację do retuszu zostanie usunięty po jego pobraniu.</string>
+	<string name="editor_output_deletion_rational">Aby usuwać pliki robocze retuszu w tle bez każdorazowego pytania o zgodę, wymagane jest przyznanie aplikacji Les Pas uprawnienia do zarządzania multimediami.</string>
 
-    <string name="privacy_header">Privacy</string>
-    <string name="remove_meta_data_before_sharing_pref_key" translatable="false">STRIP_EXIF_BEFORE_SHARING</string>
-    <string name="remove_meta_data_before_sharing_title">Remove sensitive meta data before sharing</string>
-    <string name="use_low_resolution_to_share_pref_key" translatable="false">SHARE_LOW_RESOLUTION</string>
-    <string name="use_low_resolution_to_share_title">Lower picture resolution before sharing</string>
+	<string name="privacy_header">Prywatność</string>
+	<string name="remove_meta_data_before_sharing_pref_key" translatable="false">STRIP_EXIF_BEFORE_SHARING</string>
+	<string name="remove_meta_data_before_sharing_title">Usuń wrażliwe metadane przed udostępnieniem</string>
+	<string name="use_low_resolution_to_share_pref_key" translatable="false">SHARE_LOW_RESOLUTION</string>
+	<string name="use_low_resolution_to_share_title">Zmniejsz rozdzielczość zdjęcia przed udostępnieniem</string>
 
-    <string name="storage_header">Storage</string>
-    <string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>
-    <string name="transfer_to_internal">Transfer albums to internal storage</string>
-    <string name="transfer_to_external">Transfer albums to external SD card</string>
-    <string name="external_storage_not_writable">Can\'t write to external SD card now.</string>
-    <string name="confirm_transferring_message">%1$s? If proceed, please DO NOT make any update to albums before transfer process finishes.</string>
-    <string name="not_enough_space_message">Not enough space left in %2$s to transfer %1$s photos.</string>
-    <string name="is_syncing_message">Les Pas is syncing with server, it\'s not safe to transfer storage now, please try again a few minutes later.</string>
-    <string name="yes_transfer">Proceed</string>
-    <string name="storage_statistic_pref_key" translatable="false">STATISTIC</string>
+	<string name="storage_header">Pamięć</string>
+	<string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>
+	<string name="transfer_to_internal">Przenieś albumy do pamięci wewnętrznej</string>
+	<string name="transfer_to_external">Przenieś albumy na zewnętrzną kartę SD</string>
+	<string name="external_storage_not_writable">Zapis na zewnętrznej karcie SD jest obecnie niemożliwy.</string>
+	<string name="confirm_transferring_message">%1$s? W przypadku kontynuacji NIE NALEŻY wprowadzać żadnych zmian w albumach przed zakończeniem przenoszenia.</string>
+	<string name="not_enough_space_message">Za mało wolnego miejsca w lokalizacji %2$s, aby przenieść następującą liczbę zdjęć: %1$s.</string>
+	<string name="is_syncing_message">Trwa synchronizacja aplikacji Les Pas z serwerem. Przenoszenie danych nie jest teraz bezpieczne – należy spróbować ponownie za kilka minut.</string>
+	<string name="yes_transfer">Kontynuuj</string>
+	<string name="storage_statistic_pref_key" translatable="false">STATISTIC</string>
 
-    <string name="storage_statistic_title">Statistic</string>
-    <string name="statistic_db_message">%1$,d photos in %2$,d albums</string>
-    <string name="statistic_storage_message">%1$s used in %2$s</string>
-    <string name="internal_storage">internal storage</string>
-    <string name="external_storage">external SD card</string>
-    <string name="statistic_free_space_message">%1$s available in %2$s</string>
-    <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
-    <string name="clear_cache_title">Clear Remote album cache</string>
-    <string name="msg_clear_cache">All cached remote image files will be removed. Proceed?</string>
-    <string name="msg_restart_to_take_effect">Restart app for new setting to take effect.</string>
-    <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
-    <string name="cache_size_title">Set Remote album cache size</string>
-    <string name="cache_size_summary">Current cache size: %1$dMB</string>
-    <string name="cache_size_setting_hint">Cache size:</string>
+	<string name="storage_statistic_title">Statystyki</string>
+	<string name="statistic_db_message">Zdjęcia: %1$,d w albumach: %2$,d</string>
+	<string name="statistic_storage_message">Użyto %1$s w lokalizacji: %2$s</string>
+	<string name="internal_storage">pamięć wewnętrzna</string>
+	<string name="external_storage">zewnętrzna karta SD</string>
+	<string name="statistic_free_space_message">Dostępne %1$s w lokalizacji: %2$s</string>
+	<string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
+	<string name="clear_cache_title">Wyczyść pamięć podręczną albumów zdalnych</string>
+	<string name="msg_clear_cache">Wszystkie zapisane w pamięci podręcznej pliki obrazów zdalnych zostaną usunięte. Czy kontynuować?</string>
+	<string name="msg_restart_to_take_effect">Aby nowe ustawienie zaczęło obowiązywać, wymagane jest ponowne uruchomienie aplikacji.</string>
+	<string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
+	<string name="cache_size_title">Rozmiar pamięci podręcznej albumów zdalnych</string>
+	<string name="cache_size_summary">Obecny rozmiar pamięci podręcznej: %1$d MB</string>
+	<string name="cache_size_setting_hint">Rozmiar pamięci podręcznej:</string>
 
-    <string name="sync_header">Synchronization</string>
-    <string name="backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
-    <string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
-    <string name="sync_status_local_action_pref_key" translatable="false">SYNC_CURRENT_ACTION</string>
-    <string name="sync_status_title">Synchronization status</string>
-    <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
-    <string name="wifionly_title">Sync and backup only on WiFi</string>
-    <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
-    <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
+	<string name="sync_header">Synchronizacja</string>
+	<string name="backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
+	<string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
+	<string name="sync_status_local_action_pref_key" translatable="false">SYNC_CURRENT_ACTION</string>
+	<string name="sync_status_title">Stan synchronizacji</string>
+	<string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
+	<string name="wifionly_title">Synchronizuj i twórz kopie zapasowe tylko przez Wi-Fi</string>
+	<string name="wifionly_summary_on">Tak, komórkowa transmisja danych nie będzie używana.</string>
+	<string name="wifionly_summary_off">Nie, używana będzie komórkowa transmisja danych – zalecana jest ostrożność w przypadku dużej kolekcji zdjęć.</string>
 
-    <string name="map_header">Map</string>
-    <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
-    <string name="chinese_map_title">Use Chinese Map App</string>
-    <string name="chinese_map_summary">All map apps of China use an unique coordinate system.</string>
-    <string name="nearby_convergence_pref_key" translatable="false">NEARBY_CONVERGENCE</string>
-    <string name="nearby_convergence_title">Auto converge nearby photos</string>
-    <string name="nearby_convergence_summary">When playing slideshow on map, converge photos to the nearby one which has GPS coordinate.</string>
+	<string name="map_header">Mapa</string>
+	<string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
+	<string name="chinese_map_title">Używaj chińskiej aplikacji map</string>
+	<string name="chinese_map_summary">Wszystkie chińskie aplikacje mapowe korzystają z unikalnego układu współrzędnych.</string>
+	<string name="nearby_convergence_pref_key" translatable="false">NEARBY_CONVERGENCE</string>
+	<string name="nearby_convergence_title">Automatycznie grupuj pobliskie zdjęcia</string>
+	<string name="nearby_convergence_summary">Podczas pokazu slajdów na mapie zdjęcia są przypisywane do pobliskiego zdjęcia posiadającego współrzędne GPS.</string>
 
-    <string name="account_header">Account</string>
-    <string name="relogin_pref_key" translatable="false">RELOGIN</string>
-    <string name="relogin_title">Re-login</string>
-    <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>
-    <string name="logout_pref_key" translatable="false">LOGOUT</string>
-    <string name="logout_title">Logout</string>
-    <string name="msg_logout_dialog">Log out of account %1$s?</string>
-    <string name="yes_logout">Yes, log out</string>
+	<string name="account_header">Konto</string>
+	<string name="relogin_pref_key" translatable="false">RELOGIN</string>
+	<string name="relogin_title">Zaloguj ponownie</string>
+	<string name="relogin_summary">W przypadku przypadkowego unieważnienia klucza dostępu aplikacji Les Pas na serwerze.</string>
+	<string name="logout_pref_key" translatable="false">LOGOUT</string>
+	<string name="logout_title">Wyloguj</string>
+	<string name="msg_logout_dialog">Czy wylogować z konta %1$s?</string>
+	<string name="yes_logout">Tak, wyloguj</string>
 
-    <string name="blog_header">Blog</string>
-    <string name="blog_category_pref_key" translatable="false">BLOG_CATEGORY</string>
-    <string name="blog_name_pref_key" translatable="false">BLOG_NAME</string>
-    <string name="blog_name_title">Blog Name</string>
-    <string name="blog_name_default">My Albums</string>
-    <string name="blog_exemption_clause">You’re responsible for your use of the blogging feature and any content you provide, including compliance with applicable laws. Please don’t post content unless you have the right to do so. Anything you post in the blog CAN be access by the general public.</string>
+	<string name="blog_header">Blog</string>
+	<string name="blog_category_pref_key" translatable="false">BLOG_CATEGORY</string>
+	<string name="blog_name_pref_key" translatable="false">BLOG_NAME</string>
+	<string name="blog_name_title">Nazwa bloga</string>
+	<string name="blog_name_default">Moje albumy</string>
+	<string name="blog_exemption_clause">Użytkownik ponosi odpowiedzialność za korzystanie z funkcji bloga oraz wszelkie udostępniane treści, w tym za ich zgodność z obowiązującymi przepisami prawa. Nie należy publikować treści bez posiadania do nich odpowiednich praw. Wszelkie treści opublikowane na blogu MOGĄ być dostępne publicznie.</string>
 
-    <string name="proceed_request">Proceed</string>
+	<string name="proceed_request">Kontynuuj</string>
+
 
     <!-- Sync Status Dialog Fragment -->
-    <string name="button_text_resync">Re-Sync</string>
-    <string name="button_text_help">Help!</string>
-    <string name="backup_remaining">%d left</string>
+    <string name="button_text_resync">Synchronizuj ponownie</string>
+	<string name="button_text_help">Pomoc</string>
+	<string name="backup_remaining">Pozostało: %d</string>
 
-    <string name="sync_status_action_delete_media">Removing %1$s in album \'%2$s\'</string>
-    <string name="sync_status_action_delete_album">Removing album \'%s\'</string>
-    <string name="sync_status_action_add_album">Creating album \'%s\'</string>
-    <string name="sync_status_action_add_media">Adding %1$s to album \'%2$s\'</string>
-    <string name="sync_status_action_rename_album">Renaming album \'%1$s\ to \'%2$s\'</string>
-    <string name="sync_status_action_hide_album">Hiding album \'%s\'</string>
-    <string name="sync_status_action_unhide_album">Un-hiding album \'%s\'</string>
-    <string name="sync_status_action_update_file">Updating %1$s in album \'%2$s\'</string>
-    <string name="sync_status_action_add_media_to_joint_album">Adding %1$s to joint album \'%2$s\'</string>
-    <string name="sync_status_action_update_joint_album_meta">Updating meta data of joint album \'%s\'</string>
-    <string name="sync_status_action_update_album_meta">Updating meta data of album \'%s\'</string>
-    <string name="sync_status_action_update_album_content_meta">Updating content meta data of album \'%s\'</string>
-    <string name="sync_status_action_update_album_bgm">Updating BGM of album \'%s\'</string>
-    <string name="sync_status_action_delete_album_bgm">Removing BGM of album \'%s\'</string>
-    <string name="sync_status_action_copy">Copying %1$s from album \'%2$s\' to \'%3$s\'</string>
-    <string name="sync_status_action_move">Moving %1$s from album \'%2$s\' to \'%3$s\'</string>
-    <string name="sync_status_action_delete_media_from_backup">Removing %s from camera archive</string>
-    <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive</string>
-    <string name="sync_status_action_backup_file">Backing up photo %s</string>
-    <string name="sync_status_action_create_blog">Creating blog post for album \'%s\'.</string>
+	<string name="sync_status_action_delete_media">Usuwanie %1$s z albumu \'%2$s\'</string>
+	<string name="sync_status_action_delete_album">Usuwanie albumu \'%s\'</string>
+	<string name="sync_status_action_add_album">Tworzenie albumu \'%s\'</string>
+	<string name="sync_status_action_add_media">Dodawanie %1$s do albumu \'%2$s\'</string>
+	<string name="sync_status_action_rename_album">Zmiana nazwy albumu \'%1$s\ na \'%2$s\'</string>
+	<string name="sync_status_action_hide_album">Ukrywanie albumu \'%s\'</string>
+	<string name="sync_status_action_unhide_album">Odkrywanie albumu \'%s\'</string>
+	<string name="sync_status_action_update_file">Aktualizowanie %1$s w albumie \'%2$s\'</string>
+	<string name="sync_status_action_add_media_to_joint_album">Dodawanie %1$s do albumu współdzielonego \'%2$s\'</string>
+	<string name="sync_status_action_update_joint_album_meta">Aktualizowanie metadanych albumu współdzielonego \'%s\'</string>
+	<string name="sync_status_action_update_album_meta">Aktualizowanie metadanych albumu \'%s\'</string>
+	<string name="sync_status_action_update_album_content_meta">Aktualizowanie metadanych zawartości albumu \'%s\'</string>
+	<string name="sync_status_action_update_album_bgm">Aktualizowanie muzyki w tle albumu \'%s\'</string>
+	<string name="sync_status_action_delete_album_bgm">Usuwanie muzyki w tle albumu \'%s\'</string>
+	<string name="sync_status_action_copy">Kopiowanie %1$s z albumu \'%2$s\' do \'%3$s\'</string>
+	<string name="sync_status_action_move">Przenoszenie %1$s z albumu \'%2$s\' do \'%3$s\'</string>
+	<string name="sync_status_action_delete_media_from_backup">Usuwanie %s z archiwum aparatu</string>
+	<string name="sync_status_action_patch_property">Aktualizowanie właściwości WebDAV pliku %s w archiwum aparatu</string>
+	<string name="sync_status_action_backup_file">Tworzenie kopii zapasowej zdjęcia %s</string>
+	<string name="sync_status_action_create_blog">Tworzenie wpisu na blogu dla albumu \'%s\'.</string>
 
-    <string name="sync_status_action_collect_remote_changes">Collecting changes from server</string>
-    <string name="sync_status_action_create_album_from_server">Creating album \'%s\'</string>
-    <string name="sync_status_action_update_album_from_server">Updating album \'%s\'</string>
+	<string name="sync_status_action_collect_remote_changes">Pobieranie zmian z serwera</string>
+	<string name="sync_status_action_create_album_from_server">Tworzenie albumu \'%s\'</string>
+	<string name="sync_status_action_update_album_from_server">Aktualizowanie albumu \'%s\'</string>
 
-    <string name="sync_status_result_finished">Last synchronization finished %s.</string>
-    <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
-    <string name="sync_status_result_general_error">Last synchronization failed %s!</string>
+	<string name="sync_status_result_finished">Ostatnia synchronizacja zakończyła się %s.</string>
+	<string name="sync_status_result_no_wifi">Ostatnia synchronizacja została zatrzymana %s z powodu braku połączenia Wi-Fi.</string>
+	<string name="sync_status_result_general_error">Ostatnia synchronizacja nie powiodła się (%s)!</string>
 
-    <string name="sync_status_stage_started">Starting synchronization…</string>
-    <string name="sync_status_stage_sync_local">Synchronizing local changes…</string>
-    <string name="sync_status_stage_sync_remote">Synchronizing remote changes…</string>
-    <string name="sync_status_stage_backup_pictures">Backing up media files…</string>
+	<string name="sync_status_stage_started">Rozpoczynanie synchronizacji…</string>
+	<string name="sync_status_stage_sync_local">Synchronizowanie zmian lokalnych…</string>
+	<string name="sync_status_stage_sync_remote">Synchronizowanie zmian zdalnych…</string>
+	<string name="sync_status_stage_backup_pictures">Tworzenie kopii zapasowej plików multimedialnych…</string>
+
 
     <!-- Destination DialogFragment -->
-    <string name="copy_files">Copy</string>
-    <string name="move_files">Move</string>
-    <string name="create_new_album">Create new album</string>
-    <string name="to_album">To Album:</string>
-    <string name="to_new_album">To New Album:</string>
-    <string name="checkbox_text_set_remote">Remote album, media files stored in server only.</string>
+    <string name="copy_files">Kopiuj</string>
+	<string name="move_files">Przenieś</string>
+	<string name="create_new_album">Utwórz nowy album</string>
+	<string name="to_album">Do albumu:</string>
+	<string name="to_new_album">Do nowego albumu:</string>
+	<string name="checkbox_text_set_remote">Album zdalny, pliki multimedialne przechowywane wyłącznie na serwerze.</string>
+
 
     <!-- Rename DialogFragment -->
-    <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
-    <string name="invalid_name_found">Name not allowed</string>
-    <string name="name_too_long">Name too long</string>
-    <string name="name_existed">Name already exists</string>
-    <string name="leading_dots_found">Prefix \'.\' not allowed</string>
-    <string name="hint_timestamp_pattern">"Photo\'s creation date can be changed by including pattern yyyyMMdd_hhmmss in name."</string>
+	<string name="invalid_character_found">"Separatory ścieżki '\\' '/' są niedozwolone w nazwach plików"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
+	<string name="invalid_name_found">Niedozwolona nazwa</string>
+	<string name="name_too_long">Nazwa jest za długa</string>
+	<string name="name_existed">Taka nazwa już istnieje</string>
+	<string name="leading_dots_found">Prefiks \'.\' jest niedozwolony</string>
+	<string name="hint_timestamp_pattern">"Datę utworzenia zdjęcia można zmienić, umieszczając w nazwie wzorzec yyyyMMdd_hhmmss."</string>
 
     <!-- Acquiring DialogFragment -->
-    <string name="preparing_files">Preparing photo</string>
-    <string name="preparing_files_progress">Preparing photo %1$d of %2$d</string>
-    <string name="finished_preparing_files">Preparing photos finished</string>
-    <string name="it_takes_time">Depending on the size of files and current network availability, it might take a while before new albums and photos show up in the list.</string>
-    <string name="mind_network_setting">" Please note that the current sync setting prevents Les Pas from using a mobile network."</string>
-    <string name="error_preparing_files">Error preparing files</string>
-    <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use a different one.</string>
-    <string name="no_media_file_found">No image or video files found among shared data.</string>
-    <string name="same_file_found">Same media file already exists.</string>
+	<string name="preparing_files">Przygotowywanie zdjęcia</string>
+	<string name="preparing_files_progress">Przygotowywanie zdjęcia %1$d z %2$d</string>
+	<string name="finished_preparing_files">Zakończono przygotowywanie zdjęć</string>
+	<string name="it_takes_time">W zależności od rozmiaru plików i bieżącej dostępności sieci może minąć chwila, zanim nowe albumy i zdjęcia pojawią się na liście.</string>
+	<string name="mind_network_setting">" Należy pamiętać, że bieżące ustawienia synchronizacji uniemożliwiają aplikacji Les Pas korzystanie z sieci komórkowej."</string>
+	<string name="error_preparing_files">Błąd podczas przygotowywania plików</string>
+	<string name="access_right_violation">Aplikacja udostępniająca nie przestrzega wytycznych dostępu do pamięci systemu Android, dlatego aplikacja Les Pas nie może odebrać tych plików. Należy zaktualizować aplikację udostępniającą lub użyć innej.</string>
+	<string name="no_media_file_found">Nie znaleziono plików obrazów ani wideo wśród udostępnionych danych.</string>
+	<string name="same_file_found">Taki sam plik multimedialny już istnieje.</string>
+
 
     <!-- Meta Info DialogFragment -->
-    <string name="file_name">Name:</string>
-    <string name="shot_at">Created:</string>
-    <string name="size">Size:</string>
-    <string name="camera_manufacturer">Mfg:</string>
-    <string name="camera_model">Model:</string>
-    <string name="parameter">Param.:</string>
-    <string name="artist">Artist:</string>
-    <string name="button_text_map">Map App</string>
-    <string name="msg_downloading_exif">Fetching meta data from server…</string>
+	<string name="file_name">Nazwa:</string>
+	<string name="shot_at">Utworzono:</string>
+	<string name="size">Rozmiar:</string>
+	<string name="camera_manufacturer">Prod.:</string>
+	<string name="camera_model">Model:</string>
+	<string name="parameter">Param.:</string>
+	<string name="artist">Autor:</string>
+	<string name="button_text_map">Aplikacja map</string>
+	<string name="msg_downloading_exif">Pobieranie metadanych z serwera…</string>
+
 
     <!-- Album Publish DialogFragment -->
-    <string name="internal_publish">Internal</string>
-    <string name="external_publish">Public</string>
-    <string name="publish_button_text">Publish</string>
-    <string name="unpublish_button_text">UnPublish</string>
-    <string name="joint_album">Joint</string>
-    <string name="joint_album_tooltips">Recipients can edit.</string>
-    <string name="solo_album">Solo</string>
-    <string name="solo_album_tooltips">Recipients view only.</string>
-    <string name="msg_note_down_your_password">Please note down your password, there is NO way to retrieve it once set.</string>
-    <string name="hint_leave_it_blank">Leave it blank for no password</string>
-    <string name="hint_user_name">Recipients</string>
+	<string name="internal_publish">Wewnętrzny</string>
+	<string name="external_publish">Publiczny</string>
+	<string name="publish_button_text">Opublikuj</string>
+	<string name="unpublish_button_text">Cofnij publikację</string>
+	<string name="joint_album">Współdzielony</string>
+	<string name="joint_album_tooltips">Odbiorcy mogą edytować.</string>
+	<string name="solo_album">Indywidualny</string>
+	<string name="solo_album_tooltips">Odbiorcy mogą tylko przeglądać.</string>
+	<string name="msg_note_down_your_password">Należy zanotować hasło – po jego ustawieniu NIE MA możliwości jego odzyskania.</string>
+	<string name="hint_leave_it_blank">Pozostaw puste, aby nie ustawiać hasła</string>
+	<string name="hint_user_name">Odbiorcy</string>
+
     <!--
         <string name="permission_to_edit">Allow recipient updating album</string>
     -->
 
     <!-- Toolbar actions -->
-    <string name="item_settings">Settings</string>
-    <string name="item_search">Search</string>
-    <string name="item_location_search">Location</string>
-    <string name="item_unhide">Unhide</string>
-    <string name="item_rename">Rename Album</string>
-    <string name="item_publish">Publish Album</string>
-    <string name="item_blog">Manage Blog</string>
-    <string name="item_geotag">Geotag with GPX</string>
-    <string name="item_export_gpx">Export GPX</string>
-    <string name="item_bgm">Manage BGM</string>
-    <string name="item_sortby">Sort by</string>
-    <string name="item_dateasc">Date Ascending</string>
-    <string name="item_datedesc">Date Descending</string>
-    <string name="item_nameasc">Name Ascending</string>
-    <string name="item_namedesc">Name Descending</string>
-    <string name="item_wide_list">Show name</string>
-    <string name="action_share">Share</string>
-    <string name="action_rescan">Re-scan EXIF</string>
-    <string name="action_remove">Remove</string>
-    <string name="action_undelete">Restore from trash</string>
-    <string name="action_hide">Hide</string>
-    <string name="action_set_remote">Set as Remote</string>
-    <string name="action_set_local">Set as Local</string>
-    <string name="action_reuse">To album…</string>
-    <string name="action_export">Export</string>
-    <string name="action_rename_media">Rename</string>
-    <string name="action_select_all">Select all</string>
-    <string name="action_download_to_device">Download to Device</string>
-    <string name="action_upload_to_archive">Upload to Archive</string>
-    <plurals name="selected_count">
-        <item quantity="other">%1$d selected</item>
-    </plurals>
+	<string name="item_settings">Ustawienia</string>
+	<string name="item_search">Szukaj</string>
+	<string name="item_location_search">Lokalizacja</string>
+	<string name="item_unhide">Odkryj</string>
+	<string name="item_rename">Zmień nazwę albumu</string>
+	<string name="item_publish">Opublikuj album</string>
+	<string name="item_blog">Zarządzaj blogiem</string>
+	<string name="item_geotag">Geotaguj za pomocą GPX</string>
+	<string name="item_export_gpx">Eksportuj GPX</string>
+	<string name="item_bgm">Zarządzaj muzyką w tle</string>
+	<string name="item_sortby">Sortuj według</string>
+	<string name="item_dateasc">Data rosnąco</string>
+	<string name="item_datedesc">Data malejąco</string>
+	<string name="item_nameasc">Nazwa rosnąco</string>
+	<string name="item_namedesc">Nazwa malejąco</string>
+	<string name="item_wide_list">Pokaż nazwę</string>
+	<string name="action_share">Udostępnij</string>
+	<string name="action_rescan">Skanuj ponownie EXIF</string>
+	<string name="action_remove">Usuń</string>
+	<string name="action_undelete">Przywróć z kosza</string>
+	<string name="action_hide">Ukryj</string>
+	<string name="action_set_remote">Ustaw jako zdalny</string>
+	<string name="action_set_local">Ustaw jako lokalny</string>
+	<string name="action_reuse">Do albumu…</string>
+	<string name="action_export">Eksportuj</string>
+	<string name="action_rename_media">Zmień nazwę</string>
+	<string name="action_select_all">Zaznacz wszystko</string>
+	<string name="action_download_to_device">Pobierz na urządzenie</string>
+	<string name="action_upload_to_archive">Prześlij do archiwum</string>
+	<plurals name="selected_count">
+		<item quantity="one">Zaznaczono: %1$d</item>
+		<item quantity="few">Zaznaczono: %1$d</item>
+		<item quantity="many">Zaznaczono: %1$d</item>
+		<item quantity="other">Zaznaczono: %1$d</item>
+	</plurals>
 
     <!-- Gallery Fragment -->
-    <string name="tooltips_date_picker">Pick a date</string>
-    <string name="tooltips_overview">Overview</string>
-    <string name="tooltips_enable_backup">Enable backup</string>
-    <string name="tooltips_backup_setting">Backup setting</string>
-    <string name="tooltips_local_copy">Local copy</string>
-    <string name="tooltips_archive_copy">Archive copy</string>
-    <string name="msg_no_media_found">No image or video found in device.</string>
-    <string name="msg_archive_empty">Archive empty until you start backup your gallery.</string>
-    <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
-    <string name="today">Today</string>
-    <string name="yesterday">Yesterday</string>
-    <string name="option_menu_show_all">Show all</string>
-    <string name="option_menu_empty_trash">Empty trash</string>
-    <string name="option_menu_show_archive">Archive</string>
-    <string name="option_menu_refresh_archive">Refresh archive</string>
-    <string name="gallery_name">Gallery</string>
-    <string name="camera_roll_name">Camera</string>
-    <string name="trash_name">Trash</string>
-    <string name="gallery_backup_option_dialog_title">Settings of \'%1$s\'</string>
-    <string name="label_remove_after_backup">Days to keep after backed up</string>
-    <string name="label_exclude">Sub-folders excluded from backup</string>
-    <string name="msg_backup_status">The last backup file dated at %1$s</string>
-    <string name="msg_backup_existing">New photos in \'%1$s\' will be backup from now on. There are %2$,d photos in device right now, with total size of %3$s. Do you want to back them up too?</string>
-    <string name="msg_archive_location">You can find archive on server in folder %1$s</string>
-    <string name="manage_media_access_permission_rationale">To allow Les Pas remove backed up files, you must grant it the Manage Media permission.</string>
-    <string name="msg_remove_old_files_warning">WARNING: If you chose not to backup existing files when you first enabled backup for this folder, those existing files WILL ALSO BE REMOVED by turning on this setting!</string>
-    <string name="button_text_i_understand">I understand</string>
-    <string name="confirm_empty_trash">Are you sure you want to empty the trash?</string>
-    <string name="checkbox_text_remove_local_copy">Local copy in this device</string>
-    <string name="checkbox_text_remove_archive_copy">Archived copy on server</string>
-    <string name="msg_media_manager_rationale_for_deletion">To avoid system confirmation of deletion, you need to grant Les Pas the Manage Media permission.</string>
-    <string name="button_text_grant">Authorize</string>
+	<string name="tooltips_date_picker">Wybierz datę</string>
+	<string name="tooltips_overview">Przegląd</string>
+	<string name="tooltips_enable_backup">Włącz kopię zapasową</string>
+	<string name="tooltips_backup_setting">Ustawienia kopii zapasowej</string>
+	<string name="tooltips_local_copy">Kopia lokalna</string>
+	<string name="tooltips_archive_copy">Kopia w archiwum</string>
+	<string name="msg_no_media_found">Nie znaleziono obrazów ani filmów na urządzeniu.</string>
+	<string name="msg_archive_empty">Archiwum pozostanie puste do czasu rozpoczęcia tworzenia kopii zapasowej galerii.</string>
+	<string name="msg_joint_album_not_updated_locally">Zmiany wprowadzone w albumie współdzielonym zostaną wyświetlone po ich zatwierdzeniu przez właściciela albumu.</string>
+	<string name="today">Dzisiaj</string>
+	<string name="yesterday">Wczoraj</string>
+	<string name="option_menu_show_all">Pokaż wszystko</string>
+	<string name="option_menu_empty_trash">Opróżnij kosz</string>
+	<string name="option_menu_show_archive">Archiwum</string>
+	<string name="option_menu_refresh_archive">Odśwież archiwum</string>
+	<string name="gallery_name">Galeria</string>
+	<string name="camera_roll_name">Aparat</string>
+	<string name="trash_name">Kosz</string>
+	<string name="gallery_backup_option_dialog_title">Ustawienia: \'%1$s\'</string>
+	<string name="label_remove_after_backup">Liczba dni przechowywania po utworzeniu kopii</string>
+	<string name="label_exclude">Podfoldery wykluczone z kopii zapasowej</string>
+	<string name="msg_backup_status">Ostatni plik kopii zapasowej pochodzi z dnia %1$s</string>
+	<string name="msg_backup_existing">Nowe zdjęcia w folderze \'%1$s\' będą od teraz archiwizowane. Na urządzeniu znajduje się obecnie %2$,d zdjęć o łącznym rozmiarze %3$s. Czy utworzyć również ich kopię zapasową?</string>
+	<string name="msg_archive_location">Archiwum na serwerze znajduje się w folderze %1$s</string>
+	<string name="manage_media_access_permission_rationale">Aby umożliwić aplikacji Les Pas usuwanie plików objętych kopią zapasową, wymagane jest przyznanie jej uprawnienia do zarządzania multimediami.</string>
+	<string name="msg_remove_old_files_warning">OSTRZEŻENIE: Jeśli podczas pierwszego włączania kopii zapasowej dla tego folderu wybrano pominięcie istniejących plików, włączenie tego ustawienia SPOWODUJE RÓWNIEŻ ICH USUNIĘCIE!</string>
+	<string name="button_text_i_understand">Rozumiem</string>
+	<string name="confirm_empty_trash">Czy na pewno opróżnić kosz?</string>
+	<string name="checkbox_text_remove_local_copy">Kopia lokalna na tym urządzeniu</string>
+	<string name="checkbox_text_remove_archive_copy">Kopia zarchiwizowana na serwerze</string>
+	<string name="msg_media_manager_rationale_for_deletion">Aby uniknąć systemowego potwierdzania usunięcia, wymagane jest przyznanie aplikacji Les Pas uprawnienia do zarządzania multimediami.</string>
+	<string name="button_text_grant">Autoryzuj</string>
+
 
     <!-- Search Fragment -->
-    <string name="tooltips_search_album">Search in albums</string>
-    <string name="tooltips_search_gallery">Search in Gallery</string>
-    <string name="need_albums">Please create an album first.</string>
+	<string name="tooltips_search_album">Szukaj w albumach</string>
+	<string name="tooltips_search_gallery">Szukaj w Galerii</string>
+	<string name="need_albums">Wymagane jest najpierw utworzenie albumu.</string>
+
 
     <!-- Search Result Fragment -->
-    <string name="title_in_album">%1$s in albums</string>
-    <string name="title_in_gallery">%1$s in Gallery</string>
+	<string name="title_in_album">%1$s w albumach</string>
+	<string name="title_in_gallery">%1$s w Galerii</string>
+
 
     <!-- Publication List Fragment -->
-    <string name="publication_list_fragment_title">"Friend's publications"</string>
-    <string name="confirm_download_publication">You are now on mobile network, are you sure you want to view this publication now?</string>
-    <string name="yes_i_do">Sure</string>
+	<string name="publication_list_fragment_title">"Publikacje znajomych"</string>
+	<string name="confirm_download_publication">Urządzenie korzysta obecnie z sieci komórkowej. Czy na pewno wyświetlić tę publikację teraz?</string>
+	<string name="yes_i_do">Tak</string>
+
 
     <!-- Publication Detail Fragment -->
-    <string name="item_show_meta">Show meta</string>
-    <string name="item_refresh_publication">Refresh publications</string>
+	<string name="item_show_meta">Pokaż metadane</string>
+	<string name="item_refresh_publication">Odśwież publikacje</string>
+
 
     <!-- Remote Media Fragment -->
-    <string name="button_text_add_to_lespas">Add to album</string>
+	<string name="button_text_add_to_lespas">Dodaj do albumu</string>
 
     <!-- Location Search Fragment -->
-    <string name="option_menu_in_map">Show on Map</string>
+	<string name="option_menu_in_map">Pokaż na mapie</string>
+
 
     <!-- Photo in Map Fragment -->
-    <string name="option_menu_map_slideshow">Slideshow</string>
+    <string name="option_menu_map_slideshow">Pokaz slajdów</string>
 
     <!-- Blog Dialog Fragment -->
-    <string name="button_text_post_blog">Post</string>
-    <string name="button_text_remove_blog">Remove blog</string>
-    <string name="button_text_share_blog">Share link</string>
-    <string name="button_text_done">Done</string>
-    <string name="title_theme">Blog Theme:</string>
-    <string name="theme_option_cascade">Cascade</string>
-    <string name="theme_option_cascade_tooltips">Preferred for casual captions.</string>
-    <string name="theme_option_magazine">Magazine</string>
-    <string name="theme_option_magazine_tooltips">Preferred for story telling.</string>
-    <string name="theme_option_timeline">Timeline</string>
-    <string name="theme_option_timeline_tooltips">Attention to the passage of time.</string>
-    <string name="checkbox_text_photo_list">Photos included in this blog post</string>
-    <string name="timeline_theme_day_title">Day %d</string>
+	<string name="button_text_post_blog">Opublikuj</string>
+	<string name="button_text_remove_blog">Usuń blog</string>
+	<string name="button_text_share_blog">Udostępnij link</string>
+	<string name="button_text_done">Gotowe</string>
+	<string name="title_theme">Motyw bloga:</string>
+	<string name="theme_option_cascade">Kaskada</string>
+	<string name="theme_option_cascade_tooltips">Zalecany do krótkich, swobodnych opisów.</string>
+	<string name="theme_option_magazine">Magazyn</string>
+	<string name="theme_option_magazine_tooltips">Zalecany do dłuższych opowieści.</string>
+	<string name="theme_option_timeline">Oś czasu</string>
+	<string name="theme_option_timeline_tooltips">Podkreśla upływ czasu.</string>
+	<string name="checkbox_text_photo_list">Zdjęcia zawarte w tym wpisie na blogu</string>
+	<string name="timeline_theme_day_title">Dzień %d</string>
+
 <!--
     <string name="title_content">Include in post:</string>
     <string name="content_option_social_link">Social Link</string>
@@ -441,59 +459,68 @@
     <string name="content_option_copyright">Disclaimer</string>
     <string name="content_option_copyright_tooltips">Include copyright disclaimer at blog end.</string>
 -->
-    <string name="notice">Please allow a moment to create blog pages on server.</string>
+	<string name="notice">Tworzenie stron bloga na serwerze może zająć chwilę.</string>
+
 
     <!-- Share Out Dialog Fragment -->
-    <string name="title_sensitive_data">Sensitive Meta Data</string>
-    <string name="button_text_keep_meta_data">Keep</string>
-    <string name="title_picture_resolution">Picture Resolution</string>
-    <string name="button_text_use_original_size">Use Original</string>
-    <string name="button_text_use_thumbnail">Shrink</string>
-    <string name="checkbox_text_remove_afterwards">Remove after shared</string>
+	<string name="title_sensitive_data">Wrażliwe metadane</string>
+	<string name="button_text_keep_meta_data">Zachowaj</string>
+	<string name="title_picture_resolution">Rozdzielczość zdjęcia</string>
+	<string name="button_text_use_original_size">Użyj oryginału</string>
+	<string name="button_text_use_thumbnail">Zmniejsz</string>
+	<string name="checkbox_text_remove_afterwards">Usuń po udostępnieniu</string>
+
 
     <!-- GPX -->
-    <string name="checkbox_text_overwrite">Overwrite existing location data</string>
-    <string name="button_text_tag">Geotag</string>
-    <string name="msg_invalid_gpx_file">%1$s is invalid, or no timestamp found!</string>
-    <string name="suffix_gpx_offset">mins difference allowed</string>
+	<string name="checkbox_text_overwrite">Nadpisz istniejące dane lokalizacji</string>
+	<string name="button_text_tag">Geotaguj</string>
+	<string name="msg_invalid_gpx_file">Plik %1$s jest nieprawidłowy lub nie znaleziono znacznika czasu!</string>
+	<string name="suffix_gpx_offset">min dozwolonej różnicy</string>
 
-    <string name="gpx_suffix" translatable="false">.gpx</string>
-    <string name="hint_gpx_export_file_location">File will be saved in \'Download\' folder.</string>
+	<string name="gpx_suffix" translatable="false">.gpx</string>
+	<string name="hint_gpx_export_file_location">Plik zostanie zapisany w folderze \'Download\'.</string>
+
 
     <!-- Media3 Player -->
-    <string name="msg_player_skip">5 seconds</string>
-    <string name="button_text_motion_play">Motion Photo Play</string>
+    <string name="msg_player_skip">5 sekund</string>
+	<string name="button_text_motion_play">Odtwórz zdjęcie w ruchu</string>
+
 
     <!-- Image Recognition -->
     <!-- Object label -->
-    <string name="object_unknown">UNKNOWN</string>
-    <string name="object_animal">Animal</string>
-    <string name="object_plant">Plant</string>
-    <string name="object_food">Food</string>
-    <string name="object_vehicle">Vehicle</string>
-    <string name="object_location">Location</string>
-    <string name="object_face">Face</string>
+	<string name="object_unknown">NIEZNANE</string>
+	<string name="object_animal">Zwierzęta</string>
+	<string name="object_plant">Rośliny</string>
+	<string name="object_food">Jedzenie</string>
+	<string name="object_vehicle">Pojazdy</string>
+	<string name="object_location">Lokalizacja</string>
+	<string name="object_face">Twarze</string>
+
 
     <!-- Story Fragment -->
-    <string name="the_end">The End</string>
+	<string name="the_end">Koniec</string>
+
 
     <!-- Muzei Artwork Provider -->
-    <string name="muzei_provider_description">Les Pas Moment</string>
-    <string name="prefer">Prefer:</string>
-    <string name="prefer_day_in_history">Then and now</string>
-    <string name="prefer_random">Random (fallback of all the above)</string>
-    <string name="exclude_albums">Exclude from:</string>
-    <string name="prefer_latest">Recent</string>
-    <string name="skip_late_night_update">Skip late night update</string>
-    <plurals name="years_ago_today">
-        <item quantity="one">, %1$d year ago today</item>
-        <item quantity="other">, %1$d years ago today</item>
-    </plurals>
+	<string name="muzei_provider_description">Chwile z Les Pas</string>
+	<string name="prefer">Preferowane:</string>
+	<string name="prefer_day_in_history">Wtedy i dziś</string>
+	<string name="prefer_random">Losowe (zastępczo dla powyższych)</string>
+	<string name="exclude_albums">Wyklucz z:</string>
+	<string name="prefer_latest">Ostatnie</string>
+	<string name="skip_late_night_update">Pomiń aktualizację późno w nocy</string>
+	<plurals name="years_ago_today">
+		<item quantity="one">, dokładnie %1$d rok temu</item>
+		<item quantity="few">, dokładnie %1$d lata temu</item>
+		<item quantity="many">, dokładnie %1$d lat temu</item>
+		<item quantity="other">, dokładnie %1$d roku temu</item>
+</plurals>
 
     <!-- TV Main Fragment -->
-    <string name="title_tv_my_albums">My Albums</string>
-    <string name="title_tv_shared_with_me">Shares Received</string>
+	<string name="title_tv_my_albums">Moje albumy</string>
+	<string name="title_tv_shared_with_me">Udostępnione dla mnie</string>
+
 
     <!-- TV Slider Fragment -->
-    <string name="tv_slider_exit_toast">Press \'Back\' button again to exit.</string>
+    <string name="tv_slider_exit_toast">Ponowne naciśnięcie przycisku \'Wstecz\' spowoduje wyjście.</string>
 </resources>

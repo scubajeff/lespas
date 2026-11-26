@@ -1,0 +1,43 @@
+Les Pas to darmowa, nowoczesna, lekka i szybka aplikacja galerii. Porządkuj swoje zdjęcia, pliki GIF oraz filmy w albumy, aby łatwo je przeglądać i udostępniać. Dzięki wbudowanej dwukierunkowej synchronizacji z Twoim serwerem Nextcloud Twoje pliki pozostają prywatne, bezpieczne i chronione.
+
+Zarządzanie, synchronizacja i archiwizacja
+* Porządkowanie plików multimedialnych w albumach
+* Obsługa standardowych formatów multimediów, a także formatu RAW, zdjęć HDR, panoram sferycznych (Photo Sphere) oraz zdjęć ruchomych (Motion Photo)
+* Działanie na Android TV, co zapewnia wygodne oglądanie na dużym ekranie
+* Zarządzanie plikami w galerii telefonu i automatyczne tworzenie kopii zapasowych na serwerze – każdy folder multimediów w telefonie ma własne ustawienia kopii zapasowej
+* Integracja z różnymi aplikacjami do edycji zdjęć i wideo, takimi jak Snapseed, Photoshop Express, ImageToolbox oraz Open Video Editor
+* Obsługa dodawania podpisów do zdjęć
+* Synchronizacja z serwerem Nextcloud oraz między wieloma urządzeniami – jednoczesna edycja albumów na serwerze Nextcloud i na wszystkich urządzeniach mobilnych
+* Obsługa albumów zdalnych (Remote Album), których wszystkie pliki multimedialne są przechowywane wyłącznie na serwerze Nextcloud, co pozwala zwolnić miejsce w pamięci telefonu
+* Wyszukiwanie zdjęć według obiektów za pomocą sztucznej inteligencji (AI)
+* Wyszukiwanie zdjęć według lokalizacji
+* Obsługa importowania plików GPX, dzięki czemu łatwo dodasz dane lokalizacji GPS do zdjęć wykonanych aparatem cyfrowym
+* Obsługa pamięci zewnętrznej (External Storage) w Nextcloud
+* Piękny motyw graficzny inspirowany twórczością Wesa Andersona
+
+Udostępnianie
+* Udostępnianie albumów oraz pokazów slajdów innym użytkownikom, grupom i kręgom (Circles) Nextcloud
+* Unikalna funkcja „Wspólnego albumu” (Joint Album), który Ty i inni użytkownicy Nextcloud możecie wspólnie edytować
+* Eksportowanie pliku GPX z albumu, aby dzielić się swoimi przygodami z innymi
+
+Nacisk na prywatność
+* Wszystkie pliki multimedialne i miniatury są zapisywane w prywatnej pamięci aplikacji, co chroni je przed skanowaniem przez złośliwe oprogramowanie
+* Opcja usuwania danych EXIF ze zdjęcia przed udostępnieniem go w mediach społecznościowych
+* Opcja ukrycia albumu zarówno w telefonie, jak i na serwerze
+* Uwierzytelnianie na serwerze Nextcloud za pomocą własnych danych logowania Nextcloud
+* Otwarty kod źródłowy (Open Source)
+
+Każda aplikacja, która potrafi to wszystko, jest zaledwie menedżerem plików multimedialnych z ładnym interfejsem. Les Pas nie zatrzymuje się w tym miejscu – dąży do tego, by dać Ci nowe sposoby na wykorzystanie Twoich zdjęć. Przeszłość nie powinna kurzyć się na dysku twardym – spraw, by wszystkie te wspomnienia zabłysły.
+* Integracja z aplikacją Muzei Live Wallpaper – wyświetlanie zdjęć z cyklu „Tego dnia w historii” bezpośrednio na ekranie głównym telefonu
+* Pokaz slajdów z albumu z muzyką w tle
+* Unikalna funkcja „Pokaz slajdów na mapie”, która uruchamia prezentację zdjęć z albumu bezpośrednio na mapie
+* Obsługa fotoblogowania w trzech gotowych szablonach – dzięki wybranym zdjęciom i dodanym podpisom możesz dzielić się swoimi historiami ze światem
+
+Ten projekt powstał przy użyciu następującego oprogramowania open source:
+- OkHttp https://square.github.io/okhttp
+- PhotoView https://github.com/chrisbanes/PhotoView
+- osmdroid https://github.com/osmdroid/osmdroid
+- Android Open Source Project https://source.android.com
+- TensorFlow https://www.tensorflow.org
+- OpenStreetMap https://www.openstreetmap.org
+- Panorama Library https://github.com/hannesa2/panoramagl
