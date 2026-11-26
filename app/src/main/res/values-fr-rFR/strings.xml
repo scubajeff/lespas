@@ -28,7 +28,7 @@
     <!-- NCLogin fragment -->
     <string name="welcome_message_title">Bienvenue sur Les Pas !</string>
     <string name="welcome_message">Pour commencer, veuillez configurer l\'accès à votre serveur Nextcloud.</string>
-    <string name="http_toggle_helper_text">\u2B11Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
+    <string name="http_toggle_helper_text">⬑Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
     <string name="verify_ssl_certificate_title">Certificat SSL incorrect</string>
     <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
     <string name="untrusted_ssl_certificate_message">De l\'objet du certificat :\n%1$s\n\nDélivreur :\n%2$s\n\nSHA-256 Empreinte digitale :\n%3$s\n\nPas avant : %4$s\n\nPas après : %5$s\n\n\nVous voulez faire confiance à ce serveur ?</string>
@@ -49,9 +49,9 @@
     <!-- Album fragment -->
     <string name="fab_add_photos">Ajouter des photos</string>
     <string name="unlock_please">Déverrouiller les albums cachés</string>
-    <string name="msg_set_as_remote">"Définir l'album comme "Distant" supprimera tous ses fichiers multimédias de cet appareil. Continuer ?"</string>
-    <string name="msg_set_as_local">"Définir l'album comme "Local" téléchargera tous ses fichiers multimédias depuis le serveur, ce qui prendra un certain temps. Continuer ?"</string>
-    <string name="msg_low_storage_space">"Votre espace de stockage libre est inférieur à 10%, cela empêchera Les Pas de se synchroniser avec le serveur."</string>
+    <string name="msg_set_as_remote">Définir l\'album comme Distant supprimera tous ses fichiers multimédias de cet appareil. Continuer ?</string>
+    <string name="msg_set_as_local">Définir l\'album comme Local téléchargera tous ses fichiers multimédias depuis le serveur, ce qui prendra un certain temps. Continuer ?</string>
+    <string name="msg_low_storage_space">Votre espace de stockage libre est inférieur à 10%, cela empêchera Les Pas de se synchroniser avec le serveur.</string>
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="option_menu_name_filter">Filtrer par nom</string>
     <string name="hidden_albums">Albums cachés :</string>
@@ -155,13 +155,13 @@
     <string name="to_new_album">Vers nouvel album :</string>
     <string name="checkbox_text_set_remote">Album distant, fichiers multimédias stockés uniquement sur le serveur.</string>
     <!-- Rename DialogFragment -->
-    <string name="invalid_character_found">"Séparateur de chemin "\\" "/" non autorisé dans les noms de fichiers"</string>
+    <string name="invalid_character_found">Séparateur de chemin \\\" / non autorisé dans les noms de fichiers</string>
     <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Nom non autorisé</string>
     <string name="name_too_long">Nom trop long</string>
     <string name="name_existed">Le nom existe déjà</string>
     <string name="leading_dots_found">Préfixe \".\" non autorisé</string>
-    <string name="hint_timestamp_pattern">"La date de création de la photo peut être modifiée en incluant le motif yyyyMMdd_hhmmss dans le nom."</string>
+    <string name="hint_timestamp_pattern">La date de création de la photo peut être modifiée en incluant le motif yyyyMMdd_hhmmss dans le nom.</string>
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Préparation des photos</string>
     <string name="preparing_files_progress">Préparation de la photo %1$d sur %2$d</string>
@@ -245,7 +245,7 @@
     <string name="title_in_album">%1$s dans les albums</string>
     <string name="title_in_gallery">%1$s dans la galerie</string>
     <!-- Publication List Fragment -->
-    <string name="publication_list_fragment_title">"Publications des amis"</string>
+    <string name="publication_list_fragment_title">Publications des amis</string>
     <string name="confirm_download_publication">Vous êtes connecté au réseau mobile, êtes-vous sûr de vouloir voir cette publication maintenant ?</string>
     <string name="yes_i_do">Bien sûr</string>
     <!-- Publication Detail Fragment -->
@@ -336,8 +336,8 @@
     <string name="checkbox_text_photo_list">Photos dans cet article de blog</string>
     <string name="timeline_theme_day_title">Jour %d</string>
     <plurals name="years_ago_today" tools:ignore="MissingQuantity">
-        <item quantity="one">", Il y a %1$d an aujourd'hui"</item>
-        <item quantity="other">", Il y a %1$d ans aujourd'hui"</item>
+        <item quantity="one">, Il y a %1$d an aujourd\'hui</item>
+        <item quantity="other">, Il y a %1$d ans aujourd\'hui</item>
     </plurals>
     <string name="msg_player_skip">5 secondes</string>
     <string name="internal_publish">Interne</string>
@@ -366,7 +366,7 @@
     <string name="title_sensitive_data">Métadonnées sensibles</string>
     <string name="button_text_keep_meta_data">Conserver</string>
     <string name="title_picture_resolution">Résolution de l\'image</string>
-    <string name="button_text_use_original_size">"Utiliser l'original "</string>
+    <string name="button_text_use_original_size">"Utiliser l\'original "</string>
     <string name="button_text_use_thumbnail">Réduire</string>
     <string name="checkbox_text_remove_afterwards">Supprimer après le partage</string>
     <string name="msg_saved_location">Les photos seront enregistrées dans le dossier \"Téléchargement\".</string>
