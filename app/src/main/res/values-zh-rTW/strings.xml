@@ -13,9 +13,7 @@
   ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
-  -->
-
-<resources>
+  --><resources>
     <string name="app_name">Les Pas</string>
     <string name="welcome_message_title">Les Pas歡迎您!</string>
     <string name="welcome_message">請登錄您的Nextcloud伺服器進行授權。</string>
@@ -172,7 +170,7 @@
     <string name="prefer_latest">近期</string>
     <string name="prefer_day_in_history">那時今日</string>
     <string name="prefer_random">隨意（以上各項無結果時亦使用此項）</string>
-    <string name="http_toggle_helper_text">\u2B11點選字首切換非安全HTTP連線</string>
+    <string name="http_toggle_helper_text">⬑點選字首切換非安全HTTP連線</string>
     <string name="gallery_as_album_title">在相冊列表中顯示本機圖庫</string>
     <string name="relogin_title">重新登入</string>
     <string name="relogin_summary">假如你在伺服器端意外撤銷了Les Pas的應用授權。</string>
