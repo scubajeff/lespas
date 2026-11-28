@@ -13,9 +13,7 @@
   ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
-  -->
-
-<resources>
+  --><resources>
     <string name="button_text_taken_date">Дата</string>
     <string name="app_name">Les Pas</string>
     <string name="msg_login_first">Сначала войдите на свой сервер.</string>

@@ -13,9 +13,7 @@
   ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
-  -->
-
-<resources>
+  --><resources>
     <string name="app_name">Les Pas</string>
     <string name="verify_ssl_certificate_message">Server %1$sの証明書の検証に失敗したが、サーバを信頼して続行するか？</string>
     <string name="option_menu_empty_trash">ゴミ箱を空にする</string>
@@ -172,7 +170,7 @@
     <string name="prefer">好み</string>
     <string name="prefer_latest">最近の</string>
     <string name="prefer_random">ランダム (フォールバック)</string>
-    <string name="http_toggle_helper_text">\u2B11プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
+    <string name="http_toggle_helper_text">⬑プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
     <string name="gallery_as_album_title">アルバムとして表示されるギャラリー</string>
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
@@ -304,7 +302,6 @@
     <plurals name="years_ago_today">
         <item quantity="other">, %1$d年前の今日</item>
     </plurals>
-
     <string name="msg_player_skip">5秒</string>
     <string name="internal_publish">内部</string>
     <string name="external_publish">公共</string>

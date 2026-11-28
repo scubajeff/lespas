@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
   ~
@@ -12,49 +13,40 @@
   ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
-  -->
-
-<resources>
+  --><resources>
     <string name="app_name">Les Pas</string>
     <string name="option_menu_empty_trash">Esvaziar a lixeira</string>
     <string name="option_menu_show_archive">Arquivo</string>
     <string name="option_menu_refresh_archive">Atualizar arquivo</string>
     <string name="gallery_name">Galeria</string>
-
     <!-- MainActivity -->
     <string name="need_to_restart">Transferência do armazenamento concluída. Reinicie o Les Pas agora.</string>
     <string name="sd_card_not_ready">Cartão SD não está ativo ou está protegido contra escrita.</string>
-
     <!-- Authenticator -->
     <string name="error_only_one_account">Apenas uma conta é permitida</string>
-
     <!-- NCLogin activity -->
     <string name="welcome_message_title">Bem-vindo ao Les Pas!</string>
     <string name="welcome_message">Para começar, favor conceder acesso ao seu servidor Nextcloud.</string>
-    <string name="http_toggle_helper_text">\u2B11Toque no prefixo para usar HTTP inseguro</string>
+    <string name="http_toggle_helper_text">⬑Toque no prefixo para usar HTTP inseguro</string>
     <string name="verify_ssl_certificate_title">Certificado SSL Inválido</string>
     <string name="verify_ssl_certificate_message">O certificado do servidor %1$s NÃO PODE ser verificado, você quer confiar neste servidor e continuar assim mesmo?</string>
     <string name="untrusted_ssl_certificate_message">Sujeito:\n%1$s\n\nEmissor:\n%2$s\n\nSHA-256 Impressão digital:\n%3$s\n\nEmitida em: %4$s\n\nExpirado em: %5$s\n\n\nVocê quer confiar neste servidor?</string>
     <string name="accept_certificate">Confiar nele!</string>
-
     <string name="msg_install_qrcode_scanner">Instale primeiro um aplicativo de leitura de código QR compatível. Como o %1$sSecScanQR do F-Droid</string>
     <string name="host_address_validation_error">O endereço não é válido.</string>
     <string name="host_not_valid">Endereço inválido (%1$d).</string>
     <string name="unknown_host">Servidor Nextcloud não encontrado.</string>
     <string name="network_error">Erro de rede, tente novamente.</string>
     <string name="certificate_error">Erro de certificado remoto.</string>
-
     <!-- Album fragment -->
     <string name="fab_add_photos">Adicionar fotos</string>
     <string name="unlock_please">Destravar álbuns escondidos</string>
-    <string name="msg_set_as_remote">"Ao configurar um álbum como 'Remoto' a cópia dele será removida deste dispositivo. Continuar?"</string>
-    <string name="msg_set_as_local">"Ao configurar um álbum como 'Local' uma cópia dele será baixada do servidor, pode demorar. Continuar?"</string>
-
+    <string name="msg_set_as_remote">Ao configurar um álbum como \'Remoto\' a cópia dele será removida deste dispositivo. Continuar?</string>
+    <string name="msg_set_as_local">Ao configurar um álbum como \'Local\' uma cópia dele será baixada do servidor, pode demorar. Continuar?</string>
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="option_menu_name_filter">Filtrar por nome</string>
     <string name="hidden_albums">Álbuns escondidos:</string>
     <string name="not_hiding">Os seguintes nomes já existiam na lista de álbuns escondidos: %1$s</string>
-
     <!-- AlbumDetail fragment -->
     <string name="msg_preserve_meta">Preservar o existente</string>
     <string name="button_text_rescan">Rescan</string>
@@ -73,7 +65,6 @@
     <string name="yes">Sim</string>
     <string name="no">Não</string>
     <string name="preparing_shares">Preparando compartilhamentos…</string>
-
     <!-- PhotoSlide fragment -->
     <string name="option_menu_slideshow">Mostra de slides</string>
     <string name="button_text_set_cover">Configurar como capa</string>
@@ -82,14 +73,11 @@
     <string name="button_text_info">Informações</string>
     <string name="button_text_edit_replace">Retoque - Substituir</string>
     <string name="button_text_edit_add">Retoque - Adicionar</string>
-
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">Nova capa aplicada.</string>
     <string name="toast_cover_set_canceled">Capa antiga mantida.</string>
-
     <!-- Setting fragment -->
     <string name="settings_title">Configurações</string>
-
     <string name="view_header">Visualizar</string>
     <string name="auto_theme_title">Tema da App</string>
     <string name="theme_light_entries">Tema Claro</string>
@@ -98,21 +86,17 @@
     <string name="auto_rotate_title">Rotacionar tela para combinar com a proporção da foto</string>
     <string name="auto_replay_title">Reproduzir vídeo automaticamente</string>
     <string name="default_sort_order_title">Ordem padrão de classificação de fotos para o novo álbum</string>
-
     <string name="gallery_as_album_title">Galeria exibida como um álbum</string>
-
     <string name="default_mute_title">Silenciar o vídeo por padrão</string>
     <string name="edit_header">Retoque</string>
     <string name="edit_replace_title">Substituir original</string>
     <string name="edit_replace_on_summary">Sim, substitua a foto original pelo resultado da edição.</string>
     <string name="edit_replace_off_summary">Não, adicione o arquivo editado ao álbum junto com o original. Gerencie você mesmo as duplicatas.</string>
-
     <string name="remove_editor_output_title">Remover arquivos de trabalho</string>
     <string name="remove_editor_output_on_summary">O arquivo de trabalho criado pelo aplicativo Retouch será excluído assim que for coletado.</string>
     <string name="editor_output_deletion_rational">Para remover o arquivo de trabalho de retoque em segundo plano sem solicitar sua permissão todas as vezes, você deve conceder ao Les Pas a permissão Gerenciar mídia.</string>
     <string name="privacy_header">Privacidade</string>
     <string name="remove_meta_data_before_sharing_title">Remova metadados confidenciais antes de compartilhar</string>
-
     <string name="use_low_resolution_to_share_title">Diminua a resolução da imagem antes de compartilhá-la</string>
     <string name="storage_header">Armazenamento</string>
     <string name="transfer_to_internal">Transferir álbuns para armazenamento interno</string>
@@ -134,21 +118,17 @@
     <string name="cache_size_title">Configurar limites para pasta temporária de álbuns remotos</string>
     <string name="cache_size_summary">Tamanho atual: %1$dMB</string>
     <string name="cache_size_setting_hint">Tamanho:</string>
-
     <string name="sync_header">Sincronização</string>
     <string name="wifionly_title">Sincronizar e fazer backup somente em WiFi</string>
     <string name="wifionly_summary_on">Sim, evitar consumo de dados móveis.</string>
     <string name="wifionly_summary_off">Não, usar os dados móveis - tome cuidado se a sua coleção for grande.</string>
-
     <string name="account_header">Conta</string>
     <string name="relogin_title">Re-logar</string>
     <string name="relogin_summary">Se você revogou sua chave de acesso do Les Pas no servidor, sem querer.</string>
     <string name="logout_title">Sair</string>
     <string name="msg_logout_dialog">Sair da conta %1$s?</string>
     <string name="yes_logout">Sim, sair</string>
-
     <string name="proceed_request">Continuar</string>
-
     <!-- Destination DialogFragment -->
     <string name="sync_status_stage_backup_pictures">Fazendo backup de arquivos de mídia...</string>
     <string name="copy_files">Copiar</string>
@@ -157,14 +137,13 @@
     <string name="to_album">Para Álbum:</string>
     <string name="to_new_album">Para Novo Álbum:</string>
     <string name="checkbox_text_set_remote">Álbum remoto, arquivos de mídia armazenados apenas no servidor.</string>
-
     <!-- Album Rename DialogFragment -->
-    <string name="invalid_character_found">"Separador de caminho '\\' '/' não permitido nos nomes de arquivo"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
+    <string name="invalid_character_found">Separador de caminho \'\\\' \'/\' não permitido nos nomes de arquivo</string>
+    <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Nome não permitido</string>
     <string name="name_too_long">Nome muito longo</string>
     <string name="name_existed">O nome já existe</string>
     <string name="leading_dots_found">Prefixo \'.\' não permitido</string>
-
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparando foto</string>
     <string name="preparing_files_progress">Preparando foto %1$d de %2$d</string>
@@ -175,7 +154,6 @@
     <string name="access_right_violation">A aplicação de compartilhamento não segue o padrão de armazenamento Android, por isso o Les Pas não consegue receber os arquivos. Por favor atualize a aplicação utilizada ou use outra.</string>
     <string name="no_media_file_found">Nenhuma imagem ou vídeo detectada nestes arquivos.</string>
     <string name="same_file_found">O mesmo arquivo já existia.</string>
-
     <!-- Info DialogFragment -->
     <string name="file_name">Nome:</string>
     <string name="shot_at">Criado:</string>
@@ -185,7 +163,6 @@
     <string name="parameter">Param.:</string>
     <string name="artist">Artista:</string>
     <string name="button_text_map">Mapa</string>
-
     <!-- Album Publish DialogFragment -->
     <string name="publish_button_text">Publicar</string>
     <string name="joint_album">Conjunto</string>
@@ -222,10 +199,8 @@
         <item quantity="one">%1$d selecionado</item>
         <item quantity="other">%1$d selecionados</item>
     </plurals>
-
     <!-- Camera Roll Activity -->
     <string name="msg_no_media_found">Nenhuma imagem ou vídeo foi encontrado no dispositivo.</string>
-
     <!-- Search Fragment -->
     <string name="today">Hoje</string>
     <string name="yesterday">Ontem</string>
@@ -238,29 +213,22 @@
     <string name="tooltips_search_album">Pesquisar nos álbuns</string>
     <string name="tooltips_search_gallery">Pesquisar na galeria</string>
     <string name="need_albums">Favor criar um álbum primeiro.</string>
-
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s em álbuns</string>
     <string name="title_in_gallery">%1$s na Galeria</string>
-
     <!-- Publication List Fragment -->
-    <string name="publication_list_fragment_title">"Publicação de amigos"</string>
+    <string name="publication_list_fragment_title">Publicação de amigos</string>
     <string name="confirm_download_publication">Você está na rede móvel, tem certeza que quer ver essa publicação agora?</string>
     <string name="yes_i_do">Claro!</string>
-
     <!-- Publication Detail Fragment -->
     <string name="item_show_meta">Mostar metadados</string>
     <string name="item_refresh_publication">Atualizar publicações</string>
-
     <!-- Remote Media Fragment -->
     <string name="button_text_add_to_lespas">Adicionar ao álbum</string>
-
     <!-- Location Search Fragment -->
     <string name="option_menu_in_map">Mostrar no mapa</string>
-
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Apresentação</string>
-
     <!-- Image Recognition -->
     <!-- Object label -->
     <string name="button_text_motion_play">Reprodução de fotos em movimento</string>
@@ -271,7 +239,6 @@
     <string name="object_vehicle">Veículo</string>
     <string name="object_location">Localização</string>
     <string name="object_face">Rosto</string>
-
     <!-- Muzei Artwork Provider -->
     <string name="the_end">Fim</string>
     <string name="muzei_provider_description">Momento Les Pas</string>
@@ -368,7 +335,6 @@
         <item quantity="one">, Faz hoje %1$d ano</item>
         <item quantity="other">, %1$d anos atrás hoje</item>
     </plurals>
-
     <string name="msg_player_skip">5 segundos</string>
     <string name="internal_publish">Interno</string>
     <string name="external_publish">Público</string>
